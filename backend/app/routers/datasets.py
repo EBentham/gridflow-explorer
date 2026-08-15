@@ -5,7 +5,8 @@ range parsing/defaulting (422) both happen before `client_ctx()` is ever
 entered — see P1-PLAN.md's "Read-path guard and validation ordering". The
 client is **not** a FastAPI `Depends`: FastAPI resolves dependencies before
 the route body runs, which would open (or 503 on) the database ahead of
-404/422 validation.
+404/422 validation. This ordering applies to every route in this module,
+including P3's `/coverage`.
 
 This module contains **no duckdb exception handling and does not import
 duckdb** — the entire read-path guard lives in `client_ctx()`.
@@ -18,6 +19,7 @@ from typing import Any
 from fastapi import APIRouter, Query
 
 from app.catalogue import get_dataset, list_datasets, to_catalogue_entry
+from app.coverage import dataset_coverage
 from app.deps import client_ctx
 from app.ranges import resolve_range
 
@@ -63,3 +65,31 @@ def get_dataset_data(
     start_date, end_date = resolve_range(start, end, spec.default_range_days)
     with client_ctx() as client:
         return spec.loader(client, start_date, end_date)
+
+
+@router.get("/api/datasets/{dataset_id}/coverage")
+def get_dataset_coverage(
+    dataset_id: str,
+    start: str | None = Query(default=None),
+    end: str | None = Query(default=None),
+) -> dict[str, Any]:
+    """Report which days of `[start, end]` are present locally for a dataset.
+
+    Same validation order as `/data`: `get_dataset` (404) -> `resolve_range`
+    (422) -> `with client_ctx() as client:`.
+
+    Args:
+        dataset_id: The kebab-case dataset slug from the URL.
+        start: Inclusive ISO date (`YYYY-MM-DD`), or omitted to default.
+        end: Inclusive ISO date (`YYYY-MM-DD`), or omitted to default to
+            today (UTC).
+
+    Returns:
+        The coverage shape documented in P3-PLAN.md: `dataset_id`,
+        `requested`, `present_dates`, `missing_dates`,
+        `missing_day_count`, `requested_day_count`.
+    """
+    spec = get_dataset(dataset_id)
+    start_date, end_date = resolve_range(start, end, spec.default_range_days)
+    with client_ctx() as client:
+        return dataset_coverage(client, spec, start_date, end_date)
