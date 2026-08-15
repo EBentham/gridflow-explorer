@@ -1,0 +1,47 @@
+[project]
+name = "gridflow-explorer-backend"
+version = "0.1.0"
+description = "FastAPI backend wrapping GridflowClient for the gridflow-explorer front-end"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "polars",
+    "pydantic-settings",
+    # duckdb is also a transitive dependency of gridflow, but we declare it directly:
+    # deps.py imports it for the lock-classified exception catch, and jobs.py (P3)
+    # imports it for the try_start preflight probe. A direct import is a declared
+    # dependency, not a transitive one riding in on the gridflow install.
+    "duckdb",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "httpx",  # required by fastapi.testclient.TestClient
+    "ruff",
+]
+
+# NOTE: `gridflow` is intentionally NOT listed in [project.dependencies].
+# It is installed separately as an editable local path install
+# (`uv pip install -e "../../gridflow"`) because it is a sibling checkout,
+# not a package published to PyPI. Declaring it here would send uv's
+# resolver to PyPI looking for a "gridflow" package that isn't ours.
+# See README.md "Sibling checkout requirement".
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "A", "SIM"]
+# TCH is deliberately NOT selected: FastAPI resolves route and response-model
+# annotations at runtime via get_type_hints(), and the TC rules would relocate
+# runtime-needed imports into TYPE_CHECKING blocks, producing NameError at startup.
