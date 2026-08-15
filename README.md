@@ -71,15 +71,18 @@ The backend installs `gridflow` as an editable local path dependency; it is
 intentionally **not** a declared PyPI dependency (see
 `backend/pyproject.toml`), since it isn't published there.
 
-Install backend dependencies from `backend/`:
+Create the venv and install backend dependencies from `backend/`:
 
 ```sh
-uv pip install -e ".[dev]" --system-certs
-uv pip install -e "../../gridflow" --system-certs
+uv venv --system-certs
+uv pip install -e "../../gridflow" --system-certs --python ./.venv/Scripts/python.exe
+uv pip install -e ".[dev]" --system-certs --python ./.venv/Scripts/python.exe
 ```
 
 `--system-certs` is required on this dev machine: Avast intercepts TLS and
-breaks `uv`'s default certificate verification without it.
+breaks `uv`'s default certificate verification without it. `--python
+./.venv/Scripts/python.exe` targets the venv explicitly, since it is never
+activated (see "Running the two dev processes" below).
 
 Copy `backend/.env.example` to `backend/.env` and adjust
 `GRIDFLOW_EXPLORER_DUCKDB_PATH` if your catalogue lives somewhere other than
