@@ -303,6 +303,10 @@ def test_build_env_returns_none_when_duckdb_path_unset(monkeypatch: pytest.Monke
 
 
 def test_build_command_matches_documented_shape_for_both_datasets() -> None:
+    """`--end` is the day after the inclusive `end` arg — see
+    `test_build_command_advances_end_by_one_day_for_zero_width_window` for
+    the inclusive-day -> exclusive-midnight contract this encodes.
+    """
     generation_mix = get_dataset("generation-mix")
     cmd = fetch.build_command(generation_mix, date(2026, 8, 1), date(2026, 8, 15))
     assert cmd == [
@@ -313,7 +317,7 @@ def test_build_command_matches_documented_shape_for_both_datasets() -> None:
         "--start",
         "2026-08-01",
         "--end",
-        "2026-08-15",
+        "2026-08-16",
     ]
 
     system_prices = get_dataset("system-prices")
@@ -326,5 +330,26 @@ def test_build_command_matches_documented_shape_for_both_datasets() -> None:
         "--start",
         "2026-08-01",
         "--end",
-        "2026-08-15",
+        "2026-08-16",
+    ]
+
+
+def test_build_command_advances_end_by_one_day_for_zero_width_window() -> None:
+    """Regression for the end-day fetch gap: explorer `end` is an inclusive
+    day, but the CLI's bare-date `--end` resolves to a midnight-UTC instant
+    (exclusive upper bound). A same-day request (`start == end`) would
+    therefore be a zero-width window and ingest nothing unless `--end` is
+    advanced by one day past the requested `end`.
+    """
+    generation_mix = get_dataset("generation-mix")
+    cmd = fetch.build_command(generation_mix, date(2026, 3, 1), date(2026, 3, 1))
+    assert cmd == [
+        str(fetch.GRIDFLOW_EXE),
+        "pipeline",
+        "elexon",
+        "fuelhh",
+        "--start",
+        "2026-03-01",
+        "--end",
+        "2026-03-02",
     ]
