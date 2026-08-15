@@ -22,10 +22,6 @@ export function GenerationMixScreen({ dataset }: ScreenProps) {
   const [view, setView] = useState<ViewMode>('stacked')
   const [selectedKey, setSelectedKey] = useState(dataset.series[0]?.key ?? '')
 
-  if (loading) return <LoadingState />
-  if (error) return <ErrorState error={error} />
-  if (!data) return null
-
   const selectedIndex = Math.max(
     dataset.series.findIndex((s) => s.key === selectedKey),
     0,
@@ -35,47 +31,55 @@ export function GenerationMixScreen({ dataset }: ScreenProps) {
   return (
     <div>
       <RangePicker value={range} onChange={setRange} />
-      <div className="view-toggle">
-        <label>
-          <input
-            type="radio"
-            name="view"
-            value="stacked"
-            checked={view === 'stacked'}
-            onChange={() => setView('stacked')}
-          />
-          Stacked
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="view"
-            value="single"
-            checked={view === 'single'}
-            onChange={() => setView('single')}
-          />
-          Single fuel
-        </label>
-        {view === 'single' && (
-          <select value={selectedSeries.key} onChange={(event) => setSelectedKey(event.target.value)}>
-            {dataset.series.map((s) => (
-              <option key={s.key} value={s.key}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-      {data.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <ChartCard title={dataset.title}>
-          {view === 'stacked' ? (
-            <StackedAreaChart records={data} series={dataset.series} timestampKey={dataset.timestamp_key} />
+      {loading ? (
+        <LoadingState />
+      ) : error ? (
+        <ErrorState error={error} />
+      ) : !data ? null : (
+        <>
+          <div className="view-toggle">
+            <label>
+              <input
+                type="radio"
+                name="view"
+                value="stacked"
+                checked={view === 'stacked'}
+                onChange={() => setView('stacked')}
+              />
+              Stacked
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="view"
+                value="single"
+                checked={view === 'single'}
+                onChange={() => setView('single')}
+              />
+              Single fuel
+            </label>
+            {view === 'single' && (
+              <select value={selectedSeries.key} onChange={(event) => setSelectedKey(event.target.value)}>
+                {dataset.series.map((s) => (
+                  <option key={s.key} value={s.key}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          {data.length === 0 ? (
+            <EmptyState />
           ) : (
-            <SeriesLineChart records={data} series={[selectedSeries]} timestampKey={dataset.timestamp_key} />
+            <ChartCard title={dataset.title}>
+              {view === 'stacked' ? (
+                <StackedAreaChart records={data} series={dataset.series} timestampKey={dataset.timestamp_key} />
+              ) : (
+                <SeriesLineChart records={data} series={[selectedSeries]} timestampKey={dataset.timestamp_key} />
+              )}
+            </ChartCard>
           )}
-        </ChartCard>
+        </>
       )}
     </div>
   )

@@ -16,14 +16,14 @@ export function SystemPricesScreen({ dataset }: ScreenProps) {
   const [range, setRange] = useState<DateRange>(() => lastNDays(dataset.default_range_days))
   const { data, loading, error } = useDataset(dataset.id, range)
 
-  if (loading) return <LoadingState />
-  if (error) return <ErrorState error={error} />
-  if (!data) return null
-
   return (
     <div>
       <RangePicker value={range} onChange={setRange} />
-      {data.length === 0 ? (
+      {loading ? (
+        <LoadingState />
+      ) : error ? (
+        <ErrorState error={error} />
+      ) : !data ? null : data.length === 0 ? (
         <EmptyState />
       ) : (
         <ChartCard title={dataset.title}>

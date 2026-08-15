@@ -25,6 +25,12 @@ export function RangePicker({ value, onChange }: RangePickerProps) {
   // Lazy initial only — whichever mode the incoming value implies at mount.
   // Subsequent preset/custom switches are user-driven, not re-derived here.
   const [customMode, setCustomMode] = useState(() => !activePreset)
+  // Custom-mode inputs edit this draft, not `value` directly — an empty
+  // input must stay editable locally without ever propagating an empty
+  // bound to `onChange` (a partial range 422s the API and blows away the
+  // whole screen, picker included). `onChange` only fires once both draft
+  // bounds are non-empty.
+  const [draft, setDraft] = useState<DateRange>(value)
 
   return (
     <div className="range-picker">
@@ -41,23 +47,38 @@ export function RangePicker({ value, onChange }: RangePickerProps) {
           {preset.label}
         </button>
       ))}
-      <button type="button" className={customMode ? 'active' : ''} onClick={() => setCustomMode(true)}>
+      <button
+        type="button"
+        className={customMode ? 'active' : ''}
+        onClick={() => {
+          setDraft(value)
+          setCustomMode(true)
+        }}
+      >
         Custom
       </button>
       {customMode && (
         <span className="range-picker-custom">
           <input
             type="date"
-            value={value.start}
-            max={value.end}
-            onChange={(event) => onChange({ start: event.target.value, end: value.end })}
+            value={draft.start}
+            max={draft.end || undefined}
+            onChange={(event) => {
+              const next = { start: event.target.value, end: draft.end }
+              setDraft(next)
+              if (next.start && next.end) onChange(next)
+            }}
           />
           <span>to</span>
           <input
             type="date"
-            value={value.end}
-            min={value.start}
-            onChange={(event) => onChange({ start: value.start, end: event.target.value })}
+            value={draft.end}
+            min={draft.start || undefined}
+            onChange={(event) => {
+              const next = { start: draft.start, end: event.target.value }
+              setDraft(next)
+              if (next.start && next.end) onChange(next)
+            }}
           />
         </span>
       )}
