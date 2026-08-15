@@ -28,12 +28,7 @@ function GenericDatasetScreen({ dataset }: { dataset: DatasetSummary }) {
       {dataset.chart === 'stacked-area' ? (
         <StackedAreaChart records={data} series={dataset.series} timestampKey={dataset.timestamp_key} />
       ) : (
-        <SeriesLineChart
-          records={data}
-          series={dataset.series[0]}
-          seriesIndex={0}
-          timestampKey={dataset.timestamp_key}
-        />
+        <SeriesLineChart records={data} series={[dataset.series[0]]} timestampKey={dataset.timestamp_key} />
       )}
     </ChartCard>
   )

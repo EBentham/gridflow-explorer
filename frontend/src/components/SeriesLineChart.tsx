@@ -1,29 +1,25 @@
-import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
+import { CartesianGrid, Legend, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import type { DataRecord, SeriesSpec } from '../api/types'
 import { colorFor } from '../lib/palette'
 
 interface SeriesLineChartProps {
   records: DataRecord[]
-  series: SeriesSpec
-  seriesIndex: number
+  series: SeriesSpec[]
   timestampKey: string
 }
 
-/** A single `<Line>` for one chosen series. */
-export function SeriesLineChart({ records, series, seriesIndex, timestampKey }: SeriesLineChartProps) {
+/** One `<Line>` per series (palette-indexed by position) — a single chosen fuel or a multi-series dataset like system prices. */
+export function SeriesLineChart({ records, series, timestampKey }: SeriesLineChartProps) {
   return (
     <LineChart data={records}>
       <CartesianGrid strokeDasharray="3 3" />
       <XAxis dataKey={timestampKey} tick={{ fontSize: 11 }} minTickGap={40} />
       <YAxis />
       <Tooltip />
-      <Line
-        type="monotone"
-        dataKey={series.key}
-        name={series.label}
-        stroke={colorFor(seriesIndex)}
-        dot={false}
-      />
+      {series.length > 1 && <Legend />}
+      {series.map((s, index) => (
+        <Line key={s.key} type="monotone" dataKey={s.key} name={s.label} stroke={colorFor(index)} dot={false} />
+      ))}
     </LineChart>
   )
 }

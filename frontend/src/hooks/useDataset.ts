@@ -10,8 +10,10 @@ interface UseDatasetResult {
 }
 
 /**
- * Fetches one dataset's records for `range`. Callers must memoize `range`
- * (e.g. `useMemo`) — a fresh object every render would retrigger the effect.
+ * Fetches one dataset's records for `range`. The effect depends on
+ * `range.start`/`range.end` (not the `range` object), so a fresh object
+ * with unchanged values — e.g. re-clicking the active preset — does not
+ * retrigger a fetch.
  */
 export function useDataset(datasetId: string, range: DateRange): UseDatasetResult {
   const [data, setData] = useState<DataRecord[] | null>(null)
@@ -37,7 +39,7 @@ export function useDataset(datasetId: string, range: DateRange): UseDatasetResul
       })
 
     return () => controller.abort()
-  }, [datasetId, range])
+  }, [datasetId, range.start, range.end])
 
   return { data, loading, error }
 }
