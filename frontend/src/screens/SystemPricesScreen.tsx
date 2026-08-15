@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChartCard } from '../components/ChartCard'
+import { EmptyState } from '../components/EmptyState'
 import { ErrorState } from '../components/ErrorState'
 import { LoadingState } from '../components/LoadingState'
 import { RangePicker } from '../components/RangePicker'
@@ -22,9 +23,13 @@ export function SystemPricesScreen({ dataset }: ScreenProps) {
   return (
     <div>
       <RangePicker value={range} onChange={setRange} />
-      <ChartCard title={dataset.title}>
-        <SeriesLineChart records={data} series={dataset.series} timestampKey={dataset.timestamp_key} />
-      </ChartCard>
+      {data.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <ChartCard title={dataset.title}>
+          <SeriesLineChart records={data} series={dataset.series} timestampKey={dataset.timestamp_key} />
+        </ChartCard>
+      )}
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChartCard } from '../components/ChartCard'
+import { EmptyState } from '../components/EmptyState'
 import { ErrorState } from '../components/ErrorState'
 import { LoadingState } from '../components/LoadingState'
 import { RangePicker } from '../components/RangePicker'
@@ -65,13 +66,17 @@ export function GenerationMixScreen({ dataset }: ScreenProps) {
           </select>
         )}
       </div>
-      <ChartCard title={dataset.title}>
-        {view === 'stacked' ? (
-          <StackedAreaChart records={data} series={dataset.series} timestampKey={dataset.timestamp_key} />
-        ) : (
-          <SeriesLineChart records={data} series={[selectedSeries]} timestampKey={dataset.timestamp_key} />
-        )}
-      </ChartCard>
+      {data.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <ChartCard title={dataset.title}>
+          {view === 'stacked' ? (
+            <StackedAreaChart records={data} series={dataset.series} timestampKey={dataset.timestamp_key} />
+          ) : (
+            <SeriesLineChart records={data} series={[selectedSeries]} timestampKey={dataset.timestamp_key} />
+          )}
+        </ChartCard>
+      )}
     </div>
   )
 }

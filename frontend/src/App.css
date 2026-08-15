@@ -47,12 +47,17 @@
 }
 
 .loading-state,
-.error-state {
+.error-state,
+.empty-state {
   padding: 16px 0;
 }
 
 .error-state {
   color: #b91c1c;
+}
+
+.empty-state {
+  color: var(--text);
 }
 
 .view-toggle {
