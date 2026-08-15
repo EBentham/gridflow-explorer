@@ -101,7 +101,13 @@ class JobManager:
         self._lock = threading.Lock()
         self._current: Job | None = None
 
-    def try_start(self, dataset_id: str, target: Callable[[Job], None]) -> Job | None:
+    def try_start(
+        self,
+        dataset_id: str,
+        target: Callable[[Job], None],
+        *,
+        preflight: Callable[[], None] | None = None,
+    ) -> Job | None:
         """Start a new job if none is currently running.
 
         The single start entry point: owns the `RUNNING` transition and
@@ -119,14 +125,30 @@ class JobManager:
             target: Callable invoked as the daemon thread's body, receiving
                 the created `Job`. The caller (P3) is responsible for
                 calling `finish` from within `target`'s own `try/finally`.
+            preflight: Optional callable invoked **inside the manager lock,
+                after the already-running check and before the `Job` is
+                created**. A raise here leaves no partially-created job and
+                no state to roll back — the lock is simply released as the
+                exception propagates. Keyword-only and defaulted so every
+                existing caller (including `tests/conftest.py`'s
+                `running_job` fixture) is untouched. P3's `fetch.py` injects
+                the write-lock probe here; this module stays free of
+                `duckdb` and `settings` imports.
 
         Returns:
             The newly created `Job`, or `None` if a job is already
             `RUNNING` (the caller turns that into a 409).
+
+        Raises:
+            Exception: Whatever `preflight` raises, propagated unchanged
+                (P3's route turns a `RefreshInProgress` into 409 and lets a
+                `CatalogueMissing` fall through to the normal 503 handler).
         """
         with self._lock:
             if self._current is not None and self._current.state is JobState.RUNNING:
                 return None
+            if preflight is not None:
+                preflight()
             job = Job(
                 job_id=str(uuid.uuid4()),
                 dataset_id=dataset_id,
