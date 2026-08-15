@@ -26,6 +26,7 @@ export function StackedAreaChart({ records, series, timestampKey }: StackedAreaC
           stackId="1"
           stroke={colorFor(index)}
           fill={colorFor(index)}
+          isAnimationActive={false}
         />
       ))}
     </AreaChart>
