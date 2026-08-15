@@ -10,3 +10,6 @@ frontend/dist/
 
 # Local Claude Code tooling config
 .claude/
+
+# Planning docs stay local (matches the gridflow repo convention)
+.planning/

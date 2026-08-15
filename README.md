@@ -34,8 +34,8 @@ refresh_in_progress` instead of racing DuckDB's file lock. `/api/datasets`
 and `/api/jobs/current` touch no database at all, so the UI can keep polling
 job status and the dataset list throughout a fetch. Fetch itself is
 serialized to one job at a time — a second `POST .../fetch` while one is
-running gets `409`, not a second subprocess. See
-`.planning/phases/P1-PLAN.md` for the full job-runner design.
+running gets `409`, not a second subprocess. The full design rationale lives
+in the docstrings of `backend/app/jobs.py`, `deps.py` and `fetch.py`.
 
 ## The distinctive feature: coverage-aware fetch
 
