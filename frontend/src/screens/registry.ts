@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import type { DatasetSummary } from '../api/types'
+import { GenerationMixScreen } from './GenerationMixScreen'
 
 export interface ScreenProps {
   dataset: DatasetSummary
@@ -11,4 +12,6 @@ export interface ScreenProps {
  * backend's `DATASETS` catalogue (P1-PLAN.md). Ids absent here fall back to
  * a generic chart screen (see `App.tsx`).
  */
-export const SCREENS: Record<string, ComponentType<ScreenProps>> = {}
+export const SCREENS: Record<string, ComponentType<ScreenProps>> = {
+  'generation-mix': GenerationMixScreen,
+}
