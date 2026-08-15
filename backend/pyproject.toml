@@ -45,3 +45,10 @@ select = ["E", "F", "I", "N", "UP", "B", "A", "SIM"]
 # TCH is deliberately NOT selected: FastAPI resolves route and response-model
 # annotations at runtime via get_type_hints(), and the TC rules would relocate
 # runtime-needed imports into TYPE_CHECKING blocks, producing NameError at startup.
+ignore = ["N818"]
+# N818 (exception names should end in "Error") is ignored: P1-PLAN.md's error
+# contract fixes the exact names UnknownDataset / BadRange / CatalogueMissing /
+# RefreshInProgress, referenced by these exact names across errors.py, deps.py,
+# and the T4 test suite. Renaming would relitigate a locked, Sol-approved
+# convention rather than the "id" case, which the plan explicitly resolves by
+# renaming in Python instead of ignoring.
