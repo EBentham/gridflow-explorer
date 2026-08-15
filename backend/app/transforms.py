@@ -97,8 +97,11 @@ def load_generation_mix(client: GridflowClient, start: date, end: date) -> list[
     # rows at backfill chunk boundaries (same settlement_date/period/
     # fuel_type, same generation_mw) — without dropping them the group_by
     # sum below double-counts, showing as ~2x needle spikes on the chart.
-    # This can only drop EXACT duplicates, not select the latest of two
-    # differing vintages: GridflowClient.get_fuel_generation() (client.py,
+    # Correctness is guaranteed only for the observed exact-duplicate case:
+    # `unique(keep="any")` on the settlement key would also discard one of
+    # two DIFFERING vintages arbitrarily, because no vintage discriminator
+    # reaches this frame to pick the latest —
+    # GridflowClient.get_fuel_generation() (client.py,
     # `_present_bitemporal_exclude_clause` with no `retain=`) strips the
     # `available_at` vintage column before this frame ever arrives here, and
     # there is no `silver_elexon_fuelhh_latest` view (unlike system_prices,
