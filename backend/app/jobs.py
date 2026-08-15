@@ -181,9 +181,16 @@ class JobManager:
         """
         with self._lock:
             if self._current is not None and self._current.job_id == job_id:
-                self._current.state = state
+                # `current()`/`to_job_payload` read the job's attributes
+                # locklessly, so whichever attribute we set last is the de
+                # facto publication point for a concurrent poller. Set
+                # `finished_at`/`message` first and `state` last so a
+                # poller can never observe a terminal `state` (e.g.
+                # `failed`) paired with a still-`None` `message` — a torn
+                # snapshot of an in-progress write.
                 self._current.finished_at = datetime.now(UTC)
                 self._current.message = message
+                self._current.state = state
 
     def current(self) -> Job | None:
         """Return the current job, if any.
