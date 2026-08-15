@@ -4,7 +4,11 @@ import type { JobStatus } from '../api/types'
 import type { DateRange } from '../lib/range'
 
 const POLL_INTERVAL_MS = 1500
-const TERMINAL_STATES: ReadonlySet<JobStatus['state']> = new Set(['succeeded', 'failed'])
+// `idle` is included alongside `succeeded`/`failed`: while polling, an
+// `idle` response means the job we were tracking vanished server-side
+// (restart, or the manager moved on) — that is terminal too, not a state
+// to keep polling against forever.
+const TERMINAL_STATES: ReadonlySet<JobStatus['state']> = new Set(['succeeded', 'failed', 'idle'])
 
 interface UseFetchJobResult {
   job: JobStatus | null
@@ -109,11 +113,37 @@ export function useFetchJob(datasetId: string): UseFetchJobResult {
 
   useEffect(() => {
     mountedRef.current = true
+
+    // Discover an already-running job on mount (abort-safe): `FetchBanner`
+    // is keyed on `range`, so a range change remounts this hook and aborts
+    // whatever poll was in flight — the fresh instance would otherwise
+    // never learn a job is running (same gap for a second tab opened
+    // mid-job). If discovery finds one running, join it exactly as if we
+    // had started it ourselves; the normal terminal-state handling in
+    // `poll` (and the consumer's `onComplete` effect keyed off `job.state`)
+    // takes it from there.
+    const controller = new AbortController()
+    controllerRef.current = controller
+
+    fetchJson<JobStatus>('/api/jobs/current', controller.signal)
+      .then((status) => {
+        if (!mountedRef.current || controller.signal.aborted) return
+        if (status.state === 'running') {
+          setJob(status)
+          timeoutRef.current = window.setTimeout(poll, POLL_INTERVAL_MS)
+        }
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return
+        // Mount discovery failing is not fatal — the banner simply starts
+        // idle, same as if no job had ever run.
+      })
+
     return () => {
       mountedRef.current = false
       stopPolling()
     }
-  }, [stopPolling])
+  }, [poll, stopPolling])
 
   return { job, starting, error, start }
 }

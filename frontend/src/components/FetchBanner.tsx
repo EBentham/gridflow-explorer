@@ -15,8 +15,10 @@ interface FetchBannerProps {
  * locally, offers a button to fetch it, and shows calm state through the
  * P3 job lifecycle. Owns its own `useCoverage`/`useFetchJob` — the screen
  * need only render it and pass `onComplete` (the screen's own data
- * refetch), called once the job succeeds; this component refetches its
- * own coverage on the same edge.
+ * refetch), called once the job succeeds or lands back at `idle`
+ * mid-poll (finished-with-unknown-outcome — a vanished job is still worth
+ * refreshing against); this component refetches its own coverage on the
+ * same edge.
  *
  * Callers should key this component on the range (`key={range.start +
  * range.end}`) so a range change remounts it, resetting any stale job
@@ -33,7 +35,16 @@ export function FetchBanner({ dataset, range, onComplete }: FetchBannerProps) {
 
   const prevStateRef = useRef<string | undefined>(undefined)
   useEffect(() => {
-    if (job?.state === 'succeeded' && prevStateRef.current !== 'succeeded') {
+    // `idle` reached while a job was being tracked (mount-discovered or
+    // self-started) means the job vanished server-side rather than
+    // succeeding or failing outright — finished-with-unknown-outcome. Treat
+    // it the same as `succeeded` for the refetch: no error wall, just pick
+    // up whatever landed. `job` starts `null`, never a fabricated `idle`, so
+    // this only fires on a genuine transition observed via polling.
+    const isCompletion =
+      (job?.state === 'succeeded' && prevStateRef.current !== 'succeeded') ||
+      (job?.state === 'idle' && prevStateRef.current !== 'idle')
+    if (isCompletion) {
       refetchCoverage()
       onComplete()
     }
