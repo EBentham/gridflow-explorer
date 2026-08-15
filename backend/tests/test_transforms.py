@@ -25,6 +25,16 @@ def test_bst_timestamp_converts_to_correct_utc_hour_with_z_suffix() -> None:
     assert "2026-08-10T00:00:00Z" not in timestamps
 
 
+def test_exact_duplicate_fuelhh_row_does_not_double_the_summed_value() -> None:
+    # NUCLEAR at 00:00 appears twice in the fixture as an exact duplicate
+    # (same settlement_date/settlement_period/fuel_type/generation_mw),
+    # mirroring the real silver_elexon_fuelhh backfill-chunk-boundary shape.
+    # Without the dedupe step this would sum to 8000.0.
+    records = _generation_records()
+    row = next(r for r in records if r["timestamp"] == "2026-08-09T23:00:00Z")
+    assert row["nuclear"] == 4000.0
+
+
 def test_int_star_codes_collapse_into_single_imports_value() -> None:
     records = _generation_records()
     row = next(r for r in records if r["timestamp"] == "2026-08-09T23:00:00Z")

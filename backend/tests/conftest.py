@@ -43,21 +43,29 @@ def generation_mix_frame() -> pl.DataFrame:
         - One unrecognised code (`ZZUNKNOWN`), to prove it lands in
           `other` rather than being dropped.
         - `OIL` never appears, to prove the backfill zero-fill path.
+        - `NUCLEAR` at period 1 is repeated as an exact duplicate row
+          (same settlement_date/settlement_period/fuel_type/generation_mw),
+          matching the real backfill-chunk-boundary shape of
+          `silver_elexon_fuelhh`, to prove `load_generation_mix` drops it
+          rather than double-counting it in the summed value.
     """
-    rows: list[tuple[datetime, str, float]] = [
-        (_london(2026, 8, 10, 0, 0), "NUCLEAR", 4000.0),
-        (_london(2026, 8, 10, 0, 0), "WIND", 2000.0),
-        (_london(2026, 8, 10, 0, 0), "INTFR", 500.0),
-        (_london(2026, 8, 10, 0, 0), "INTNED", 300.0),
-        (_london(2026, 8, 10, 0, 0), "INTIFA2", 200.0),
-        (_london(2026, 8, 10, 0, 0), "ZZUNKNOWN", 50.0),
-        (_london(2026, 8, 10, 0, 30), "NUCLEAR", 4100.0),
+    rows: list[tuple[datetime, int, str, float]] = [
+        (_london(2026, 8, 10, 0, 0), 1, "NUCLEAR", 4000.0),
+        (_london(2026, 8, 10, 0, 0), 1, "NUCLEAR", 4000.0),  # exact chunk-boundary duplicate
+        (_london(2026, 8, 10, 0, 0), 1, "WIND", 2000.0),
+        (_london(2026, 8, 10, 0, 0), 1, "INTFR", 500.0),
+        (_london(2026, 8, 10, 0, 0), 1, "INTNED", 300.0),
+        (_london(2026, 8, 10, 0, 0), 1, "INTIFA2", 200.0),
+        (_london(2026, 8, 10, 0, 0), 1, "ZZUNKNOWN", 50.0),
+        (_london(2026, 8, 10, 0, 30), 2, "NUCLEAR", 4100.0),
     ]
     return pl.DataFrame(
         {
             "timestamp_utc": [r[0] for r in rows],
-            "fuel_type": [r[1] for r in rows],
-            "generation_mw": [r[2] for r in rows],
+            "settlement_date": [r[0].date() for r in rows],
+            "settlement_period": [r[1] for r in rows],
+            "fuel_type": [r[2] for r in rows],
+            "generation_mw": [r[3] for r in rows],
         }
     )
 

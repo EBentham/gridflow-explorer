@@ -68,6 +68,9 @@ def load_generation_mix(client: GridflowClient, start: date, end: date) -> list[
     """Load and reshape `generation-mix` records for the given window.
 
     Pipeline (P1-PLAN.md "generation-mix", exact order):
+        0. Drop exact duplicate `(settlement_date, settlement_period,
+           fuel_type)` rows (see WHY comment below on the vintage-collapse
+           gap this does NOT cover).
         1. Map `fuel_type` -> `series_key`, vectorized: `INT*` prefix ->
            "imports"; else `FUEL_TO_SERIES` lookup, defaulting to "other".
         2. Warn once (not drop) on any unrecognised, non-`INT*` code.
@@ -89,6 +92,25 @@ def load_generation_mix(client: GridflowClient, start: date, end: date) -> list[
         `GENERATION_SERIES_KEYS`, every declared key present and non-null.
     """
     raw = client.get_fuel_generation(start, end)
+
+    # WHY: silver_elexon_fuelhh is APPEND_ONLY and carries exact duplicate
+    # rows at backfill chunk boundaries (same settlement_date/period/
+    # fuel_type, same generation_mw) — without dropping them the group_by
+    # sum below double-counts, showing as ~2x needle spikes on the chart.
+    # This can only drop EXACT duplicates, not select the latest of two
+    # differing vintages: GridflowClient.get_fuel_generation() (client.py,
+    # `_present_bitemporal_exclude_clause` with no `retain=`) strips the
+    # `available_at` vintage column before this frame ever arrives here, and
+    # there is no `silver_elexon_fuelhh_latest` view (unlike system_prices,
+    # `("elexon", "fuelhh")` has no LATEST_VIEW_SPECS entry). A future
+    # re-publication with a different generation_mw for the same key would
+    # still need an upstream fix (retain `available_at` on the client call,
+    # or add a fuelhh latest-view spec) before it can be vintage-collapsed
+    # here.
+    if raw.height:
+        raw = raw.unique(
+            subset=["settlement_date", "settlement_period", "fuel_type"], keep="any"
+        )
 
     fuel_codes = set(raw["fuel_type"].unique().to_list()) if raw.height else set()
     unknown = {
