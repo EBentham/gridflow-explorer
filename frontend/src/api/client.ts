@@ -21,9 +21,12 @@ export class ApiError extends Error {
  * A handled backend error has the `{error: {code, message}}` envelope
  * (P1-PLAN.md "Error shape"). A genuine 500 has no such envelope, so the
  * JSON parse is guarded and falls back to the HTTP status text.
+ *
+ * `init` defaults every existing GET call site's behaviour unchanged; P3's
+ * `useFetchJob` passes `{ method: 'POST' }` to trigger a fetch job.
  */
-export async function fetchJson<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(path, { signal })
+export async function fetchJson<T>(path: string, signal?: AbortSignal, init?: RequestInit): Promise<T> {
+  const response = await fetch(path, { ...init, signal })
 
   if (!response.ok) {
     let body: ApiErrorBody | null = null

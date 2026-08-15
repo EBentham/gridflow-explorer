@@ -38,6 +38,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
+from typing import Any
 
 _LOCK_MARKERS = ("could not set lock", "conflicting lock")
 
@@ -101,7 +102,13 @@ class JobManager:
         self._lock = threading.Lock()
         self._current: Job | None = None
 
-    def try_start(self, dataset_id: str, target: Callable[[Job], None]) -> Job | None:
+    def try_start(
+        self,
+        dataset_id: str,
+        target: Callable[[Job], None],
+        *,
+        preflight: Callable[[], None] | None = None,
+    ) -> Job | None:
         """Start a new job if none is currently running.
 
         The single start entry point: owns the `RUNNING` transition and
@@ -119,14 +126,30 @@ class JobManager:
             target: Callable invoked as the daemon thread's body, receiving
                 the created `Job`. The caller (P3) is responsible for
                 calling `finish` from within `target`'s own `try/finally`.
+            preflight: Optional callable invoked **inside the manager lock,
+                after the already-running check and before the `Job` is
+                created**. A raise here leaves no partially-created job and
+                no state to roll back — the lock is simply released as the
+                exception propagates. Keyword-only and defaulted so every
+                existing caller (including `tests/conftest.py`'s
+                `running_job` fixture) is untouched. P3's `fetch.py` injects
+                the write-lock probe here; this module stays free of
+                `duckdb` and `settings` imports.
 
         Returns:
             The newly created `Job`, or `None` if a job is already
             `RUNNING` (the caller turns that into a 409).
+
+        Raises:
+            Exception: Whatever `preflight` raises, propagated unchanged
+                (P3's route turns a `RefreshInProgress` into 409 and lets a
+                `CatalogueMissing` fall through to the normal 503 handler).
         """
         with self._lock:
             if self._current is not None and self._current.state is JobState.RUNNING:
                 return None
+            if preflight is not None:
+                preflight()
             job = Job(
                 job_id=str(uuid.uuid4()),
                 dataset_id=dataset_id,
@@ -158,9 +181,16 @@ class JobManager:
         """
         with self._lock:
             if self._current is not None and self._current.job_id == job_id:
-                self._current.state = state
+                # `current()`/`to_job_payload` read the job's attributes
+                # locklessly, so whichever attribute we set last is the de
+                # facto publication point for a concurrent poller. Set
+                # `finished_at`/`message` first and `state` last so a
+                # poller can never observe a terminal `state` (e.g.
+                # `failed`) paired with a still-`None` `message` — a torn
+                # snapshot of an in-progress write.
                 self._current.finished_at = datetime.now(UTC)
                 self._current.message = message
+                self._current.state = state
 
     def current(self) -> Job | None:
         """Return the current job, if any.
@@ -181,3 +211,35 @@ class JobManager:
 
 
 JOBS = JobManager()
+
+
+def _iso_z(value: datetime | None) -> str | None:
+    """Render a UTC `datetime` as ISO-8601 with a trailing `Z`, or `None`."""
+    if value is None:
+        return None
+    return value.isoformat().replace("+00:00", "Z")
+
+
+def to_job_payload(job: Job) -> dict[str, Any]:
+    """Serialize a `Job` into the one wire shape both job routes return.
+
+    P3's `POST /fetch` 202 body and `GET /api/jobs/current` both return this
+    same payload — a deliberate simplification (P3-PLAN.md "T3") so the
+    frontend has exactly one job type, a superset of P1-PLAN's minimal 202
+    body (`job_id`, `dataset_id`, `state`).
+
+    Args:
+        job: The `Job` to serialize.
+
+    Returns:
+        `job_id`, `dataset_id`, `state`, ISO-8601 `Z` `started_at` /
+        `finished_at`, and `message`.
+    """
+    return {
+        "job_id": job.job_id,
+        "dataset_id": job.dataset_id,
+        "state": job.state,
+        "started_at": _iso_z(job.started_at),
+        "finished_at": _iso_z(job.finished_at),
+        "message": job.message,
+    }

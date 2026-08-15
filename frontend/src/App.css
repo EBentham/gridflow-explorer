@@ -56,8 +56,45 @@
   color: #b91c1c;
 }
 
+.error-state-refresh {
+  color: var(--text);
+}
+
 .empty-state {
   color: var(--text);
+}
+
+.fetch-banner {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.fetch-banner-idle {
+  background: var(--accent-bg);
+  color: var(--text-h);
+  border: 1px solid var(--accent-border);
+}
+
+.fetch-banner-idle button {
+  padding: 4px 10px;
+  border: 1px solid var(--accent-border);
+  background: transparent;
+  color: var(--text-h);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.fetch-banner-running {
+  color: var(--text);
+}
+
+.fetch-banner-failed {
+  color: #b91c1c;
 }
 
 .view-toggle {

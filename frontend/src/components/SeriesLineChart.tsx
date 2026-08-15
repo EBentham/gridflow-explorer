@@ -18,7 +18,15 @@ export function SeriesLineChart({ records, series, timestampKey }: SeriesLineCha
       <Tooltip />
       {series.length > 1 && <Legend />}
       {series.map((s, index) => (
-        <Line key={s.key} type="monotone" dataKey={s.key} name={s.label} stroke={colorFor(index)} dot={false} />
+        <Line
+          key={s.key}
+          type="monotone"
+          dataKey={s.key}
+          name={s.label}
+          stroke={colorFor(index)}
+          dot={false}
+          isAnimationActive={false}
+        />
       ))}
     </LineChart>
   )

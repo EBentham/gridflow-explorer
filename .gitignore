@@ -7,3 +7,6 @@ __pycache__/
 frontend/node_modules/
 frontend/dist/
 *.duckdb
+
+# Local Claude Code tooling config
+.claude/

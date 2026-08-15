@@ -29,3 +29,29 @@ export interface ApiErrorBody {
     message: string
   }
 }
+
+/** `/api/datasets/{id}/coverage` response — P3-PLAN.md's coverage shape. */
+export interface Coverage {
+  dataset_id: string
+  requested: { start: string; end: string }
+  present_dates: string[]
+  missing_dates: string[]
+  missing_day_count: number
+  requested_day_count: number
+}
+
+/**
+ * The one job shape returned by both `POST .../fetch` (202 body) and
+ * `GET /api/jobs/current` (P3-PLAN.md T3: "a superset of P1-PLAN's 202
+ * body ... a deliberate simplification so the frontend has exactly one job
+ * type"). Only `state` is guaranteed present — a fresh manager with no job
+ * ever started answers the bare `{"state": "idle"}`.
+ */
+export interface JobStatus {
+  state: 'idle' | 'running' | 'succeeded' | 'failed'
+  job_id?: string
+  dataset_id?: string
+  started_at?: string
+  finished_at?: string | null
+  message?: string | null
+}
