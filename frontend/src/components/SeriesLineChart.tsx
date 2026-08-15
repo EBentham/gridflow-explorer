@@ -1,6 +1,7 @@
 import { CartesianGrid, Legend, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import type { DataRecord, SeriesSpec } from '../api/types'
 import { colorFor } from '../lib/palette'
+import { tooltipContentStyle, tooltipItemStyle, tooltipLabelStyle } from '../lib/tooltip'
 
 interface SeriesLineChartProps {
   records: DataRecord[]
@@ -15,7 +16,11 @@ export function SeriesLineChart({ records, series, timestampKey }: SeriesLineCha
       <CartesianGrid strokeDasharray="3 3" />
       <XAxis dataKey={timestampKey} tick={{ fontSize: 11 }} minTickGap={40} />
       <YAxis />
-      <Tooltip />
+      <Tooltip
+        contentStyle={tooltipContentStyle}
+        labelStyle={tooltipLabelStyle}
+        itemStyle={tooltipItemStyle}
+      />
       {series.length > 1 && <Legend />}
       {series.map((s, index) => (
         <Line
