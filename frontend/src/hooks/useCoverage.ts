@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ApiError, fetchJson } from '../api/client'
-import type { DataRecord } from '../api/types'
+import type { Coverage } from '../api/types'
 import type { DateRange } from '../lib/range'
 
-interface UseDatasetResult {
-  data: DataRecord[] | null
+interface UseCoverageResult {
+  coverage: Coverage | null
   loading: boolean
   error: ApiError | null
   /** Re-runs the fetch for the current `datasetId`/`range` without changing either. */
@@ -12,15 +12,14 @@ interface UseDatasetResult {
 }
 
 /**
- * Fetches one dataset's records for `range`. The effect depends on
- * `range.start`/`range.end` (not the `range` object), so a fresh object
- * with unchanged values — e.g. re-clicking the active preset — does not
- * retrigger a fetch. `refetch` bumps an internal counter included in the
- * same dependency array, so a P3 fetch-job completion can force a reload
- * of an otherwise-unchanged range.
+ * Fetches one dataset's local coverage for `range` — same shape and abort
+ * discipline as `useDataset`: the effect depends on `range.start`/
+ * `range.end` (not the `range` object), and `refetch` bumps an internal
+ * counter in the same dependency array so a completed fetch job can force
+ * a reload without a range change.
  */
-export function useDataset(datasetId: string, range: DateRange): UseDatasetResult {
-  const [data, setData] = useState<DataRecord[] | null>(null)
+export function useCoverage(datasetId: string, range: DateRange): UseCoverageResult {
+  const [coverage, setCoverage] = useState<Coverage | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<ApiError | null>(null)
   const [refetchTick, setRefetchTick] = useState(0)
@@ -30,16 +29,14 @@ export function useDataset(datasetId: string, range: DateRange): UseDatasetResul
     setLoading(true)
     setError(null)
 
-    const path = `/api/datasets/${datasetId}/data?start=${range.start}&end=${range.end}`
-    fetchJson<DataRecord[]>(path, controller.signal)
-      .then(setData)
+    const path = `/api/datasets/${datasetId}/coverage?start=${range.start}&end=${range.end}`
+    fetchJson<Coverage>(path, controller.signal)
+      .then(setCoverage)
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === 'AbortError') return
         setError(err instanceof ApiError ? err : new ApiError('unknown_error', String(err)))
       })
       .finally(() => {
-        // An aborted request's replacement may already be in flight (StrictMode's
-        // dev double-effect, or a fast range change) — do not flip loading off for it.
         if (!controller.signal.aborted) setLoading(false)
       })
 
@@ -48,5 +45,5 @@ export function useDataset(datasetId: string, range: DateRange): UseDatasetResul
 
   const refetch = useCallback(() => setRefetchTick((tick) => tick + 1), [])
 
-  return { data, loading, error, refetch }
+  return { coverage, loading, error, refetch }
 }
