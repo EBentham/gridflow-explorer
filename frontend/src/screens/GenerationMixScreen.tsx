@@ -69,12 +69,7 @@ export function GenerationMixScreen({ dataset }: ScreenProps) {
         {view === 'stacked' ? (
           <StackedAreaChart records={data} series={dataset.series} timestampKey={dataset.timestamp_key} />
         ) : (
-          <SeriesLineChart
-            records={data}
-            series={selectedSeries}
-            seriesIndex={selectedIndex}
-            timestampKey={dataset.timestamp_key}
-          />
+          <SeriesLineChart records={data} series={[selectedSeries]} timestampKey={dataset.timestamp_key} />
         )}
       </ChartCard>
     </div>

@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 import type { DatasetSummary } from '../api/types'
 import { GenerationMixScreen } from './GenerationMixScreen'
+import { SystemPricesScreen } from './SystemPricesScreen'
 
 export interface ScreenProps {
   dataset: DatasetSummary
@@ -14,4 +15,5 @@ export interface ScreenProps {
  */
 export const SCREENS: Record<string, ComponentType<ScreenProps>> = {
   'generation-mix': GenerationMixScreen,
+  'system-prices': SystemPricesScreen,
 }
