@@ -30,7 +30,11 @@ export function useDataset(datasetId: string, range: DateRange): UseDatasetResul
         if (err instanceof DOMException && err.name === 'AbortError') return
         setError(err instanceof ApiError ? err : new ApiError('unknown_error', String(err)))
       })
-      .finally(() => setLoading(false))
+      .finally(() => {
+        // An aborted request's replacement may already be in flight (StrictMode's
+        // dev double-effect, or a fast range change) — do not flip loading off for it.
+        if (!controller.signal.aborted) setLoading(false)
+      })
 
     return () => controller.abort()
   }, [datasetId, range])
