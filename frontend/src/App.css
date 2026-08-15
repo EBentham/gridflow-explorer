@@ -61,3 +61,31 @@
   margin-bottom: 16px;
   align-items: center;
 }
+
+.range-picker {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.range-picker button {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.range-picker button.active {
+  background: var(--accent-bg);
+  color: var(--text-h);
+  border-color: var(--accent-border);
+}
+
+.range-picker-custom {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
