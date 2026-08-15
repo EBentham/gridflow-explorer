@@ -38,6 +38,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
+from typing import Any
 
 _LOCK_MARKERS = ("could not set lock", "conflicting lock")
 
@@ -203,3 +204,35 @@ class JobManager:
 
 
 JOBS = JobManager()
+
+
+def _iso_z(value: datetime | None) -> str | None:
+    """Render a UTC `datetime` as ISO-8601 with a trailing `Z`, or `None`."""
+    if value is None:
+        return None
+    return value.isoformat().replace("+00:00", "Z")
+
+
+def to_job_payload(job: Job) -> dict[str, Any]:
+    """Serialize a `Job` into the one wire shape both job routes return.
+
+    P3's `POST /fetch` 202 body and `GET /api/jobs/current` both return this
+    same payload — a deliberate simplification (P3-PLAN.md "T3") so the
+    frontend has exactly one job type, a superset of P1-PLAN's minimal 202
+    body (`job_id`, `dataset_id`, `state`).
+
+    Args:
+        job: The `Job` to serialize.
+
+    Returns:
+        `job_id`, `dataset_id`, `state`, ISO-8601 `Z` `started_at` /
+        `finished_at`, and `message`.
+    """
+    return {
+        "job_id": job.job_id,
+        "dataset_id": job.dataset_id,
+        "state": job.state,
+        "started_at": _iso_z(job.started_at),
+        "finished_at": _iso_z(job.finished_at),
+        "message": job.message,
+    }

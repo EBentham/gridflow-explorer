@@ -14,6 +14,7 @@ A schema drift, a SQL bug, or a corrupt catalogue must surface as a genuine
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Any
 
 
 class ErrorCode(StrEnum):
@@ -74,3 +75,23 @@ class RefreshInProgress(ApiError):
 
     code = ErrorCode.REFRESH_IN_PROGRESS
     http_status = 503
+
+
+def error_envelope(code: ErrorCode, message: str) -> dict[str, Any]:
+    """Build the API's single `{"error": {"code", "message"}}` envelope.
+
+    The one definition of this shape (P3-PLAN.md "Only two additions to
+    shipped code"). `main.py`'s `handle_api_error` uses it for every
+    `ApiError`, and the P3 `/fetch` route's 409 path (a job already running,
+    which is not itself an `ApiError` raise — `try_start` returns `None`)
+    uses the same helper so there remains exactly one envelope shape in the
+    codebase.
+
+    Args:
+        code: Machine-readable error code.
+        message: Human-readable sentence.
+
+    Returns:
+        `{"error": {"code": code, "message": message}}`.
+    """
+    return {"error": {"code": code, "message": message}}
