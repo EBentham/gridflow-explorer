@@ -35,6 +35,26 @@ existing equivalent to "overall" and already carry every gate verdict in
 today's data, so `variant_metrics` filters to ``scope == "run"`` OR a
 non-null ``gate_passed``, per-Variant, rather than inventing an aggregate
 that is not in the store.
+
+CONTRADICTION found against the spec's `/day` shape (headline finding, not
+fixed here — the response shape is spec-fenced and adding a field is a
+scope decision, not an implementation one): a single `model_id` can carry
+more than one `vintage_policy_id` at once. Verified on the real store —
+`day_ahead.lgbm_demand.v1` currently has two, `v1_rolling_23h30m` and
+`v1_day_anchored_noon_d1`, both live and overlapping for settlement dates
+2024-08-31 through 2026-08-22. In that overlap, `/day` returns **two**
+records per settlement period for the same `model_id` (verified: 96 rows
+for 48 periods on 2026-08-10), and nothing in the response shape
+distinguishes which policy a given row belongs to — the spec's "one record
+per settlement period... per requested Variant" does not hold as written.
+`day_forecast` still returns every superseded row (never silently drops
+one), sorted deterministically by `(model_id, settlement_period,
+vintage_policy_id)` so which row appears first is stable across identical
+requests — but a consumer keyed only on `model_id` (e.g. the frontend fan
+chart, keyed by `model_id` per settlement period) cannot render both. A
+follow-up decision is needed: either a Variant is really `model_id ×
+vintage_policy_id` (and `/variants` should list one entry per pair), or
+`vintage_policy_id` needs to join `/day`'s response shape.
 """
 
 from __future__ import annotations
@@ -274,6 +294,13 @@ def day_forecast(
     Returns:
         `[]` for a valid day with no matching rows (the empty state) — see
         `UnknownVariant` for the distinct "this Variant does not exist" case.
+        NOTE: a single `model_id` can carry more than one `vintage_policy_id`
+        (verified on the real store — `day_ahead.lgbm_demand.v1` currently
+        has two, overlapping in date range), and this response shape has no
+        field to distinguish them. Both rows are returned under the same
+        `model_id`; the response is deterministically ordered (see the sort
+        below) but the two policies are not otherwise disambiguated — see
+        the DEVIATION note in the module docstring.
 
     Raises:
         UnknownVariant: One or more requested `model_ids` is not present
@@ -297,7 +324,14 @@ def day_forecast(
         return []
 
     quantile_cols = [c for c in day_rows.columns if c.startswith(_QUANTILE_PREFIX)]
-    day_rows = day_rows.sort(["model_id", "settlement_period"]).with_columns(
+    # WHY: sorted by `vintage_policy_id` too (not just model_id/settlement_period)
+    # for a deterministic tie-break — `polars.sort` does not guarantee stable
+    # ordering among ties on its sort keys alone, and a `model_id` can carry
+    # more than one `vintage_policy_id` for the same settlement_period (see
+    # Returns note above). Without this, which policy's row appears first
+    # (and therefore which one the frontend's per-model_id chart keeps) could
+    # vary run to run for the identical query.
+    day_rows = day_rows.sort(["model_id", "settlement_period", "vintage_policy_id"]).with_columns(
         pl.col("delivery_time").dt.strftime("%Y-%m-%dT%H:%M:%SZ")
     )
     columns = [*_DAY_RESPONSE_COLUMNS, *quantile_cols]
