@@ -9,7 +9,12 @@ Split by consumer:
       at all*, which the `JOBS.is_running()` short-circuit (case 3) needs.
     - `StubClientCtx`: `test_api.py`, monkeypatched in for
       `app.routers.datasets.client_ctx` so route tests never touch a real
-      `GridflowClient`.
+      `GridflowClient`. Reused (generic — any client with `.close()`) by
+      the P4 forecasts tests below via `ForecastStubClient`.
+    - `forecast_rows_frame` / `forecast_metrics_rows_frame` /
+      `ForecastStubClient`: `test_forecasts.py` and `test_forecasts_api.py`
+      (via the `forecast_stub_client` / `forecast_stub_client_ctx` and
+      `empty_forecast_stub_client*` fixtures).
 """
 
 from __future__ import annotations
@@ -202,3 +207,499 @@ def running_job() -> Generator[None, None, None]:
         yield
     finally:
         JOBS.finish(job.job_id, JobState.IDLE, None)
+
+
+# --- P4 forecasts fixtures --------------------------------------------------
+
+
+def forecast_rows_frame() -> pl.DataFrame:
+    """Fixture long-format `gold_forecasts` frame, tz-aware Europe/London.
+
+    Exercises every rule `app.forecasts` implements:
+        - Supersession (ADR-057 section 6): the first two rows share one
+          supersession identity (model_id, vintage_kind, vintage_policy_id,
+          issued_at, delivery_time) at period 1 on 2026-08-10 — an older
+          write (`run-old`, `written_at` 01:00, `q_0.5=100.0`) and a newer
+          write (`run-new`, `written_at` 02:00, `q_0.5=200.0`). Only the
+          newer row's values must survive.
+        - UTC relabelling: every timestamp is in August (BST, UTC+1) — a
+          missing `convert_time_zone("UTC")` would ship
+          `2026-08-10T00:00:00Z` for period 1 instead of the correct
+          `2026-08-09T23:00:00Z`.
+        - Multi-Variant handling: `day_ahead.lgbm_demand.v2` on the same
+          day needs no special-casing to appear alongside v1.
+        - 2026-08-11 carries no rows at all, for the empty-day case.
+    """
+    rows: list[dict[str, object]] = [
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "issued_at": _london(2026, 8, 9, 23, 30),
+            "delivery_time": _london(2026, 8, 10, 0, 0),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 1,
+            "actual": 21000.0,
+            "run_id": "run-old",
+            "written_at": _london(2026, 8, 10, 1, 0),
+            "gates_passed": True,
+            "q_0.05": 19000.0,
+            "q_0.5": 100.0,
+            "q_0.95": 21500.0,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "issued_at": _london(2026, 8, 9, 23, 30),
+            "delivery_time": _london(2026, 8, 10, 0, 0),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 1,
+            "actual": 21000.0,
+            "run_id": "run-new",
+            "written_at": _london(2026, 8, 10, 2, 0),
+            "gates_passed": True,
+            "q_0.05": 19500.0,
+            "q_0.5": 200.0,
+            "q_0.95": 21600.0,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "issued_at": _london(2026, 8, 9, 23, 30),
+            "delivery_time": _london(2026, 8, 10, 0, 30),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 2,
+            "actual": 21100.0,
+            "run_id": "run-new",
+            "written_at": _london(2026, 8, 10, 2, 0),
+            "gates_passed": True,
+            "q_0.05": 19600.0,
+            "q_0.5": 210.0,
+            "q_0.95": 21700.0,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v2",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v2_rolling_23h30m",
+            "issued_at": _london(2026, 8, 9, 23, 30),
+            "delivery_time": _london(2026, 8, 10, 0, 0),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 1,
+            "actual": 21050.0,
+            "run_id": "run-v2",
+            "written_at": _london(2026, 8, 10, 3, 0),
+            "gates_passed": True,
+            "q_0.05": 19700.0,
+            "q_0.5": 220.0,
+            "q_0.95": 21800.0,
+        },
+    ]
+    columns = list(rows[0].keys())
+    return pl.DataFrame({col: [row[col] for row in rows] for col in columns})
+
+
+def forecast_metrics_rows_frame() -> pl.DataFrame:
+    """Fixture `gold_forecast_metrics` frame, tz-aware Europe/London.
+
+    Exercises "newest run per Variant" (v1's newest write is `run-new` at
+    02:00, so its `run-old` fold-scope row at 01:00 must not appear in
+    `variant_metrics`'s output) and the `scope == "run"` filter (the real
+    store carries no `scope='overall'` rows — see `app.forecasts`'s
+    DEVIATION note).
+    """
+    rows: list[dict[str, object]] = [
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "run_id": "run-old",
+            "written_at": _london(2026, 8, 10, 1, 0),
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "scope": "fold",
+            "metric_kind": "score",
+            "metric_name": "pinball_loss",
+            "metric_value": 12.3,
+            "gate_passed": None,
+            "gate_threshold": None,
+            "gate_message": None,
+            "train_size": 300,
+            "valid_size": 40,
+            "n_folds": 10,
+            "gates_passed": True,
+            "perfect_prog_caveat": False,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "run_id": "run-new",
+            "written_at": _london(2026, 8, 10, 2, 0),
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "scope": "run",
+            "metric_kind": "gate",
+            "metric_name": "pinball_loss_overall",
+            "metric_value": 11.1,
+            "gate_passed": True,
+            "gate_threshold": 15.0,
+            "gate_message": "pass",
+            "train_size": 320,
+            "valid_size": 42,
+            "n_folds": 12,
+            "gates_passed": True,
+            "perfect_prog_caveat": False,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v2",
+            "run_id": "run-v2",
+            "written_at": _london(2026, 8, 10, 3, 0),
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v2_rolling_23h30m",
+            "scope": "run",
+            "metric_kind": "gate",
+            "metric_name": "pinball_loss_overall",
+            "metric_value": 9.5,
+            "gate_passed": True,
+            "gate_threshold": 15.0,
+            "gate_message": "pass",
+            "train_size": 320,
+            "valid_size": 42,
+            "n_folds": 12,
+            "gates_passed": True,
+            "perfect_prog_caveat": True,
+        },
+    ]
+    columns = list(rows[0].keys())
+    return pl.DataFrame({col: [row[col] for row in rows] for col in columns})
+
+
+def empty_forecasts_frame() -> pl.DataFrame:
+    """Zero-row `gold_forecasts` frame, correctly typed (empty-store case)."""
+    return pl.DataFrame(
+        schema={
+            "model_id": pl.String,
+            "vintage_kind": pl.String,
+            "vintage_policy_id": pl.String,
+            "issued_at": pl.Datetime(time_unit="us", time_zone="Europe/London"),
+            "delivery_time": pl.Datetime(time_unit="us", time_zone="Europe/London"),
+            "settlement_date": pl.Date,
+            "settlement_period": pl.Int16,
+            "actual": pl.Float64,
+            "run_id": pl.String,
+            "written_at": pl.Datetime(time_unit="us", time_zone="Europe/London"),
+            "gates_passed": pl.Boolean,
+            "q_0.05": pl.Float64,
+            "q_0.5": pl.Float64,
+            "q_0.95": pl.Float64,
+        }
+    )
+
+
+def empty_metrics_frame() -> pl.DataFrame:
+    """Zero-row `gold_forecast_metrics` frame, correctly typed (empty-store case)."""
+    return pl.DataFrame(
+        schema={
+            "model_id": pl.String,
+            "run_id": pl.String,
+            "written_at": pl.Datetime(time_unit="us", time_zone="Europe/London"),
+            "vintage_kind": pl.String,
+            "vintage_policy_id": pl.String,
+            "scope": pl.String,
+            "metric_kind": pl.String,
+            "metric_name": pl.String,
+            "metric_value": pl.Float64,
+            "gate_passed": pl.Boolean,
+            "gate_threshold": pl.Float64,
+            "gate_message": pl.String,
+            "train_size": pl.Int32,
+            "valid_size": pl.Int32,
+            "n_folds": pl.Int32,
+            "gates_passed": pl.Boolean,
+            "perfect_prog_caveat": pl.Boolean,
+        }
+    )
+
+
+def two_policy_forecasts_frame() -> pl.DataFrame:
+    """Fixture `gold_forecasts` frame pinning ADR-057 section 3's realised
+    collision: one `model_id` carrying **two live `vintage_policy_id`
+    families** for the same settlement day — the defect the P4 coordinator
+    review caught (`list_variants`/`day_forecast` grouped by `model_id`
+    alone would show only one policy and silently drop the other's rows).
+
+    Both policies deliver period 1 on 2026-08-10; `v1_rolling_23h30m` also
+    covers a second, earlier day (2025-01-01) that `v1_day_anchored_noon_d1`
+    does not, so their `first_settlement_date` spans genuinely differ, the
+    way the real store's do (2022-01-31 vs 2024-08-31).
+
+    Deliberately a separate fixture from `forecast_rows_frame` (which keeps
+    one policy per model) so the single-policy tests are not disturbed by
+    this scenario.
+    """
+    rows: list[dict[str, object]] = [
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "issued_at": _london(2025, 1, 1, 0, 0),
+            "delivery_time": _london(2025, 1, 1, 0, 0),
+            "settlement_date": date(2025, 1, 1),
+            "settlement_period": 1,
+            "actual": 20000.0,
+            "run_id": "run-rolling-old-day",
+            "written_at": _london(2025, 1, 1, 1, 0),
+            "gates_passed": True,
+            "q_0.05": 18000.0,
+            "q_0.5": 300.0,
+            "q_0.95": 21000.0,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "issued_at": _london(2026, 8, 9, 23, 30),
+            "delivery_time": _london(2026, 8, 10, 0, 0),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 1,
+            "actual": 21000.0,
+            "run_id": "run-rolling",
+            "written_at": _london(2026, 8, 10, 1, 0),
+            "gates_passed": True,
+            "q_0.05": 19000.0,
+            "q_0.5": 310.0,
+            "q_0.95": 21500.0,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_day_anchored_noon_d1",
+            "issued_at": _london(2026, 8, 9, 12, 0),
+            "delivery_time": _london(2026, 8, 10, 0, 0),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 1,
+            "actual": 21000.0,
+            "run_id": "run-day-anchored",
+            "written_at": _london(2026, 8, 10, 2, 0),
+            "gates_passed": True,
+            "q_0.05": 19500.0,
+            "q_0.5": 420.0,
+            "q_0.95": 21600.0,
+        },
+    ]
+    columns = list(rows[0].keys())
+    return pl.DataFrame({col: [row[col] for row in rows] for col in columns})
+
+
+def two_policy_metrics_frame() -> pl.DataFrame:
+    """Fixture `gold_forecast_metrics` frame matching `two_policy_forecasts_frame`.
+
+    One `scope='run'` row per `(model_id, vintage_policy_id)` pair, so
+    `variant_metrics` grouped by the pair returns both, distinctly.
+    """
+    rows: list[dict[str, object]] = [
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "run_id": "run-rolling",
+            "written_at": _london(2026, 8, 10, 1, 0),
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "scope": "run",
+            "metric_kind": "gate",
+            "metric_name": "pinball_loss_overall",
+            "metric_value": 11.1,
+            "gate_passed": True,
+            "gate_threshold": 15.0,
+            "gate_message": "pass",
+            "train_size": 320,
+            "valid_size": 42,
+            "n_folds": 12,
+            "gates_passed": True,
+            "perfect_prog_caveat": False,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "run_id": "run-day-anchored",
+            "written_at": _london(2026, 8, 10, 2, 0),
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_day_anchored_noon_d1",
+            "scope": "run",
+            "metric_kind": "gate",
+            "metric_name": "pinball_loss_overall",
+            "metric_value": 9.5,
+            "gate_passed": True,
+            "gate_threshold": 15.0,
+            "gate_message": "pass",
+            "train_size": 320,
+            "valid_size": 42,
+            "n_folds": 12,
+            "gates_passed": True,
+            "perfect_prog_caveat": False,
+        },
+    ]
+    columns = list(rows[0].keys())
+    return pl.DataFrame({col: [row[col] for row in rows] for col in columns})
+
+
+def tie_break_forecasts_frame() -> pl.DataFrame:
+    """Fixture `gold_forecasts` frame pinning `_supersede`'s `run_id DESC`
+    tie-break specifically.
+
+    `forecast_rows_frame`'s supersession-colliding rows have *different*
+    `written_at` values, so `written_at DESC` alone always resolves the
+    winner and the secondary `run_id DESC` comparator is never exercised —
+    removing it from `_supersede`'s sort key would not fail any existing
+    test (a Sol diff review finding). Both rows here share the exact same
+    `written_at`; only `run_id` differs ("run-a" vs "run-z"), so the
+    surviving `q_0.5` value is determined by the tie-break alone.
+    """
+    rows: list[dict[str, object]] = [
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "issued_at": _london(2026, 8, 9, 23, 30),
+            "delivery_time": _london(2026, 8, 10, 0, 0),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 1,
+            "actual": 21000.0,
+            "run_id": "run-a",
+            "written_at": _london(2026, 8, 10, 2, 0),
+            "gates_passed": True,
+            "q_0.05": 19000.0,
+            "q_0.5": 111.0,
+            "q_0.95": 21500.0,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "issued_at": _london(2026, 8, 9, 23, 30),
+            "delivery_time": _london(2026, 8, 10, 0, 0),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 1,
+            "actual": 21000.0,
+            "run_id": "run-z",
+            "written_at": _london(2026, 8, 10, 2, 0),
+            "gates_passed": True,
+            "q_0.05": 19500.0,
+            "q_0.5": 999.0,
+            "q_0.95": 21600.0,
+        },
+    ]
+    columns = list(rows[0].keys())
+    return pl.DataFrame({col: [row[col] for row in rows] for col in columns})
+
+
+def collision_forecasts_frame() -> pl.DataFrame:
+    """Fixture `gold_forecasts` frame pinning the JSON variant-key encoding
+    (Sol diff review, second confirmatory pass).
+
+    `model_id` and `vintage_policy_id` both contain the literal string
+    `"::"` -- the previous wire encoding's separator. Under that old
+    scheme, `_decode_variant_key` would split at the wrong boundary; under
+    the current JSON-array encoding, the pair round-trips exactly.
+    """
+    rows: list[dict[str, object]] = [
+        {
+            "model_id": "weird::model.id",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "also::weird_policy",
+            "issued_at": _london(2026, 8, 9, 23, 30),
+            "delivery_time": _london(2026, 8, 10, 0, 0),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 1,
+            "actual": 21000.0,
+            "run_id": "run-collision",
+            "written_at": _london(2026, 8, 10, 1, 0),
+            "gates_passed": True,
+            "q_0.05": 19000.0,
+            "q_0.5": 300.0,
+            "q_0.95": 21500.0,
+        },
+    ]
+    columns = list(rows[0].keys())
+    return pl.DataFrame({col: [row[col] for row in rows] for col in columns})
+
+
+class ForecastStubClient:
+    """Stand-in for `GridflowClient` in the P4 forecasts tests.
+
+    `app.forecasts` issues exactly two constant, predicate-free SQL
+    strings (see its module docstring's DEVIATION note on why there is no
+    bind parameter to stub) — this dispatches on which relation the SQL
+    names, so callers never need to parse or care about the query text.
+    """
+
+    def __init__(
+        self,
+        forecasts: pl.DataFrame | None = None,
+        metrics: pl.DataFrame | None = None,
+    ) -> None:
+        self.forecasts = forecasts if forecasts is not None else forecast_rows_frame()
+        self.metrics = metrics if metrics is not None else forecast_metrics_rows_frame()
+        self.calls: list[str] = []
+
+    def query(self, sql: str) -> pl.DataFrame:
+        """Record the call and return the fixture frame the SQL names."""
+        self.calls.append(sql)
+        if "gold_forecast_metrics" in sql:
+            return self.metrics
+        if "gold_forecasts" in sql:
+            return self.forecasts
+        raise AssertionError(f"ForecastStubClient.query got unexpected SQL: {sql!r}")
+
+    def close(self) -> None:
+        """No-op, present only for interface parity with `GridflowClient`."""
+
+
+@pytest.fixture
+def forecast_stub_client() -> ForecastStubClient:
+    """A fresh `ForecastStubClient` with default fixture frames."""
+    return ForecastStubClient()
+
+
+@pytest.fixture
+def forecast_stub_client_ctx(forecast_stub_client: ForecastStubClient) -> StubClientCtx:
+    """A `StubClientCtx` wrapping `forecast_stub_client`, ready to monkeypatch in."""
+    return StubClientCtx(forecast_stub_client)
+
+
+@pytest.fixture
+def empty_forecast_stub_client() -> ForecastStubClient:
+    """A `ForecastStubClient` over an empty store (both views zero rows)."""
+    return ForecastStubClient(forecasts=empty_forecasts_frame(), metrics=empty_metrics_frame())
+
+
+@pytest.fixture
+def empty_forecast_stub_client_ctx(empty_forecast_stub_client: ForecastStubClient) -> StubClientCtx:
+    """A `StubClientCtx` wrapping `empty_forecast_stub_client`, ready to monkeypatch in."""
+    return StubClientCtx(empty_forecast_stub_client)
+
+
+@pytest.fixture
+def two_policy_forecast_stub_client() -> ForecastStubClient:
+    """A `ForecastStubClient` pinning ADR-057 section 3's two-policy collision."""
+    return ForecastStubClient(
+        forecasts=two_policy_forecasts_frame(), metrics=two_policy_metrics_frame()
+    )
+
+
+@pytest.fixture
+def two_policy_forecast_stub_client_ctx(
+    two_policy_forecast_stub_client: ForecastStubClient,
+) -> StubClientCtx:
+    """A `StubClientCtx` wrapping `two_policy_forecast_stub_client`, ready to monkeypatch in."""
+    return StubClientCtx(two_policy_forecast_stub_client)
+
+
+@pytest.fixture
+def tie_break_forecast_stub_client() -> ForecastStubClient:
+    """A `ForecastStubClient` pinning `_supersede`'s `run_id DESC` tie-break."""
+    return ForecastStubClient(forecasts=tie_break_forecasts_frame(), metrics=empty_metrics_frame())
+
+
+@pytest.fixture
+def collision_forecast_stub_client() -> ForecastStubClient:
+    """A `ForecastStubClient` pinning the JSON variant-key encoding against
+    identifiers that contain the previous wire encoding's `"::"` separator.
+    """
+    return ForecastStubClient(forecasts=collision_forecasts_frame(), metrics=empty_metrics_frame())

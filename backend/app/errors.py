@@ -24,6 +24,7 @@ class ErrorCode(StrEnum):
     BAD_RANGE = "bad_range"
     CATALOGUE_MISSING = "catalogue_missing"
     REFRESH_IN_PROGRESS = "refresh_in_progress"
+    UNKNOWN_VARIANT = "unknown_variant"
 
 
 class ApiError(Exception):
@@ -75,6 +76,19 @@ class RefreshInProgress(ApiError):
 
     code = ErrorCode.REFRESH_IN_PROGRESS
     http_status = 503
+
+
+class UnknownVariant(ApiError):
+    """Raised when a requested forecast `model_id` is not present in the store.
+
+    Distinct from `UnknownDataset` (the dataset catalogue): a forecast
+    Variant is discovered from `gold_forecasts`/`gold_forecast_metrics`
+    data, not declared statically, so "unknown" can only be determined
+    after a store read — see `routers/forecasts.py`'s validation ordering.
+    """
+
+    code = ErrorCode.UNKNOWN_VARIANT
+    http_status = 404
 
 
 def error_envelope(code: ErrorCode, message: str) -> dict[str, Any]:
