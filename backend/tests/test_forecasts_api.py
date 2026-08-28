@@ -11,8 +11,12 @@ import pytest
 from conftest import ForecastStubClient, StubClientCtx
 from fastapi.testclient import TestClient
 
+from app.forecasts import _encode_variant_key
 from app.main import app
 from app.routers import forecasts as forecasts_router
+
+V1_ROLLING = _encode_variant_key("day_ahead.lgbm_demand.v1", "v1_rolling_23h30m")
+V1_DAY_ANCHORED = _encode_variant_key("day_ahead.lgbm_demand.v1", "v1_day_anchored_noon_d1")
 
 
 def _client() -> TestClient:
@@ -54,7 +58,7 @@ def test_day_returns_only_newest_write_for_a_superseded_identity(
 
     response = _client().get(
         "/api/forecasts/day",
-        params={"date": "2026-08-10", "model_id": "day_ahead.lgbm_demand.v1"},
+        params={"date": "2026-08-10", "variant_key": V1_ROLLING},
     )
 
     assert response.status_code == 200
@@ -98,14 +102,32 @@ def test_day_valid_date_with_no_rows_returns_200_and_empty_list(
     assert response.json() == []
 
 
-def test_day_unknown_model_id_returns_404(
+def test_day_unknown_variant_key_returns_404(
     monkeypatch: pytest.MonkeyPatch, forecast_stub_client_ctx: StubClientCtx
 ) -> None:
     monkeypatch.setattr(forecasts_router, "client_ctx", forecast_stub_client_ctx)
 
     response = _client().get(
         "/api/forecasts/day",
-        params={"date": "2026-08-10", "model_id": "not-a-real-model"},
+        params={"date": "2026-08-10", "variant_key": "not-a-real-model::not-a-real-policy"},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "unknown_variant"
+
+
+def test_day_crossed_pair_of_two_real_components_returns_404_over_the_route(
+    monkeypatch: pytest.MonkeyPatch, forecast_stub_client_ctx: StubClientCtx
+) -> None:
+    """Regression for Sol's finding: v1's model_id crossed with v2's
+    vintage_policy_id — each half exists in the store, never together.
+    """
+    monkeypatch.setattr(forecasts_router, "client_ctx", forecast_stub_client_ctx)
+    crossed = _encode_variant_key("day_ahead.lgbm_demand.v1", "v2_rolling_23h30m")
+
+    response = _client().get(
+        "/api/forecasts/day",
+        params={"date": "2026-08-10", "variant_key": crossed},
     )
 
     assert response.status_code == 404
@@ -124,14 +146,31 @@ def test_day_bad_date_returns_422_and_never_enters_client_ctx(
     assert not forecast_stub_client_ctx.entered
 
 
+def test_day_unknown_variant_key_during_writer_lock_answers_503_not_404(
+    running_job: None,
+) -> None:
+    """Pinning test for the documented exception in `routers/forecasts.py`:
+    with no `client_ctx` monkeypatch and `JOBS` genuinely `RUNNING`, an
+    unknown `variant_key` cannot be distinguished from a known one before
+    the guard — both answer `503 refresh_in_progress`, not `404`. This is
+    the accepted, documented consequence of `unknown_variant` requiring a
+    store read (unlike `dataset_id`'s static registry lookup).
+    """
+    response = _client().get(
+        "/api/forecasts/day",
+        params={"date": "2026-08-10", "variant_key": "not-a-real-model::not-a-real-policy"},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "refresh_in_progress"
+
+
 def test_metrics_newest_run_per_variant(
     monkeypatch: pytest.MonkeyPatch, forecast_stub_client_ctx: StubClientCtx
 ) -> None:
     monkeypatch.setattr(forecasts_router, "client_ctx", forecast_stub_client_ctx)
 
-    response = _client().get(
-        "/api/forecasts/metrics", params={"model_id": "day_ahead.lgbm_demand.v1"}
-    )
+    response = _client().get("/api/forecasts/metrics", params={"variant_key": V1_ROLLING})
 
     assert response.status_code == 200
     records = response.json()
@@ -195,14 +234,14 @@ def test_day_two_policy_rows_carry_vintage_policy_id_over_the_route(
     }
 
 
-def test_day_vintage_policy_id_query_param_narrows_to_one_policy_over_the_route(
+def test_day_variant_key_query_param_narrows_to_one_policy_over_the_route(
     monkeypatch: pytest.MonkeyPatch, two_policy_forecast_stub_client_ctx: StubClientCtx
 ) -> None:
     monkeypatch.setattr(forecasts_router, "client_ctx", two_policy_forecast_stub_client_ctx)
 
     response = _client().get(
         "/api/forecasts/day",
-        params={"date": "2026-08-10", "vintage_policy_id": "v1_day_anchored_noon_d1"},
+        params={"date": "2026-08-10", "variant_key": V1_DAY_ANCHORED},
     )
 
     assert response.status_code == 200
@@ -212,14 +251,17 @@ def test_day_vintage_policy_id_query_param_narrows_to_one_policy_over_the_route(
     assert period_1[0]["vintage_policy_id"] == "v1_day_anchored_noon_d1"
 
 
-def test_day_unknown_vintage_policy_id_returns_404_over_the_route(
+def test_day_unknown_variant_key_among_two_policies_returns_404_over_the_route(
     monkeypatch: pytest.MonkeyPatch, two_policy_forecast_stub_client_ctx: StubClientCtx
 ) -> None:
     monkeypatch.setattr(forecasts_router, "client_ctx", two_policy_forecast_stub_client_ctx)
 
     response = _client().get(
         "/api/forecasts/day",
-        params={"date": "2026-08-10", "vintage_policy_id": "not-a-real-policy"},
+        params={
+            "date": "2026-08-10",
+            "variant_key": "day_ahead.lgbm_demand.v1::not-a-real-policy",
+        },
     )
 
     assert response.status_code == 404

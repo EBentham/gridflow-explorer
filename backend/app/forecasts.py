@@ -22,11 +22,11 @@ in spirit and make the mandated supersession test unwritable against a
 stub frame). Both loaders below therefore issue a **constant, predicate-free
 SQL string** (`"SELECT * FROM gold_forecasts"` / `"... gold_forecast_metrics"`)
 — there is nothing to interpolate, so "parameterised SQL only" holds
-vacuously — and every predicate (day, model_id, vintage_policy_id,
-supersession) is applied in Polars afterwards, mirroring `transforms.py`'s
-existing precedent of doing all reshaping in Polars rather than SQL. The
-store is small (tens of thousands of rows total), so a full-view pull per
-request is cheap for this local single-user tool.
+vacuously — and every predicate (day, Variant, supersession) is applied
+in Polars afterwards, mirroring `transforms.py`'s existing precedent of
+doing all reshaping in Polars rather than SQL. The store is small (tens of
+thousands of rows total), so a full-view pull per request is cheap for
+this local single-user tool.
 
 DEVIATION from the spec's `/metrics` shape: the store has no
 ``scope='overall'`` metric rows — only ``scope`` in {``run``, ``fold``}
@@ -36,7 +36,7 @@ today's data, so `variant_metrics` filters to ``scope == "run"`` OR a
 non-null ``gate_passed``, per-Variant, rather than inventing an aggregate
 that is not in the store.
 
-RESOLVED CORRECTNESS DEFECT (previously documented here as an open
+RESOLVED CORRECTNESS DEFECT #1 (previously documented here as an open
 contradiction; ADR-057 sections 2 and 3 settle it, so this is a fix, not
 a decision left to the reader): a single `model_id` can carry more than
 one `vintage_policy_id` at once, and the two are genuinely different
@@ -59,6 +59,19 @@ vintage_policy_id)` — not `model_id` alone.** `list_variants`,
 Variants are listed today, `/day` records carry `vintage_policy_id` so
 the two policies' rows are always separable, and `/metrics` groups per
 pair so one policy's gates are never attributed to the other.
+
+RESOLVED CORRECTNESS DEFECT #2 (Sol diff review, first confirmatory pass):
+the first cut of defect #1's fix still let `/day` accept `model_id` and
+`vintage_policy_id` as two *independently ANDed* filters. That silently
+reopened the same class of bug one level down — a request naming a
+`model_id` that exists and a `vintage_policy_id` that exists, but never
+together as the same real row, matched zero rows and returned `200 []`,
+indistinguishable from "no forecast for this day". `day_forecast` and
+`variant_metrics` now take `variant_keys`: opaque `_encode_variant_key(...)`
+strings identifying one exact `(model_id, vintage_policy_id)` pair each.
+Validation and filtering both operate on the pair directly, so "is this
+key a real Variant" is a single set-membership check rather than two
+independent ones that can each pass while the pair itself does not exist.
 """
 
 from __future__ import annotations
@@ -90,9 +103,15 @@ _SUPERSESSION_KEY: tuple[str, ...] = (
 )
 
 # A Variant's identity for this screen (see module docstring's RESOLVED
-# note): `model_id` alone is not enough — two `vintage_policy_id`s can and
-# do coexist under one `model_id`, describing different producers.
+# DEFECT #1 note): `model_id` alone is not enough — two `vintage_policy_id`s
+# can and do coexist under one `model_id`, describing different producers.
 _VARIANT_KEY: tuple[str, ...] = ("model_id", "vintage_policy_id")
+
+# Separator for `_encode_variant_key` — appears in neither a `model_id`
+# (dot-separated) nor a `vintage_policy_id` (underscore-separated) in this
+# store today. Matches the frontend's `variantKey()` helper (`api/types.ts`)
+# exactly, so a key round-trips unchanged between the two.
+_VARIANT_KEY_SEP = "::"
 
 # The seven quantile columns carried on every `gold_forecasts` row, matched
 # by a `q_0` prefix so a future quantile level (e.g. `q_0.01`) flows through
@@ -196,6 +215,81 @@ def _variant_title_for(model_id: str, vintage_policy_id: str) -> str:
     return f"{_title_for(model_id)} -- {_policy_label_for(vintage_policy_id)}"
 
 
+def _encode_variant_key(model_id: str, vintage_policy_id: str) -> str:
+    """Encode a `(model_id, vintage_policy_id)` pair as one opaque string.
+
+    See module docstring's RESOLVED DEFECT #2 note: this is the unit
+    `day_forecast`/`variant_metrics` validate and filter on, closing the
+    gap where `model_id` and `vintage_policy_id` could each independently
+    exist without ever existing together as the same row.
+
+    Args:
+        model_id: The raw dotted model identifier.
+        vintage_policy_id: The raw vintage policy identifier.
+
+    Returns:
+        The encoded key, e.g. ``"day_ahead.lgbm_demand.v1::v1_rolling_23h30m"``.
+    """
+    return f"{model_id}{_VARIANT_KEY_SEP}{vintage_policy_id}"
+
+
+def _decode_variant_key(variant_key: str) -> tuple[str, str]:
+    """Decode one `_encode_variant_key` string back into its pair.
+
+    Callers that have not already confirmed `variant_key` is a member of
+    `_known_variant_keys(...)` will get a `vintage_policy_id` of `""` for
+    a malformed (separator-less) key — harmless, since it then matches no
+    real row rather than raising.
+
+    Args:
+        variant_key: An `_encode_variant_key(...)` string.
+
+    Returns:
+        The decoded `(model_id, vintage_policy_id)` pair.
+    """
+    model_id, _, vintage_policy_id = variant_key.partition(_VARIANT_KEY_SEP)
+    return model_id, vintage_policy_id
+
+
+def _known_variant_keys(frame: pl.DataFrame) -> set[str]:
+    """The set of encoded Variant keys actually present in `frame`.
+
+    Args:
+        frame: A `gold_forecasts` or `gold_forecast_metrics` frame (raw or
+            superseded) carrying `model_id`/`vintage_policy_id` columns.
+
+    Returns:
+        Every distinct `_encode_variant_key(...)` value present, or an
+        empty set for a zero-row frame.
+    """
+    if frame.height == 0:
+        return set()
+    model_ids = frame["model_id"].to_list()
+    policy_ids = frame["vintage_policy_id"].to_list()
+    return {_encode_variant_key(m, p) for m, p in zip(model_ids, policy_ids, strict=True)}
+
+
+def _pairs_frame(variant_keys: Sequence[str]) -> pl.DataFrame:
+    """Build a two-column `(model_id, vintage_policy_id)` frame from decoded keys.
+
+    Used as the right side of a semi-join to filter to exactly the
+    requested Variants — see module docstring's RESOLVED DEFECT #2 note.
+
+    Args:
+        variant_keys: `_encode_variant_key(...)` strings to decode.
+
+    Returns:
+        A frame with one row per key, columns `model_id`/`vintage_policy_id`.
+    """
+    pairs = [_decode_variant_key(key) for key in variant_keys]
+    return pl.DataFrame(
+        {
+            "model_id": [pair[0] for pair in pairs],
+            "vintage_policy_id": [pair[1] for pair in pairs],
+        }
+    )
+
+
 def _load_forecasts(client: GridflowClient) -> pl.DataFrame:
     """Load the full `gold_forecasts` view with timestamps converted to UTC.
 
@@ -271,9 +365,17 @@ def list_variants(client: GridflowClient) -> list[dict[str, Any]]:
     """List every forecast Variant present, from its newest run.
 
     A Variant is `(model_id, vintage_policy_id)` — see module docstring's
-    RESOLVED note. Two `vintage_policy_id`s under one `model_id` yield two
-    entries, each with its own `first_settlement_date`/`last_settlement_date`/
-    `n_days`, since those spans genuinely differ per producer.
+    RESOLVED DEFECT #1 note. Two `vintage_policy_id`s under one `model_id`
+    yield two entries, each with its own `first_settlement_date`/
+    `last_settlement_date`/`n_days`, since those spans genuinely differ
+    per producer.
+
+    `perfect_prog_caveat` and `gates_passed` are **nullable** in the
+    response: they come from a `left` join onto `gold_forecast_metrics`,
+    so a Variant with forecasts but no matching metrics row (a training
+    run that failed to write metrics — not observed on the real store, but
+    not excluded by it either) reports `null` for both, not `false`. A
+    caller must treat `null` as "unknown", not as "no"/"failed".
 
     Args:
         client: A live `GridflowClient` (or test stand-in) to query.
@@ -345,56 +447,48 @@ def list_variants(client: GridflowClient) -> list[dict[str, Any]]:
 def day_forecast(
     client: GridflowClient,
     day: date,
-    model_ids: Sequence[str] | None,
-    vintage_policy_ids: Sequence[str] | None = None,
+    variant_keys: Sequence[str] | None,
 ) -> list[dict[str, Any]]:
     """Return one record per settlement period of `day`, per requested Variant.
 
     A Variant is `(model_id, vintage_policy_id)` — see module docstring's
-    RESOLVED note. `model_ids` and `vintage_policy_ids` combine with AND:
-    both omitted means every Variant present; either given narrows on that
-    dimension only.
+    RESOLVED DEFECT #1 and #2 notes. `variant_keys` are
+    `_encode_variant_key(model_id, vintage_policy_id)` strings identifying
+    exact Variants; validation and filtering both operate on the pair, not
+    on `model_id`/`vintage_policy_id` independently, so a key naming a
+    `model_id` and a `vintage_policy_id` that each exist elsewhere but
+    never together cannot silently pass as a "known" Variant.
 
     Args:
         client: A live `GridflowClient` (or test stand-in) to query.
         day: The settlement day to return.
-        model_ids: Zero or more `model_id`s to restrict to; `None` or empty
-            means every `model_id` present.
-        vintage_policy_ids: Zero or more `vintage_policy_id`s to restrict
-            to; `None` or empty means every policy present.
+        variant_keys: Zero or more `_encode_variant_key(...)` Variant ids
+            to restrict to; `None` or empty means every Variant present.
 
     Returns:
         `[]` for a valid day with no matching rows (the empty state) — see
-        `UnknownVariant` for the distinct "this value does not exist" case.
+        `UnknownVariant` for the distinct "this Variant does not exist" case.
         Each record carries `vintage_policy_id`, so two policies under one
         `model_id` are always separable.
 
     Raises:
-        UnknownVariant: One or more requested `model_ids`/`vintage_policy_ids`
-            is not present anywhere in the store.
+        UnknownVariant: One or more requested `variant_keys` does not
+            identify a Variant present anywhere in the store.
     """
     forecasts = _supersede(_load_forecasts(client))
-    known_model_ids = set(forecasts["model_id"].unique().to_list()) if forecasts.height else set()
-    known_policy_ids = (
-        set(forecasts["vintage_policy_id"].unique().to_list()) if forecasts.height else set()
-    )
+    known_keys = _known_variant_keys(forecasts)
 
-    unknown: list[str] = []
-    if model_ids:
-        unknown.extend(sorted(set(model_ids) - known_model_ids))
-    if vintage_policy_ids:
-        unknown.extend(sorted(set(vintage_policy_ids) - known_policy_ids))
-    if unknown:
-        raise UnknownVariant(f"Unknown model_id/vintage_policy_id value(s): {', '.join(unknown)}.")
+    if variant_keys:
+        unknown = sorted(set(variant_keys) - known_keys)
+        if unknown:
+            raise UnknownVariant(f"Unknown Variant key(s): {', '.join(unknown)}.")
 
     if forecasts.height == 0:
         return []
 
     day_rows = forecasts.filter(pl.col("settlement_date") == day)
-    if model_ids:
-        day_rows = day_rows.filter(pl.col("model_id").is_in(list(model_ids)))
-    if vintage_policy_ids:
-        day_rows = day_rows.filter(pl.col("vintage_policy_id").is_in(list(vintage_policy_ids)))
+    if variant_keys:
+        day_rows = day_rows.join(_pairs_frame(variant_keys), on=list(_VARIANT_KEY), how="semi")
     if day_rows.height == 0:
         return []
 
@@ -408,37 +502,36 @@ def day_forecast(
 
 def variant_metrics(
     client: GridflowClient,
-    model_ids: Sequence[str] | None,
-    vintage_policy_ids: Sequence[str] | None = None,
+    variant_keys: Sequence[str] | None,
 ) -> list[dict[str, Any]]:
     """Return the newest run's metrics for each requested (or every) Variant.
 
     A Variant is `(model_id, vintage_policy_id)` — see module docstring's
-    RESOLVED note; grouping the newest run per `model_id` alone would
-    attribute one policy's gates to the other. See also module DEVIATION
-    note: the store has no `scope='overall'` rows, so this returns
-    `scope == "run"` rows plus every row carrying a gate verdict
-    (`gate_passed` non-null) — identical sets in today's data.
+    RESOLVED DEFECT #1 and #2 notes; grouping the newest run per
+    `model_id` alone would attribute one policy's gates to the other. See
+    also module DEVIATION note: the store has no `scope='overall'` rows,
+    so this returns `scope == "run"` rows plus every row carrying a gate
+    verdict (`gate_passed` non-null) — identical sets in today's data.
+
+    Unlike `day_forecast`, an unmatched `variant_key` here is not a `404`
+    (no documented `unknown_variant` behaviour for `/metrics`) — it simply
+    contributes no rows, matching the previous `model_id`-only convention.
 
     Args:
         client: A live `GridflowClient` (or test stand-in) to query.
-        model_ids: Zero or more `model_id`s to restrict to; `None` or empty
-            means every `model_id` present.
-        vintage_policy_ids: Zero or more `vintage_policy_id`s to restrict
-            to; `None` or empty means every policy present.
+        variant_keys: Zero or more `_encode_variant_key(...)` Variant ids
+            to restrict to; `None` or empty means every Variant present.
 
     Returns:
         `[]` when the store holds no metrics, or no metrics match the
-        requested filters.
+        requested `variant_keys`.
     """
     metrics = _load_metrics(client)
     if metrics.height == 0:
         return []
 
-    if model_ids:
-        metrics = metrics.filter(pl.col("model_id").is_in(list(model_ids)))
-    if vintage_policy_ids:
-        metrics = metrics.filter(pl.col("vintage_policy_id").is_in(list(vintage_policy_ids)))
+    if variant_keys:
+        metrics = metrics.join(_pairs_frame(variant_keys), on=list(_VARIANT_KEY), how="semi")
     if metrics.height == 0:
         return []
 

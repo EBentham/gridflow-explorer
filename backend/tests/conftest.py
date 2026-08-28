@@ -539,6 +539,56 @@ def two_policy_metrics_frame() -> pl.DataFrame:
     return pl.DataFrame({col: [row[col] for row in rows] for col in columns})
 
 
+def tie_break_forecasts_frame() -> pl.DataFrame:
+    """Fixture `gold_forecasts` frame pinning `_supersede`'s `run_id DESC`
+    tie-break specifically.
+
+    `forecast_rows_frame`'s supersession-colliding rows have *different*
+    `written_at` values, so `written_at DESC` alone always resolves the
+    winner and the secondary `run_id DESC` comparator is never exercised —
+    removing it from `_supersede`'s sort key would not fail any existing
+    test (a Sol diff review finding). Both rows here share the exact same
+    `written_at`; only `run_id` differs ("run-a" vs "run-z"), so the
+    surviving `q_0.5` value is determined by the tie-break alone.
+    """
+    rows: list[dict[str, object]] = [
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "issued_at": _london(2026, 8, 9, 23, 30),
+            "delivery_time": _london(2026, 8, 10, 0, 0),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 1,
+            "actual": 21000.0,
+            "run_id": "run-a",
+            "written_at": _london(2026, 8, 10, 2, 0),
+            "gates_passed": True,
+            "q_0.05": 19000.0,
+            "q_0.5": 111.0,
+            "q_0.95": 21500.0,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "issued_at": _london(2026, 8, 9, 23, 30),
+            "delivery_time": _london(2026, 8, 10, 0, 0),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 1,
+            "actual": 21000.0,
+            "run_id": "run-z",
+            "written_at": _london(2026, 8, 10, 2, 0),
+            "gates_passed": True,
+            "q_0.05": 19500.0,
+            "q_0.5": 999.0,
+            "q_0.95": 21600.0,
+        },
+    ]
+    columns = list(rows[0].keys())
+    return pl.DataFrame({col: [row[col] for row in rows] for col in columns})
+
+
 class ForecastStubClient:
     """Stand-in for `GridflowClient` in the P4 forecasts tests.
 
@@ -608,3 +658,9 @@ def two_policy_forecast_stub_client_ctx(
 ) -> StubClientCtx:
     """A `StubClientCtx` wrapping `two_policy_forecast_stub_client`, ready to monkeypatch in."""
     return StubClientCtx(two_policy_forecast_stub_client)
+
+
+@pytest.fixture
+def tie_break_forecast_stub_client() -> ForecastStubClient:
+    """A `ForecastStubClient` pinning `_supersede`'s `run_id DESC` tie-break."""
+    return ForecastStubClient(forecasts=tie_break_forecasts_frame(), metrics=empty_metrics_frame())
