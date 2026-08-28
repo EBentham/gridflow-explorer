@@ -12,6 +12,7 @@ import { StackedAreaChart } from './components/StackedAreaChart'
 import { useDataset } from './hooks/useDataset'
 import { useDatasets } from './hooks/useDatasets'
 import { lastNDays } from './lib/range'
+import { ForecastScreen } from './screens/ForecastScreen'
 import { SCREENS } from './screens/registry'
 
 /** Fallback screen for any catalogue dataset with no dedicated entry in `SCREENS`. */
@@ -57,6 +58,7 @@ function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<Navigate to="/datasets/generation-mix" replace />} />
         <Route path="/datasets/:datasetId" element={<DatasetRoute />} />
+        <Route path="/forecasts" element={<ForecastScreen />} />
       </Route>
     </Routes>
   )

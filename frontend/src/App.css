@@ -131,3 +131,72 @@
   gap: 6px;
   align-items: center;
 }
+
+.forecast-controls {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.forecast-date-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.forecast-variant-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 12px;
+}
+
+.forecast-variant-picker label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.forecast-gate-fail {
+  color: #b91c1c;
+  font-size: 12px;
+}
+
+.forecast-metrics {
+  margin-top: 24px;
+  max-width: 1100px;
+}
+
+.forecast-metrics-variant {
+  margin-bottom: 20px;
+}
+
+.perfect-prog-caveat {
+  font-size: 13px;
+  color: var(--text-h);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  padding: 6px 10px;
+  max-width: 640px;
+}
+
+.forecast-metrics-table {
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.forecast-metrics-table th,
+.forecast-metrics-table td {
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  text-align: left;
+}

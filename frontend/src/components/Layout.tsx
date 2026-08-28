@@ -17,6 +17,9 @@ export function Layout() {
               {dataset.title}
             </NavLink>
           ))}
+          {/* Static — forecasts are a sibling read surface, not a catalogue
+              dataset, so this link is not derived from `/api/datasets`. */}
+          <NavLink to="/forecasts">Forecasts</NavLink>
         </nav>
       </header>
       <main className="layout-main">

@@ -55,3 +55,59 @@ export interface JobStatus {
   finished_at?: string | null
   message?: string | null
 }
+
+/**
+ * `/api/forecasts/variants` entry — one per distinct forecast `model_id`,
+ * from its newest run (P4-forecast-screen-SPEC.md). `title` is derived
+ * server-side, not stored.
+ */
+export interface ForecastVariant {
+  model_id: string
+  title: string
+  vintage_kind: string
+  vintage_policy_id: string
+  perfect_prog_caveat: boolean
+  run_id: string
+  written_at: string
+  gates_passed: boolean
+  first_settlement_date: string
+  last_settlement_date: string
+  n_days: number
+}
+
+/**
+ * One record from `/api/forecasts/day` — one settlement period of one
+ * Variant, its quantile fan, and the realised `actual` (already on the
+ * forecast row, no join needed).
+ */
+export interface ForecastDayRecord {
+  model_id: string
+  delivery_time: string
+  settlement_period: number
+  actual: number | null
+  'q_0.05': number
+  'q_0.1': number
+  'q_0.25': number
+  'q_0.5': number
+  'q_0.75': number
+  'q_0.9': number
+  'q_0.95': number
+}
+
+/** One record from `/api/forecasts/metrics` — a run- or gate-scoped metric row. */
+export interface ForecastMetric {
+  model_id: string
+  run_id: string
+  metric_kind: string
+  scope: string
+  metric_name: string
+  metric_value: number
+  gate_passed: boolean | null
+  gate_threshold: number | null
+  gate_message: string | null
+  train_size: number | null
+  valid_size: number | null
+  n_folds: number
+  gates_passed: boolean
+  perfect_prog_caveat: boolean
+}
