@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from 'react'
 import { Area, CartesianGrid, ComposedChart, Legend, Line, Tooltip, XAxis, YAxis } from 'recharts'
 import type { ForecastDayRecord, ForecastVariant } from '../api/types'
+import { variantKey } from '../api/types'
 import { colorFor } from '../lib/palette'
 import { tooltipContentStyle, tooltipItemStyle, tooltipLabelStyle } from '../lib/tooltip'
 
@@ -35,8 +36,14 @@ function formatTimeOfDay(isoTimestamp: string): string {
 
 /**
  * Pivots per-Variant `/api/forecasts/day` records into one row per
- * settlement period, keyed `${model_id}__<field>` so multiple Variants'
- * fans can render side by side on one chart.
+ * settlement period, keyed `${variantKey(model_id, vintage_policy_id)}__<field>`
+ * so multiple Variants' fans can render side by side on one chart.
+ *
+ * Keyed on the full `(model_id, vintage_policy_id)` pair, not `model_id`
+ * alone — a single `model_id` can carry more than one live
+ * `vintage_policy_id` (ADR-057 secs 2-3); keying on `model_id` alone would
+ * make one policy's row silently overwrite the other's for the same
+ * settlement period, which is the defect this pivot must not reintroduce.
  */
 function buildFanRows(records: ForecastDayRecord[]): FanRow[] {
   const byPeriod = new Map<number, FanRow>()
@@ -46,7 +53,7 @@ function buildFanRows(records: ForecastDayRecord[]): FanRow[] {
       row = { delivery_time: record.delivery_time, settlement_period: record.settlement_period }
       byPeriod.set(record.settlement_period, row)
     }
-    const prefix = record.model_id
+    const prefix = variantKey(record.model_id, record.vintage_policy_id)
     for (const band of BANDS) {
       row[`${prefix}__${band.low}__base`] = record[band.low]
       row[`${prefix}__${band.low}__span`] = record[band.high] - record[band.low]
@@ -66,12 +73,12 @@ function buildFanRows(records: ForecastDayRecord[]): FanRow[] {
  * `ComposedChart` sees `Area`/`Line` as direct children — Recharts does
  * not recurse into arbitrary wrapper elements to find its own chart types.
  */
-function renderVariantLayers(modelId: string, title: string, color: string): ReactElement[] {
+function renderVariantLayers(key: string, title: string, color: string): ReactElement[] {
   const layers: ReactElement[] = BANDS.flatMap((band) => [
     <Area
-      key={`${modelId}-${band.low}-base`}
-      dataKey={`${modelId}__${band.low}__base`}
-      stackId={`${modelId}-${band.low}`}
+      key={`${key}-${band.low}-base`}
+      dataKey={`${key}__${band.low}__base`}
+      stackId={`${key}-${band.low}`}
       stroke="none"
       fill="transparent"
       isAnimationActive={false}
@@ -80,9 +87,9 @@ function renderVariantLayers(modelId: string, title: string, color: string): Rea
       tooltipType="none"
     />,
     <Area
-      key={`${modelId}-${band.low}-span`}
-      dataKey={`${modelId}__${band.low}__span`}
-      stackId={`${modelId}-${band.low}`}
+      key={`${key}-${band.low}-span`}
+      dataKey={`${key}__${band.low}__span`}
+      stackId={`${key}-${band.low}`}
       stroke="none"
       fill={hexToRgba(color, band.opacity)}
       isAnimationActive={false}
@@ -91,16 +98,16 @@ function renderVariantLayers(modelId: string, title: string, color: string): Rea
   ])
   layers.push(
     <Line
-      key={`${modelId}-median`}
-      dataKey={`${modelId}__median`}
+      key={`${key}-median`}
+      dataKey={`${key}__median`}
       name={`${title} median (q_0.5)`}
       stroke={color}
       dot={false}
       isAnimationActive={false}
     />,
     <Line
-      key={`${modelId}-actual`}
-      dataKey={`${modelId}__actual`}
+      key={`${key}-actual`}
+      dataKey={`${key}__actual`}
       name={`${title} actual`}
       stroke={color}
       strokeDasharray="4 3"
@@ -114,6 +121,8 @@ function renderVariantLayers(modelId: string, title: string, color: string): Rea
 
 /**
  * Quantile fan + `actual` overlay for one or more forecast Variants.
+ * Variants are enumerated by `(model_id, vintage_policy_id)` pair (see
+ * `buildFanRows`), not `model_id` alone.
  *
  * The X axis is UTC settlement time — labelled explicitly, since
  * `delivery_time` has already been relabelled from Europe/London by the
@@ -121,8 +130,11 @@ function renderVariantLayers(modelId: string, title: string, color: string): Rea
  */
 export function ForecastFanChart({ records, variants }: ForecastFanChartProps) {
   const rows = buildFanRows(records)
-  const modelIds = [...new Set(records.map((r) => r.model_id))]
-  const titleFor = (modelId: string) => variants.find((v) => v.model_id === modelId)?.title ?? modelId
+  const keys = [...new Set(records.map((r) => variantKey(r.model_id, r.vintage_policy_id)))]
+  const titleFor = (key: string) => {
+    const variant = variants.find((v) => variantKey(v.model_id, v.vintage_policy_id) === key)
+    return variant?.title ?? key
+  }
 
   return (
     <ComposedChart data={rows}>
@@ -142,7 +154,7 @@ export function ForecastFanChart({ records, variants }: ForecastFanChartProps) {
         labelFormatter={(value: ReactNode) => `Delivery ${String(value)}`}
       />
       <Legend />
-      {modelIds.flatMap((modelId, index) => renderVariantLayers(modelId, titleFor(modelId), colorFor(index)))}
+      {keys.flatMap((key, index) => renderVariantLayers(key, titleFor(key), colorFor(index)))}
     </ComposedChart>
   )
 }

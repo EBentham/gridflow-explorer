@@ -57,9 +57,12 @@ export interface JobStatus {
 }
 
 /**
- * `/api/forecasts/variants` entry — one per distinct forecast `model_id`,
- * from its newest run (P4-forecast-screen-SPEC.md). `title` is derived
- * server-side, not stored.
+ * `/api/forecasts/variants` entry — one per distinct `(model_id,
+ * vintage_policy_id)` pair, from that pair's newest run
+ * (P4-forecast-screen-SPEC.md, revised: a single `model_id` can carry more
+ * than one live `vintage_policy_id` — ADR-057 secs 2-3 — so `model_id`
+ * alone does not identify a Variant). `title` is derived server-side, not
+ * stored.
  */
 export interface ForecastVariant {
   model_id: string
@@ -77,11 +80,13 @@ export interface ForecastVariant {
 
 /**
  * One record from `/api/forecasts/day` — one settlement period of one
- * Variant, its quantile fan, and the realised `actual` (already on the
- * forecast row, no join needed).
+ * Variant (`model_id` + `vintage_policy_id`, since either alone does not
+ * identify the Variant), its quantile fan, and the realised `actual`
+ * (already on the forecast row, no join needed).
  */
 export interface ForecastDayRecord {
   model_id: string
+  vintage_policy_id: string
   delivery_time: string
   settlement_period: number
   actual: number | null
@@ -97,6 +102,7 @@ export interface ForecastDayRecord {
 /** One record from `/api/forecasts/metrics` — a run- or gate-scoped metric row. */
 export interface ForecastMetric {
   model_id: string
+  vintage_policy_id: string
   run_id: string
   metric_kind: string
   scope: string
@@ -110,4 +116,13 @@ export interface ForecastMetric {
   n_folds: number
   gates_passed: boolean
   perfect_prog_caveat: boolean
+}
+
+/**
+ * Canonical `(model_id, vintage_policy_id)` pair key. `::` appears in
+ * neither raw id, so this is collision-safe as a `Map`/object key and a
+ * React list `key=`.
+ */
+export function variantKey(modelId: string, vintagePolicyId: string): string {
+  return `${modelId}::${vintagePolicyId}`
 }

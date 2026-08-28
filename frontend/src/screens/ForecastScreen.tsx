@@ -5,20 +5,29 @@ import { ErrorState } from '../components/ErrorState'
 import { ForecastFanChart } from '../components/ForecastFanChart'
 import { LoadingState } from '../components/LoadingState'
 import type { ForecastMetric, ForecastVariant } from '../api/types'
+import { variantKey } from '../api/types'
 import { useForecastDay } from '../hooks/useForecastDay'
 import { useForecastMetrics } from '../hooks/useForecastMetrics'
 import { useForecastVariants } from '../hooks/useForecastVariants'
 
-function titleFor(variants: ForecastVariant[], modelId: string): string {
-  return variants.find((v) => v.model_id === modelId)?.title ?? modelId
+function titleFor(variants: ForecastVariant[], key: string): string {
+  return variants.find((v) => variantKey(v.model_id, v.vintage_policy_id) === key)?.title ?? key
 }
 
 /** One Variant's caveat line + metric table, always visible (never a tooltip). */
-function VariantMetrics({ modelId, rows, variants }: { modelId: string; rows: ForecastMetric[]; variants: ForecastVariant[] }) {
+function VariantMetrics({
+  variantKey: key,
+  rows,
+  variants,
+}: {
+  variantKey: string
+  rows: ForecastMetric[]
+  variants: ForecastVariant[]
+}) {
   const caveat = rows[0]?.perfect_prog_caveat ?? false
   return (
     <div className="forecast-metrics-variant">
-      <h3>{titleFor(variants, modelId)}</h3>
+      <h3>{titleFor(variants, key)}</h3>
       <p className="perfect-prog-caveat">
         {caveat
           ? 'Perfect-prog caveat: this score uses the realised (actual) weather, not a day-ahead ' +
@@ -51,20 +60,34 @@ function VariantMetrics({ modelId, rows, variants }: { modelId: string; rows: Fo
   )
 }
 
-/** Metrics panel: one section per requested Variant, grouped from the flat `/metrics` response. */
-function MetricsPanel({ metrics, modelIds, variants }: { metrics: ForecastMetric[]; modelIds: string[]; variants: ForecastVariant[] }) {
-  const byModel = new Map<string, ForecastMetric[]>()
+/**
+ * Metrics panel: one section per requested Variant, grouped from the flat
+ * `/metrics` response by `(model_id, vintage_policy_id)` pair — grouping
+ * by `model_id` alone would attribute one policy's gates to the other
+ * (ADR-057 secs 2-3).
+ */
+function MetricsPanel({
+  metrics,
+  variantKeys,
+  variants,
+}: {
+  metrics: ForecastMetric[]
+  variantKeys: string[]
+  variants: ForecastVariant[]
+}) {
+  const byVariant = new Map<string, ForecastMetric[]>()
   for (const metric of metrics) {
-    const rows = byModel.get(metric.model_id) ?? []
+    const key = variantKey(metric.model_id, metric.vintage_policy_id)
+    const rows = byVariant.get(key) ?? []
     rows.push(metric)
-    byModel.set(metric.model_id, rows)
+    byVariant.set(key, rows)
   }
 
   return (
     <section className="forecast-metrics">
       <h2>Metrics</h2>
-      {modelIds.map((modelId) => (
-        <VariantMetrics key={modelId} modelId={modelId} rows={byModel.get(modelId) ?? []} variants={variants} />
+      {variantKeys.map((key) => (
+        <VariantMetrics key={key} variantKey={key} rows={byVariant.get(key) ?? []} variants={variants} />
       ))}
     </section>
   )
@@ -76,11 +99,17 @@ function MetricsPanel({ metrics, modelIds, variants }: { metrics: ForecastMetric
  * unconditionally on every render — the "no Variants yet" and loading
  * states are handled by conditional *rendering*, after all hooks run, per
  * the rules of hooks.
+ *
+ * A Variant is `(model_id, vintage_policy_id)`, not `model_id` alone
+ * (ADR-057 secs 2-3: a single `model_id` can carry more than one live
+ * `vintage_policy_id`) — selection state, the checkbox list, and the
+ * metrics grouping are all keyed on `variantKey(model_id,
+ * vintage_policy_id)` throughout this screen.
  */
 export function ForecastScreen() {
   const { data: variants, loading: variantsLoading, error: variantsError } = useForecastVariants()
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [selectedModelIds, setSelectedModelIds] = useState<string[] | null>(null)
+  const [selectedVariantKeys, setSelectedVariantKeys] = useState<string[] | null>(null)
 
   const overallLastDate = useMemo(() => {
     if (!variants || variants.length === 0) return null
@@ -99,10 +128,14 @@ export function ForecastScreen() {
   }, [variants])
 
   const date = selectedDate ?? overallLastDate
-  const modelIds = selectedModelIds ?? (variants ? variants.map((v) => v.model_id) : [])
+  const allVariantKeys = useMemo(
+    () => (variants ? variants.map((v) => variantKey(v.model_id, v.vintage_policy_id)) : []),
+    [variants],
+  )
+  const variantKeys = selectedVariantKeys ?? allVariantKeys
 
-  const { data: dayRecords, loading: dayLoading, error: dayError } = useForecastDay(date, modelIds)
-  const { data: metrics, loading: metricsLoading, error: metricsError } = useForecastMetrics(modelIds)
+  const { data: dayRecords, loading: dayLoading, error: dayError } = useForecastDay(date, variantKeys)
+  const { data: metrics, loading: metricsLoading, error: metricsError } = useForecastMetrics(variantKeys)
 
   if (variantsLoading) return <LoadingState />
   if (variantsError) return <ErrorState error={variantsError} />
@@ -119,10 +152,10 @@ export function ForecastScreen() {
     )
   }
 
-  const toggleModel = (modelId: string) => {
-    setSelectedModelIds((current) => {
-      const base = current ?? variants.map((v) => v.model_id)
-      return base.includes(modelId) ? base.filter((id) => id !== modelId) : [...base, modelId]
+  const toggleVariant = (key: string) => {
+    setSelectedVariantKeys((current) => {
+      const base = current ?? allVariantKeys
+      return base.includes(key) ? base.filter((k) => k !== key) : [...base, key]
     })
   }
 
@@ -142,17 +175,20 @@ export function ForecastScreen() {
         </label>
         <fieldset className="forecast-variant-picker">
           <legend>Variants</legend>
-          {variants.map((variant) => (
-            <label key={variant.model_id}>
-              <input
-                type="checkbox"
-                checked={modelIds.includes(variant.model_id)}
-                onChange={() => toggleModel(variant.model_id)}
-              />
-              {variant.title}
-              {!variant.gates_passed && <span className="forecast-gate-fail"> (gates failed)</span>}
-            </label>
-          ))}
+          {variants.map((variant) => {
+            const key = variantKey(variant.model_id, variant.vintage_policy_id)
+            return (
+              <label key={key}>
+                <input
+                  type="checkbox"
+                  checked={variantKeys.includes(key)}
+                  onChange={() => toggleVariant(key)}
+                />
+                {variant.title}
+                {!variant.gates_passed && <span className="forecast-gate-fail"> (gates failed)</span>}
+              </label>
+            )
+          })}
         </fieldset>
       </div>
 
@@ -163,8 +199,8 @@ export function ForecastScreen() {
       ) : dayRecords === null ? null : dayRecords.length === 0 ? (
         <EmptyState>
           No forecast for {date} for{' '}
-          {modelIds.length > 0
-            ? modelIds.map((id) => titleFor(variants, id)).join(', ')
+          {variantKeys.length > 0
+            ? variantKeys.map((key) => titleFor(variants, key)).join(', ')
             : 'any selected Variant'}
           . Available range across all Variants: {overallFirstDate} to {overallLastDate}.
         </EmptyState>
@@ -179,7 +215,7 @@ export function ForecastScreen() {
       ) : metricsError ? (
         <ErrorState error={metricsError} />
       ) : (
-        <MetricsPanel metrics={metrics ?? []} modelIds={modelIds} variants={variants} />
+        <MetricsPanel metrics={metrics ?? []} variantKeys={variantKeys} variants={variants} />
       )}
     </div>
   )
