@@ -8,50 +8,80 @@ interface UseForecastDayResult {
   error: ApiError | null
 }
 
+/** Whether the current `(date, variantKeys)` should skip fetching entirely. */
+function shouldSkip(date: string | null, variantKeys: string[]): boolean {
+  return !date || variantKeys.length === 0
+}
+
 /**
  * Fetches `/api/forecasts/day` for `date`, restricted to `variantKeys`
  * (`variantKey(model_id, vintage_policy_id)` pairs, sent as repeated
- * `variant_key` query params — the backend validates and filters on the
+ * `variant_key` query params -- the backend validates and filters on the
  * exact pair, so no client-side re-filtering is needed here).
  *
- * Two states short-circuit the fetch entirely and resolve to an empty
- * result:
- *   - `date` is `null` — the caller (e.g. `ForecastScreen`) is still
+ * Two states short-circuit the fetch entirely and resolve to `data: []`,
+ * `loading: false`:
+ *   - `date` is `null` -- the caller (e.g. `ForecastScreen`) is still
  *     resolving the default day from `/variants`.
- *   - `variantKeys` is empty — the caller has explicitly deselected every
- *     Variant. This does **not** mean "every Variant" (that was a real
- *     defect, caught by Sol diff review: unchecking every checkbox used to
- *     still fetch and render everything, contradicting the screen's own
- *     controls). An empty selection means nothing is selected, so nothing
- *     is fetched and nothing is shown — the caller renders its empty
- *     state from a `[]` result exactly as it would for a day with no
- *     forecasts.
+ *   - `variantKeys` is empty -- the caller has explicitly deselected every
+ *     Variant. This does **not** mean "every Variant" (a real defect,
+ *     caught by Sol diff review: unchecking every checkbox used to still
+ *     fetch and render everything, contradicting the screen's own
+ *     controls).
  *
- * The effect depends on `date` and the joined `variantKeys` (not the
- * array reference), so a fresh-but-unchanged selection array from a
- * re-render does not retrigger a fetch — same principle as
- * `useDataset.ts`'s `range.start`/`range.end` dependency choice.
+ * These two skip states and "a request is in flight" are kept genuinely
+ * distinct (Sol diff review, second confirmatory pass, on the *previous*
+ * version of this fix): a naive `useEffect`-only implementation computes
+ * the skip decision and calls `setLoading`/`setData` **inside** the
+ * effect, which only runs *after* React has already painted the current
+ * render. On the render where `date`/`variantKeys` first become non-empty
+ * (e.g. the instant `/variants` resolves), that render would therefore
+ * still show the *previous* render's `loading`/`data` -- a stale `[]`
+ * result -- painting "no forecast" for one frame before the effect fires
+ * and starts the real fetch. This hook instead recomputes and resets
+ * `data`/`loading` synchronously *during render* whenever `date` or the
+ * JSON-encoded `variantKeys` change, using React's documented
+ * "adjusting state when a prop changes" pattern: calling `setState`
+ * directly in the render body (not inside an effect or callback) is safe
+ * and causes React to re-render immediately, before anything is painted,
+ * so there is no visible stale frame.
+ *
+ * `variantKeys` is compared/passed via `JSON.stringify`/`JSON.parse`
+ * rather than joining with a separator (e.g. `.join(',')`) for the same
+ * reason `variantKey()` itself moved off `"::"`-joining a pair: a
+ * `variantKey(...)` value is itself a JSON string and can legitimately
+ * contain a comma, so a comma-joined list of keys is not guaranteed to
+ * split back into the original keys.
  */
 export function useForecastDay(date: string | null, variantKeys: string[]): UseForecastDayResult {
-  const [data, setData] = useState<ForecastDayRecord[] | null>(null)
-  const [loading, setLoading] = useState(true)
+  const variantKeysJson = JSON.stringify(variantKeys)
+  const skip = shouldSkip(date, variantKeys)
+
+  const [data, setData] = useState<ForecastDayRecord[] | null>(() => (skip ? [] : null))
+  const [loading, setLoading] = useState(() => !skip)
   const [error, setError] = useState<ApiError | null>(null)
-  const variantKeysJoined = variantKeys.join(',')
+  const [committedDate, setCommittedDate] = useState(date)
+  const [committedKeysJson, setCommittedKeysJson] = useState(variantKeysJson)
+
+  if (committedDate !== date || committedKeysJson !== variantKeysJson) {
+    setCommittedDate(date)
+    setCommittedKeysJson(variantKeysJson)
+    setData(skip ? [] : null)
+    setLoading(!skip)
+    setError(null)
+  }
 
   useEffect(() => {
-    if (!date || variantKeysJoined === '') {
-      setData([])
-      setError(null)
-      setLoading(false)
-      return
-    }
+    // Re-derived from the effect's own dependencies (not closed over from
+    // the render above) so the effect is self-contained and its
+    // dependency array is complete.
+    const keys = JSON.parse(variantKeysJson) as string[]
+    if (!date || keys.length === 0) return undefined
 
     const controller = new AbortController()
-    setLoading(true)
-    setError(null)
 
     const params = new URLSearchParams({ date })
-    for (const key of variantKeysJoined.split(',')) params.append('variant_key', key)
+    for (const key of keys) params.append('variant_key', key)
     const path = `/api/forecasts/day?${params.toString()}`
 
     fetchJson<ForecastDayRecord[]>(path, controller.signal)
@@ -65,7 +95,7 @@ export function useForecastDay(date: string | null, variantKeys: string[]): UseF
       })
 
     return () => controller.abort()
-  }, [date, variantKeysJoined])
+  }, [date, variantKeysJson])
 
   return { data, loading, error }
 }

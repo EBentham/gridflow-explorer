@@ -127,10 +127,27 @@ export interface ForecastMetric {
 }
 
 /**
- * Canonical `(model_id, vintage_policy_id)` pair key. `::` appears in
- * neither raw id, so this is collision-safe as a `Map`/object key and a
- * React list `key=`.
+ * Canonical `(model_id, vintage_policy_id)` pair key: a JSON-encoded
+ * 2-element array, matching the backend's `_encode_variant_key`
+ * (`app/forecasts.py`) exactly -- both call their platform's standard
+ * JSON encoder on the identical `[model_id, vintage_policy_id]` shape.
+ *
+ * A hand-picked separator (the previous `"::"`-joined string) is not
+ * collision-safe: `model_id`/`vintage_policy_id` come from a different
+ * repository this app only reads, so their content is not constrained by
+ * anything here (Sol diff review, second confirmatory pass). If either
+ * identifier ever contained the separator, two *distinct* pairs could
+ * encode to the *same* string -- e.g. `("A::B", "C")` and `("A", "B::C")`
+ * both joined to `"A::B::C"` -- silently merging two different Variants'
+ * chart series, checkbox state, and React list keys into one. JSON's own
+ * string escaping, not a delimiter choice, is what makes two different
+ * pairs always produce two different encoded strings.
+ *
+ * This is the single definition of the pair's wire form: it is used both
+ * as the value sent in each repeated `variant_key` query param and as the
+ * internal `Map`/React `key=` used everywhere a Variant needs a stable
+ * identity (`ForecastScreen.tsx`, `ForecastFanChart.tsx`).
  */
 export function variantKey(modelId: string, vintagePolicyId: string): string {
-  return `${modelId}::${vintagePolicyId}`
+  return JSON.stringify([modelId, vintagePolicyId])
 }

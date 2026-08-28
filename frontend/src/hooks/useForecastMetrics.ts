@@ -11,37 +11,51 @@ interface UseForecastMetricsResult {
 /**
  * Fetches `/api/forecasts/metrics` restricted to `variantKeys`
  * (`variantKey(model_id, vintage_policy_id)` pairs, sent as repeated
- * `variant_key` query params — the backend filters on the exact pair, so
+ * `variant_key` query params -- the backend filters on the exact pair, so
  * no client-side re-filtering is needed here).
  *
- * An empty `variantKeys` short-circuits the fetch and resolves to `[]`,
- * matching `useForecastDay.ts`'s corrected contract: an explicitly empty
- * selection means nothing is shown, not "every Variant" (see that hook's
- * docstring for the defect this closes).
+ * An empty `variantKeys` short-circuits the fetch and resolves to
+ * `data: []`, `loading: false` -- matching `useForecastDay.ts`'s
+ * corrected contract: an explicitly empty selection means nothing is
+ * shown, not "every Variant".
  *
- * Depends on the joined `variantKeys`, not the array reference — same
- * principle as `useForecastDay.ts`.
+ * The skip decision and any in-flight request are kept genuinely
+ * distinct states via a render-time reset (see `useForecastDay.ts`'s
+ * docstring for the full rationale: a `useEffect`-only implementation can
+ * paint one stale "no metrics" frame on the render where `variantKeys`
+ * first becomes non-empty, since effects only run after that render has
+ * already been painted).
+ *
+ * `variantKeys` is compared/passed via `JSON.stringify`/`JSON.parse`, not
+ * a joined string -- a `variantKey(...)` value is itself a JSON string
+ * and can legitimately contain the character used to join a list, so
+ * joining/splitting the list with a separator is not safe (same
+ * reasoning as `variantKey()` itself moving off `"::"`-joining a pair).
  */
 export function useForecastMetrics(variantKeys: string[]): UseForecastMetricsResult {
-  const [data, setData] = useState<ForecastMetric[] | null>(null)
-  const [loading, setLoading] = useState(true)
+  const variantKeysJson = JSON.stringify(variantKeys)
+  const skip = variantKeys.length === 0
+
+  const [data, setData] = useState<ForecastMetric[] | null>(() => (skip ? [] : null))
+  const [loading, setLoading] = useState(() => !skip)
   const [error, setError] = useState<ApiError | null>(null)
-  const variantKeysJoined = variantKeys.join(',')
+  const [committedKeysJson, setCommittedKeysJson] = useState(variantKeysJson)
+
+  if (committedKeysJson !== variantKeysJson) {
+    setCommittedKeysJson(variantKeysJson)
+    setData(skip ? [] : null)
+    setLoading(!skip)
+    setError(null)
+  }
 
   useEffect(() => {
-    if (variantKeysJoined === '') {
-      setData([])
-      setError(null)
-      setLoading(false)
-      return
-    }
+    const keys = JSON.parse(variantKeysJson) as string[]
+    if (keys.length === 0) return undefined
 
     const controller = new AbortController()
-    setLoading(true)
-    setError(null)
 
     const params = new URLSearchParams()
-    for (const key of variantKeysJoined.split(',')) params.append('variant_key', key)
+    for (const key of keys) params.append('variant_key', key)
     const path = `/api/forecasts/metrics?${params.toString()}`
 
     fetchJson<ForecastMetric[]>(path, controller.signal)
@@ -55,7 +69,7 @@ export function useForecastMetrics(variantKeys: string[]): UseForecastMetricsRes
       })
 
     return () => controller.abort()
-  }, [variantKeysJoined])
+  }, [variantKeysJson])
 
   return { data, loading, error }
 }
