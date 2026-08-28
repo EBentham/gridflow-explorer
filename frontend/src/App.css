@@ -169,6 +169,12 @@
   font-size: 12px;
 }
 
+.forecast-gate-unknown {
+  color: var(--text);
+  font-size: 12px;
+  font-style: italic;
+}
+
 .forecast-metrics {
   margin-top: 24px;
   max-width: 1100px;

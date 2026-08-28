@@ -14,6 +14,17 @@ function titleFor(variants: ForecastVariant[], key: string): string {
   return variants.find((v) => variantKey(v.model_id, v.vintage_policy_id) === key)?.title ?? key
 }
 
+/**
+ * The caveat is a three-state fact, not a boolean with a default: `true`
+ * (applies), `false` (verified not applicable), or "unknown" when no
+ * metrics row exists yet for this Variant's newest run. Collapsing
+ * "unknown" into `false` (a Sol diff review finding) would report
+ * "not applicable" for a Variant that simply has not been scored.
+ */
+function caveatFor(rows: ForecastMetric[]): boolean | null {
+  return rows.length === 0 ? null : rows[0].perfect_prog_caveat
+}
+
 /** One Variant's caveat line + metric table, always visible (never a tooltip). */
 function VariantMetrics({
   variantKey: key,
@@ -24,15 +35,17 @@ function VariantMetrics({
   rows: ForecastMetric[]
   variants: ForecastVariant[]
 }) {
-  const caveat = rows[0]?.perfect_prog_caveat ?? false
+  const caveat = caveatFor(rows)
   return (
     <div className="forecast-metrics-variant">
       <h3>{titleFor(variants, key)}</h3>
       <p className="perfect-prog-caveat">
-        {caveat
+        {caveat === true
           ? 'Perfect-prog caveat: this score uses the realised (actual) weather, not a day-ahead ' +
             'forecast — it is optimistic by the unmeasured day-ahead weather-forecast error (ADR-056).'
-          : 'Perfect-prog caveat: not applicable — this run uses genuine day-ahead inputs.'}
+          : caveat === false
+            ? 'Perfect-prog caveat: not applicable — this run uses genuine day-ahead inputs.'
+            : "Perfect-prog caveat: unknown — no metrics recorded for this Variant's newest run."}
       </p>
       {rows.length === 0 ? (
         <p>No metrics recorded for this Variant's newest run.</p>
@@ -105,6 +118,14 @@ function MetricsPanel({
  * `vintage_policy_id`) — selection state, the checkbox list, and the
  * metrics grouping are all keyed on `variantKey(model_id,
  * vintage_policy_id)` throughout this screen.
+ *
+ * Deselecting every checkbox means "show nothing", not "show every
+ * Variant" — `variantKeys` becomes `[]` (an explicit empty array,
+ * distinct from `selectedVariantKeys === null`'s "not customised yet"),
+ * and `useForecastDay`/`useForecastMetrics` both treat an empty key list
+ * as "fetch nothing" (a Sol diff review finding: the previous behaviour
+ * silently fell back to every Variant, contradicting the screen's own
+ * controls).
  */
 export function ForecastScreen() {
   const { data: variants, loading: variantsLoading, error: variantsError } = useForecastVariants()
@@ -185,7 +206,12 @@ export function ForecastScreen() {
                   onChange={() => toggleVariant(key)}
                 />
                 {variant.title}
-                {!variant.gates_passed && <span className="forecast-gate-fail"> (gates failed)</span>}
+                {variant.gates_passed === false && (
+                  <span className="forecast-gate-fail"> (gates failed)</span>
+                )}
+                {variant.gates_passed === null && (
+                  <span className="forecast-gate-unknown"> (gates unknown)</span>
+                )}
               </label>
             )
           })}
@@ -198,11 +224,14 @@ export function ForecastScreen() {
         <ErrorState error={dayError} />
       ) : dayRecords === null ? null : dayRecords.length === 0 ? (
         <EmptyState>
-          No forecast for {date} for{' '}
-          {variantKeys.length > 0
-            ? variantKeys.map((key) => titleFor(variants, key)).join(', ')
-            : 'any selected Variant'}
-          . Available range across all Variants: {overallFirstDate} to {overallLastDate}.
+          {variantKeys.length === 0 ? (
+            <>No Variant selected — check at least one Variant above to see its forecast.</>
+          ) : (
+            <>
+              No forecast for {date} for {variantKeys.map((key) => titleFor(variants, key)).join(', ')}.
+              Available range across all Variants: {overallFirstDate} to {overallLastDate}.
+            </>
+          )}
         </EmptyState>
       ) : (
         <ChartCard title="Quantile fan + actual">

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ApiError, fetchJson } from '../api/client'
 import type { ForecastDayRecord } from '../api/types'
-import { variantKey } from '../api/types'
 
 interface UseForecastDayResult {
   data: ForecastDayRecord[] | null
@@ -11,18 +10,22 @@ interface UseForecastDayResult {
 
 /**
  * Fetches `/api/forecasts/day` for `date`, restricted to `variantKeys`
- * (`variantKey(model_id, vintage_policy_id)` pairs; empty means every
- * Variant present, matching the backend's "omitted" default). `date` is
- * nullable so a caller still resolving the default day (e.g. from
- * `/variants`) can skip firing a request with an empty/invalid date.
+ * (`variantKey(model_id, vintage_policy_id)` pairs, sent as repeated
+ * `variant_key` query params — the backend validates and filters on the
+ * exact pair, so no client-side re-filtering is needed here).
  *
- * The backend's `model_id`/`vintage_policy_id` query params AND
- * independently, so they cannot express an arbitrary *set of pairs* on
- * their own (selecting `(m1, pA)` and `(m2, pB)` would also match
- * `(m1, pB)` if that pair ever existed). This hook sends the **union** of
- * each dimension to narrow the request, then filters the response
- * client-side to the exact requested pairs before returning it — the
- * union is over-inclusive only in transit, never in what the caller sees.
+ * Two states short-circuit the fetch entirely and resolve to an empty
+ * result:
+ *   - `date` is `null` — the caller (e.g. `ForecastScreen`) is still
+ *     resolving the default day from `/variants`.
+ *   - `variantKeys` is empty — the caller has explicitly deselected every
+ *     Variant. This does **not** mean "every Variant" (that was a real
+ *     defect, caught by Sol diff review: unchecking every checkbox used to
+ *     still fetch and render everything, contradicting the screen's own
+ *     controls). An empty selection means nothing is selected, so nothing
+ *     is fetched and nothing is shown — the caller renders its empty
+ *     state from a `[]` result exactly as it would for a day with no
+ *     forecasts.
  *
  * The effect depends on `date` and the joined `variantKeys` (not the
  * array reference), so a fresh-but-unchanged selection array from a
@@ -36,8 +39,8 @@ export function useForecastDay(date: string | null, variantKeys: string[]): UseF
   const variantKeysJoined = variantKeys.join(',')
 
   useEffect(() => {
-    if (!date) {
-      setData(null)
+    if (!date || variantKeysJoined === '') {
+      setData([])
       setError(null)
       setLoading(false)
       return
@@ -47,24 +50,12 @@ export function useForecastDay(date: string | null, variantKeys: string[]): UseF
     setLoading(true)
     setError(null)
 
-    const pairs = variantKeysJoined === '' ? [] : variantKeysJoined.split(',')
-    const pairSet = new Set(pairs)
-    const modelIds = new Set(pairs.map((pair) => pair.split('::')[0]))
-    const policyIds = new Set(pairs.map((pair) => pair.split('::')[1]))
-
     const params = new URLSearchParams({ date })
-    for (const modelId of modelIds) params.append('model_id', modelId)
-    for (const policyId of policyIds) params.append('vintage_policy_id', policyId)
+    for (const key of variantKeysJoined.split(',')) params.append('variant_key', key)
     const path = `/api/forecasts/day?${params.toString()}`
 
     fetchJson<ForecastDayRecord[]>(path, controller.signal)
-      .then((records) => {
-        const filtered =
-          pairSet.size === 0
-            ? records
-            : records.filter((r) => pairSet.has(variantKey(r.model_id, r.vintage_policy_id)))
-        setData(filtered)
-      })
+      .then(setData)
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === 'AbortError') return
         setError(err instanceof ApiError ? err : new ApiError('unknown_error', String(err)))

@@ -63,16 +63,24 @@ export interface JobStatus {
  * than one live `vintage_policy_id` — ADR-057 secs 2-3 — so `model_id`
  * alone does not identify a Variant). `title` is derived server-side, not
  * stored.
+ *
+ * `perfect_prog_caveat` and `gates_passed` are **nullable**: the backend
+ * derives them from a `left` join onto the metrics store
+ * (`app/forecasts.py`'s `list_variants`), so a Variant with forecasts but
+ * no matching metrics reports `null`, not `false`. Treat `null` as
+ * "unknown" — a Sol diff review finding: reading a `null` `gates_passed`
+ * as `!gates_passed` (failed) or a `null` caveat as "not applicable" is
+ * silently wrong, not merely imprecise.
  */
 export interface ForecastVariant {
   model_id: string
   title: string
   vintage_kind: string
   vintage_policy_id: string
-  perfect_prog_caveat: boolean
+  perfect_prog_caveat: boolean | null
   run_id: string
   written_at: string
-  gates_passed: boolean
+  gates_passed: boolean | null
   first_settlement_date: string
   last_settlement_date: string
   n_days: number
