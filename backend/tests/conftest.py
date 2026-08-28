@@ -9,7 +9,12 @@ Split by consumer:
       at all*, which the `JOBS.is_running()` short-circuit (case 3) needs.
     - `StubClientCtx`: `test_api.py`, monkeypatched in for
       `app.routers.datasets.client_ctx` so route tests never touch a real
-      `GridflowClient`.
+      `GridflowClient`. Reused (generic — any client with `.close()`) by
+      the P4 forecasts tests below via `ForecastStubClient`.
+    - `forecast_rows_frame` / `forecast_metrics_rows_frame` /
+      `ForecastStubClient`: `test_forecasts.py` and `test_forecasts_api.py`
+      (via the `forecast_stub_client` / `forecast_stub_client_ctx` and
+      `empty_forecast_stub_client*` fixtures).
 """
 
 from __future__ import annotations
@@ -202,3 +207,268 @@ def running_job() -> Generator[None, None, None]:
         yield
     finally:
         JOBS.finish(job.job_id, JobState.IDLE, None)
+
+
+# --- P4 forecasts fixtures --------------------------------------------------
+
+
+def forecast_rows_frame() -> pl.DataFrame:
+    """Fixture long-format `gold_forecasts` frame, tz-aware Europe/London.
+
+    Exercises every rule `app.forecasts` implements:
+        - Supersession (ADR-057 section 6): the first two rows share one
+          supersession identity (model_id, vintage_kind, vintage_policy_id,
+          issued_at, delivery_time) at period 1 on 2026-08-10 — an older
+          write (`run-old`, `written_at` 01:00, `q_0.5=100.0`) and a newer
+          write (`run-new`, `written_at` 02:00, `q_0.5=200.0`). Only the
+          newer row's values must survive.
+        - UTC relabelling: every timestamp is in August (BST, UTC+1) — a
+          missing `convert_time_zone("UTC")` would ship
+          `2026-08-10T00:00:00Z` for period 1 instead of the correct
+          `2026-08-09T23:00:00Z`.
+        - Multi-Variant handling: `day_ahead.lgbm_demand.v2` on the same
+          day needs no special-casing to appear alongside v1.
+        - 2026-08-11 carries no rows at all, for the empty-day case.
+    """
+    rows: list[dict[str, object]] = [
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "issued_at": _london(2026, 8, 9, 23, 30),
+            "delivery_time": _london(2026, 8, 10, 0, 0),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 1,
+            "actual": 21000.0,
+            "run_id": "run-old",
+            "written_at": _london(2026, 8, 10, 1, 0),
+            "gates_passed": True,
+            "q_0.05": 19000.0,
+            "q_0.5": 100.0,
+            "q_0.95": 21500.0,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "issued_at": _london(2026, 8, 9, 23, 30),
+            "delivery_time": _london(2026, 8, 10, 0, 0),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 1,
+            "actual": 21000.0,
+            "run_id": "run-new",
+            "written_at": _london(2026, 8, 10, 2, 0),
+            "gates_passed": True,
+            "q_0.05": 19500.0,
+            "q_0.5": 200.0,
+            "q_0.95": 21600.0,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "issued_at": _london(2026, 8, 9, 23, 30),
+            "delivery_time": _london(2026, 8, 10, 0, 30),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 2,
+            "actual": 21100.0,
+            "run_id": "run-new",
+            "written_at": _london(2026, 8, 10, 2, 0),
+            "gates_passed": True,
+            "q_0.05": 19600.0,
+            "q_0.5": 210.0,
+            "q_0.95": 21700.0,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v2",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v2_rolling_23h30m",
+            "issued_at": _london(2026, 8, 9, 23, 30),
+            "delivery_time": _london(2026, 8, 10, 0, 0),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 1,
+            "actual": 21050.0,
+            "run_id": "run-v2",
+            "written_at": _london(2026, 8, 10, 3, 0),
+            "gates_passed": True,
+            "q_0.05": 19700.0,
+            "q_0.5": 220.0,
+            "q_0.95": 21800.0,
+        },
+    ]
+    columns = list(rows[0].keys())
+    return pl.DataFrame({col: [row[col] for row in rows] for col in columns})
+
+
+def forecast_metrics_rows_frame() -> pl.DataFrame:
+    """Fixture `gold_forecast_metrics` frame, tz-aware Europe/London.
+
+    Exercises "newest run per Variant" (v1's newest write is `run-new` at
+    02:00, so its `run-old` fold-scope row at 01:00 must not appear in
+    `variant_metrics`'s output) and the `scope == "run"` filter (the real
+    store carries no `scope='overall'` rows — see `app.forecasts`'s
+    DEVIATION note).
+    """
+    rows: list[dict[str, object]] = [
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "run_id": "run-old",
+            "written_at": _london(2026, 8, 10, 1, 0),
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "scope": "fold",
+            "metric_kind": "score",
+            "metric_name": "pinball_loss",
+            "metric_value": 12.3,
+            "gate_passed": None,
+            "gate_threshold": None,
+            "gate_message": None,
+            "train_size": 300,
+            "valid_size": 40,
+            "n_folds": 10,
+            "gates_passed": True,
+            "perfect_prog_caveat": False,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "run_id": "run-new",
+            "written_at": _london(2026, 8, 10, 2, 0),
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "scope": "run",
+            "metric_kind": "gate",
+            "metric_name": "pinball_loss_overall",
+            "metric_value": 11.1,
+            "gate_passed": True,
+            "gate_threshold": 15.0,
+            "gate_message": "pass",
+            "train_size": 320,
+            "valid_size": 42,
+            "n_folds": 12,
+            "gates_passed": True,
+            "perfect_prog_caveat": False,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v2",
+            "run_id": "run-v2",
+            "written_at": _london(2026, 8, 10, 3, 0),
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v2_rolling_23h30m",
+            "scope": "run",
+            "metric_kind": "gate",
+            "metric_name": "pinball_loss_overall",
+            "metric_value": 9.5,
+            "gate_passed": True,
+            "gate_threshold": 15.0,
+            "gate_message": "pass",
+            "train_size": 320,
+            "valid_size": 42,
+            "n_folds": 12,
+            "gates_passed": True,
+            "perfect_prog_caveat": True,
+        },
+    ]
+    columns = list(rows[0].keys())
+    return pl.DataFrame({col: [row[col] for row in rows] for col in columns})
+
+
+def empty_forecasts_frame() -> pl.DataFrame:
+    """Zero-row `gold_forecasts` frame, correctly typed (empty-store case)."""
+    return pl.DataFrame(
+        schema={
+            "model_id": pl.String,
+            "vintage_kind": pl.String,
+            "vintage_policy_id": pl.String,
+            "issued_at": pl.Datetime(time_unit="us", time_zone="Europe/London"),
+            "delivery_time": pl.Datetime(time_unit="us", time_zone="Europe/London"),
+            "settlement_date": pl.Date,
+            "settlement_period": pl.Int16,
+            "actual": pl.Float64,
+            "run_id": pl.String,
+            "written_at": pl.Datetime(time_unit="us", time_zone="Europe/London"),
+            "gates_passed": pl.Boolean,
+            "q_0.05": pl.Float64,
+            "q_0.5": pl.Float64,
+            "q_0.95": pl.Float64,
+        }
+    )
+
+
+def empty_metrics_frame() -> pl.DataFrame:
+    """Zero-row `gold_forecast_metrics` frame, correctly typed (empty-store case)."""
+    return pl.DataFrame(
+        schema={
+            "model_id": pl.String,
+            "run_id": pl.String,
+            "written_at": pl.Datetime(time_unit="us", time_zone="Europe/London"),
+            "vintage_kind": pl.String,
+            "vintage_policy_id": pl.String,
+            "scope": pl.String,
+            "metric_kind": pl.String,
+            "metric_name": pl.String,
+            "metric_value": pl.Float64,
+            "gate_passed": pl.Boolean,
+            "gate_threshold": pl.Float64,
+            "gate_message": pl.String,
+            "train_size": pl.Int32,
+            "valid_size": pl.Int32,
+            "n_folds": pl.Int32,
+            "gates_passed": pl.Boolean,
+            "perfect_prog_caveat": pl.Boolean,
+        }
+    )
+
+
+class ForecastStubClient:
+    """Stand-in for `GridflowClient` in the P4 forecasts tests.
+
+    `app.forecasts` issues exactly two constant, predicate-free SQL
+    strings (see its module docstring's DEVIATION note on why there is no
+    bind parameter to stub) — this dispatches on which relation the SQL
+    names, so callers never need to parse or care about the query text.
+    """
+
+    def __init__(
+        self,
+        forecasts: pl.DataFrame | None = None,
+        metrics: pl.DataFrame | None = None,
+    ) -> None:
+        self.forecasts = forecasts if forecasts is not None else forecast_rows_frame()
+        self.metrics = metrics if metrics is not None else forecast_metrics_rows_frame()
+        self.calls: list[str] = []
+
+    def query(self, sql: str) -> pl.DataFrame:
+        """Record the call and return the fixture frame the SQL names."""
+        self.calls.append(sql)
+        if "gold_forecast_metrics" in sql:
+            return self.metrics
+        if "gold_forecasts" in sql:
+            return self.forecasts
+        raise AssertionError(f"ForecastStubClient.query got unexpected SQL: {sql!r}")
+
+    def close(self) -> None:
+        """No-op, present only for interface parity with `GridflowClient`."""
+
+
+@pytest.fixture
+def forecast_stub_client() -> ForecastStubClient:
+    """A fresh `ForecastStubClient` with default fixture frames."""
+    return ForecastStubClient()
+
+
+@pytest.fixture
+def forecast_stub_client_ctx(forecast_stub_client: ForecastStubClient) -> StubClientCtx:
+    """A `StubClientCtx` wrapping `forecast_stub_client`, ready to monkeypatch in."""
+    return StubClientCtx(forecast_stub_client)
+
+
+@pytest.fixture
+def empty_forecast_stub_client() -> ForecastStubClient:
+    """A `ForecastStubClient` over an empty store (both views zero rows)."""
+    return ForecastStubClient(forecasts=empty_forecasts_frame(), metrics=empty_metrics_frame())
+
+
+@pytest.fixture
+def empty_forecast_stub_client_ctx(empty_forecast_stub_client: ForecastStubClient) -> StubClientCtx:
+    """A `StubClientCtx` wrapping `empty_forecast_stub_client`, ready to monkeypatch in."""
+    return StubClientCtx(empty_forecast_stub_client)
