@@ -8,7 +8,13 @@ import pytest
 from conftest import ForecastStubClient
 
 from app.errors import UnknownVariant
-from app.forecasts import _encode_variant_key, day_forecast, list_variants, variant_metrics
+from app.forecasts import (
+    _decode_variant_key,
+    _encode_variant_key,
+    day_forecast,
+    list_variants,
+    variant_metrics,
+)
 
 DAY = date(2026, 8, 10)
 
@@ -267,3 +273,44 @@ def test_supersession_run_id_desc_tie_break_when_written_at_ties(
     assert len(period_1) == 1
     # run "run-z" sorts after "run-a" under `run_id DESC` and must win the tie.
     assert period_1[0]["q_0.5"] == 999.0
+
+
+# --- Pinning tests: Sol diff review, second confirmatory pass --------------
+#
+# The wire encoding must be collision-safe: model_id/vintage_policy_id come
+# from a different repository this app only reads, so a hand-picked
+# separator (the previous "::") can appear inside an identifier. These
+# tests fail against that old scheme (verified by temporarily reverting
+# `_encode_variant_key`/`_decode_variant_key` to `f"{a}::{b}"` /
+# `.partition("::")` and confirming both fail) and pass against the current
+# JSON-array encoding.
+
+
+def test_encode_variant_key_distinguishes_pairs_that_would_collide_naively() -> None:
+    # Under the old "::"-joined scheme, encode("A::B", "C") and
+    # encode("A", "B::C") both produced the literal string "A::B::C" -- two
+    # genuinely different pairs sharing one wire key.
+    key_a = _encode_variant_key("A::B", "C")
+    key_b = _encode_variant_key("A", "B::C")
+    assert key_a != key_b
+
+
+def test_decode_variant_key_round_trips_when_identifiers_contain_the_wire_separator() -> None:
+    model_id = "weird::model.id"
+    vintage_policy_id = "also::weird_policy"
+    key = _encode_variant_key(model_id, vintage_policy_id)
+    assert _decode_variant_key(key) == (model_id, vintage_policy_id)
+
+
+def test_day_forecast_resolves_a_variant_whose_identifiers_contain_the_wire_separator(
+    collision_forecast_stub_client: ForecastStubClient,
+) -> None:
+    model_id = "weird::model.id"
+    vintage_policy_id = "also::weird_policy"
+    key = _encode_variant_key(model_id, vintage_policy_id)
+
+    records = day_forecast(collision_forecast_stub_client, DAY, [key])
+
+    assert len(records) == 1
+    assert records[0]["model_id"] == model_id
+    assert records[0]["vintage_policy_id"] == vintage_policy_id

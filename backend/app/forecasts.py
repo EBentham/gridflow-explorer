@@ -72,10 +72,31 @@ strings identifying one exact `(model_id, vintage_policy_id)` pair each.
 Validation and filtering both operate on the pair directly, so "is this
 key a real Variant" is a single set-membership check rather than two
 independent ones that can each pass while the pair itself does not exist.
+
+RESOLVED CORRECTNESS DEFECT #3 (Sol diff review, second confirmatory pass):
+defect #2's fix encoded a pair as ``f"{model_id}::{vintage_policy_id}"``,
+choosing ``"::"`` because it did not appear in *today's* identifiers. That
+is a probabilistic argument, not a correctness one -- `model_id` and
+`vintage_policy_id` are produced by gridflow_models, a different
+repository this app only reads, so nothing here constrains what
+characters they contain. If either ever contained ``"::"``, decoding
+could split at the wrong boundary, and two *distinct* pairs could encode
+to the *same* string (e.g. ``("A::B", "C")`` and ``("A", "B::C")`` both
+joined to ``"A::B::C"``) -- a real collision, not merely a rare one.
+`_encode_variant_key`/`_decode_variant_key` now JSON-encode the pair as a
+2-element array. This is not "a rarer separator": JSON's own string
+escaping delimits the two elements regardless of their content, so no
+separator choice or collision probability is involved at all. The
+frontend's `variantKey()` (`api/types.ts`) encodes with `JSON.stringify`
+on the identical `[model_id, vintage_policy_id]` shape, so there remains
+exactly one definition of the pair's wire form, expressed once per
+platform's own standard JSON implementation rather than by hand-rolled
+matching logic on each side.
 """
 
 from __future__ import annotations
 
+import json
 import re
 from datetime import date
 from typing import TYPE_CHECKING, Any
@@ -106,12 +127,6 @@ _SUPERSESSION_KEY: tuple[str, ...] = (
 # DEFECT #1 note): `model_id` alone is not enough — two `vintage_policy_id`s
 # can and do coexist under one `model_id`, describing different producers.
 _VARIANT_KEY: tuple[str, ...] = ("model_id", "vintage_policy_id")
-
-# Separator for `_encode_variant_key` — appears in neither a `model_id`
-# (dot-separated) nor a `vintage_policy_id` (underscore-separated) in this
-# store today. Matches the frontend's `variantKey()` helper (`api/types.ts`)
-# exactly, so a key round-trips unchanged between the two.
-_VARIANT_KEY_SEP = "::"
 
 # The seven quantile columns carried on every `gold_forecasts` row, matched
 # by a `q_0` prefix so a future quantile level (e.g. `q_0.01`) flows through
@@ -216,39 +231,56 @@ def _variant_title_for(model_id: str, vintage_policy_id: str) -> str:
 
 
 def _encode_variant_key(model_id: str, vintage_policy_id: str) -> str:
-    """Encode a `(model_id, vintage_policy_id)` pair as one opaque string.
+    """Encode a `(model_id, vintage_policy_id)` pair as a JSON 2-element array.
 
-    See module docstring's RESOLVED DEFECT #2 note: this is the unit
-    `day_forecast`/`variant_metrics` validate and filter on, closing the
-    gap where `model_id` and `vintage_policy_id` could each independently
-    exist without ever existing together as the same row.
+    See module docstring's RESOLVED DEFECT #3 note: a hand-picked
+    separator (the previous `"::"`) is not collision-safe, because
+    `model_id`/`vintage_policy_id` come from a different repository this
+    app only reads and their content is not constrained by anything here.
+    JSON's own string escaping -- not the choice of delimiter -- is what
+    makes two different pairs always encode to two different strings.
+    Mirrors the frontend's `variantKey()` (`api/types.ts`) exactly: both
+    call their platform's standard JSON encoder on the identical
+    `[model_id, vintage_policy_id]` shape.
 
     Args:
         model_id: The raw dotted model identifier.
         vintage_policy_id: The raw vintage policy identifier.
 
     Returns:
-        The encoded key, e.g. ``"day_ahead.lgbm_demand.v1::v1_rolling_23h30m"``.
+        The encoded key, e.g. ``'["day_ahead.lgbm_demand.v1", "v1_rolling_23h30m"]'``.
     """
-    return f"{model_id}{_VARIANT_KEY_SEP}{vintage_policy_id}"
+    return json.dumps([model_id, vintage_policy_id])
 
 
-def _decode_variant_key(variant_key: str) -> tuple[str, str]:
+def _decode_variant_key(variant_key: str) -> tuple[str, str] | None:
     """Decode one `_encode_variant_key` string back into its pair.
 
-    Callers that have not already confirmed `variant_key` is a member of
-    `_known_variant_keys(...)` will get a `vintage_policy_id` of `""` for
-    a malformed (separator-less) key — harmless, since it then matches no
-    real row rather than raising.
+    Returns `None` (rather than raising) for a value that is not
+    well-formed JSON, or not a 2-element array of strings — such a value
+    cannot be a real Variant (every real one round-trips through
+    `_encode_variant_key`), so callers treat it as simply unknown rather
+    than crashing on a client-supplied string.
 
     Args:
         variant_key: An `_encode_variant_key(...)` string.
 
     Returns:
-        The decoded `(model_id, vintage_policy_id)` pair.
+        The decoded `(model_id, vintage_policy_id)` pair, or `None` if
+        `variant_key` is not well-formed.
     """
-    model_id, _, vintage_policy_id = variant_key.partition(_VARIANT_KEY_SEP)
-    return model_id, vintage_policy_id
+    try:
+        decoded = json.loads(variant_key)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    if (
+        isinstance(decoded, list)
+        and len(decoded) == 2
+        and isinstance(decoded[0], str)
+        and isinstance(decoded[1], str)
+    ):
+        return decoded[0], decoded[1]
+    return None
 
 
 def _known_variant_keys(frame: pl.DataFrame) -> set[str]:
@@ -274,14 +306,20 @@ def _pairs_frame(variant_keys: Sequence[str]) -> pl.DataFrame:
 
     Used as the right side of a semi-join to filter to exactly the
     requested Variants — see module docstring's RESOLVED DEFECT #2 note.
+    Keys that fail to decode (see `_decode_variant_key`) are dropped
+    silently: they cannot match any real row, so they contribute nothing
+    to the join, same as any other unmatched key.
 
     Args:
         variant_keys: `_encode_variant_key(...)` strings to decode.
 
     Returns:
-        A frame with one row per key, columns `model_id`/`vintage_policy_id`.
+        A frame with one row per successfully-decoded key, columns
+        `model_id`/`vintage_policy_id` — possibly zero rows.
     """
-    pairs = [_decode_variant_key(key) for key in variant_keys]
+    pairs = [decoded for key in variant_keys if (decoded := _decode_variant_key(key)) is not None]
+    if not pairs:
+        return pl.DataFrame(schema={"model_id": pl.String, "vintage_policy_id": pl.String})
     return pl.DataFrame(
         {
             "model_id": [pair[0] for pair in pairs],

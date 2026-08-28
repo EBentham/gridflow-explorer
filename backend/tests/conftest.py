@@ -589,6 +589,37 @@ def tie_break_forecasts_frame() -> pl.DataFrame:
     return pl.DataFrame({col: [row[col] for row in rows] for col in columns})
 
 
+def collision_forecasts_frame() -> pl.DataFrame:
+    """Fixture `gold_forecasts` frame pinning the JSON variant-key encoding
+    (Sol diff review, second confirmatory pass).
+
+    `model_id` and `vintage_policy_id` both contain the literal string
+    `"::"` -- the previous wire encoding's separator. Under that old
+    scheme, `_decode_variant_key` would split at the wrong boundary; under
+    the current JSON-array encoding, the pair round-trips exactly.
+    """
+    rows: list[dict[str, object]] = [
+        {
+            "model_id": "weird::model.id",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "also::weird_policy",
+            "issued_at": _london(2026, 8, 9, 23, 30),
+            "delivery_time": _london(2026, 8, 10, 0, 0),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 1,
+            "actual": 21000.0,
+            "run_id": "run-collision",
+            "written_at": _london(2026, 8, 10, 1, 0),
+            "gates_passed": True,
+            "q_0.05": 19000.0,
+            "q_0.5": 300.0,
+            "q_0.95": 21500.0,
+        },
+    ]
+    columns = list(rows[0].keys())
+    return pl.DataFrame({col: [row[col] for row in rows] for col in columns})
+
+
 class ForecastStubClient:
     """Stand-in for `GridflowClient` in the P4 forecasts tests.
 
@@ -664,3 +695,11 @@ def two_policy_forecast_stub_client_ctx(
 def tie_break_forecast_stub_client() -> ForecastStubClient:
     """A `ForecastStubClient` pinning `_supersede`'s `run_id DESC` tie-break."""
     return ForecastStubClient(forecasts=tie_break_forecasts_frame(), metrics=empty_metrics_frame())
+
+
+@pytest.fixture
+def collision_forecast_stub_client() -> ForecastStubClient:
+    """A `ForecastStubClient` pinning the JSON variant-key encoding against
+    identifiers that contain the previous wire encoding's `"::"` separator.
+    """
+    return ForecastStubClient(forecasts=collision_forecasts_frame(), metrics=empty_metrics_frame())
