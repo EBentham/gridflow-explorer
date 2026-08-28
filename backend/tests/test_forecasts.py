@@ -314,3 +314,94 @@ def test_day_forecast_resolves_a_variant_whose_identifiers_contain_the_wire_sepa
     assert len(records) == 1
     assert records[0]["model_id"] == model_id
     assert records[0]["vintage_policy_id"] == vintage_policy_id
+
+
+# --- Pinning tests: coordinator finding (encoded-string comparison across --
+# --- the Python/JavaScript boundary is not reliable), confirmed by Sol -----
+# --- diff review, third confirmatory pass ----------------------------------
+#
+# Python's `json.dumps` and JavaScript's `JSON.stringify` do not produce
+# byte-identical output for the same `[model_id, vintage_policy_id]` value:
+# Python's default item separator is `", "` (with a space), JS's is `","`
+# (no space). A real browser sends the JS spelling; the previous fix
+# compared it, as a *string*, against a set of Python-re-encoded strings --
+# so no real frontend request could ever resolve. The fix decodes every
+# wire key once, at the edge, into a `(model_id, vintage_policy_id)` tuple
+# and compares tuples, never encoded strings, which makes the byte spelling
+# irrelevant.
+
+
+def test_decode_variant_key_handles_both_json_encoders_spelling_of_a_pair() -> None:
+    py_style = _encode_variant_key("day_ahead.lgbm_demand.v1", "v1_rolling_23h30m")
+    js_style = '["day_ahead.lgbm_demand.v1","v1_rolling_23h30m"]'  # no space after the comma
+    # Sanity check: these really are two different byte strings for the
+    # same logical pair -- the bug this pins is exactly that they differ.
+    assert py_style != js_style
+    assert _decode_variant_key(py_style) == _decode_variant_key(js_style)
+    assert _decode_variant_key(js_style) == ("day_ahead.lgbm_demand.v1", "v1_rolling_23h30m")
+
+
+def test_day_forecast_resolves_a_javascript_spelled_variant_key(
+    forecast_stub_client: ForecastStubClient,
+) -> None:
+    # No space after the comma -- exactly what `JSON.stringify` (a real
+    # browser) sends, and exactly what the byte-comparison bug 404'd.
+    js_style_key = '["day_ahead.lgbm_demand.v1","v1_rolling_23h30m"]'
+
+    records = day_forecast(forecast_stub_client, DAY, [js_style_key])
+
+    period_1 = [r for r in records if r["settlement_period"] == 1]
+    assert len(period_1) == 1
+    assert period_1[0]["model_id"] == "day_ahead.lgbm_demand.v1"
+
+
+def test_day_forecast_both_json_encoder_spellings_resolve_identically(
+    forecast_stub_client: ForecastStubClient,
+) -> None:
+    py_style_key = _encode_variant_key("day_ahead.lgbm_demand.v1", "v1_rolling_23h30m")
+    js_style_key = '["day_ahead.lgbm_demand.v1","v1_rolling_23h30m"]'
+    assert py_style_key != js_style_key  # they really are different byte strings
+
+    py_records = day_forecast(forecast_stub_client, DAY, [py_style_key])
+    js_records = day_forecast(forecast_stub_client, DAY, [js_style_key])
+
+    assert py_records == js_records
+    assert py_records != []
+
+
+# --- Pinning tests: decoder must never raise on pathological-but-valid -----
+# --- JSON (Sol diff review, third confirmatory pass, finding 2) ------------
+#
+# `_decode_variant_key`'s previous `except (json.JSONDecodeError,
+# TypeError)` let `RecursionError` (excessive nesting) and `ValueError`
+# (an integer literal exceeding Python's configured digit limit) escape as
+# an unhandled 500 on both /day and /metrics.
+
+
+def test_decode_variant_key_returns_none_for_deeply_nested_json() -> None:
+    deeply_nested = "[" * 200 + "]" * 200
+    assert _decode_variant_key(deeply_nested) is None
+
+
+def test_decode_variant_key_returns_none_for_an_oversized_json_integer() -> None:
+    huge_int = "9" * 5000
+    assert _decode_variant_key(huge_int) is None
+
+
+def test_day_forecast_pathological_variant_key_raises_unknown_variant_not_500(
+    forecast_stub_client: ForecastStubClient,
+) -> None:
+    deeply_nested = "[" * 200 + "]" * 200
+    huge_int = "9" * 5000
+    for hostile_key in (deeply_nested, huge_int):
+        with pytest.raises(UnknownVariant):
+            day_forecast(forecast_stub_client, DAY, [hostile_key])
+
+
+def test_variant_metrics_pathological_variant_key_yields_no_rows_not_500(
+    forecast_stub_client: ForecastStubClient,
+) -> None:
+    deeply_nested = "[" * 200 + "]" * 200
+    huge_int = "9" * 5000
+    for hostile_key in (deeply_nested, huge_int):
+        assert variant_metrics(forecast_stub_client, [hostile_key]) == []

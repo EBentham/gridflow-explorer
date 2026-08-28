@@ -92,6 +92,32 @@ on the identical `[model_id, vintage_policy_id]` shape, so there remains
 exactly one definition of the pair's wire form, expressed once per
 platform's own standard JSON implementation rather than by hand-rolled
 matching logic on each side.
+
+RESOLVED CORRECTNESS DEFECT #4 (coordinator finding, structural fix): all
+three defects above share one root cause -- a Variant's identity was
+handled as a **string** (an encoded key) instead of as a **pair**. Defect
+#3's "shared JSON encoding" did not close that gap: Python's `json.dumps`
+and JavaScript's `JSON.stringify` do not produce byte-identical output for
+the same `[model_id, vintage_policy_id]` value (Python's default item
+separator is `", "`, JS's is `","`), so a key built by the real frontend
+and compared, *as a string*, against a key re-encoded by the backend from
+its own data never matched -- every real selection 404d. Picking matching
+separators (e.g. `separators=(",", ":")`) would only patch this one
+byte-level asymmetry and leave the class alive for the next one (key
+ordering, `ensure_ascii`, unicode escaping).
+
+The actual fix: **the encoded key is an opaque transport token and is
+never compared, keyed, or set-membership-tested in its encoded form.**
+`_decode_variant_key` runs exactly once, at the edge, on every incoming
+`variant_keys` value (`day_forecast`, `variant_metrics`), producing a
+`(model_id, vintage_policy_id)` tuple. `_known_variant_pairs` builds its
+set directly from the frame's own columns as tuples -- never by
+re-encoding and comparing strings. From that point on, identity is
+`tuple == tuple`, which cannot depend on which platform's JSON encoder
+produced the wire string that decoded to it. `_encode_variant_key`
+remains only as a convenience for constructing a wire-format token
+(tests, and conceptually "what a frontend sends") -- production code
+never calls it to build something to compare against.
 """
 
 from __future__ import annotations
@@ -262,6 +288,28 @@ def _decode_variant_key(variant_key: str) -> tuple[str, str] | None:
     `_encode_variant_key`), so callers treat it as simply unknown rather
     than crashing on a client-supplied string.
 
+    This function's contract is that **no** input can make it raise: a
+    `variant_key` either decodes to a valid pair, or this returns `None` —
+    there is no third outcome. `json.loads` on hostile-but-syntactically-
+    valid input can fail in more ways than `JSONDecodeError`/`TypeError`
+    (e.g. `RecursionError` on excessive nesting depth, `ValueError` on an
+    integer literal exceeding Python's configured digit limit — Sol diff
+    review, third confirmatory pass, found both escaping this function as
+    an unhandled 500 when only those two exception types were caught).
+    Enumerating every failure mode `json.loads` can produce for input
+    whose shape this function does not control is the same "patch the
+    instance, not the class" mistake that produced the `"::"` collision
+    and the cross-platform string-comparison bugs upstream of this one —
+    the next pathological input would just raise a fourth exception type.
+    The `except Exception` below is deliberately broad **at this one
+    boundary only**: it is the parse step for arbitrary, untrusted,
+    externally-supplied text, and every one of its failure modes means
+    exactly the same thing here ("not a valid Variant key"). It does not
+    catch `BaseException` subclasses outside `Exception`
+    (`KeyboardInterrupt`, `SystemExit`, `MemoryError`) — those are not
+    malformed input, they are conditions where continuing at all would be
+    wrong, and must keep propagating.
+
     Args:
         variant_key: An `_encode_variant_key(...)` string.
 
@@ -271,7 +319,7 @@ def _decode_variant_key(variant_key: str) -> tuple[str, str] | None:
     """
     try:
         decoded = json.loads(variant_key)
-    except (json.JSONDecodeError, TypeError):
+    except Exception:
         return None
     if (
         isinstance(decoded, list)
@@ -283,41 +331,51 @@ def _decode_variant_key(variant_key: str) -> tuple[str, str] | None:
     return None
 
 
-def _known_variant_keys(frame: pl.DataFrame) -> set[str]:
-    """The set of encoded Variant keys actually present in `frame`.
+def _known_variant_pairs(frame: pl.DataFrame) -> set[tuple[str, str]]:
+    """The set of `(model_id, vintage_policy_id)` pairs actually present in `frame`.
+
+    Returns raw tuples straight from the frame — **never** a re-encoded
+    string. See module docstring's RESOLVED DEFECT #4 note: two different
+    JSON encoders (Python's `json.dumps`, JavaScript's `JSON.stringify`)
+    do not produce byte-identical output for the same logical value —
+    Python's default item separator is `", "`, JS's is `","` — so
+    comparing *encoded* strings across the frontend/backend boundary is
+    unreliable even with a shared, documented encoding. A decoded tuple
+    has no such ambiguity: two platforms' encoders can disagree on
+    spelling, but `("a", "b") == ("a", "b")` regardless of which encoder
+    produced the wire string that decoded to it.
 
     Args:
         frame: A `gold_forecasts` or `gold_forecast_metrics` frame (raw or
             superseded) carrying `model_id`/`vintage_policy_id` columns.
 
     Returns:
-        Every distinct `_encode_variant_key(...)` value present, or an
+        Every distinct `(model_id, vintage_policy_id)` pair present, or an
         empty set for a zero-row frame.
     """
     if frame.height == 0:
         return set()
     model_ids = frame["model_id"].to_list()
     policy_ids = frame["vintage_policy_id"].to_list()
-    return {_encode_variant_key(m, p) for m, p in zip(model_ids, policy_ids, strict=True)}
+    return set(zip(model_ids, policy_ids, strict=True))
 
 
-def _pairs_frame(variant_keys: Sequence[str]) -> pl.DataFrame:
-    """Build a two-column `(model_id, vintage_policy_id)` frame from decoded keys.
+def _pairs_frame(pairs: Sequence[tuple[str, str]]) -> pl.DataFrame:
+    """Build a two-column `(model_id, vintage_policy_id)` frame from decoded pairs.
 
     Used as the right side of a semi-join to filter to exactly the
     requested Variants — see module docstring's RESOLVED DEFECT #2 note.
-    Keys that fail to decode (see `_decode_variant_key`) are dropped
-    silently: they cannot match any real row, so they contribute nothing
-    to the join, same as any other unmatched key.
+    Callers decode wire strings into pairs *once*, at the edge
+    (`day_forecast`/`variant_metrics`); this function never sees an
+    encoded string.
 
     Args:
-        variant_keys: `_encode_variant_key(...)` strings to decode.
+        pairs: Decoded `(model_id, vintage_policy_id)` pairs.
 
     Returns:
-        A frame with one row per successfully-decoded key, columns
+        A frame with one row per pair, columns
         `model_id`/`vintage_policy_id` — possibly zero rows.
     """
-    pairs = [decoded for key in variant_keys if (decoded := _decode_variant_key(key)) is not None]
     if not pairs:
         return pl.DataFrame(schema={"model_id": pl.String, "vintage_policy_id": pl.String})
     return pl.DataFrame(
@@ -514,19 +572,30 @@ def day_forecast(
             identify a Variant present anywhere in the store.
     """
     forecasts = _supersede(_load_forecasts(client))
-    known_keys = _known_variant_keys(forecasts)
+    known_pairs = _known_variant_pairs(forecasts)
 
+    # Decode every wire key exactly once, here, at the edge. From this
+    # point on nothing compares encoded strings to anything — only
+    # decoded tuples are compared, which is what makes the exact byte
+    # spelling of whichever encoder produced `variant_keys` irrelevant.
+    requested_pairs: list[tuple[str, str]] = []
+    unknown: list[str] = []
     if variant_keys:
-        unknown = sorted(set(variant_keys) - known_keys)
+        for key in variant_keys:
+            pair = _decode_variant_key(key)
+            if pair is None or pair not in known_pairs:
+                unknown.append(key)
+            else:
+                requested_pairs.append(pair)
         if unknown:
-            raise UnknownVariant(f"Unknown Variant key(s): {', '.join(unknown)}.")
+            raise UnknownVariant(f"Unknown Variant key(s): {', '.join(sorted(set(unknown)))}.")
 
     if forecasts.height == 0:
         return []
 
     day_rows = forecasts.filter(pl.col("settlement_date") == day)
-    if variant_keys:
-        day_rows = day_rows.join(_pairs_frame(variant_keys), on=list(_VARIANT_KEY), how="semi")
+    if requested_pairs:
+        day_rows = day_rows.join(_pairs_frame(requested_pairs), on=list(_VARIANT_KEY), how="semi")
     if day_rows.height == 0:
         return []
 
@@ -569,7 +638,13 @@ def variant_metrics(
         return []
 
     if variant_keys:
-        metrics = metrics.join(_pairs_frame(variant_keys), on=list(_VARIANT_KEY), how="semi")
+        # Decoded once, here — same rule as `day_forecast`. A key that
+        # fails to decode simply contributes no pair to filter on, same
+        # as any other unmatched key (no documented 404 for /metrics).
+        pairs = [
+            decoded for key in variant_keys if (decoded := _decode_variant_key(key)) is not None
+        ]
+        metrics = metrics.join(_pairs_frame(pairs), on=list(_VARIANT_KEY), how="semi")
     if metrics.height == 0:
         return []
 
