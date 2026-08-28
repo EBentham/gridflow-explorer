@@ -419,6 +419,126 @@ def empty_metrics_frame() -> pl.DataFrame:
     )
 
 
+def two_policy_forecasts_frame() -> pl.DataFrame:
+    """Fixture `gold_forecasts` frame pinning ADR-057 section 3's realised
+    collision: one `model_id` carrying **two live `vintage_policy_id`
+    families** for the same settlement day — the defect the P4 coordinator
+    review caught (`list_variants`/`day_forecast` grouped by `model_id`
+    alone would show only one policy and silently drop the other's rows).
+
+    Both policies deliver period 1 on 2026-08-10; `v1_rolling_23h30m` also
+    covers a second, earlier day (2025-01-01) that `v1_day_anchored_noon_d1`
+    does not, so their `first_settlement_date` spans genuinely differ, the
+    way the real store's do (2022-01-31 vs 2024-08-31).
+
+    Deliberately a separate fixture from `forecast_rows_frame` (which keeps
+    one policy per model) so the single-policy tests are not disturbed by
+    this scenario.
+    """
+    rows: list[dict[str, object]] = [
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "issued_at": _london(2025, 1, 1, 0, 0),
+            "delivery_time": _london(2025, 1, 1, 0, 0),
+            "settlement_date": date(2025, 1, 1),
+            "settlement_period": 1,
+            "actual": 20000.0,
+            "run_id": "run-rolling-old-day",
+            "written_at": _london(2025, 1, 1, 1, 0),
+            "gates_passed": True,
+            "q_0.05": 18000.0,
+            "q_0.5": 300.0,
+            "q_0.95": 21000.0,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "issued_at": _london(2026, 8, 9, 23, 30),
+            "delivery_time": _london(2026, 8, 10, 0, 0),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 1,
+            "actual": 21000.0,
+            "run_id": "run-rolling",
+            "written_at": _london(2026, 8, 10, 1, 0),
+            "gates_passed": True,
+            "q_0.05": 19000.0,
+            "q_0.5": 310.0,
+            "q_0.95": 21500.0,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_day_anchored_noon_d1",
+            "issued_at": _london(2026, 8, 9, 12, 0),
+            "delivery_time": _london(2026, 8, 10, 0, 0),
+            "settlement_date": date(2026, 8, 10),
+            "settlement_period": 1,
+            "actual": 21000.0,
+            "run_id": "run-day-anchored",
+            "written_at": _london(2026, 8, 10, 2, 0),
+            "gates_passed": True,
+            "q_0.05": 19500.0,
+            "q_0.5": 420.0,
+            "q_0.95": 21600.0,
+        },
+    ]
+    columns = list(rows[0].keys())
+    return pl.DataFrame({col: [row[col] for row in rows] for col in columns})
+
+
+def two_policy_metrics_frame() -> pl.DataFrame:
+    """Fixture `gold_forecast_metrics` frame matching `two_policy_forecasts_frame`.
+
+    One `scope='run'` row per `(model_id, vintage_policy_id)` pair, so
+    `variant_metrics` grouped by the pair returns both, distinctly.
+    """
+    rows: list[dict[str, object]] = [
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "run_id": "run-rolling",
+            "written_at": _london(2026, 8, 10, 1, 0),
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_rolling_23h30m",
+            "scope": "run",
+            "metric_kind": "gate",
+            "metric_name": "pinball_loss_overall",
+            "metric_value": 11.1,
+            "gate_passed": True,
+            "gate_threshold": 15.0,
+            "gate_message": "pass",
+            "train_size": 320,
+            "valid_size": 42,
+            "n_folds": 12,
+            "gates_passed": True,
+            "perfect_prog_caveat": False,
+        },
+        {
+            "model_id": "day_ahead.lgbm_demand.v1",
+            "run_id": "run-day-anchored",
+            "written_at": _london(2026, 8, 10, 2, 0),
+            "vintage_kind": "issued",
+            "vintage_policy_id": "v1_day_anchored_noon_d1",
+            "scope": "run",
+            "metric_kind": "gate",
+            "metric_name": "pinball_loss_overall",
+            "metric_value": 9.5,
+            "gate_passed": True,
+            "gate_threshold": 15.0,
+            "gate_message": "pass",
+            "train_size": 320,
+            "valid_size": 42,
+            "n_folds": 12,
+            "gates_passed": True,
+            "perfect_prog_caveat": False,
+        },
+    ]
+    columns = list(rows[0].keys())
+    return pl.DataFrame({col: [row[col] for row in rows] for col in columns})
+
+
 class ForecastStubClient:
     """Stand-in for `GridflowClient` in the P4 forecasts tests.
 
@@ -472,3 +592,19 @@ def empty_forecast_stub_client() -> ForecastStubClient:
 def empty_forecast_stub_client_ctx(empty_forecast_stub_client: ForecastStubClient) -> StubClientCtx:
     """A `StubClientCtx` wrapping `empty_forecast_stub_client`, ready to monkeypatch in."""
     return StubClientCtx(empty_forecast_stub_client)
+
+
+@pytest.fixture
+def two_policy_forecast_stub_client() -> ForecastStubClient:
+    """A `ForecastStubClient` pinning ADR-057 section 3's two-policy collision."""
+    return ForecastStubClient(
+        forecasts=two_policy_forecasts_frame(), metrics=two_policy_metrics_frame()
+    )
+
+
+@pytest.fixture
+def two_policy_forecast_stub_client_ctx(
+    two_policy_forecast_stub_client: ForecastStubClient,
+) -> StubClientCtx:
+    """A `StubClientCtx` wrapping `two_policy_forecast_stub_client`, ready to monkeypatch in."""
+    return StubClientCtx(two_policy_forecast_stub_client)

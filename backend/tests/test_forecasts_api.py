@@ -157,3 +157,85 @@ def test_forecast_stub_client_type_is_exercised_by_route(
     # Sanity check on the fixture wiring itself, matching test_api.py's
     # style of asserting `.entered` explicitly.
     assert isinstance(forecast_stub_client_ctx.client, ForecastStubClient)
+
+
+# --- Two-policy collision (ADR-057 section 3), exercised at the route ------
+
+
+def test_variants_two_policy_families_yield_two_entries_over_the_route(
+    monkeypatch: pytest.MonkeyPatch, two_policy_forecast_stub_client_ctx: StubClientCtx
+) -> None:
+    monkeypatch.setattr(forecasts_router, "client_ctx", two_policy_forecast_stub_client_ctx)
+
+    response = _client().get("/api/forecasts/variants")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 2
+    policy_ids = {entry["vintage_policy_id"] for entry in body}
+    assert policy_ids == {"v1_rolling_23h30m", "v1_day_anchored_noon_d1"}
+    titles = {entry["title"] for entry in body}
+    assert len(titles) == 2, "each policy must get a distinguishable title"
+
+
+def test_day_two_policy_rows_carry_vintage_policy_id_over_the_route(
+    monkeypatch: pytest.MonkeyPatch, two_policy_forecast_stub_client_ctx: StubClientCtx
+) -> None:
+    monkeypatch.setattr(forecasts_router, "client_ctx", two_policy_forecast_stub_client_ctx)
+
+    response = _client().get("/api/forecasts/day", params={"date": "2026-08-10"})
+
+    assert response.status_code == 200
+    records = response.json()
+    period_1 = [r for r in records if r["settlement_period"] == 1]
+    assert len(period_1) == 2
+    assert {r["vintage_policy_id"] for r in period_1} == {
+        "v1_rolling_23h30m",
+        "v1_day_anchored_noon_d1",
+    }
+
+
+def test_day_vintage_policy_id_query_param_narrows_to_one_policy_over_the_route(
+    monkeypatch: pytest.MonkeyPatch, two_policy_forecast_stub_client_ctx: StubClientCtx
+) -> None:
+    monkeypatch.setattr(forecasts_router, "client_ctx", two_policy_forecast_stub_client_ctx)
+
+    response = _client().get(
+        "/api/forecasts/day",
+        params={"date": "2026-08-10", "vintage_policy_id": "v1_day_anchored_noon_d1"},
+    )
+
+    assert response.status_code == 200
+    records = response.json()
+    period_1 = [r for r in records if r["settlement_period"] == 1]
+    assert len(period_1) == 1
+    assert period_1[0]["vintage_policy_id"] == "v1_day_anchored_noon_d1"
+
+
+def test_day_unknown_vintage_policy_id_returns_404_over_the_route(
+    monkeypatch: pytest.MonkeyPatch, two_policy_forecast_stub_client_ctx: StubClientCtx
+) -> None:
+    monkeypatch.setattr(forecasts_router, "client_ctx", two_policy_forecast_stub_client_ctx)
+
+    response = _client().get(
+        "/api/forecasts/day",
+        params={"date": "2026-08-10", "vintage_policy_id": "not-a-real-policy"},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "unknown_variant"
+
+
+def test_metrics_two_policy_families_grouped_per_pair_over_the_route(
+    monkeypatch: pytest.MonkeyPatch, two_policy_forecast_stub_client_ctx: StubClientCtx
+) -> None:
+    monkeypatch.setattr(forecasts_router, "client_ctx", two_policy_forecast_stub_client_ctx)
+
+    response = _client().get("/api/forecasts/metrics")
+
+    assert response.status_code == 200
+    records = response.json()
+    assert len(records) == 2
+    by_policy = {r["vintage_policy_id"]: r for r in records}
+    assert by_policy["v1_rolling_23h30m"]["metric_value"] == 11.1
+    assert by_policy["v1_day_anchored_noon_d1"]["metric_value"] == 9.5
