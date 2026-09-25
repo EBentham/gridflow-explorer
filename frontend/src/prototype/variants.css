@@ -1,0 +1,1322 @@
+/* PROTOTYPE tokens + shells, one section per variant (mix by system).
+   Each variant: light tokens, dark tokens (OS preference unless the viewer
+   stamps data-theme), then its shell. Fuel hexes are validator-passing sets
+   (dataviz validate_palette.js, adjacent pairs in stack order). */
+
+/* =============================================================== A: Synoptic */
+:root[data-variant='a'] {
+  --scheme: light;
+  --font-ui: 'Barlow', system-ui, sans-serif;
+  --font-display: 'Barlow Semi Condensed', 'Barlow', sans-serif;
+  --font-data: 'Barlow', sans-serif;
+  --chart-font: 'Barlow Semi Condensed', sans-serif;
+  --text-size: 15px;
+  --h1-size: 34px;
+  --h1-weight: 600;
+  --h2-size: 18px;
+  --radius-sm: 2px;
+  --bg: #f0f3f2;
+  --surface: #f0f3f2;
+  --panel: #e2e9e8;
+  --ink: #16273a;
+  --ink-2: #3e5163;
+  --muted: #5d6f7e;
+  --rule: #c9d4d6;
+  --rule-strong: #9fb1b8;
+  --accent: #1f4e73;
+  --accent-ink: #f0f3f2;
+  --hover: rgb(31 78 115 / 0.08);
+  --selected: rgb(31 78 115 / 0.14);
+  --focus: #1f4e73;
+  --chart-surface: #f0f3f2;
+  --chart-grid: #d6dfe1;
+  --chart-grid-strong: #a9bcc2;
+  --chart-axis: #7f929c;
+  --chart-tick: #4f6272;
+  --chart-cursor: #16273a;
+  --chart-price: #1f4e73;
+  --chart-price-2: #a5432a;
+  --chart-niv-short: #b5552f;
+  --chart-niv-long: #3e7ca8;
+  --chart-fan: #1f4e73;
+  --chart-fan-soft: #6a8fad;
+  --chart-actual: #a5432a;
+  --heat-lo: #e4ecec;
+  --heat-hi: #1f4e73;
+  --status-pass: #2f6f4e;
+  --status-fail: #a3322a;
+  --tip-bg: #fbfcfc;
+  --tip-border: #9fb1b8;
+  --tip-ink: #16273a;
+  --tip-muted: #4f6272;
+  --fixture-ink: #8a4b12;
+  --fixture-bg: #f6e7d2;
+  --fuel-nuclear: #744e9b;
+  --fuel-hydro: #5da7d9;
+  --fuel-biomass: #648e24;
+  --fuel-wind: #008b9f;
+  --fuel-gas: #e18f45;
+  --fuel-peaking: #a53c2a;
+  --fuel-other: #cbae5f;
+  --fuel-pumped_storage: #4b67a5;
+  --fuel-imports: #bc81b7;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-variant='a']:not([data-theme='light']) {
+    --scheme: dark;
+    --bg: #131c24;
+    --surface: #131c24;
+    --panel: #0e151b;
+    --ink: #e3ebef;
+    --ink-2: #b3c2cc;
+    --muted: #8a9dab;
+    --rule: #26343f;
+    --rule-strong: #3c4e5b;
+    --accent: #8db8d8;
+    --accent-ink: #0e151b;
+    --hover: rgb(141 184 216 / 0.1);
+    --selected: rgb(141 184 216 / 0.18);
+    --focus: #8db8d8;
+    --chart-surface: #131c24;
+    --chart-grid: #1f2c36;
+    --chart-grid-strong: #3a4b58;
+    --chart-axis: #5e7180;
+    --chart-tick: #9db0bd;
+    --chart-cursor: #e3ebef;
+    --chart-price: #8db8d8;
+    --chart-niv-short: #d9774a;
+    --chart-niv-long: #5e9ccb;
+    --chart-fan: #8db8d8;
+    --chart-fan-soft: #5e86a3;
+    --chart-actual: #f09a7c;
+    --heat-lo: #1a2630;
+    --heat-hi: #8db8d8;
+    --status-pass: #6cc29a;
+    --status-fail: #f0806f;
+    --tip-bg: #0e151b;
+    --tip-border: #3c4e5b;
+    --tip-ink: #e3ebef;
+    --tip-muted: #9db0bd;
+    --fixture-ink: #f0b67a;
+    --fixture-bg: #3a2a18;
+    --fuel-nuclear: #875eb2;
+    --fuel-hydro: #509acc;
+    --fuel-biomass: #577e22;
+    --fuel-wind: #169e9e;
+    --fuel-gas: #cc7c30;
+    --fuel-peaking: #ab4230;
+    --fuel-other: #a58938;
+    --fuel-pumped_storage: #4b6dbe;
+    --fuel-imports: #b378ad;
+  }
+}
+:root[data-variant='a'][data-theme='dark'] {
+  --scheme: dark;
+  --bg: #131c24;
+  --surface: #131c24;
+  --panel: #0e151b;
+  --ink: #e3ebef;
+  --ink-2: #b3c2cc;
+  --muted: #8a9dab;
+  --rule: #26343f;
+  --rule-strong: #3c4e5b;
+  --accent: #8db8d8;
+  --accent-ink: #0e151b;
+  --hover: rgb(141 184 216 / 0.1);
+  --selected: rgb(141 184 216 / 0.18);
+  --focus: #8db8d8;
+  --chart-surface: #131c24;
+  --chart-grid: #1f2c36;
+  --chart-grid-strong: #3a4b58;
+  --chart-axis: #5e7180;
+  --chart-tick: #9db0bd;
+  --chart-cursor: #e3ebef;
+  --chart-price: #8db8d8;
+  --chart-niv-short: #d9774a;
+  --chart-niv-long: #5e9ccb;
+  --chart-fan: #8db8d8;
+  --chart-fan-soft: #5e86a3;
+  --chart-actual: #f09a7c;
+  --heat-lo: #1a2630;
+  --heat-hi: #8db8d8;
+  --status-pass: #6cc29a;
+  --status-fail: #f0806f;
+  --tip-bg: #0e151b;
+  --tip-border: #3c4e5b;
+  --tip-ink: #e3ebef;
+  --tip-muted: #9db0bd;
+  --fixture-ink: #f0b67a;
+  --fixture-bg: #3a2a18;
+  --fuel-nuclear: #875eb2;
+  --fuel-hydro: #509acc;
+  --fuel-biomass: #577e22;
+  --fuel-wind: #169e9e;
+  --fuel-gas: #cc7c30;
+  --fuel-peaking: #ab4230;
+  --fuel-other: #a58938;
+  --fuel-pumped_storage: #4b6dbe;
+  --fuel-imports: #b378ad;
+}
+
+.a-shell {
+  display: grid;
+  grid-template-columns: 272px minmax(0, 1fr);
+  min-height: 100svh;
+}
+.a-key {
+  background: var(--panel);
+  border-right: 1px solid var(--rule-strong);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  box-sizing: border-box;
+  overflow: auto;
+}
+.a-brand {
+  display: grid;
+  gap: 2px;
+}
+.a-brand-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--ink);
+}
+.a-brand-sub {
+  color: var(--muted);
+  font-size: 13px;
+}
+.a-nav {
+  display: grid;
+  border-top: 1px solid var(--rule-strong);
+}
+.a-nav-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule);
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--ink-2);
+}
+.a-nav-item:hover {
+  color: var(--ink);
+}
+.a-nav-item.is-active {
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--accent);
+  padding-left: 10px;
+}
+.a-tag {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--fixture-ink);
+}
+.a-slot:empty {
+  display: none;
+}
+.a-source {
+  margin: auto 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.a-main {
+  padding: 28px 40px 64px;
+  min-width: 0;
+}
+:root[data-variant='a'] .gf-screen-head {
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 32px;
+}
+:root[data-variant='a'] .gf-screen-title,
+:root[data-variant='a'] .gf-screen-sub {
+  grid-column: 1;
+}
+:root[data-variant='a'] .gf-stamp {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: start;
+  border: 1.5px solid var(--ink);
+  padding: 8px 12px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--surface);
+  max-width: 220px;
+}
+:root[data-variant='a'] .gf-seg {
+  border-color: var(--ink);
+}
+:root[data-variant='a'] .gf-seg button {
+  border-color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 15px;
+}
+:root[data-variant='a'] .gf-metrics-block h2 {
+  font-size: 20px;
+}
+
+/* =============================================================== B: Control room */
+:root[data-variant='b'] {
+  --scheme: dark;
+  --font-ui: 'Overpass', system-ui, sans-serif;
+  --font-display: 'Overpass', sans-serif;
+  --font-data: 'Overpass Mono', monospace;
+  --chart-font: 'Overpass', sans-serif;
+  --text-size: 14px;
+  --h1-size: 22px;
+  --h1-weight: 700;
+  --h1-tracking: 0;
+  --h2-size: 15px;
+  --radius-sm: 4px;
+  --side-width: 340px;
+  --bg: #0e1720;
+  --surface: #14202b;
+  --panel: #14202b;
+  --ink: #dce6ee;
+  --ink-2: #a9b8c5;
+  --muted: #8193a3;
+  --rule: #223140;
+  --rule-strong: #34495d;
+  --accent: #4f9fe0;
+  --accent-ink: #06101a;
+  --hover: rgb(79 159 224 / 0.1);
+  --selected: rgb(79 159 224 / 0.2);
+  --focus: #7db8ee;
+  --chart-surface: #14202b;
+  --chart-grid: #1f2d3a;
+  --chart-grid-strong: #2e4152;
+  --chart-axis: #3e5366;
+  --chart-tick: #93a5b5;
+  --chart-cursor: #dce6ee;
+  --chart-price: #eaf1f7;
+  --chart-price-2: #f0b429;
+  --chart-niv-short: #e0884a;
+  --chart-niv-long: #4c8fd1;
+  --chart-fan: #6fb6f0;
+  --chart-fan-soft: #3f7db5;
+  --chart-actual: #f1f5f8;
+  --heat-lo: #172431;
+  --heat-hi: #6fb6f0;
+  --lamp-ok: #3dbe74;
+  --lamp-warn: #f0b429;
+  --lamp-bad: #f0584a;
+  --status-pass: #3dbe74;
+  --status-fail: #f0584a;
+  --tip-bg: #0a121a;
+  --tip-border: #34495d;
+  --tip-ink: #dce6ee;
+  --tip-muted: #93a5b5;
+  --tip-shadow: 0 6px 18px rgb(0 0 0 / 0.5);
+  --fixture-ink: #f0b429;
+  --fixture-bg: rgb(240 180 41 / 0.1);
+  --fuel-nuclear: #8b56bf;
+  --fuel-hydro: #4599da;
+  --fuel-biomass: #3f971b;
+  --fuel-wind: #01999e;
+  --fuel-gas: #cf7c00;
+  --fuel-peaking: #b7331d;
+  --fuel-other: #aa8812;
+  --fuel-pumped_storage: #4264b8;
+  --fuel-imports: #af6ea9;
+}
+@media (prefers-color-scheme: light) {
+  :root[data-variant='b']:not([data-theme='dark']) {
+    --scheme: light;
+    --bg: #e6ecf1;
+    --surface: #f7f9fb;
+    --panel: #f7f9fb;
+    --ink: #102030;
+    --ink-2: #3b4f62;
+    --muted: #5a6e80;
+    --rule: #d3dce4;
+    --rule-strong: #b3c1cd;
+    --accent: #1f6fb5;
+    --accent-ink: #ffffff;
+    --hover: rgb(31 111 181 / 0.08);
+    --selected: rgb(31 111 181 / 0.14);
+    --focus: #1f6fb5;
+    --chart-surface: #f7f9fb;
+    --chart-grid: #e3e9ee;
+    --chart-grid-strong: #c5d0da;
+    --chart-axis: #9aaab8;
+    --chart-tick: #4e6275;
+    --chart-cursor: #102030;
+    --chart-price: #102030;
+    --chart-niv-short: #c4602a;
+    --chart-niv-long: #2c6cb0;
+    --chart-fan: #1f6fb5;
+    --chart-fan-soft: #6c9fcc;
+    --chart-actual: #102030;
+    --heat-lo: #e3eaf1;
+    --heat-hi: #1f6fb5;
+    --lamp-ok: #1e8e4e;
+    --lamp-warn: #a86a12;
+    --status-pass: #1e8e4e;
+    --status-fail: #c8372d;
+    --tip-bg: #ffffff;
+    --tip-border: #b3c1cd;
+    --tip-ink: #102030;
+    --tip-muted: #4e6275;
+    --tip-shadow: 0 6px 18px rgb(16 32 48 / 0.14);
+    --fixture-ink: #8a5a00;
+    --fixture-bg: #fbf0d8;
+    --fuel-nuclear: #7848a6;
+    --fuel-hydro: #52a6e8;
+    --fuel-biomass: #418f2e;
+    --fuel-wind: #008b9f;
+    --fuel-gas: #e88c03;
+    --fuel-peaking: #b02b15;
+    --fuel-other: #d0ad46;
+    --fuel-pumped_storage: #4465b1;
+    --fuel-imports: #c07dba;
+  }
+}
+:root[data-variant='b'][data-theme='light'] {
+  --scheme: light;
+  --bg: #e6ecf1;
+  --surface: #f7f9fb;
+  --panel: #f7f9fb;
+  --ink: #102030;
+  --ink-2: #3b4f62;
+  --muted: #5a6e80;
+  --rule: #d3dce4;
+  --rule-strong: #b3c1cd;
+  --accent: #1f6fb5;
+  --accent-ink: #ffffff;
+  --hover: rgb(31 111 181 / 0.08);
+  --selected: rgb(31 111 181 / 0.14);
+  --focus: #1f6fb5;
+  --chart-surface: #f7f9fb;
+  --chart-grid: #e3e9ee;
+  --chart-grid-strong: #c5d0da;
+  --chart-axis: #9aaab8;
+  --chart-tick: #4e6275;
+  --chart-cursor: #102030;
+  --chart-price: #102030;
+  --chart-niv-short: #c4602a;
+  --chart-niv-long: #2c6cb0;
+  --chart-fan: #1f6fb5;
+  --chart-fan-soft: #6c9fcc;
+  --chart-actual: #102030;
+  --heat-lo: #e3eaf1;
+  --heat-hi: #1f6fb5;
+  --lamp-ok: #1e8e4e;
+  --lamp-warn: #a86a12;
+  --status-pass: #1e8e4e;
+  --status-fail: #c8372d;
+  --tip-bg: #ffffff;
+  --tip-border: #b3c1cd;
+  --tip-ink: #102030;
+  --tip-muted: #4e6275;
+  --tip-shadow: 0 6px 18px rgb(16 32 48 / 0.14);
+  --fixture-ink: #8a5a00;
+  --fixture-bg: #fbf0d8;
+  --fuel-nuclear: #7848a6;
+  --fuel-hydro: #52a6e8;
+  --fuel-biomass: #418f2e;
+  --fuel-wind: #008b9f;
+  --fuel-gas: #e88c03;
+  --fuel-peaking: #b02b15;
+  --fuel-other: #d0ad46;
+  --fuel-pumped_storage: #4465b1;
+  --fuel-imports: #c07dba;
+}
+
+.b-shell {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+.b-top {
+  display: flex;
+  align-items: stretch;
+  gap: 32px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--bg);
+}
+.b-brand {
+  display: flex;
+  align-items: center;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--ink);
+}
+.b-tabs {
+  display: flex;
+  gap: 4px;
+}
+.b-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 14px 12px;
+  text-decoration: none;
+  color: var(--ink-2);
+  border-bottom: 2px solid transparent;
+}
+.b-tab:hover {
+  color: var(--ink);
+}
+.b-tab.is-active {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+.b-tag {
+  font-size: 11px;
+  color: var(--fixture-ink);
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  padding: 0 4px;
+}
+.b-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border-bottom: 1px solid var(--rule);
+  background: var(--panel);
+}
+.b-read {
+  display: grid;
+  gap: 2px;
+  padding: 10px 20px;
+  border-right: 1px solid var(--rule);
+}
+.b-read-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.b-read-value {
+  font-family: var(--font-data);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.b-read-when .b-read-value {
+  font-family: var(--font-ui);
+}
+.b-lamp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  margin-left: auto;
+  color: var(--ink-2);
+}
+.b-lamp-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.b-lamp.is-ok .b-lamp-dot {
+  background: var(--lamp-ok);
+}
+.b-lamp.is-warn .b-lamp-dot {
+  background: var(--lamp-warn);
+}
+.b-wall {
+  padding: 20px 24px 64px;
+  min-width: 0;
+}
+:root[data-variant='b'] .gf-main > .gf-chart,
+:root[data-variant='b'] .gf-main > .gf-chart-stack,
+:root[data-variant='b'] .gf-side,
+:root[data-variant='b'] .gf-metrics-block,
+:root[data-variant='b'] .gf-table-wrap {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 12px 12px 26px;
+}
+:root[data-variant='b'] .gf-side {
+  padding: 16px;
+}
+:root[data-variant='b'] .gf-chart-stack .gf-chart {
+  border: 0;
+  padding: 0;
+}
+:root[data-variant='b'] .gf-axis-caption {
+  bottom: -20px;
+}
+:root[data-variant='b'] .gf-screen-head {
+  grid-template-columns: auto 1fr;
+  column-gap: 16px;
+  align-items: baseline;
+}
+:root[data-variant='b'] .gf-screen-sub {
+  grid-column: 1 / -1;
+}
+:root[data-variant='b'] .gf-stamp {
+  grid-row: 1;
+  grid-column: 2;
+  font-family: var(--font-data);
+  font-size: 13px;
+}
+:root[data-variant='b'] .gf-seg {
+  background: var(--panel);
+}
+
+/* =============================================================== C: Chart recorder */
+:root[data-variant='c'] {
+  --scheme: light;
+  --font-ui: 'Archivo', system-ui, sans-serif;
+  --font-display: 'Archivo', sans-serif;
+  --font-data: 'Archivo', sans-serif;
+  --chart-font: 'Archivo', sans-serif;
+  --text-size: 14.5px;
+  --h1-size: 30px;
+  --h1-weight: 800;
+  --h1-tracking: -0.015em;
+  --h2-size: 16px;
+  --radius-sm: 0px;
+  --aside-width: 260px;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --panel: #f4f7f5;
+  --ink: #1a1f1b;
+  --ink-2: #45514a;
+  --muted: #5f6c64;
+  --rule: #dce8df;
+  --rule-strong: #a9cbb3;
+  --accent: #c8102e;
+  --accent-ink: #ffffff;
+  --hover: rgb(26 31 27 / 0.05);
+  --selected: rgb(200 16 46 / 0.1);
+  --focus: #c8102e;
+  --chart-surface: #ffffff;
+  --chart-grid: #e1efe4;
+  --chart-grid-strong: #9fcbaa;
+  --chart-axis: #6e9a7a;
+  --chart-tick: #3f5a47;
+  --chart-cursor: #c8102e;
+  --chart-price: #c8102e;
+  --chart-price-2: #1f4fa8;
+  --chart-niv-short: #d0642a;
+  --chart-niv-long: #1f4fa8;
+  --chart-fan: #1f4fa8;
+  --chart-fan-soft: #7f9dd0;
+  --chart-actual: #1a1f1b;
+  --heat-lo: #eef6f0;
+  --heat-hi: #1f4fa8;
+  --status-pass: #1e7a3e;
+  --status-fail: #c8102e;
+  --tip-bg: #ffffff;
+  --tip-border: #1a1f1b;
+  --tip-ink: #1a1f1b;
+  --tip-muted: #45514a;
+  --tip-shadow: none;
+  --fixture-ink: #9a4a00;
+  --fixture-bg: #fff3e6;
+  --fuel-nuclear: #6c4bb1;
+  --fuel-hydro: #41a8e8;
+  --fuel-biomass: #5d8a1c;
+  --fuel-wind: #0081a0;
+  --fuel-gas: #ef8604;
+  --fuel-peaking: #b3260e;
+  --fuel-other: #d2ad3f;
+  --fuel-pumped_storage: #4364b4;
+  --fuel-imports: #c27cbb;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-variant='c']:not([data-theme='light']) {
+    --scheme: dark;
+    --bg: #161917;
+    --surface: #161917;
+    --panel: #1e2320;
+    --ink: #e8ede9;
+    --ink-2: #b6c2ba;
+    --muted: #8d9a92;
+    --rule: #26302a;
+    --rule-strong: #3a5443;
+    --accent: #ff6b6b;
+    --accent-ink: #161917;
+    --hover: rgb(232 237 233 / 0.06);
+    --selected: rgb(255 107 107 / 0.14);
+    --focus: #ff6b6b;
+    --chart-surface: #161917;
+    --chart-grid: #1f2a23;
+    --chart-grid-strong: #36513f;
+    --chart-axis: #4f6e59;
+    --chart-tick: #9db5a5;
+    --chart-cursor: #ff6b6b;
+    --chart-price: #ff6b6b;
+    --chart-niv-short: #f08a4b;
+    --chart-niv-long: #6f9bf0;
+    --chart-fan: #8fb0ff;
+    --chart-fan-soft: #5b7bc0;
+    --chart-actual: #f2f5f3;
+    --heat-lo: #1e2621;
+    --heat-hi: #8fb0ff;
+    --status-pass: #6fd08f;
+    --status-fail: #ff6b6b;
+    --tip-bg: #161917;
+    --tip-border: #e8ede9;
+    --tip-ink: #e8ede9;
+    --tip-muted: #b6c2ba;
+    --fixture-ink: #ffb870;
+    --fixture-bg: #33261a;
+    --fuel-nuclear: #7e5acb;
+    --fuel-hydro: #329bda;
+    --fuel-biomass: #639024;
+    --fuel-wind: #0098a4;
+    --fuel-gas: #d57700;
+    --fuel-peaking: #ba2e17;
+    --fuel-other: #ab8700;
+    --fuel-pumped_storage: #3b5eb6;
+    --fuel-imports: #a666a0;
+  }
+}
+:root[data-variant='c'][data-theme='dark'] {
+  --scheme: dark;
+  --bg: #161917;
+  --surface: #161917;
+  --panel: #1e2320;
+  --ink: #e8ede9;
+  --ink-2: #b6c2ba;
+  --muted: #8d9a92;
+  --rule: #26302a;
+  --rule-strong: #3a5443;
+  --accent: #ff6b6b;
+  --accent-ink: #161917;
+  --hover: rgb(232 237 233 / 0.06);
+  --selected: rgb(255 107 107 / 0.14);
+  --focus: #ff6b6b;
+  --chart-surface: #161917;
+  --chart-grid: #1f2a23;
+  --chart-grid-strong: #36513f;
+  --chart-axis: #4f6e59;
+  --chart-tick: #9db5a5;
+  --chart-cursor: #ff6b6b;
+  --chart-price: #ff6b6b;
+  --chart-niv-short: #f08a4b;
+  --chart-niv-long: #6f9bf0;
+  --chart-fan: #8fb0ff;
+  --chart-fan-soft: #5b7bc0;
+  --chart-actual: #f2f5f3;
+  --heat-lo: #1e2621;
+  --heat-hi: #8fb0ff;
+  --status-pass: #6fd08f;
+  --status-fail: #ff6b6b;
+  --tip-bg: #161917;
+  --tip-border: #e8ede9;
+  --tip-ink: #e8ede9;
+  --tip-muted: #b6c2ba;
+  --fixture-ink: #ffb870;
+  --fixture-bg: #33261a;
+  --fuel-nuclear: #7e5acb;
+  --fuel-hydro: #329bda;
+  --fuel-biomass: #639024;
+  --fuel-wind: #0098a4;
+  --fuel-gas: #d57700;
+  --fuel-peaking: #ba2e17;
+  --fuel-other: #ab8700;
+  --fuel-pumped_storage: #3b5eb6;
+  --fuel-imports: #a666a0;
+}
+
+.c-shell {
+  min-height: 100svh;
+}
+.c-roll {
+  display: flex;
+  align-items: flex-end;
+  gap: 40px;
+  padding: 0 32px;
+  border-bottom: 2px solid var(--ink);
+}
+.c-brand {
+  font-weight: 800;
+  font-stretch: 112%;
+  font-size: 17px;
+  padding: 18px 0 12px;
+}
+.c-tabs {
+  display: flex;
+  gap: 0;
+}
+.c-tab {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 10px 18px 9px;
+  text-decoration: none;
+  color: var(--ink-2);
+  border: 1px solid transparent;
+  border-bottom: 0;
+  margin-bottom: -2px;
+  font-stretch: 90%;
+}
+.c-tab:hover {
+  color: var(--ink);
+}
+.c-tab.is-active {
+  color: var(--ink);
+  background: var(--surface);
+  border-color: var(--ink);
+  border-bottom: 2px solid var(--surface);
+  font-weight: 700;
+}
+.c-tag {
+  font-size: 11.5px;
+  color: var(--fixture-ink);
+}
+.c-paper {
+  padding: 24px 32px 64px;
+}
+:root[data-variant='c'] .gf-screen-head h1 {
+  font-stretch: 112%;
+}
+:root[data-variant='c'] .gf-chart {
+  border-top: 1px solid var(--chart-grid-strong);
+  border-bottom: 1px solid var(--chart-grid-strong);
+}
+:root[data-variant='c'] .gf-aside {
+  border-left: 1px solid var(--rule-strong);
+  padding-left: 20px;
+  min-height: 100%;
+}
+:root[data-variant='c'] .gf-seg,
+:root[data-variant='c'] .gf-seg button {
+  border-color: var(--ink);
+}
+:root[data-variant='c'] .gf-seg button {
+  font-stretch: 90%;
+}
+:root[data-variant='c'] .gf-table,
+:root[data-variant='c'] .gf-tip {
+  font-stretch: 88%;
+}
+
+/* =============================================================== D: Settlement ledger */
+:root[data-variant='d'] {
+  --scheme: light;
+  --font-ui: 'Source Serif 4', Georgia, serif;
+  --font-display: 'Source Serif 4', Georgia, serif;
+  --font-data: 'Source Serif 4', Georgia, serif;
+  --chart-font: 'Source Serif 4', Georgia, serif;
+  --text-size: 15px;
+  --h1-size: 30px;
+  --h1-weight: 600;
+  --h2-size: 17px;
+  --radius-sm: 3px;
+  --aside-width: 220px;
+  --heat-label: 96px;
+  --bg: #fafaf7;
+  --surface: #ffffff;
+  --panel: #f1f0ea;
+  --ink: #1d1c1a;
+  --ink-2: #4a4843;
+  --muted: #69665e;
+  --rule: #e6e4dc;
+  --rule-strong: #c9c6ba;
+  --accent: #2e6a4f;
+  --accent-ink: #ffffff;
+  --hover: rgb(46 106 79 / 0.07);
+  --selected: rgb(46 106 79 / 0.13);
+  --focus: #2e6a4f;
+  --chart-surface: #ffffff;
+  --chart-grid: #eceae3;
+  --chart-grid-strong: #cfccc1;
+  --chart-axis: #9a968a;
+  --chart-tick: #5c5a53;
+  --chart-cursor: #1d1c1a;
+  --chart-price: #2e6a4f;
+  --chart-price-2: #b4572e;
+  --chart-niv-short: #b4572e;
+  --chart-niv-long: #3d6e9e;
+  --chart-fan: #2e6a4f;
+  --chart-fan-soft: #7fa792;
+  --chart-actual: #1d1c1a;
+  --heat-lo: #efeee8;
+  --heat-hi: #2e6a4f;
+  --status-pass: #2e6a4f;
+  --status-fail: #a8322a;
+  --tip-bg: #ffffff;
+  --tip-border: #c9c6ba;
+  --tip-ink: #1d1c1a;
+  --tip-muted: #5c5a53;
+  --fixture-ink: #8a4b12;
+  --fixture-bg: #f7ead8;
+  --fuel-nuclear: #725195;
+  --fuel-hydro: #5ea7d8;
+  --fuel-biomass: #71934d;
+  --fuel-wind: #00859e;
+  --fuel-gas: #de8f58;
+  --fuel-peaking: #9f4231;
+  --fuel-other: #caae60;
+  --fuel-pumped_storage: #4b67a4;
+  --fuel-imports: #bc81b7;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-variant='d']:not([data-theme='light']) {
+    --scheme: dark;
+    --bg: #1b1a18;
+    --surface: #22211e;
+    --panel: #151513;
+    --ink: #edebe4;
+    --ink-2: #bdb9ae;
+    --muted: #938f84;
+    --rule: #2f2d29;
+    --rule-strong: #46433d;
+    --accent: #7fc3a0;
+    --accent-ink: #151513;
+    --hover: rgb(127 195 160 / 0.08);
+    --selected: rgb(127 195 160 / 0.16);
+    --focus: #7fc3a0;
+    --chart-surface: #22211e;
+    --chart-grid: #2b2a26;
+    --chart-grid-strong: #45423b;
+    --chart-axis: #6c685e;
+    --chart-tick: #ada99e;
+    --chart-cursor: #edebe4;
+    --chart-price: #7fc3a0;
+    --chart-niv-short: #e08a5c;
+    --chart-niv-long: #7ba6d6;
+    --chart-fan: #7fc3a0;
+    --chart-fan-soft: #4f7e66;
+    --chart-actual: #f4f2ec;
+    --heat-lo: #262521;
+    --heat-hi: #7fc3a0;
+    --status-pass: #7fc3a0;
+    --status-fail: #f0806f;
+    --tip-bg: #151513;
+    --tip-border: #46433d;
+    --tip-ink: #edebe4;
+    --tip-muted: #ada99e;
+    --fixture-ink: #f0b67a;
+    --fixture-bg: #33281c;
+    --fuel-nuclear: #8561ac;
+    --fuel-hydro: #519acb;
+    --fuel-biomass: #5e8233;
+    --fuel-wind: #29a5a7;
+    --fuel-gas: #c97d45;
+    --fuel-peaking: #a34635;
+    --fuel-other: #a4893a;
+    --fuel-pumped_storage: #4e6aa8;
+    --fuel-imports: #b378ad;
+  }
+}
+:root[data-variant='d'][data-theme='dark'] {
+  --scheme: dark;
+  --bg: #1b1a18;
+  --surface: #22211e;
+  --panel: #151513;
+  --ink: #edebe4;
+  --ink-2: #bdb9ae;
+  --muted: #938f84;
+  --rule: #2f2d29;
+  --rule-strong: #46433d;
+  --accent: #7fc3a0;
+  --accent-ink: #151513;
+  --hover: rgb(127 195 160 / 0.08);
+  --selected: rgb(127 195 160 / 0.16);
+  --focus: #7fc3a0;
+  --chart-surface: #22211e;
+  --chart-grid: #2b2a26;
+  --chart-grid-strong: #45423b;
+  --chart-axis: #6c685e;
+  --chart-tick: #ada99e;
+  --chart-cursor: #edebe4;
+  --chart-price: #7fc3a0;
+  --chart-niv-short: #e08a5c;
+  --chart-niv-long: #7ba6d6;
+  --chart-fan: #7fc3a0;
+  --chart-fan-soft: #4f7e66;
+  --chart-actual: #f4f2ec;
+  --heat-lo: #262521;
+  --heat-hi: #7fc3a0;
+  --status-pass: #7fc3a0;
+  --status-fail: #f0806f;
+  --tip-bg: #151513;
+  --tip-border: #46433d;
+  --tip-ink: #edebe4;
+  --tip-muted: #ada99e;
+  --fixture-ink: #f0b67a;
+  --fixture-bg: #33281c;
+  --fuel-nuclear: #8561ac;
+  --fuel-hydro: #519acb;
+  --fuel-biomass: #5e8233;
+  --fuel-wind: #29a5a7;
+  --fuel-gas: #c97d45;
+  --fuel-peaking: #a34635;
+  --fuel-other: #a4893a;
+  --fuel-pumped_storage: #4e6aa8;
+  --fuel-imports: #b378ad;
+}
+
+.d-shell {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 100svh;
+}
+.d-rail {
+  background: var(--panel);
+  padding: 24px 0;
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.d-brand {
+  font-weight: 700;
+  font-size: 19px;
+  padding: 0 20px;
+}
+.d-rail-note {
+  margin: 0;
+  padding: 0 20px 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.d-rail nav {
+  display: grid;
+  border-top: 1px solid var(--rule-strong);
+}
+.d-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 20px;
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-2);
+}
+.d-row:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+.d-row.is-active {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+}
+.d-row-value {
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--ink);
+}
+.d-rail-foot {
+  margin: auto 0 0;
+  padding: 0 20px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.d-main {
+  padding: 28px 40px 64px;
+  min-width: 0;
+}
+:root[data-variant='d'] .gf-screen-sub {
+  font-size: 16px;
+}
+:root[data-variant='d'] .gf-stamp {
+  font-style: normal;
+  color: var(--ink-2);
+}
+:root[data-variant='d'] .gf-chart {
+  border: 1px solid var(--rule);
+}
+:root[data-variant='d'] .gf-table {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+:root[data-variant='d'] .gf-table-wrap {
+  max-height: none;
+  background: var(--surface);
+}
+:root[data-variant='d'] .gf-heat {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 14px 16px;
+}
+
+/* =============================================================== E: Emission lines */
+:root[data-variant='e'] {
+  --scheme: dark;
+  --font-ui: 'Host Grotesk', system-ui, sans-serif;
+  --font-display: 'Host Grotesk', sans-serif;
+  --font-data: 'Host Grotesk', sans-serif;
+  --chart-font: 'Host Grotesk', sans-serif;
+  --text-size: 15px;
+  --h1-size: 15px;
+  --h1-weight: 700;
+  --h1-tracking: 0.01em;
+  --h2-size: 15px;
+  --radius-sm: 0px;
+  --aside-width: 220px;
+  --bg: #141517;
+  --surface: #141517;
+  --panel: #1b1c1f;
+  --ink: #e9e4d8;
+  --ink-2: #b5b0a5;
+  --muted: #8a867e;
+  --rule: #26272b;
+  --rule-strong: #3a3b40;
+  --accent: #e9e4d8;
+  --accent-ink: #141517;
+  --hover: rgb(233 228 216 / 0.06);
+  --selected: rgb(233 228 216 / 0.12);
+  --focus: #ffd66b;
+  --chart-surface: #141517;
+  --chart-grid: #1f2023;
+  --chart-grid-strong: #2c2d31;
+  --chart-axis: #3a3b40;
+  --chart-tick: #8c877d;
+  --chart-cursor: #ffd66b;
+  --chart-price: #ffd66b;
+  --chart-price-2: #ff8a5c;
+  --chart-niv-short: #ff8a5c;
+  --chart-niv-long: #6fa8ff;
+  --chart-fan: #9fd4ff;
+  --chart-fan-soft: #6f9cc4;
+  --chart-actual: #e9e4d8;
+  --heat-lo: #1b1c1f;
+  --heat-hi: #9fd4ff;
+  --status-pass: #8fd694;
+  --status-fail: #ff7a6b;
+  --tip-bg: #0f1012;
+  --tip-border: #3a3b40;
+  --tip-ink: #e9e4d8;
+  --tip-muted: #b5b0a5;
+  --tip-shadow: none;
+  --fixture-ink: #ffd66b;
+  --fixture-bg: transparent;
+  --fuel-nuclear: #765bd2;
+  --fuel-hydro: #2a9cdd;
+  --fuel-biomass: #448824;
+  --fuel-wind: #00a2a3;
+  --fuel-gas: #c98000;
+  --fuel-peaking: #bd280f;
+  --fuel-other: #ab8700;
+  --fuel-pumped_storage: #426acf;
+  --fuel-imports: #a765a1;
+}
+@media (prefers-color-scheme: light) {
+  :root[data-variant='e']:not([data-theme='dark']) {
+    --scheme: light;
+    --bg: #ecebe7;
+    --surface: #ecebe7;
+    --panel: #e2e1dc;
+    --ink: #1b1c1e;
+    --ink-2: #4b4c50;
+    --muted: #66676b;
+    --rule: #d6d5d0;
+    --rule-strong: #b5b4ae;
+    --accent: #1b1c1e;
+    --accent-ink: #ecebe7;
+    --hover: rgb(27 28 30 / 0.05);
+    --selected: rgb(27 28 30 / 0.1);
+    --focus: #a86f00;
+    --chart-surface: #ecebe7;
+    --chart-grid: #dddcd7;
+    --chart-grid-strong: #c2c1bb;
+    --chart-axis: #a09f99;
+    --chart-tick: #56575b;
+    --chart-cursor: #a86f00;
+    --chart-price: #a86f00;
+    --chart-niv-short: #c0562a;
+    --chart-niv-long: #2f64b8;
+    --chart-fan: #2f64b8;
+    --chart-fan-soft: #7f9ed4;
+    --chart-actual: #1b1c1e;
+    --heat-lo: #e2e1dc;
+    --heat-hi: #2f64b8;
+    --status-pass: #2e7a3a;
+    --status-fail: #b3372a;
+    --tip-bg: #f6f5f2;
+    --tip-border: #b5b4ae;
+    --tip-ink: #1b1c1e;
+    --tip-muted: #4b4c50;
+    --fixture-ink: #8a5a00;
+    --fuel-nuclear: #654cb7;
+    --fuel-hydro: #3aa8eb;
+    --fuel-biomass: #428f2f;
+    --fuel-wind: #008b9f;
+    --fuel-gas: #e19000;
+    --fuel-peaking: #b62003;
+    --fuel-other: #d3ac36;
+    --fuel-pumped_storage: #4164b7;
+    --fuel-imports: #c37bbd;
+  }
+}
+:root[data-variant='e'][data-theme='light'] {
+  --scheme: light;
+  --bg: #ecebe7;
+  --surface: #ecebe7;
+  --panel: #e2e1dc;
+  --ink: #1b1c1e;
+  --ink-2: #4b4c50;
+  --muted: #66676b;
+  --rule: #d6d5d0;
+  --rule-strong: #b5b4ae;
+  --accent: #1b1c1e;
+  --accent-ink: #ecebe7;
+  --hover: rgb(27 28 30 / 0.05);
+  --selected: rgb(27 28 30 / 0.1);
+  --focus: #a86f00;
+  --chart-surface: #ecebe7;
+  --chart-grid: #dddcd7;
+  --chart-grid-strong: #c2c1bb;
+  --chart-axis: #a09f99;
+  --chart-tick: #56575b;
+  --chart-cursor: #a86f00;
+  --chart-price: #a86f00;
+  --chart-niv-short: #c0562a;
+  --chart-niv-long: #2f64b8;
+  --chart-fan: #2f64b8;
+  --chart-fan-soft: #7f9ed4;
+  --chart-actual: #1b1c1e;
+  --heat-lo: #e2e1dc;
+  --heat-hi: #2f64b8;
+  --status-pass: #2e7a3a;
+  --status-fail: #b3372a;
+  --tip-bg: #f6f5f2;
+  --tip-border: #b5b4ae;
+  --tip-ink: #1b1c1e;
+  --tip-muted: #4b4c50;
+  --fixture-ink: #8a5a00;
+  --fuel-nuclear: #654cb7;
+  --fuel-hydro: #3aa8eb;
+  --fuel-biomass: #428f2f;
+  --fuel-wind: #008b9f;
+  --fuel-gas: #e19000;
+  --fuel-peaking: #b62003;
+  --fuel-other: #d3ac36;
+  --fuel-pumped_storage: #4164b7;
+  --fuel-imports: #c37bbd;
+}
+
+:root[data-variant='e'] body {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 37px, rgb(255 255 255 / 0.012) 37px 38px, transparent 38px 91px, rgb(0 0 0 / 0.05) 91px 93px),
+    var(--bg);
+}
+.e-shell {
+  display: grid;
+  grid-template-columns: minmax(200px, 22vw) minmax(0, 1fr);
+  min-height: 100svh;
+}
+.e-rail {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 28px 0;
+  background: linear-gradient(90deg, transparent calc(100% - 1px), var(--rule-strong) calc(100% - 1px));
+}
+.e-brand {
+  text-align: right;
+  padding-right: 28px;
+  font-weight: 700;
+  margin-bottom: 40px;
+}
+.e-rail ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 18px;
+}
+.e-stop,
+.e-fresh {
+  display: grid;
+  grid-template-columns: 1fr 44px;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--muted);
+}
+.e-stop-label {
+  text-align: right;
+}
+.e-tick {
+  justify-self: end;
+  width: 44px;
+  height: 1px;
+  background: var(--rule-strong);
+  transform: scaleX(0.32);
+  transform-origin: right center;
+  transition: transform 220ms cubic-bezier(0.25, 1, 0.5, 1), background-color 150ms ease-out;
+}
+.e-stop:hover {
+  color: var(--ink);
+}
+.e-stop:hover .e-tick {
+  transform: scaleX(0.55);
+  background: var(--ink-2);
+}
+.e-stop.is-active {
+  color: var(--ink);
+  font-weight: 700;
+}
+.e-stop.is-active .e-tick {
+  transform: none;
+  height: 2px;
+  background: var(--ink);
+}
+.e-stop.is-fixture .e-tick {
+  background: repeating-linear-gradient(90deg, var(--fixture-ink) 0 4px, transparent 4px 7px);
+}
+.e-fresh {
+  margin-top: auto;
+  font-size: 13px;
+}
+.e-fresh .e-tick {
+  transform: none;
+  background: var(--status-pass);
+}
+.e-fresh.is-stale .e-tick {
+  transform: scaleX(0.5);
+  background: var(--fixture-ink);
+}
+.e-main {
+  padding: 28px 40px 64px;
+  min-width: 0;
+}
+:root[data-variant='e'] .gf-screen-head h1 {
+  font-size: 15px;
+}
+:root[data-variant='e'] .gf-seg {
+  border: 0;
+  gap: 16px;
+}
+:root[data-variant='e'] .gf-seg button {
+  border: 0;
+  padding: 4px 0;
+  box-shadow: inset 0 -1px 0 var(--rule-strong);
+}
+:root[data-variant='e'] .gf-seg button.is-on {
+  background: transparent;
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow: inset 0 -2px 0 var(--ink);
+}
+:root[data-variant='e'] .gf-fixture {
+  border-radius: 0;
+  border-width: 0 0 1px;
+  padding: 0 0 2px;
+}
+:root[data-variant='e'] .gf-swatch {
+  height: 2px;
+  width: 16px;
+}
+:root[data-variant='e'] .gf-fuel-key button {
+  grid-template-columns: 16px 1fr auto;
+}
+:root[data-variant='e'] .gf-aside {
+  padding-top: 4px;
+}

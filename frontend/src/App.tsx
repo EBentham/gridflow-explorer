@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { Navigate, Route, Routes, useParams, useSearchParams } from 'react-router-dom'
 import './App.css'
 import { ApiError } from './api/client'
 import type { DatasetSummary } from './api/types'
@@ -14,6 +14,8 @@ import { useDatasets } from './hooks/useDatasets'
 import { lastNDays } from './lib/range'
 import { ForecastScreen } from './screens/ForecastScreen'
 import { SCREENS } from './screens/registry'
+import { ComparePage } from './prototype/ComparePage'
+import { PrototypeRoot } from './prototype/PrototypeRoot'
 
 /** Fallback screen for any catalogue dataset with no dedicated entry in `SCREENS`. */
 function GenericDatasetScreen({ dataset }: { dataset: DatasetSummary }) {
@@ -53,8 +55,12 @@ function DatasetRoute() {
 }
 
 function App() {
+  const [params] = useSearchParams()
+  // PROTOTYPE (design loop round 1): `?variant=` swaps in the variant shells; dev builds only.
+  if (import.meta.env.DEV && params.has('variant')) return <PrototypeRoot />
   return (
     <Routes>
+      {import.meta.env.DEV && <Route path="/prototype" element={<ComparePage />} />}
       <Route element={<Layout />}>
         <Route path="/" element={<Navigate to="/datasets/generation-mix" replace />} />
         <Route path="/datasets/:datasetId" element={<DatasetRoute />} />
