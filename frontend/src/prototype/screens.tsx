@@ -261,7 +261,7 @@ export function WindScreen() {
   const key = (
     <div className="gf-key-block">
       <p className="gf-key-title">Key</p>
-      <FanKey fixture={variant.lineForm} />
+      <FanKey fixture={variant.lineForm} fan={variant.language.fan} />
     </div>
   )
   const metrics = (
@@ -288,9 +288,9 @@ export function WindScreen() {
           ) : (
             <DataTable caption="Wind forecast by settlement period (fixture)" columns={columns} rows={tableRows} />
           )}
-          {!variant.sidePanel && metrics}
+          {metrics}
         </div>
-        {variant.sidePanel && <aside className="gf-side">{metrics}{key}</aside>}
+        {variant.sidePanel && <aside className="gf-side">{key}</aside>}
         {variant.keyPlacement === 'aside' && !variant.sidePanel && <aside className="gf-aside">{key}</aside>}
       </div>
       {variant.keyPlacement === 'shell' && <ShellSlot>{key}</ShellSlot>}

@@ -225,7 +225,7 @@ export function MetricsPanel({ metrics, caveat }: { metrics: ForecastMetric[]; c
   )
 }
 
-export function FanKey({ fixture }: { fixture?: boolean }) {
+export function FanKey({ fixture, fan }: { fixture?: boolean; fan: 'bands' | 'contours' | 'hairlines' }) {
   const dash = fixture ? '5 4' : undefined
   return (
     <ul className="gf-fan-key">
@@ -239,14 +239,32 @@ export function FanKey({ fixture }: { fixture?: boolean }) {
         <svg width="22" height="10" aria-hidden="true">
           <line x1="0" y1="5" x2="22" y2="5" stroke="var(--chart-fan)" strokeWidth="2.5" strokeDasharray={dash} />
         </svg>
-        Median forecast
+        Median forecast{fixture ? ' (dashed: fixture)' : ''}
       </li>
       <li>
-        <svg width="22" height="12" aria-hidden="true">
-          <rect x="0" y="0" width="22" height="12" fill="var(--chart-fan)" fillOpacity="0.14" />
-          <rect x="0" y="3" width="22" height="6" fill="var(--chart-fan)" fillOpacity="0.3" />
-        </svg>
-        50, 80 and 90% intervals
+        {fan === 'bands' ? (
+          <svg width="22" height="12" aria-hidden="true">
+            <rect x="0" y="0" width="22" height="12" fill="var(--chart-fan)" fillOpacity="0.14" />
+            <rect x="0" y="3" width="22" height="6" fill="var(--chart-fan)" fillOpacity="0.3" />
+          </svg>
+        ) : (
+          <svg width="22" height="12" aria-hidden="true">
+            {[1.5, 4.5, 7.5, 10.5].map((y) => (
+              <line
+                key={y}
+                x1="0"
+                y1={y}
+                x2="22"
+                y2={y}
+                stroke={fan === 'contours' ? 'var(--chart-fan-soft)' : 'var(--chart-fan)'}
+                strokeOpacity={fan === 'hairlines' ? 0.6 : 1}
+                strokeWidth="1"
+                strokeDasharray={dash}
+              />
+            ))}
+          </svg>
+        )}
+        {fan === 'bands' ? '50, 80 and 90% intervals' : 'Quantiles p5, p10, p25, p75, p90, p95'}
       </li>
     </ul>
   )
