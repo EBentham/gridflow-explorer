@@ -8,8 +8,11 @@ source lines, the honesty states and the Fixture tags.
 - `define.ts` is the typed shape of the config. This file says how to use it.
 - `contract.ts` is the data: the manifest (`GET /api/sources`) and the rows responses.
 - `frontend/DESIGN.md` is the look. It is locked; a page adds no new looks.
-- The approved pilot page (P4-0) is the worked example to copy from. Until it lands, the demo
-  family (`demo/dataset-page/`) shows every part of the template on synthetic data.
+- The pilot page, `elexon/market-index-price/`, is the worked example to copy from: a series
+  in the full frame, with a key and a working panel of its own. The demo family
+  (`demo/dataset-page/`) shows every state of the template on synthetic data.
+- Every page reads the local store through the HTTP adapter (`_data/http.ts`). Only the demo
+  reads the fixture.
 
 ## Folder layout
 
@@ -19,10 +22,12 @@ src/views/
   define.ts              the view config types, defineView, TEMPLATE_PARAMS
   contract.ts            the manifest and rows shapes, and the DataSource interface
   registry.ts            finds every page with import.meta.glob('./*/*/index.tsx')
-  FamilyRoute.tsx        the route element: the page, or "No page yet"
+  FamilyRoute.tsx        the route element: the page, or what the source list says of the address
+  NEEDS.md               P4-0's gaps, for the seat to batch
   _template/             the frame, the three bodies, the default panels (template-owned)
-  _data/                 adapters, loading hooks, the dev fixture (template-owned)
-  demo/dataset-page/     the fixture demo family (P4-0 deletes it)
+  _data/                 the HTTP adapter, the demo's fixture adapter, loading hooks (template-owned)
+  demo/dataset-page/     the fixture demo family: every state, on synthetic data
+  elexon/market-index-price/  the pilot page: copy from it
   <source>/<family>/     one page per family:
     index.tsx              the view config, and nothing else
     *.tsx                  the page's own panels and controls, if any
@@ -38,7 +43,8 @@ Folders starting with `_` belong to the template. The registry skips them.
    There is no list to edit: the registry finds the folder, the route works, and the source
    page links the family.
 2. **Write `index.tsx`.** It exports the config as its default export, and nothing else. A
-   sketch for `elexon/market-index-price` (the pilot page is the real one):
+   sketch for `elexon/market-index-price` (the pilot page is the real one: it draws the
+   volume in a working panel of its own instead of under the price):
 
    ```tsx
    import { defineView } from '../../define'
@@ -89,7 +95,7 @@ Folders starting with `_` belong to the template. The registry skips them.
 | `title` | The main panel's H2. Default: `label`. |
 | `sub` | The head's sentence for this dataset, when it differs from the page's `sub`. |
 | `caveats` | Vintage, unit doubts, known faults, what a default filter leaves out. Written from the P1 card and the manifest notes, never pasted from them. |
-| `query` | `{ group, filters }` for the rows request, or a function of the page's URL parameters returning one. `group` must be a `dims` column. `filters: null` clears the dataset's default filter. |
+| `query` | `{ group, filters }` for the rows request, or a function of the page's URL parameters returning one. `group` must be a `dims` column. `filters: null` clears the dataset's default filter. **A dataset whose rows vary by more dims than its split answers `ambiguous_series` (422), and the page shows nothing rather than mix series. Its config must supply the `group` and the `filters` that leave one series per group.** The error names the column that varies; `entsog/released-capacity` groups by point and filters by direction. |
 | `related` | Other datasets read for the same window, e.g. a price beside a volume (see below). |
 | `panels` | Replacements for the `main`, `key`, `working` or `side` panel (see "Panels"). |
 | `controls` | The page's own toolbar controls, after Chart and Table (see "Controls"). |
@@ -106,13 +112,17 @@ Folders starting with `_` belong to the template. The registry skips them.
 | `chart.zero`, `chart.height` | Put zero on the value axis; the panel height. |
 | `chart.extremes` | Label the highest and lowest value. Default: on for a single line. |
 | `chart.maxSeries` | At most this many series are drawn (default 10). The rest are named in the key as not drawn, and listed in the table. They are never merged into "other". |
+| `chart.belowZero` | Band the main panel's runs below zero with the highlight band, e.g. negative prices. The key names the band. |
+| `chart.axisWidth` | A fixed value-axis width in px, so that a chart the page draws in a panel of its own lines its clock up under this one (the pilot's volume). |
+| `chart.lower: false` | No second panel. The columns left out of the main panel are the page's to draw in a panel of its own. |
+| `chart: false` | A series shown as a table: no chart and no Chart view. The key, "Latest values", lists each series' latest value; select one to read it in the days table. Rows holding text only get a table of the rows and a count of rows per day. |
 
 ### Events (`body: 'events'`)
 
 | Field | What it is |
 |---|---|
 | `timeLabel` | The event time's column header, e.g. `Published`. Default `Time`. |
-| `columns` | `{ field, label, format, unit, display }` after the time. `format` is `'text'`, `'id'` (mono, for identifiers only), `'number'`, `'time'`, `'date'` or `'bool'`. Tables keep MW unless `display: 'GW'`. Default: every field, with formats read from the values. |
+| `columns` | `{ field, label, format, unit, display, text }` after the time. `format` is `'text'`, `'id'` (mono, for identifiers only), `'number'`, `'time'`, `'date'` or `'bool'`. Tables keep MW unless `display: 'GW'`. `text` reads a coded value in words, with the helpers in `_template/codes.ts` (ENTSO-E production types, the name inside JSON text, snake_case ids). The cell, sort, filter list, counts and search use the words; the filter still matches the value as held. A number held as text sorts as a number. Default: every field, with formats read from the values. |
 | `filters` | Fields that get a column filter, in the URL as `?f.<field>=`. Default: text and id fields holding 2 to 40 distinct values in the window. A field with one value in the window gets no filter unless one is set. |
 | `sort` | `{ field, dir }`. Default: newest first. |
 | `strip` | A count of events per period above the table, in the Chart view. `true` picks hours for a day or two and days beyond; `{ per: 'hour' \| 'day' }` fixes it. Without a strip there is no Chart view. |
@@ -188,6 +198,12 @@ config; don't work around the check.
   true minus sign; an unknown unit says "unit unconfirmed". Axes and tooltips use the UK
   clock, and tooltips name the period (`Tue 15 Sep, 14:30–15:00 BST`). Settlement date and
   period appear only when the rows carry them.
+- **Errors in plain words.** A 413 says why the window is too much to read, a 422 what
+  varies (`ambiguous_series`) or what the request got wrong, a 404 why the dataset isn't
+  held, and a 503 gives the refreshing state (`text.ts` `errorParts`, drawn by `ErrorWords`).
+  The backend's own messages and hints are never printed.
+- **Settlement periods.** Where the rows carry `settlement_period`, tooltips and the key
+  name the period with its number (`Tue 22 Sep, 18:00–18:30 BST, SP 37`, from `periodName`).
 - **Fixture data.** On the fixture adapter every panel gets the dashed-ochre Fixture tag,
   the head gets a badge, and lines are dashed.
 
@@ -229,7 +245,7 @@ The grid (DESIGN §5) has four slots:
 | Slot | Where | Series default | Events default | Reference default |
 |---|---|---|---|---|
 | `main` | Left, top: the chart or the table | `SeriesBody` | `EventsBody` | `ReferenceBody` |
-| `key` | Right of main, 272px | Key: each series with its latest value; select one to draw it alone | In this window: counts, newest, oldest | Table: rows, columns, last fetched |
+| `key` | Right of main, 272px | Key: each series with its latest value; select one to draw it alone (with `chart: false`, "Latest values") | In this window: counts, newest, oldest | Table: rows, columns, last fetched |
 | `working` | Left, below main | Days in range: held, mean, lowest and highest per UK day | Events by day | Rows by `countBy`, or the columns |
 | `side` | Right, below the key | About this data | About this data | About this data |
 
@@ -262,9 +278,9 @@ panels: {
   leave a blank panel.
 - The default side body, About, reads the source list alone, so it renders in every state:
   loading, error and refreshing included. A replacement side body follows the rule above.
-- On an error the main panel prints the backend's message, and a 413's hint on narrowing
-  the window. A 422's hint can be a query string, so it isn't shown. P4-0 maps each error
-  code to plain words when the HTTP adapter lands.
+- On an error the main panel says what went wrong in plain words (see "Errors in plain
+  words" above). A panel of the page's own that reads a related dataset says its error with
+  `ErrorWords`.
 - `src` runs in every state. Until the rows are read, `ctx.response` and `ctx.series` are
   null.
 
@@ -284,17 +300,22 @@ drops the window where it doesn't apply.
 **Pieces to reuse** (import them from `_template/`; don't copy them):
 
 - `panels.tsx`: `SourceLine`, `PageNotes`, `SeriesKey`, `SeriesDays`, `EventsSummary`,
-  `EventsDays`, `ReferenceSummary`, `ReferenceCounts`, `About`.
+  `EventsDays`, `ReferenceSummary`, `ReferenceCounts`, `About`, `ErrorWords`.
+- `codes.ts`: `productionType`, `jsonName` and `idWords`, for `ColumnSpec.text`.
+- `cells.tsx`: `wordsOf`, a column's value in its words.
 - `WindowedTable.tsx`: the sortable, windowed table with sticky headers. A line under it
   says when its box cuts rows or columns off.
 - `CountStrip.tsx`: events per hour or day as bars.
 - `SeriesChart.tsx` and `seriesPanels.ts` (`planPanels`): the series chart.
-- `panelHelpers.ts`: `unitsOf`, `heldDays`, `daySeries`, `relatedParts`, `plannedParts`,
-  `relatedFilters`, `plannedFilters`.
+- `panelHelpers.ts`: `unitsOf`, `heldDays`, `daySeries`, `keyStamp`, `relatedParts`,
+  `plannedParts`, `relatedFilters`, `plannedFilters`.
 - `seriesModel.ts`: the model on `ctx.series` (`all`, `drawn`, `undrawn`, `rows`,
-  `stepMs`, `bucketed`), and `daySummaries`, `latestValue`, `extremesOf`.
+  `stepMs`, `bucketed`, `settlement`), and `daySummaries`, `latestValue`, `extremesOf`,
+  `periodName`, `runsBelowZero`.
+- In a stats list (`dl.gf-stats`), `<span className="gf-stat-when">` sets a figure's time on
+  a line under it, as the pilot's key does for the highest and lowest price.
 - `units.ts` (`displayUnit`) and `text.ts` (`coverageSentences`, `truncationSentences`,
-  `emptyWindowText`, `notHeldText`, `meansText`, `cadenceOf`).
+  `emptyWindowText`, `notHeldText`, `meansText`, `cadenceOf`, `errorParts`, `errorText`).
 - From `src/design/`: `format.ts` for numbers and money, `time.ts` for the UK clock,
   `chartTheme.ts` and `charts.tsx` for chart parts, and `frame.tsx` for `Segmented`.
 
