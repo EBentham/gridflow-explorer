@@ -1,12 +1,13 @@
-import type { ForecastDayRecord, ForecastMetric, ForecastVariant } from '../../api/types'
+import type { ForecastDayRecord, ForecastMetric, ForecastVariant } from '../api/types'
 
 /**
  * FIXTURE -- synthetic wind forecast. No wind model exists in the forecast
  * store yet (only `day_ahead.lgbm_demand` v1/v2). Every number below is
  * generated here, deterministically, in the exact shape of
  * `/api/forecasts/day` + `/api/forecasts/metrics` rows, so the wind view can
- * be designed before the model lands. Replace with the real endpoint in the
- * plumbing phase (see frontend/HANDOFF-plumbing.md).
+ * be designed before the model lands. Every screen that draws it carries the
+ * dashed-ochre Fixture tag. Replace it with the real endpoint when a wind
+ * model writes to the forecast store (the v0.3 forecast-screen stub).
  */
 
 export const WIND_FIXTURE_MODEL = 'fixture.wind_day_ahead.v0'

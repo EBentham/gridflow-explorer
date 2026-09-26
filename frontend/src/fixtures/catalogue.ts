@@ -1,12 +1,13 @@
 /**
- * PROTOTYPE FIXTURE: the source catalogue, mirrored by hand from gridflow's
+ * FIXTURE: the source catalogue, mirrored by hand from gridflow's
  * config/sources.yaml on 26 Sep 2026 (dataset ids and fetch schedules as
  * configured there). Family labels and blurbs are written for the Explorer.
  * Kinds follow each dataset's silver table shape, checked 26 Sep 2026: time
  * series are keyed on a regular clock, event feeds on a per-action or
  * per-message id, reference tables have no clock.
  * "Configured" is not "has local rows": only the charted datasets carry
- * coverage. The plumbing phase replaces this with a manifest endpoint.
+ * coverage. v0.4 P4-0 replaces this file with the /api/sources endpoint and
+ * deletes it.
  */
 
 export type Kind = 'series' | 'events' | 'reference'
