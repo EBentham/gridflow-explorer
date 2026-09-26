@@ -2,17 +2,19 @@
  * The shared Recharts theme module (DESIGN §6): the chart frame with its
  * clock caption, day rules, the zero line, the chartreuse highlight band and
  * selection edges, labelled extremes, the compact tooltip, the key panel's
- * marks (including the fan key and the fuel key) and the plain data table.
+ * marks (including the fan key and the fuel key) and the plain data table,
+ * with a line under it when its box cuts rows or columns off.
  * Constants and axis/series prop factories live in `chartTheme.ts`.
  *
  * Compose charts from these pieces. Every colour is a CSS custom property,
  * so both themes come from the tokens with no re-render.
  */
-import type { ReactElement, ReactNode } from 'react'
+import { useRef, type ReactElement, type ReactNode } from 'react'
 import { ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer } from 'recharts'
 import { CHART } from './chartTheme'
 import { fmt1 } from './format'
 import { FUEL_BANDS, fuelVar, type MixRow } from './fuels'
+import { overflowCue, useOverflow } from './overflow'
 
 // ---------------------------------------------------------------- frame
 
@@ -275,31 +277,36 @@ export interface TableColumn {
 
 /** A chart's rows as a plain table, for the Chart | Table switch. */
 export function DataTable({ columns, rows, caption }: { columns: TableColumn[]; rows: Record<string, ReactNode>[]; caption: string }) {
+  const box = useRef<HTMLDivElement>(null)
+  const cue = overflowCue(useOverflow(box))
   return (
-    <div className="gf-table-wrap">
-      <table className="gf-table">
-        <caption>{caption}</caption>
-        <thead>
-          <tr>
-            {columns.map((c) => (
-              <th key={c.key} className={c.align === 'end' ? 'is-num' : undefined} scope="col">
-                {c.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={i}>
+    <>
+      <div ref={box} className="gf-table-wrap">
+        <table className="gf-table">
+          <caption>{caption}</caption>
+          <thead>
+            <tr>
               {columns.map((c) => (
-                <td key={c.key} className={c.align === 'end' ? 'is-num' : undefined}>
-                  {r[c.key]}
-                </td>
+                <th key={c.key} className={c.align === 'end' ? 'is-num' : undefined} scope="col">
+                  {c.label}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i}>
+                {columns.map((c) => (
+                  <td key={c.key} className={c.align === 'end' ? 'is-num' : undefined}>
+                    {r[c.key]}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {cue && <p className="gf-hint">{cue}</p>}
+    </>
   )
 }
