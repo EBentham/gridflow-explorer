@@ -1,0 +1,57 @@
+/* Element defaults for the whole app. Every colour, face and size comes from
+   tokens.css; this file only sets what plain elements inherit. */
+
+:root {
+  color-scheme: var(--scheme);
+  font: var(--text-size) / 1.45 var(--font-ui);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--ink);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+#root {
+  min-height: 100svh;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  color: var(--ink);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Identifiers only (dataset, column, table and model ids), never a pill. */
+code {
+  font-family: var(--font-id);
+  font-size: 0.93em;
+  line-height: inherit;
+  color: var(--code-ink);
+}
