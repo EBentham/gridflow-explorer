@@ -1,0 +1,306 @@
+/* The dataset page template's own pieces (src/views): the family line under
+   the toolbar, the main panel's notes, the series key, the windowed table
+   with its filters and search, and the count lists. The frame itself (head,
+   toolbar, grid, panels, day tables, stats) is design/frame.css. Colours
+   come only from tokens.css. */
+
+/* ================================================================ toolbar */
+
+/* the family's datasets that aren't held, on their own line under the controls */
+.gf-toolbar-line {
+  flex-basis: 100%;
+  margin: 0;
+  padding-top: 7px;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* ================================================================ the main panel's notes */
+
+.gf-notes {
+  display: grid;
+  gap: 3px;
+  max-width: 100ch;
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.gf-notes p {
+  margin: 0;
+}
+.gf-notes .is-caveat {
+  color: var(--muted);
+}
+.gf-state ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+/* ================================================================ the series key */
+
+.gf-series-key {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1px;
+  font-size: 13px;
+}
+.gf-series-key button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 4px 6px;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    opacity 150ms ease-out;
+}
+.gf-series-key button:disabled {
+  cursor: default;
+}
+.gf-series-key button:not(:disabled):hover {
+  background: var(--hover);
+}
+.gf-series-key button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.gf-series-key .gf-key {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.gf-series-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gf-series-value {
+  flex: none;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.gf-series-key li.is-focus button {
+  background: var(--selected);
+}
+.gf-series-key li.is-muted button {
+  opacity: 0.55;
+}
+
+/* ================================================================ filters and search */
+
+.gf-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 14px;
+  margin: 2px 0 8px;
+}
+.gf-filter {
+  display: grid;
+  gap: 3px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.gf-select,
+.gf-input {
+  min-width: 140px;
+  max-width: 280px;
+  padding: 4px 7px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+}
+.gf-search .gf-input {
+  width: 260px;
+}
+.gf-select:focus-visible,
+.gf-input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.gf-filters-clear {
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 150ms ease-out;
+}
+.gf-filters-clear:hover {
+  border-color: var(--ink-2);
+}
+
+/* ================================================================ the windowed table */
+
+.gf-wtable {
+  overflow: auto;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+}
+.gf-wtable table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-data);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.gf-wtable caption {
+  padding: 6px 10px;
+  text-align: left;
+  caption-side: top;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.gf-wtable th,
+.gf-wtable td {
+  padding: 0 10px;
+  white-space: nowrap;
+  text-align: left;
+}
+.gf-wtable .is-num {
+  text-align: right;
+}
+.gf-wtable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 30px;
+  background: var(--panel);
+  font-weight: 400;
+  color: var(--muted);
+  border-bottom: 1px solid var(--rule-strong);
+}
+.gf-wtable thead th button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.gf-wtable thead th button:hover {
+  color: var(--ink);
+}
+.gf-wtable thead th button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+/* one line per row, of fixed height: WindowedTable's ROW_H */
+.gf-wtable tbody tr {
+  height: 28px;
+}
+.gf-wtable tbody td {
+  border-top: 1px solid var(--rule);
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gf-wtable tbody tr:hover {
+  background: var(--hover);
+}
+.gf-wtable tbody tr.gf-wtable-pad,
+.gf-wtable tbody tr.gf-wtable-pad:hover {
+  background: none;
+}
+.gf-wtable-empty td {
+  padding: 18px 10px;
+  color: var(--muted);
+}
+.gf-sortmark {
+  flex: none;
+}
+.gf-sortmark path {
+  fill: none;
+  stroke: var(--rule-strong);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.gf-sortmark path.is-on {
+  stroke: var(--ink);
+}
+.gf-cell-missing {
+  color: var(--muted);
+}
+
+/* ================================================================ count lists */
+
+.gf-counts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+  max-height: 268px;
+  overflow: auto;
+  font-size: 13px;
+}
+.gf-counts li {
+  display: grid;
+  grid-template-columns: minmax(0, 12rem) minmax(0, 1fr) 4.5rem;
+  align-items: center;
+  gap: 10px;
+}
+.gf-counts-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gf-counts-bar {
+  height: 10px;
+  background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+.gf-counts-bar span {
+  display: block;
+  height: 100%;
+  background: var(--kind-reference);
+}
+.gf-counts-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.gf-cols {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 4px 18px;
+  font-size: 13px;
+}
+.gf-cols li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.gf-cols span {
+  color: var(--muted);
+  white-space: nowrap;
+}
