@@ -105,34 +105,28 @@ export function GenerationG() {
         {
           kind: 'bronze',
           name: 'bronze',
-          height: 82,
-          terminal: {
-            ids: ['elexon/fuelhh'],
-            body: 'Raw FUELHH responses from Elexon BMRS, append-only. The Explorer never reads this layer, so its days aren’t checked here.',
-          },
+          height: 80,
+          terminal: { ids: ['elexon/fuelhh'], body: 'Raw Elexon responses. The Explorer doesn’t read this layer.' },
         },
         {
           kind: 'silver',
           name: 'silver',
-          height: 88,
+          height: 84,
           track: silverTrack(cov),
-          terminal: {
-            ids: ['silver_elexon_fuelhh'],
-            body: (
-              <>
-                One typed row per settlement period and fuel code. <CoverageLine cov={cov} />
-              </>
-            ),
-          },
+          terminal: { ids: ['silver_elexon_fuelhh'], body: <CoverageLine cov={cov} /> },
         },
         {
           kind: 'gold',
           name: 'gold',
-          height: 94,
+          height: 104,
           track: servedTrack(ts, domain, loading),
           terminal: {
-            ids: ['GridflowClient.get_fuel_generation()', '/api/datasets/generation-mix'],
-            body: <>No gold view: the client reads silver and the API sums fuel codes into GW. {loading ? '' : servedCount(rows.length)}</>,
+            ids: ['/api/datasets/generation-mix'],
+            body: (
+              <>
+                No gold view: read from silver by <Id>get_fuel_generation()</Id>. {loading ? '' : servedCount(rows.length)}
+              </>
+            ),
           },
         },
       ]

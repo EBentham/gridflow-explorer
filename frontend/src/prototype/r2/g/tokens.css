@@ -396,9 +396,15 @@
   color: var(--ink-2);
   font-size: 13.5px;
 }
+:root[data-variant='g'] code,
 :root[data-variant='g'] .g-id {
+  display: inline;
+  padding: 0;
+  border-radius: 0;
+  background: none;
   font-family: var(--font-id);
   font-size: 0.93em;
+  line-height: inherit;
   color: var(--ink);
 }
 
@@ -586,6 +592,98 @@
 }
 :root[data-variant='g'] .gf-table tbody tr:hover {
   background: var(--hover);
+}
+
+
+/* right column: keys, stats, gates */
+:root[data-variant='g'] .g-col {
+  position: absolute;
+  font-size: 13px;
+  color: var(--ink);
+}
+:root[data-variant='g'] .g-key {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+}
+:root[data-variant='g'] .g-key li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.3;
+}
+:root[data-variant='g'] .g-key svg {
+  flex: none;
+}
+:root[data-variant='g'] .g-stats {
+  margin: 14px 0 0;
+  display: grid;
+  gap: 4px;
+}
+:root[data-variant='g'] .g-stats div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--rule);
+  padding-top: 4px;
+}
+:root[data-variant='g'] .g-stats dt {
+  color: var(--ink-2);
+}
+:root[data-variant='g'] .g-stats dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+:root[data-variant='g'] .g-col-head {
+  margin: 18px 0 6px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-stretch: 90%;
+  font-size: 16px;
+  letter-spacing: -0.005em;
+}
+:root[data-variant='g'] .g-gates ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+:root[data-variant='g'] .g-gates li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1px 10px;
+  padding: 5px 0;
+  border-top: 1px solid var(--rule);
+}
+:root[data-variant='g'] .g-gate-name {
+  font-weight: 500;
+}
+:root[data-variant='g'] .g-gate-result {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+:root[data-variant='g'] .g-gate-result.is-pass {
+  color: var(--status-pass);
+}
+:root[data-variant='g'] .g-gate-result.is-fail {
+  color: var(--status-fail);
+}
+:root[data-variant='g'] .g-gate-result.is-unknown {
+  color: var(--muted);
+}
+:root[data-variant='g'] .g-gate-rule {
+  grid-column: 1 / -1;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+:root[data-variant='g'] .g-note-fixture {
+  fill: var(--fixture-ink);
+  font-style: italic;
 }
 
 /* ------------------------------------------------------------------ below ground */

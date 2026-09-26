@@ -356,9 +356,8 @@
 }
 :root[data-variant='h'] .gf-coverage {
   margin-top: 14px;
-  border: 0;
-  border-left: 3px solid var(--fuel-biomass);
-  border-radius: 0;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
   background: var(--panel);
   font-size: 14.5px;
   color: var(--body);

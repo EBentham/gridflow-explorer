@@ -36,7 +36,7 @@ function areaPath(top: [number, number][], bottom: [number, number][]): string {
   return `${linePath(top)} ${[...bottom].reverse().map(([x, y]) => `L${x.toFixed(1)} ${y.toFixed(1)}`).join(' ')} Z`
 }
 
-export function YAxis({ ticks, y, width, unit, fmt = fmt0, top = TOP }: { ticks: number[]; y: (v: number) => number; width: number; unit: string; fmt?: (v: number) => string; top?: number }) {
+export function YAxis({ ticks, y, width, unit, fmt = fmt0, top = TOP, bottom }: { ticks: number[]; y: (v: number) => number; width: number; unit: string; fmt?: (v: number) => string; top?: number; bottom?: number }) {
   const hi = width - prOf(width)
   const PL = plOf(width)
   return (
@@ -44,7 +44,7 @@ export function YAxis({ ticks, y, width, unit, fmt = fmt0, top = TOP }: { ticks:
       {ticks.map((t) => (
         <g key={t}>
           <line x1={PL} x2={hi} y1={y(t)} y2={y(t)} stroke="var(--chart-grid)" strokeWidth="1" />
-          <text x={PL - 10} y={y(t) + 4} textAnchor="end" className="g-tick">
+          <text x={PL - 10} y={bottom !== undefined && y(t) > bottom - 8 ? y(t) - 3 : y(t) + 4} textAnchor="end" className="g-tick">
             {fmt(t)}
           </text>
         </g>
@@ -133,21 +133,23 @@ export function MixChart({
   const bottom = height - 3
   const bands = focus ? FUEL_BANDS.filter((b) => b.key === focus) : FUEL_BANDS
 
+  /** Positive parts stack up from zero, negative parts stack down from it, so a band that
+   *  changes sign between half-hours never sweeps across the stack. */
   const stackOf = (row: MixRow, set: typeof FUEL_BANDS) => {
     let pos = 0
     let neg = 0
-    const out: Record<string, [number, number]> = {}
+    const up: Record<string, [number, number]> = {}
+    const down: Record<string, [number, number]> = {}
     for (const b of set) {
       const v = row[b.key] ?? 0
-      if (v >= 0) {
-        out[b.key] = [pos, pos + v]
-        pos += v
-      } else {
-        out[b.key] = [neg + v, neg]
-        neg += v
-      }
+      const p = Math.max(v, 0)
+      const n = Math.min(v, 0)
+      up[b.key] = [pos, pos + p]
+      down[b.key] = [neg + n, neg]
+      pos += p
+      neg += n
     }
-    return { out, pos, neg }
+    return { up, down, pos, neg }
   }
 
   const fullScale = useMemo(() => {
@@ -177,14 +179,16 @@ export function MixChart({
   const paths = useMemo(
     () =>
       runs.flatMap((run, ri) => {
-        const pts = runXs(run).map((p) => ({ px: x(p.t), s: stackOf(p.row, bands).out }))
-        return bands
-          .filter((b) => run.some((r) => Math.abs(r[b.key] ?? 0) > 0.0005))
-          .map((b) => {
-            const top = pts.map((p): [number, number] => [p.px, y(p.s[b.key][1])])
-            const base = pts.map((p): [number, number] => [p.px, y(p.s[b.key][0])])
-            return { key: `${ri}-${b.key}`, band: b.key, d: areaPath(top, base) }
-          })
+        const pts = runXs(run).map((p) => ({ px: x(p.t), s: stackOf(p.row, bands) }))
+        return bands.flatMap((b) =>
+          (['up', 'down'] as const)
+            .filter((side) => run.some((r) => (side === 'up' ? (r[b.key] ?? 0) > 0.0005 : (r[b.key] ?? 0) < -0.0005)))
+            .map((side) => {
+              const top = pts.map((p): [number, number] => [p.px, y(p.s[side][b.key][1])])
+              const base = pts.map((p): [number, number] => [p.px, y(p.s[side][b.key][0])])
+              return { key: `${ri}-${b.key}-${side}`, band: b.key, d: areaPath(top, base) }
+            }),
+        )
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [runs, width, domain[0], domain[1], focus, scale.domain[0], scale.domain[1]],
@@ -205,9 +209,12 @@ export function MixChart({
   const latest = rows.at(-1)
   const labels = useMemo(() => {
     if (!latest) return []
-    const s = stackOf(latest, FUEL_BANDS).out
+    const s = stackOf(latest, FUEL_BANDS)
     const order = [...FUEL_BANDS].reverse()
-    const targets = order.map((b) => yFull((s[b.key][0] + s[b.key][1]) / 2))
+    const targets = order.map((b) => {
+      const seg = (latest[b.key] ?? 0) < 0 ? s.down[b.key] : s.up[b.key]
+      return yFull((seg[0] + seg[1]) / 2)
+    })
     const placed = spread(targets, 18, TOP + 26, height - 10)
     return order.map((b, i) => ({ band: b, target: targets[i], y: placed[i], value: latest[b.key] ?? 0 }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -238,7 +245,7 @@ export function MixChart({
   return (
     <div className="g-plot" style={{ height }}>
       <svg width={width} height={height} className="g-plot-svg" aria-hidden="true">
-        <YAxis ticks={scale.ticks} y={y} width={width} unit="GW" fmt={(v) => fmt0(v)} />
+        <YAxis ticks={scale.ticks} y={y} width={width} unit="GW" fmt={(v) => fmt0(v)} bottom={bottom} />
         <DayRules domain={domain} width={width} top={TOP} bottom={height} />
         {paths.map((p) => (
           <g key={p.key}>
@@ -247,10 +254,10 @@ export function MixChart({
               fill={fuelVar(p.band)}
               fillOpacity={focus ? 0.2 : 1}
               stroke={focus ? 'none' : 'var(--chart-surface)'}
-              strokeWidth={0.8}
+              strokeWidth={0.6}
               strokeLinejoin="round"
             />
-            {!focus && TEXTURED.has(p.band) && <path d={p.d} fill={`url(#g-f-${p.band})`} opacity="0.55" />}
+            {!focus && TEXTURED.has(p.band) && <path d={p.d} fill={`url(#g-f-${p.band})`} opacity="0.45" />}
           </g>
         ))}
         {focusLines.map((l) => (

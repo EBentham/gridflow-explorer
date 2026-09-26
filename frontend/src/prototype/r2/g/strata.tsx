@@ -94,7 +94,7 @@ export function GeoDefs() {
 
 /** Identifier in Red Hat Mono, breakable after `_`, `/` and `.` so long table names wrap cleanly. */
 export function Id({ children }: { children: string }) {
-  const parts = children.split(/(?<=[_/.])/)
+  const parts = children.length > 24 ? children.split(/(?<=[_/.])/) : [children]
   return (
     <code className="g-id">
       {parts.map((p, i) => (
@@ -192,8 +192,10 @@ export function Strata({ width, domain, layers, cursor, cable = 'live', joinFrom
   const hi = width - pr
   const tx = width - pr + TRUNK
 
+  // Narrow screens wrap the terminal text onto more lines; give each stratum room for it.
+  const extra = width < 1100 ? 16 : 0
   const bases: number[] = [SOIL]
-  for (const l of layers) bases.push(bases[bases.length - 1] + l.height)
+  for (const l of layers) bases.push(bases[bases.length - 1] + l.height + extra)
   const H = bases[bases.length - 1] + BED
   const waves = bases.map((b, i) => wave(width, b, SEEDS[i % SEEDS.length], i === 0 ? 2.2 : 3.2))
   const bandPath = (i: number) => {
@@ -230,7 +232,7 @@ export function Strata({ width, domain, layers, cursor, cable = 'live', joinFrom
     const stops = [13, ...bases.filter((b) => b > 13 && b < trunkEnd), trunkEnd]
     for (let k = 0; k < stops.length - 1; k++) trunkSegs.push({ y0: stops[k], y1: stops[k + 1] })
   }
-  const head = joinFromAbove ? `M${hi} 1.5 H${tx - 12} Q${tx} 1.5 ${tx} 13` : `M${hi} 1.5 H${tx - 12} Q${tx} 1.5 ${tx} 13`
+  const head = `M${hi} 1.5 H${tx - 12} Q${tx} 1.5 ${tx} 13`
 
   return (
     <div className="g-strata" style={{ height: H }}>
@@ -318,7 +320,7 @@ export function Strata({ width, domain, layers, cursor, cable = 'live', joinFrom
         <path d={`M0 1 H${width}`} stroke="var(--g-ground)" strokeWidth="2" />
         {labels.map((lb) => {
           const px = x(lb.at)
-          if (px < lo - 2 || px > hi + 2) return null
+          if (px < lo - 2 || px > hi - (lb.anchor === 'start' ? 40 : 18)) return null
           return (
             <text key={lb.at} x={lb.anchor === 'start' ? px + 4 : px} y={29} textAnchor={lb.anchor} className="g-tick">
               {lb.text}
@@ -368,6 +370,13 @@ export function Strata({ width, domain, layers, cursor, cable = 'live', joinFrom
             </g>
           )
         })}
+        {joinFromAbove && (
+          <g fill="none" strokeLinecap="round">
+            <path d={`M${tx} -2 V13`} stroke="var(--g-cable)" strokeWidth="4.4" />
+            <path d={`M${tx} -2 V13`} stroke="var(--g-core-soil)" strokeWidth="1.5" />
+            <circle cx={tx} cy={13} r="4.6" fill="var(--g-cable)" />
+          </g>
+        )}
         <circle cx={hi} cy={1.5} r="3.4" fill="var(--bg)" stroke="var(--g-cable)" strokeWidth="1.3" />
       </svg>
 

@@ -137,9 +137,10 @@ export function voidWords(v: Interval, domain: Interval): string {
     const last = dayMonth(b - HALF_HOUR).split(' ')
     return first[1] === last[1] ? `no rows, ${first[0]} to ${last[0]} ${last[1]}` : `no rows, ${dayMonth(a)} to ${dayMonth(b - HALF_HOUR)}`
   }
-  if (b >= domain[1] && a > domain[0]) return `no rows from ${clock(a)}`
-  if (a <= domain[0]) return `no rows before ${clock(b)}`
-  return `no rows, ${clock(a)} to ${clock(b)}`
+  const sameDay = londonMidnight(a) === londonMidnight(b - 1)
+  if (b >= domain[1] && a > domain[0]) return sameDay ? `no rows from ${clock(a)}` : `no rows from ${dayMonth(a)} ${clock(a)}`
+  if (a <= domain[0]) return sameDay ? `no rows before ${clock(b)}` : `no rows before ${dayMonth(b)} ${clock(b)}`
+  return sameDay ? `no rows, ${clock(a)} to ${clock(b)}` : `no rows, ${dayMonth(a)} ${clock(a)} to ${dayMonth(b)} ${clock(b)}`
 }
 
 /** Deterministic wavy boundary, sampled every 12px. */
