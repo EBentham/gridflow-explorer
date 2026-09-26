@@ -18,7 +18,13 @@ def clear_rows_metadata_cache():
     rows._cache.clear()
 
 
-def _spec(*, ordered: bool = True, grain: str = "1h", grouped: bool = True) -> dict:
+def _spec(
+    *,
+    ordered: bool = True,
+    grain: str = "1h",
+    grouped: bool = True,
+    anchor_column: str = "timestamp_utc",
+) -> dict:
     return {
         "id": "sample",
         "kind": "series",
@@ -26,7 +32,7 @@ def _spec(*, ordered: bool = True, grain: str = "1h", grouped: bool = True) -> d
         "latest_relation": None,
         "not_held_cause": None,
         "clock": {"column": "timestamp_utc", "grain": grain, "settlement_cols": []},
-        "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
+        "latest_day_rule": {"mode": "max", "column": anchor_column},
         "values": [{"column": "value", "unit": "MW", "label": "Test value"}],
         "dims": [{"column": "unit", "role": "series", "cardinality": 2}] if grouped else [],
         "default_filter": None,
@@ -43,17 +49,80 @@ def _spec(*, ordered: bool = True, grain: str = "1h", grouped: bool = True) -> d
 
 
 def _seed(db, spec, records):
+    available = (
+        ", available_at TIMESTAMPTZ" if spec["latest_day_rule"]["column"] == "available_at" else ""
+    )
+    placeholders = ", ?" if available else ""
     db.con.execute(
         "CREATE TABLE silver_test_sample (timestamp_utc TIMESTAMPTZ, "
-        "unit VARCHAR, value DOUBLE, published_at TIMESTAMPTZ, ingested_at TIMESTAMPTZ)"
+        f"unit VARCHAR, value DOUBLE, published_at TIMESTAMPTZ, ingested_at TIMESTAMPTZ{available})"
     )
-    db.con.executemany("INSERT INTO silver_test_sample VALUES (?, ?, ?, ?, ?)", records)
+    db.con.executemany(
+        f"INSERT INTO silver_test_sample VALUES (?, ?, ?, ?, ?{placeholders})", records
+    )
 
 
 def _run(monkeypatch, db, spec, *, start="2026-09-22", end="2026-09-22", filters=None, group=None):
     monkeypatch.setattr(rows, "REGISTRY", {("test", "sample"): spec})
     request = rows.validate("test", "sample", start, end, group, filters)
     return rows.execute(db, request, f"test-{id(db)}")
+
+
+def test_default_window_uses_clock_column_when_anchor_differs(monkeypatch, sources_db):
+    spec = _spec(grain="irregular", grouped=False, anchor_column="available_at")
+    first = datetime(2026, 8, 1, 10, tzinfo=UTC)
+    second = datetime(2026, 8, 2, 10, tzinfo=UTC)
+    published = datetime(2026, 8, 15, tzinfo=UTC)
+    _seed(
+        sources_db,
+        spec,
+        [
+            (first, "A", 1.0, published, published, published),
+            (second, "A", 2.0, published, published, published),
+        ],
+    )
+    result = _run(monkeypatch, sources_db, spec, start=None, end=None)
+    assert result["row_count"] == 2
+    assert result["window"]["end"] == "2026-08-02"
+    assert result["window"]["tz"] == "Europe/London"
+    assert [row["ts"] for row in result["rows"]] == [rows._ts_ms(first), rows._ts_ms(second)]
+    assert result["coverage"]["latest_local_day"] == "2026-08-02"
+
+
+def test_empty_window_with_data_outside_emits_note(monkeypatch, sources_db):
+    spec = _spec(grain="irregular", grouped=False, anchor_column="available_at")
+    stamp = datetime(2026, 8, 1, 10, tzinfo=UTC)
+    published = datetime(2026, 8, 15, tzinfo=UTC)
+    _seed(
+        sources_db,
+        spec,
+        [
+            (stamp, "A", 1.0, published, published, published),
+            (stamp + timedelta(days=1), "A", 2.0, published, published, published),
+        ],
+    )
+    result = _run(monkeypatch, sources_db, spec, start="2026-08-10", end="2026-08-11")
+    assert result["row_count"] == 0
+    assert any(
+        "No rows in this window" in note and "2026-08-01" in note and "2026-08-02" in note
+        for note in result["notes"]
+    )
+
+
+def test_columns_list_includes_every_declared_value(monkeypatch, sources_db):
+    spec = _spec(ordered=False, grain="irregular", grouped=False)
+    spec["values"].append({"column": "other_value", "unit": "GBP", "label": "Other value"})
+    stamp = datetime(2026, 9, 22, tzinfo=UTC)
+    sources_db.con.execute(
+        "CREATE TABLE silver_test_sample (timestamp_utc TIMESTAMPTZ, value DOUBLE, "
+        "other_value DOUBLE)"
+    )
+    sources_db.con.execute("INSERT INTO silver_test_sample VALUES (?, 1.0, 2.0)", [stamp])
+    result = _run(monkeypatch, sources_db, spec)
+    assert result["columns"] == [
+        {"column": "value", "unit": "MW", "label": "Test value"},
+        {"column": "other_value", "unit": "GBP", "label": "Other value"},
+    ]
 
 
 @pytest.mark.parametrize("reverse", [False, True])

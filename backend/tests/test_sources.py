@@ -7,7 +7,7 @@ from datetime import UTC, date, datetime
 
 import pytest
 
-from app import sources
+from app import rows, sources
 from app.sources_spec import SOURCES as COMMITTED_SOURCES
 
 
@@ -130,8 +130,39 @@ def test_uk_days_dst_and_publication_anchor_not_future_delivery(
     assert result["coverage"]["rows"] == 4
     assert result["coverage"]["first_day"] == "2026-08-10"
     assert result["coverage"]["day_count"] == 3
-    assert result["coverage"]["latest_local_day"] == "2026-08-09"
+    assert result["coverage"]["latest_local_day"] == sources._today_uk().isoformat()
+    assert result["coverage"]["last_published_day"] == "2026-08-09"
     assert sources_db.table_calls == 1
+
+
+def test_latest_local_day_matches_rows_default_window_end(
+    monkeypatch: pytest.MonkeyPatch, sources_db
+) -> None:
+    dataset = _dataset(
+        latest_relation=None,
+        clock={"column": "timestamp_utc", "grain": "irregular", "settlement_cols": []},
+    )
+    sources_db.con.execute(
+        "CREATE TABLE silver_test_sample (timestamp_utc TIMESTAMPTZ, "
+        "published_at TIMESTAMPTZ, value DOUBLE)"
+    )
+    sources_db.con.executemany(
+        "INSERT INTO silver_test_sample VALUES (?, ?, ?)",
+        [
+            (datetime(2026, 8, 1, 10, tzinfo=UTC), datetime(2026, 8, 15, tzinfo=UTC), 1.0),
+            (datetime(2026, 8, 2, 10, tzinfo=UTC), datetime(2026, 8, 15, tzinfo=UTC), 2.0),
+        ],
+    )
+    monkeypatch.setattr(sources, "SOURCES", _spec(dataset))
+    monkeypatch.setattr(rows, "REGISTRY", {("test", "sample"): dataset})
+    rows._cache.clear()
+    manifest_coverage = _one(sources._response(sources.build_manifest(sources_db)))["coverage"]
+    request = rows.validate("test", "sample", None, None, None, None)
+    rows_response = rows.execute(sources_db, request, f"test-{id(sources_db)}")
+    assert rows_response["row_count"] == 2
+    assert manifest_coverage["latest_local_day"] == "2026-08-02"
+    assert manifest_coverage["latest_local_day"] == rows_response["window"]["end"]
+    assert manifest_coverage["last_published_day"] == "2026-08-15"
 
 
 def test_latest_relation_and_missing_column_isolated(
@@ -285,7 +316,7 @@ def test_filter_dedup_snapshot_and_null_anchor(monkeypatch: pytest.MonkeyPatch, 
     card = _one(sources._response(sources.build_manifest(sources_db)))
     assert card["coverage"]["rows"] == 1
     assert card["coverage"]["last_day"] == "2026-09-03"
-    assert card["coverage"]["latest_local_day"] is None
+    assert card["coverage"]["latest_local_day"] == "2026-09-03"
 
 
 def test_dotted_and_reserved_identifiers_and_quoted_scalar_execute(

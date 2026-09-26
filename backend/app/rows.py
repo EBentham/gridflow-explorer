@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 import math
 import re
 import threading
@@ -349,7 +348,7 @@ def _metadata(client: Any, request: Request, config: str) -> Metadata:
 def _window(request: Request, meta: Metadata) -> tuple[date, date, datetime, datetime] | None:
     if request.dataset["kind"] == "reference":
         return None
-    anchor = meta.anchor_day
+    anchor = meta.last_day
     if isinstance(anchor, datetime):
         anchor = anchor.date()
     if request.end is None:
@@ -930,9 +929,9 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
         "last_day": meta.last_day.isoformat() if meta.last_day else None,
         "day_count": meta.day_count,
         "latest_local_day": min(
-            meta.anchor_day, datetime.now(UTC).astimezone(LONDON).date()
+            meta.last_day, datetime.now(UTC).astimezone(LONDON).date()
         ).isoformat()
-        if meta.anchor_day
+        if meta.last_day
         else None,
         "days_in_window": (window[1] - window[0]).days + 1 if window else None,
     }
@@ -947,6 +946,14 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
         }
         if width:
             truncation.update(bucket_ms=width, aggregation="mean")
+    if window and not rows and meta.rows:
+        if meta.first_day and meta.last_day:
+            notes.append(
+                f"No rows in this window; held data runs {meta.first_day.isoformat()} "
+                f"to {meta.last_day.isoformat()}."
+            )
+        else:
+            notes.append("No rows in this window; the dataset has rows outside it.")
     return {
         "dataset": dataset["id"],
         "source": request.source,
@@ -955,16 +962,17 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
         "window": {
             "start": window[0].isoformat(),
             "end": window[1].isoformat(),
+            "tz": "Europe/London",
             "lower_utc": window[2].isoformat().replace("+00:00", "Z"),
             "upper_utc": window[3].isoformat().replace("+00:00", "Z"),
         }
         if window
         else None,
         "grain_ms": grain,
-        "columns": {
-            "values": copy.deepcopy(dataset["values"]),
-            "dims": copy.deepcopy(dataset["dims"]),
-        },
+        "columns": [
+            {"column": value["column"], "unit": value["unit"], "label": value["label"]}
+            for value in dataset["values"]
+        ],
         "group": request.group,
         "filters": dict(request.filters),
         "rows": rows,

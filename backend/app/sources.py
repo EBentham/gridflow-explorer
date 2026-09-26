@@ -243,9 +243,11 @@ def _coverage(
     if reference:
         result["last_ingested"] = _iso_z(row["last_ingested"])
     else:
-        # Preserve the uncapped anchor in the private cache. The cap is applied
-        # to a response copy so a cache crossing UK midnight gets today's date.
-        result["_anchor_day"] = _day_string(row["anchor_day"])
+        # Preserve uncapped clock and publication days across cache refreshes.
+        # The response caps them at today, including across UK midnight.
+        result["_anchor_day"] = _day_string(row["last_day"])
+        if dataset["latest_day_rule"]["mode"] == "max":
+            result["_published_anchor_day"] = _day_string(row["anchor_day"])
     return result
 
 
@@ -360,6 +362,11 @@ def _response(snapshot: dict[str, Any]) -> dict[str, Any]:
                     coverage["latest_local_day"] = (
                         min(date.fromisoformat(anchor), today).isoformat() if anchor else None
                     )
+                    published = coverage.pop("_published_anchor_day", None)
+                    if published:
+                        coverage["last_published_day"] = min(
+                            date.fromisoformat(published), today
+                        ).isoformat()
     return payload
 
 
