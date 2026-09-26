@@ -53,13 +53,17 @@ export function stepDigits(step: number): number {
   return 6
 }
 
-/** Decimals for a value with no settled precision: fewer as it grows (1234 → 0, 12.3 → 1, 0.123 → 3). */
+/**
+ * Decimals for a value with no settled precision: fewer as it grows (1234 → 0,
+ * 12.3 → 1, 1.23 → 2), and below 1 three significant figures (0.123 → 3,
+ * 0.00914 → 5, 0.0000161 → 7), so a small value never prints as zero.
+ */
 export function autoDigits(v: number): number {
   const a = Math.abs(v)
   if (a >= 100 || a === 0) return 0
   if (a >= 10) return 1
   if (a >= 1) return 2
-  return 3
+  return Math.min(12, 2 - Math.floor(Math.log10(a)))
 }
 
 /** A share in whole per cent: `38%`. */

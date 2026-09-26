@@ -115,15 +115,19 @@ export function relatedParts(ctx: PageContext, series: SeriesDef[], withColumns 
   })
 }
 
-/** The units a dataset's value columns print in, from the config's specs and the manifest: `GW`, or `unit unconfirmed`. */
-function plannedUnit(dataset: ManifestDataset | null, columns: string[], specs: ValueSpec[] | undefined): string | null {
+/**
+ * The units a dataset's value columns print in, from the config's specs and
+ * the manifest: `GW`, or `unit unconfirmed`; undefined when none of them is a
+ * number (text columns have no unit to name).
+ */
+function plannedUnit(dataset: ManifestDataset | null, columns: string[], specs: ValueSpec[] | undefined): string | undefined {
   const labels = columns.map((c) => {
     const spec = specs?.find((s) => s.column === c)
     const unit = displayUnit(spec?.unit ?? dataset?.values.find((v) => v.column === c)?.unit, spec?.display)
     return unit.numeric ? (unit.label ?? 'unit unconfirmed') : null
   })
   const known = [...new Set(labels.filter((l): l is string => l !== null))]
-  return known.length ? listText(known) : null
+  return known.length ? listText(known) : undefined
 }
 
 /**
@@ -131,7 +135,7 @@ function plannedUnit(dataset: ManifestDataset | null, columns: string[], specs: 
  * the columns it asks for, their unit, split and filters, and each related
  * dataset, from the config and the manifest rather than from rows.
  */
-export function plannedParts(ctx: PageContext): { columns: string[]; by: string | null; filters: Record<string, Scalar> | null; unit: string | null; also: SourcePart[] } {
+export function plannedParts(ctx: PageContext): { columns: string[]; by: string | null; filters: Record<string, Scalar> | null; unit: string | undefined; also: SourcePart[] } {
   const view = ctx.view
   const specs = view.body === 'series' ? view.values : undefined
   const columns = specs?.map((v) => v.column) ?? ctx.dataset.values.map((v) => v.column)

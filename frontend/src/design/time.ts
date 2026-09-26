@@ -45,10 +45,11 @@ function londonParts(ms: number): LondonParts {
   return { year: out.year, month: out.month, day: out.day, hour: out.hour, minute: out.minute }
 }
 
-/** `BST` or `GMT` for the instant (en-GB renders BST as `GMT+1` in some runtimes). */
+/** `BST` or `GMT` for the instant (some runtimes render them `GMT+1` and `GMT+0`). */
 export function zoneAbbrev(ms: number): string {
   const name = zoneFmt.formatToParts(ms).find((p) => p.type === 'timeZoneName')?.value ?? ''
-  return name === 'GMT+1' ? 'BST' : name
+  if (name === 'GMT+1') return 'BST'
+  return name === 'GMT+0' ? 'GMT' : name
 }
 
 /** London UTC offset in ms at an instant. */

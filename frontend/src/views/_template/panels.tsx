@@ -287,9 +287,11 @@ export function SeriesKey({ ctx }: { ctx: PageContext }) {
   )
 }
 
-/** Text-only rows per UK day: how many hold something. */
+/** Text-only rows per UK day: how many hold something; a day beyond the local depth is not held. */
 function RowsPerDay({ ctx }: { ctx: PageContext }) {
   const days = heldDays(ctx)
+  const first = ctx.dataset.coverage?.first_day
+  const last = ctx.dataset.coverage?.last_day
   return (
     <>
       <div className="gf-days">
@@ -303,12 +305,15 @@ function RowsPerDay({ ctx }: { ctx: PageContext }) {
             </tr>
           </thead>
           <tbody>
-            {days.map((d) => (
-              <tr key={d.day} className={d.held === 0 ? 'is-missing' : undefined}>
-                <th scope="row">{dayLabel(d.start)}</th>
-                <td className="is-num">{d.held || 'none held'}</td>
-              </tr>
-            ))}
+            {days.map((d) => {
+              const outside = (first && d.day < first) || (last && d.day > last)
+              return (
+                <tr key={d.day} className={d.held === 0 ? 'is-missing' : undefined}>
+                  <th scope="row">{dayLabel(d.start)}</th>
+                  <td className="is-num">{d.held ? d.held : outside ? 'not held locally' : 'none held'}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -578,13 +583,15 @@ export function ReferenceCounts({ ctx }: { ctx: PageContext }) {
   const counts = new Map<string, number>()
   for (const r of response.rows) counts.set(String(r[field] ?? 'none'), (counts.get(String(r[field] ?? 'none')) ?? 0) + 1)
   const max = Math.max(1, ...counts.values())
+  const spec = view.columns?.find((c) => c.field === field)
+  const said = (k: string) => (spec ? (wordsOf(spec, k) ?? k) : k)
   return (
     <ul className="gf-counts">
       {[...counts.entries()]
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .sort((a, b) => b[1] - a[1] || said(a[0]).localeCompare(said(b[0])))
         .map(([k, n]) => (
           <li key={k}>
-            <span className="gf-counts-label">{k}</span>
+            <span className="gf-counts-label">{said(k)}</span>
             <span className="gf-counts-bar" aria-hidden="true">
               <span style={{ width: `${(n / max) * 100}%` }} />
             </span>
@@ -596,6 +603,25 @@ export function ReferenceCounts({ ctx }: { ctx: PageContext }) {
 }
 
 // ---------------------------------------------------------------- about (every body)
+
+/** An id set in mono that may wrap after its underscores rather than mid-word. */
+function Id({ id }: { id: string }) {
+  const parts = id.split('_')
+  return (
+    <code>
+      {parts.map((p, i) => (
+        <Fragment key={i}>
+          {p}
+          {i < parts.length - 1 && (
+            <>
+              _<wbr />
+            </>
+          )}
+        </Fragment>
+      ))}
+    </code>
+  )
+}
 
 /** The side panel's default: what the dataset is, how it is read, and how far it runs locally. */
 export function About({ ctx }: { ctx: PageContext }) {
@@ -619,18 +645,20 @@ export function About({ ctx }: { ctx: PageContext }) {
       <div>
         <dt>Dataset</dt>
         <dd>
-          <code>{d.id}</code>, {ctx.fixture ? 'made in the browser' : `from ${sourceName(ctx.source)} (${ctx.source.host})`}
+          <Id id={d.id} />, {ctx.fixture ? 'made in the browser' : `from ${sourceName(ctx.source)} (${ctx.source.host})`}
         </dd>
       </div>
       <div>
         <dt>Columns</dt>
         <dd>
-          {columns.map((c, i) => (
-            <Fragment key={c.column}>
-              {i > 0 && '; '}
-              <code>{c.column}</code> {c.note}
-            </Fragment>
-          ))}
+          {columns.length
+            ? columns.map((c, i) => (
+                <Fragment key={c.column}>
+                  {i > 0 && '; '}
+                  <Id id={c.column} /> {c.note}
+                </Fragment>
+              ))
+            : 'No values: it holds identifiers and categories.'}
         </dd>
       </div>
       {split && (
@@ -677,7 +705,8 @@ export function About({ ctx }: { ctx: PageContext }) {
       </div>
       <div>
         <dt>Held locally</dt>
-        <dd>{!d.held ? `Nothing: ${notHeldText(d.not_held_cause, { layer: ctx.source.layer })}` : (depth ?? (d.kind === 'reference' ? plural(d.coverage?.rows ?? 0, 'row', 'rows') : 'nothing yet'))}</dd>
+        {/* Rows with no known day range (a table whose clock isn't read) still count as held. */}
+        <dd>{!d.held ? `Nothing: ${notHeldText(d.not_held_cause, { layer: ctx.source.layer })}` : (depth ?? (d.coverage?.rows ? plural(d.coverage.rows, 'row', 'rows') : 'nothing yet'))}</dd>
       </div>
       <div>
         <dt>Fetched</dt>

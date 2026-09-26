@@ -106,6 +106,8 @@ export function toTableCol(spec: ColumnSpec): TableCol<Row> {
     if (words !== null) return words
     if (format === 'time') return toInstant(v)
     if (typeof v === 'number') return v
+    // A number the table holds as text ("22.3") sorts as the number; the cell shows it as published.
+    if (format === 'number' && typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v))) return Number(v)
     if (typeof v === 'boolean') return v ? 1 : 0
     return String(v)
   }
