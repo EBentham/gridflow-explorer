@@ -6,9 +6,9 @@
    prefers dark (unless data-theme="light") or when data-theme="dark" is set
    on <html>. Both dark blocks must stay identical.
 
-   Status: extracted from the prototype (src/prototype/r2/i/tokens.css and
-   home.css). The prototype still carries its own copy until the port phase
-   wires this file into the app and deletes src/prototype/. */
+   Status: extracted from the design-loop prototype and, since the v0.4 port
+   (P0-1), the app's only token source: main.tsx loads it first and every
+   stylesheet in src/design reads from it. */
 
 :root {
   --scheme: light;

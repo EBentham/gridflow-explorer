@@ -1,4 +1,5 @@
 import type { DataRecord } from '../api/types'
+import { gw } from './format'
 import { toMs } from './time'
 
 /**
@@ -48,26 +49,33 @@ export const fuelVar = (key: string) => `var(--fuel-${key})`
 
 export interface MixRow {
   t: number
-  /** Band values in GW (display unit), signed. */
-  [key: string]: number
+  /** Band values in GW (display unit), signed; null where the source sent none. */
+  [key: string]: number | null
 }
+
+const num = (v: unknown): number | null => (v === null || v === undefined || v === '' ? null : Number(v))
 
 /**
  * Pivots API records (MW per source series) into band rows in GW, plus
  * `<key>__pos` / `<key>__neg` parts for signed bands so positive parts stack
- * above zero and negative parts stack below it.
+ * above zero and negative parts stack below it. A band is null only when
+ * every source in it is null: a missing value is never read as zero.
  */
 export function toMixRows(records: DataRecord[], timestampKey: string): MixRow[] {
   return records.map((r) => {
     const row: MixRow = { t: toMs(String(r[timestampKey])) }
     for (const band of FUEL_BANDS) {
-      const mw = band.sources.reduce((sum, s) => sum + (Number(r[s.key]) || 0), 0)
-      const gw = mw / 1000
-      row[band.key] = gw
-      for (const s of band.sources) row[`src__${s.key}`] = (Number(r[s.key]) || 0) / 1000
+      const parts = band.sources.map((s) => {
+        const p = num(r[s.key])
+        row[`src__${s.key}`] = p === null ? null : gw(p)
+        return p
+      })
+      const held = parts.filter((p): p is number => p !== null)
+      const value = held.length ? gw(held.reduce((a, b) => a + b, 0)) : null
+      row[band.key] = value
       if (band.signed) {
-        row[`${band.key}__pos`] = Math.max(gw, 0)
-        row[`${band.key}__neg`] = Math.min(gw, 0)
+        row[`${band.key}__pos`] = value === null ? null : Math.max(value, 0)
+        row[`${band.key}__neg`] = value === null ? null : Math.min(value, 0)
       }
     }
     return row

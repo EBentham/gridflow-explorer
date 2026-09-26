@@ -1,0 +1,222 @@
+/* Chart furniture (DESIGN §6): the chart box and its clock caption, the
+   tooltip, labelled extremes, the fuel key and the one-bar mix. Marks take
+   their colours from --chart-* and --fuel-* tokens. */
+
+.gf-chart {
+  position: relative;
+  min-width: 0;
+  background: var(--chart-surface);
+}
+.gf-chart.has-caption {
+  margin-bottom: 18px;
+}
+.gf-chart.is-pickable .recharts-surface {
+  cursor: pointer;
+}
+.gf-chart .recharts-surface {
+  overflow: visible;
+}
+.gf-chart .recharts-tooltip-wrapper {
+  z-index: 5;
+}
+.gf-chart-stack {
+  display: flex;
+  flex-direction: column;
+}
+.gf-axis-caption {
+  position: absolute;
+  right: 18px;
+  bottom: -18px;
+  color: var(--chart-tick);
+  font-family: var(--chart-font);
+  font-size: 11.5px;
+}
+.gf-extreme {
+  font-family: var(--chart-font);
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--ink);
+}
+
+/* ================================================================ tooltip */
+
+.gf-tip {
+  min-width: 180px;
+  padding: 6px 8px;
+  background: var(--tip-bg);
+  color: var(--tip-ink);
+  border: 1px solid var(--tip-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--tip-shadow);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.gf-tip-title {
+  margin-bottom: 4px;
+  color: var(--tip-muted);
+  font-variant-numeric: tabular-nums;
+}
+.gf-tip table {
+  border-collapse: collapse;
+}
+.gf-tip td {
+  padding: 1px 4px 1px 0;
+  white-space: pre;
+}
+.gf-tip td.gf-tip-value {
+  padding-right: 8px;
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.gf-tip-label {
+  color: var(--tip-muted);
+}
+.gf-tip-strong td {
+  border-top: 1px solid var(--tip-border);
+  padding-top: 3px;
+}
+.gf-tip-note {
+  margin-top: 4px;
+  color: var(--tip-muted);
+}
+
+/* ================================================================ fuel key */
+
+.gf-fuel-key {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+.gf-fuel-key button {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+}
+.gf-fuel-key button:hover {
+  background: var(--hover);
+}
+.gf-fuel-key button:focus-visible {
+  outline: 2px solid var(--focus);
+}
+.gf-fuel-key .is-focus button {
+  background: var(--selected);
+  font-weight: 600;
+}
+.gf-fuel-key .is-muted {
+  opacity: 0.5;
+}
+.gf-swatch {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+.gf-fuel-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+
+/* ================================================================ the one-bar mix (the site's generation bar) */
+
+.gf-mixbar {
+  margin: 4px 0 0;
+  display: grid;
+}
+.gf-mixbar-labels {
+  position: relative;
+  height: 64px;
+}
+.gf-mixbar-label {
+  position: absolute;
+  display: grid;
+  align-content: start;
+  padding-left: 6px;
+  border-left: 1px solid var(--rule-strong);
+  font-size: 12.5px;
+  line-height: 1.25;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.gf-mixbar-label b {
+  font-weight: 600;
+  color: var(--ink);
+}
+.gf-mixbar-label.is-row0 {
+  top: 0;
+  bottom: 0;
+}
+.gf-mixbar-label.is-row1 {
+  top: 30px;
+  bottom: 0;
+}
+.gf-mixbar-label.is-end {
+  padding: 0 6px 0 0;
+  border-left: 0;
+  border-right: 1px solid var(--rule-strong);
+  text-align: right;
+}
+.gf-mixbar-bar {
+  position: relative;
+  height: 30px;
+}
+.gf-mixbar-bar span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  box-shadow: inset -1px 0 0 var(--panel);
+}
+.gf-mixbar-axis {
+  position: relative;
+  height: 22px;
+  margin-top: 4px;
+  border-top: 1px solid var(--chart-axis);
+  font-size: 11.5px;
+  color: var(--chart-tick);
+}
+.gf-mixbar-axis span {
+  position: absolute;
+  top: 0;
+  padding-top: 5px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+.gf-mixbar-axis span::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 4px;
+  border-left: 1px solid var(--chart-axis);
+}
+.gf-mixbar-axis span:first-child {
+  transform: none;
+}
+.gf-mixbar-axis span:first-child::before {
+  left: 0;
+}
+.gf-mixbar-axis .is-total {
+  transform: translateX(-100%);
+  font-weight: 600;
+  color: var(--ink);
+}
+.gf-mixbar-axis .is-total::before {
+  left: 100%;
+}
+.gf-mixbar-rest {
+  margin-top: 6px;
+  max-width: 90ch;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+}

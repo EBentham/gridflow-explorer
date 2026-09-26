@@ -1,70 +1,30 @@
-import { useMemo } from 'react'
-import { Navigate, Route, Routes, useParams, useSearchParams } from 'react-router-dom'
-import './App.css'
-import { ApiError } from './api/client'
-import type { DatasetSummary } from './api/types'
-import { ChartCard } from './components/ChartCard'
-import { ErrorState } from './components/ErrorState'
-import { Layout } from './components/Layout'
-import { LoadingState } from './components/LoadingState'
-import { SeriesLineChart } from './components/SeriesLineChart'
-import { StackedAreaChart } from './components/StackedAreaChart'
-import { useDataset } from './hooks/useDataset'
-import { useDatasets } from './hooks/useDatasets'
-import { lastNDays } from './lib/range'
-import { ForecastScreen } from './screens/ForecastScreen'
-import { SCREENS } from './screens/registry'
-import { ComparePage } from './prototype/ComparePage'
-import { PrototypeRoot } from './prototype/PrototypeRoot'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { NotFoundScreen } from './screens/NotFoundScreen'
+import { CatalogueScreen } from './screens/catalogue/CatalogueScreen'
+import { SourceScreen } from './screens/catalogue/SourceScreen'
+import { ForecastScreen } from './screens/forecasts/ForecastScreen'
+import { GenerationMixScreen } from './screens/generation-mix/GenerationMixScreen'
+import { SystemPricesScreen } from './screens/system-prices/SystemPricesScreen'
+import { WindForecastScreen } from './screens/wind-forecast/WindForecastScreen'
+import { Shell } from './shell/Shell'
 
-/** Fallback screen for any catalogue dataset with no dedicated entry in `SCREENS`. */
-function GenericDatasetScreen({ dataset }: { dataset: DatasetSummary }) {
-  const range = useMemo(() => lastNDays(dataset.default_range_days), [dataset.default_range_days])
-  const { data, loading, error } = useDataset(dataset.id, range)
-
-  if (loading) return <LoadingState />
-  if (error) return <ErrorState error={error} />
-  if (!data) return null
-
-  return (
-    <ChartCard title={dataset.title}>
-      {dataset.chart === 'stacked-area' ? (
-        <StackedAreaChart records={data} series={dataset.series} timestampKey={dataset.timestamp_key} />
-      ) : (
-        <SeriesLineChart records={data} series={[dataset.series[0]]} timestampKey={dataset.timestamp_key} />
-      )}
-    </ChartCard>
-  )
-}
-
-/** Resolves `:datasetId` against the live catalogue and renders its registered screen. */
-function DatasetRoute() {
-  const { datasetId } = useParams<{ datasetId: string }>()
-  const { data: datasets, loading, error } = useDatasets()
-
-  if (loading) return <LoadingState />
-  if (error) return <ErrorState error={error} />
-
-  const dataset = datasets?.find((d) => d.id === datasetId)
-  if (!dataset) {
-    return <ErrorState error={new ApiError('unknown_dataset', `Unknown dataset '${datasetId ?? ''}'.`)} />
-  }
-
-  const Screen = SCREENS[dataset.id] ?? GenericDatasetScreen
-  return <Screen dataset={dataset} />
-}
-
+/**
+ * Every screen sits in the shell. The brand, and `/`, open the catalogue;
+ * the pinned screens keep their routes; /forecasts is reached from the
+ * catalogue, not the rail.
+ */
 function App() {
-  const [params] = useSearchParams()
-  // PROTOTYPE (design loop round 1): `?variant=` swaps in the variant shells; dev builds only.
-  if (import.meta.env.DEV && params.has('variant')) return <PrototypeRoot />
   return (
     <Routes>
-      {import.meta.env.DEV && <Route path="/prototype" element={<ComparePage />} />}
-      <Route element={<Layout />}>
-        <Route path="/" element={<Navigate to="/datasets/generation-mix" replace />} />
-        <Route path="/datasets/:datasetId" element={<DatasetRoute />} />
-        <Route path="/forecasts" element={<ForecastScreen />} />
+      <Route element={<Shell />}>
+        <Route index element={<Navigate to="/sources" replace />} />
+        <Route path="sources" element={<CatalogueScreen />} />
+        <Route path="sources/:sourceKey" element={<SourceScreen />} />
+        <Route path="datasets/generation-mix" element={<GenerationMixScreen />} />
+        <Route path="datasets/system-prices" element={<SystemPricesScreen />} />
+        <Route path="forecasts" element={<ForecastScreen />} />
+        <Route path="forecasts/wind" element={<WindForecastScreen />} />
+        <Route path="*" element={<NotFoundScreen />} />
       </Route>
     </Routes>
   )
