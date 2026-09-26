@@ -15,7 +15,6 @@ import { WIND_FIXTURE_DAY, WIND_FIXTURE_MODEL } from '../../fixtures/windForecas
 import {
   CATALOGUE_SNAPSHOT,
   DOMAINS,
-  GOLD,
   SOURCES,
   datasetCount,
   kindCounts,
@@ -155,8 +154,7 @@ export function CatalogueScreen() {
         kind="datacentre"
         title="gridflow data"
         sub="Every source gridflow ingests, and which of its datasets the Explorer draws. Select a source to see what it holds."
-        stamp={`${SOURCES.length} sources and ${TOTAL} datasets configured in gridflow, ${CHARTED} of them charted here. Source list copied from gridflow's sources.yaml on ${CATALOGUE_SNAPSHOT}.`}
-        badge={<FixtureTag>Source list is a fixture copy</FixtureTag>}
+        stamp={`${SOURCES.length} sources and ${TOTAL} datasets, ${CHARTED} of them charted here. This list was copied from gridflow's settings on ${CATALOGUE_SNAPSHOT} and doesn't update itself yet.`}
       />
 
       <Panel title="In the Explorer" src={`The screens that read gridflow now, each drawn over ${windowText}, UK time.`}>
@@ -193,55 +191,18 @@ export function CatalogueScreen() {
         </ul>
       </Panel>
 
-      <div className="i-cat-grid">
-        <Panel className="i-cat-sources" title="Sources" src="Grouped by what they measure. Counts are datasets configured in gridflow, not rows held locally.">
-          {DOMAINS.map((d) => (
-            <section key={d} className="i-domain" aria-labelledby={`i-domain-${d}`}>
-              <h3 id={`i-domain-${d}`}>{d}</h3>
-              <ul>
-                {SOURCES.filter((s) => s.domain === d).map((s) => (
-                  <SourceRow key={s.key} s={s} />
-                ))}
-              </ul>
-            </section>
-          ))}
-        </Panel>
-
-        <div className="i-cat-side">
-          <Panel title="Reading the list">
-            <dl className="i-legend">
-              <div>
-                <dt>
-                  <span className="i-srow-view is-sample">Charted</span>
-                </dt>
-                <dd>An Explorer screen reads it through GridflowClient.</dd>
-              </div>
-              <div>
-                <dt>
-                  <FixtureTag>Fixture</FixtureTag>
-                </dt>
-                <dd>Synthetic data made in the browser, labelled wherever it appears.</dd>
-              </div>
-              <div>
-                <dt>
-                  <span className="is-none">Not read yet</span>
-                </dt>
-                <dd>Configured in gridflow; the Explorer has no screen for it.</dd>
-              </div>
-            </dl>
-          </Panel>
-          <Panel title="Built in gridflow" src="Gold views and builders over the silver tables. Not read by the Explorer yet.">
-            <ul className="i-gold">
-              {GOLD.map((g) => (
-                <li key={g.id}>
-                  <code>{g.id}</code>
-                  <span>{g.label}</span>
-                </li>
+      <Panel className="i-cat-sources" title="Sources" src="Grouped by what they measure. Counts are datasets gridflow is set up to fetch, not rows held locally.">
+        {DOMAINS.map((d) => (
+          <section key={d} className="i-domain" aria-labelledby={`i-domain-${d}`}>
+            <h3 id={`i-domain-${d}`}>{d}</h3>
+            <ul>
+              {SOURCES.filter((s) => s.domain === d).map((s) => (
+                <SourceRow key={s.key} s={s} />
               ))}
             </ul>
-          </Panel>
-        </div>
-      </div>
+          </section>
+        ))}
+      </Panel>
     </section>
   )
 }

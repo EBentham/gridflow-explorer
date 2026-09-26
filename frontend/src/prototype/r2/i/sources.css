@@ -41,9 +41,6 @@
   text-decoration-color: var(--accent-hover);
   color: var(--ink);
 }
-:root[data-variant='i'] .i-srow-view.is-sample {
-  font-size: 13px;
-}
 
 /* ================================================================ view tiles */
 
@@ -160,7 +157,6 @@
 
 /* ================================================================ catalogue grid */
 
-:root[data-variant='i'] .i-cat-grid,
 :root[data-variant='i'] .i-src-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
@@ -170,7 +166,6 @@
 :root[data-variant='i'] .i-src-grid.is-single {
   grid-template-columns: minmax(0, 1fr);
 }
-:root[data-variant='i'] .i-cat-side,
 :root[data-variant='i'] .i-src-side {
   display: grid;
   gap: 12px;
@@ -291,26 +286,6 @@
   color: var(--muted);
 }
 
-/* legend and gold list */
-:root[data-variant='i'] .i-legend {
-  margin: 0;
-  display: grid;
-  gap: 10px;
-}
-:root[data-variant='i'] .i-legend div {
-  display: grid;
-  gap: 3px;
-}
-:root[data-variant='i'] .i-legend dt {
-  display: flex;
-}
-:root[data-variant='i'] .i-legend dd {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.4;
-  color: var(--ink-2);
-}
-:root[data-variant='i'] .i-gold,
 :root[data-variant='i'] .i-famlist,
 :root[data-variant='i'] .i-src-views {
   list-style: none;
@@ -319,17 +294,12 @@
   display: grid;
   gap: 10px;
 }
-:root[data-variant='i'] .i-gold li,
 :root[data-variant='i'] .i-famlist li {
   display: grid;
   gap: 2px;
   font-size: 13px;
   line-height: 1.4;
   color: var(--ink-2);
-}
-:root[data-variant='i'] .i-gold code {
-  font-size: 12px;
-  overflow-wrap: anywhere;
 }
 
 /* ================================================================ source page */
@@ -416,7 +386,6 @@
   }
 }
 @media (max-width: 980px) {
-  :root[data-variant='i'] .i-cat-grid,
   :root[data-variant='i'] .i-src-grid {
     grid-template-columns: minmax(0, 1fr);
   }
