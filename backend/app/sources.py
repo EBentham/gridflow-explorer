@@ -243,11 +243,14 @@ def _coverage(
     if reference:
         result["last_ingested"] = _iso_z(row["last_ingested"])
     else:
-        # Preserve uncapped clock and publication days across cache refreshes.
-        # The response caps them at today, including across UK midnight.
-        result["_anchor_day"] = _day_string(row["last_day"])
-        if dataset["latest_day_rule"]["mode"] == "max":
-            result["_published_anchor_day"] = _day_string(row["anchor_day"])
+        # Preserve the uncapped window day across cache refreshes.
+        # Events window on the latest-day rule, including clockless events.
+        window_day = (
+            row["anchor_day"]
+            if dataset["kind"] == "events" and dataset["latest_day_rule"]["mode"] == "max"
+            else row["last_day"]
+        )
+        result["_anchor_day"] = _day_string(window_day)
     return result
 
 
@@ -362,11 +365,6 @@ def _response(snapshot: dict[str, Any]) -> dict[str, Any]:
                     coverage["latest_local_day"] = (
                         min(date.fromisoformat(anchor), today).isoformat() if anchor else None
                     )
-                    published = coverage.pop("_published_anchor_day", None)
-                    if published:
-                        coverage["last_published_day"] = min(
-                            date.fromisoformat(published), today
-                        ).isoformat()
     return payload
 
 

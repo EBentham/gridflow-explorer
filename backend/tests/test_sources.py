@@ -133,7 +133,7 @@ def test_uk_days_dst_and_future_delivery_caps_latest_day_to_today(
     assert result["coverage"]["first_day"] == "2026-08-10"
     assert result["coverage"]["day_count"] == 3
     assert result["coverage"]["latest_local_day"] == today.isoformat()
-    assert result["coverage"]["last_published_day"] == "2026-08-09"
+    assert "last_published_day" not in result["coverage"]
     assert sources_db.table_calls == 1
 
 
@@ -164,7 +164,49 @@ def test_latest_local_day_matches_rows_default_window_end(
     assert rows_response["row_count"] == 2
     assert manifest_coverage["latest_local_day"] == "2026-08-02"
     assert manifest_coverage["latest_local_day"] == rows_response["window"]["end"]
-    assert manifest_coverage["last_published_day"] == "2026-08-15"
+    assert "last_published_day" not in manifest_coverage
+
+
+@pytest.mark.parametrize("clock_column", ["timestamp_utc", None])
+def test_events_manifest_latest_day_matches_rows_default_window(
+    monkeypatch: pytest.MonkeyPatch, sources_db, clock_column
+) -> None:
+    """Event coverage follows the window column even when its clock differs or is absent."""
+    dataset = _dataset(
+        kind="events",
+        latest_relation=None,
+        clock={"column": clock_column, "grain": "irregular", "settlement_cols": []}
+        if clock_column
+        else None,
+        latest_day_rule={
+            "mode": "max",
+            "column": "published_at" if clock_column else "event_time",
+        },
+    )
+    anchor_column = dataset["latest_day_rule"]["column"]
+    sources_db.con.execute(
+        f"CREATE TABLE silver_test_sample ({anchor_column} TIMESTAMPTZ, "
+        "timestamp_utc TIMESTAMPTZ, value DOUBLE)"
+    )
+    sources_db.con.executemany(
+        "INSERT INTO silver_test_sample VALUES (?, ?, ?)",
+        [
+            (datetime(2026, 8, 1, tzinfo=UTC), datetime(2026, 8, 20, tzinfo=UTC), 1.0),
+            (datetime(2026, 8, 2, tzinfo=UTC), datetime(2026, 8, 21, tzinfo=UTC), 2.0),
+        ],
+    )
+    monkeypatch.setattr(sources, "SOURCES", _spec(dataset))
+    monkeypatch.setattr(rows, "REGISTRY", {("test", "sample"): dataset})
+    rows._cache.clear()
+    card = _one(sources._response(sources.build_manifest(sources_db)))
+    response = rows.execute(
+        sources_db,
+        rows.validate("test", "sample", None, None, None, None),
+        f"test-{id(sources_db)}",
+    )
+    assert card["coverage"]["latest_local_day"] == "2026-08-02"
+    assert card["coverage"]["latest_local_day"] == response["window"]["end"]
+    assert "Rows have no usable latest-day anchor." not in card["notes"]
 
 
 def test_latest_relation_and_missing_column_isolated(

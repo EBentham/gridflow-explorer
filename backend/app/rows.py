@@ -219,7 +219,6 @@ class Metadata:
     types: dict[str, str]
     first_day: date | None
     last_day: date | None
-    anchor_day: date | None
     day_count: int | None
     rows: int
     cause: str | None = None
@@ -317,24 +316,21 @@ def _metadata(client: Any, request: Request, config: str) -> Metadata:
         column in types and _clock_kind(column, types) is None for column in clocks if column
     )
     if relation not in tables or missing or unsupported:
-        meta = Metadata(None, types, None, None, None, None, 0, "missing-in-catalogue")
+        meta = Metadata(None, types, None, None, None, 0, "missing-in-catalogue")
     else:
         selected = _selected_sql(relation, dataset)
         clock = _clock_column(dataset)
-        anchor = dataset["latest_day_rule"]["column"]
         day_sql = _uk_day(clock, types) if clock else "CAST(NULL AS DATE)"
-        anchor_sql = _uk_day(anchor, types) if anchor else "CAST(NULL AS DATE)"
         result = client.query(
             f"SELECT count(*) AS n, min({day_sql}) AS first_day, "
-            f"max({day_sql}) AS last_day, count(DISTINCT {day_sql}) AS day_count, "
-            f"max({anchor_sql}) AS anchor_day FROM ({selected}) AS covered"
+            f"max({day_sql}) AS last_day, count(DISTINCT {day_sql}) AS day_count "
+            f"FROM ({selected}) AS covered"
         ).to_dicts()[0]
         meta = Metadata(
             relation,
             types,
             result["first_day"],
             result["last_day"],
-            result["anchor_day"],
             result["day_count"],
             result["n"],
         )
@@ -910,7 +906,41 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
         expanded_rows = []
         for group_value in groups_seen:
             utc_phases = phases_by_group[group_value]
-            if calendar_cadence and len(utc_phases) != 1:
+            use_local_grid = calendar_cadence and len(utc_phases) != 1
+            if not width and len(utc_phases) == 1:
+                phase = next(iter(utc_phases))
+                first = lower_ms + (phase - lower_ms) % grain
+                utc_grid = range(first, upper_ms, grain)
+                if calendar_cadence:
+                    weekly = grain == GRAINS["7d"]
+                    counts: dict[date, int] = {}
+                    for ts in utc_grid:
+                        local_day = datetime.fromtimestamp(ts / 1000, UTC).astimezone(LONDON).date()
+                        key = (
+                            local_day - timedelta(days=local_day.weekday()) if weekly else local_day
+                        )
+                        counts[key] = counts.get(key, 0) + 1
+                    if weekly:
+                        local_phases = local_phases_by_group[group_value]
+                        weekday = next(iter(local_phases))[1] if len(local_phases) == 1 else None
+                        expected = (
+                            {
+                                day - timedelta(days=day.weekday())
+                                for offset in range((window[1] - window[0]).days + 1)
+                                if (day := window[0] + timedelta(days=offset)).weekday() == weekday
+                            }
+                            if weekday is not None
+                            else set(counts)
+                        )
+                    else:
+                        expected = {
+                            window[0] + timedelta(days=offset)
+                            for offset in range((window[1] - window[0]).days + 1)
+                        }
+                    use_local_grid = set(counts) != expected or any(
+                        count != 1 for count in counts.values()
+                    )
+            if use_local_grid:
                 phases = local_phases_by_group[group_value]
                 if len(phases) != 1:
                     raise _limit(
@@ -945,9 +975,7 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
                     raise _limit(
                         "unsupported_cadence", "Filter the mixed identities or cadence phases."
                     )
-                phase = next(iter(utc_phases))
-                first = lower_ms + (phase - lower_ms) % grain
-                grid = range(first, upper_ms, grain)
+                grid = utc_grid
             for ts in grid:
                 record = observed.get((ts, group_value))
                 if record is None:
@@ -968,10 +996,8 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
             ),
         )
     coverage = {
-        "rows": meta.rows,
         "first_day": meta.first_day.isoformat() if meta.first_day else None,
         "last_day": meta.last_day.isoformat() if meta.last_day else None,
-        "day_count": meta.day_count,
         "latest_local_day": min(
             meta.last_day, datetime.now(UTC).astimezone(LONDON).date()
         ).isoformat()
@@ -1007,8 +1033,6 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
             "start": window[0].isoformat(),
             "end": window[1].isoformat(),
             "tz": "Europe/London",
-            "lower_utc": window[2].isoformat().replace("+00:00", "Z"),
-            "upper_utc": window[3].isoformat().replace("+00:00", "Z"),
         }
         if window
         else None,

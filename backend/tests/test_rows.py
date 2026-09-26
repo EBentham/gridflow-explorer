@@ -358,6 +358,37 @@ def test_utc_midnight_daily_crosses_bst_to_gmt(
     assert gaps[0][result["group"]] == "A"
 
 
+@pytest.mark.parametrize("grain", ["1d", "24h"])
+def test_london_midnight_daily_single_side_of_switch(monkeypatch, sources_db, grain):
+    """A London phase observed before fallback fills one midnight per London date."""
+    london = ZoneInfo("Europe/London")
+    spec = _spec(grain=grain)
+    stamps = [datetime(2026, 10, day, tzinfo=london) for day in (22, 23, 24)]
+    _seed(
+        sources_db, spec, [(stamp, "A", float(i), stamp, stamp) for i, stamp in enumerate(stamps)]
+    )
+    result = _run(monkeypatch, sources_db, spec, start="2026-10-22", end="2026-10-28")
+    assert result["row_count"] == 7
+    expected = [datetime(2026, 10, day, tzinfo=london) for day in range(22, 29)]
+    assert [row["ts"] for row in result["rows"]] == [rows._ts_ms(point) for point in expected]
+    assert [row["value"] for row in result["rows"]] == [0.0, 1.0, 2.0, None, None, None, None]
+
+
+@pytest.mark.parametrize("grain", ["1d", "24h"])
+def test_utc_midnight_daily_single_side_of_switch(monkeypatch, sources_db, grain):
+    """A UTC phase observed after fallback retains UTC midnight gaps before it."""
+    spec = _spec(grain=grain)
+    stamps = [datetime(2026, 10, day, tzinfo=UTC) for day in (26, 27, 28)]
+    _seed(
+        sources_db, spec, [(stamp, "A", float(i), stamp, stamp) for i, stamp in enumerate(stamps)]
+    )
+    result = _run(monkeypatch, sources_db, spec, start="2026-10-22", end="2026-10-28")
+    assert result["row_count"] == 7
+    expected = [datetime(2026, 10, day, tzinfo=UTC) for day in range(22, 29)]
+    assert [row["ts"] for row in result["rows"]] == [rows._ts_ms(point) for point in expected]
+    assert [row["value"] for row in result["rows"]] == [None, None, None, None, 0.0, 1.0, 2.0]
+
+
 def test_calendar_day_grain_crosses_gmt_to_bst_without_phase_refusal(monkeypatch, sources_db):
     """Spring's shorter UTC day retains a London 23:00 daily phase."""
     london = ZoneInfo("Europe/London")
@@ -401,7 +432,6 @@ def test_interval_value_is_not_treated_as_numeric_bucket(monkeypatch):
     meta = rows.Metadata(
         "silver_test_sample",
         {"timestamp_utc": "TIMESTAMPTZ", "duration": "INTERVAL"},
-        None,
         None,
         None,
         None,
@@ -623,8 +653,10 @@ def test_dst_half_hour_window_bounds(monkeypatch, sources_db, day, expected_coun
     first = datetime.fromisoformat(lower.replace("Z", "+00:00"))
     _seed(sources_db, spec, [(first, "A", 1.0, first, first)])
     result = _run(monkeypatch, sources_db, spec, start=day, end=day)
-    assert result["window"]["lower_utc"] == lower
-    assert result["window"]["upper_utc"] == upper
+    assert result["window"] == {"start": day, "end": day, "tz": "Europe/London"}
+    assert result["rows"][0]["ts"] == rows._ts_ms(
+        datetime.fromisoformat(lower.replace("Z", "+00:00"))
+    )
     assert result["row_count"] == expected_count
 
 
@@ -665,7 +697,7 @@ def test_naive_utc_clock_in_bst(monkeypatch, sources_db):
     )
     result = _run(monkeypatch, sources_db, spec, start="2026-08-01", end="2026-08-01")
     assert result["rows"][0]["ts"] == rows._ts_ms(datetime(2026, 8, 1, 0, 30, tzinfo=UTC))
-    assert result["window"]["lower_utc"] == "2026-07-31T23:00:00Z"
+    assert result["window"] == {"start": "2026-08-01", "end": "2026-08-01", "tz": "Europe/London"}
 
 
 def test_events_use_publication_clock_and_descending_order(monkeypatch, sources_db):
@@ -682,7 +714,7 @@ def test_events_use_publication_clock_and_descending_order(monkeypatch, sources_
     result = _run(monkeypatch, sources_db, spec)
     assert [row["value"] for row in result["rows"]] == [2.0, 1.0]
     assert [row["ts"] for row in result["rows"]] == [rows._ts_ms(later), rows._ts_ms(first)]
-    assert result["coverage"]["day_count"] == 1
+    assert "day_count" not in result["coverage"]
     assert any("publication time" in note for note in result["notes"])
 
 
@@ -759,7 +791,6 @@ def test_gap_and_bucket_never_invent_settlement_period(monkeypatch, sources_db):
     meta = rows.Metadata(
         "silver_test_sample",
         {"timestamp_utc": "TIMESTAMPTZ", "value": "DOUBLE"},
-        None,
         None,
         None,
         None,
@@ -1104,7 +1135,7 @@ def test_all_null_bucket_stays_null(sources_db):
     spec = _spec()
     request = rows.Request("test", spec, None, None, "unit", (), False)
     meta = rows.Metadata(
-        "sample", {"timestamp_utc": "TIMESTAMPTZ", "value": "DOUBLE"}, None, None, None, None, 0
+        "sample", {"timestamp_utc": "TIMESTAMPTZ", "value": "DOUBLE"}, None, None, None, 0
     )
     sources_db.con.execute(
         "CREATE TABLE sample (timestamp_utc TIMESTAMPTZ, unit VARCHAR, value DOUBLE)"

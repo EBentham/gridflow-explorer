@@ -392,7 +392,11 @@ def test_same_day_range_is_accepted(monkeypatch, sources_db):
     response = client.get(url + "?start=2026-08-01&end=2026-08-01")
     assert response.status_code == 200
     assert response.json()["coverage"]["days_in_window"] == 1
-    assert response.json()["window"]["lower_utc"] == "2026-07-31T23:00:00Z"
+    assert response.json()["window"] == {
+        "start": "2026-08-01",
+        "end": "2026-08-01",
+        "tz": "Europe/London",
+    }
 
 
 def test_declared_not_held_returns_cause_before_acquire(monkeypatch):
@@ -420,7 +424,7 @@ def test_cached_missing_schema_returns_cause_before_acquire(monkeypatch):
     config = str(get_settings().duckdb_path)
     rows._cache[(config, "test", "sample")] = (
         rows.time.monotonic(),
-        rows.Metadata(None, {}, None, None, None, None, 0, "missing-in-catalogue"),
+        rows.Metadata(None, {}, None, None, None, 0, "missing-in-catalogue"),
     )
     response = TestClient(app).get("/api/sources/test/sample/rows")
     assert response.status_code == 404
@@ -600,7 +604,7 @@ def test_rows_writer_lock_returns_503_even_with_warm_metadata(monkeypatch, runni
     config = str(get_settings().duckdb_path)
     rows._cache[(config, "test", "sample")] = (
         rows.time.monotonic(),
-        rows.Metadata("silver_test_sample", {}, None, None, None, None, 1),
+        rows.Metadata("silver_test_sample", {}, None, None, None, 1),
     )
 
     class Forbidden:
