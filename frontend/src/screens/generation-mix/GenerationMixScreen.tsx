@@ -9,9 +9,9 @@ import { FetchBanner } from '../../components/FetchBanner'
 import { DataTable, FuelKey } from '../../design/charts'
 import { daysInWindow, daysScrollCue, partialDays } from '../../design/days'
 import { fmt1, pct } from '../../design/format'
-import { Head, Panel, PendingNote, RangeControl, Screen, StatusNote, Toolbar, ViewSwitch, type ChartOrTable } from '../../design/frame'
+import { Head, Panel, PendingNote, RangeControl, Screen, StatusNote, Toolbar, ViewSwitch } from '../../design/frame'
 import { FUEL_BANDS, toMixRows } from '../../design/fuels'
-import { emptyRangeText } from '../../design/range'
+import { emptyRangeText, useViewParam } from '../../design/range'
 import { clock, dayLabel, halfHourWindow, rangeText, windowDomain } from '../../design/time'
 import { useLiveDataset } from '../../hooks/useLiveDataset'
 import { GenerationChart } from './GenerationChart'
@@ -31,7 +31,7 @@ export function GenerationMixScreen() {
   const days = useMemo(() => (range ? daysInWindow(rows, range) : []), [rows, range])
   const domain = useMemo(() => (range ? windowDomain(range.start, range.end) : null), [range])
   const [focus, setFocus] = useState<string | undefined>()
-  const [view, setView] = useState<ChartOrTable>('chart')
+  const [view, setView] = useViewParam()
   const [picked, setPicked] = useState<number | undefined>()
 
   const held = days.filter((d) => d.rows.length > 0)
@@ -133,7 +133,7 @@ export function GenerationMixScreen() {
           title="Days in range"
           src={
             <>
-              {DATASET}, mean GW and shares of generation per UK day{windowText && `, ${windowText}`}. Select a day to mark it on the chart and read its mean mix.
+              {DATASET}, half-hours held, mean GW and shares of generation per UK day{windowText && `, ${windowText}`}. Select a day to mark it on the chart and read its mean mix.
             </>
           }
         >
@@ -145,7 +145,10 @@ export function GenerationMixScreen() {
                   <tr>
                     <th scope="col">Day</th>
                     <th scope="col" className="is-num">
-                      Mean, GW
+                      Held
+                    </th>
+                    <th scope="col" className="is-num">
+                      GW
                     </th>
                     <th scope="col" className="is-num">
                       Wind
@@ -161,18 +164,21 @@ export function GenerationMixScreen() {
                       return (
                         <tr key={d.day} className="is-missing">
                           <th scope="row">{dayLabel(d.start)}</th>
+                          <td className="is-num">0 of {d.expected}</td>
                           <td colSpan={3}>not held locally</td>
                         </tr>
                       )
                     }
                     const on = d.start === day?.start
+                    const whole = d.rows.length >= d.expected
                     return (
-                      <tr key={d.day} className={on ? 'is-on' : undefined}>
+                      <tr key={d.day} className={on ? 'is-on' : whole ? undefined : 'is-partial'}>
                         <th scope="row">
                           <button type="button" aria-pressed={on} onClick={() => setPicked(d.start)}>
                             {dayLabel(d.start)}
                           </button>
                         </th>
+                        <td className="is-num">{whole ? d.rows.length : `${d.rows.length} of ${d.expected}`}</td>
                         <td className="is-num">{fmt1(meanTotal(d.rows))}</td>
                         <td className="is-num">{pct(share(d.rows, 'wind'))}</td>
                         <td className="is-num">{pct(share(d.rows, 'gas'))}</td>

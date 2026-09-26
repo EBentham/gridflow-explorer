@@ -16,7 +16,7 @@
  */
 import { useState, type ReactNode } from 'react'
 import { Emblem, type GlyphKind } from './glyphs'
-import { PRESETS, type Preset, type RangeState } from './range'
+import { PRESETS, type ChartOrTable, type Preset, type RangeState } from './range'
 import { fmtDay } from './time'
 import { useDocumentTitle } from './title'
 import type { DateRange } from '../lib/range'
@@ -130,7 +130,7 @@ export function Segmented<T extends string | number>({
   )
 }
 
-export type ChartOrTable = 'chart' | 'table'
+export type { ChartOrTable }
 
 const VIEW_OPTIONS: { value: ChartOrTable; label: string }[] = [
   { value: 'chart', label: 'Chart' },

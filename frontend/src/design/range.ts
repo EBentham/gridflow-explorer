@@ -1,17 +1,40 @@
 /**
- * The toolbar's range model (DESIGN §5): 1, 7 or 30 UK days ending on the
- * dataset's latest local day, or a custom pair of dates. Local data stops
+ * The toolbar's state (DESIGN §5). The range: 1, 7 or 30 UK days ending on
+ * the dataset's latest local day, or a custom pair of dates. Local data stops
  * well before today, so a window ending today would open empty; anchoring
- * on the latest held day is what makes the default useful.
+ * on the latest held day is what makes the default useful. And the view:
+ * Chart or Table.
  *
- * The choice lives in the URL (`?days=30`, or `?from=YYYY-MM-DD&to=…`), so a
- * view can be linked, reloaded and screenshotted as it is. The default
- * (7 days) leaves the URL clean.
+ * Both live in the URL (`?days=30`, or `?from=YYYY-MM-DD&to=…`; `?view=table`),
+ * so a view can be linked, reloaded and screenshotted as it is. The defaults
+ * (7 days, the chart) leave the URL clean.
  */
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { DateRange } from '../lib/range'
 import { rangeText, shiftDate, todayUk } from './time'
+
+export type ChartOrTable = 'chart' | 'table'
+
+/** The Chart | Table switch, kept in the URL as `?view=table` (the chart is the clean default). */
+export function useViewParam(): [ChartOrTable, (v: ChartOrTable) => void] {
+  const [params, setParams] = useSearchParams()
+  const view: ChartOrTable = params.get('view') === 'table' ? 'table' : 'chart'
+  const setView = useCallback(
+    (v: ChartOrTable) =>
+      setParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          if (v === 'table') next.set('view', 'table')
+          else next.delete('view')
+          return next
+        },
+        { replace: true },
+      ),
+    [setParams],
+  )
+  return [view, setView]
+}
 
 export type Preset = 1 | 7 | 30
 

@@ -32,8 +32,11 @@ function StatusIcon({ state }: { state: 'pass' | 'fail' | 'unknown' }) {
   )
 }
 
-/** A run's gate metrics: value, rule and result per gate, then the perfect-prog caveat in words. */
-export function MetricsPanel({ metrics, caveat }: { metrics: ForecastMetric[]; caveat: boolean | null }) {
+/**
+ * A run's gate metrics: value, rule and result per gate, then the perfect-prog caveat in words.
+ * On fixture metrics the caveat says what the fixture is marked as, not what inputs were used.
+ */
+export function MetricsPanel({ metrics, caveat, fixture = false }: { metrics: ForecastMetric[]; caveat: boolean | null; fixture?: boolean }) {
   return (
     <div className="gf-metrics">
       <table>
@@ -71,7 +74,9 @@ export function MetricsPanel({ metrics, caveat }: { metrics: ForecastMetric[]; c
         {caveat === true
           ? 'Scored with realised weather (perfect prog), so it flatters the model by the unmeasured weather-forecast error.'
           : caveat === false
-            ? 'Scored on genuine day-ahead inputs; the perfect-prog caveat does not apply.'
+            ? fixture
+              ? "The fixture is marked as scored on day-ahead inputs, so the perfect-prog caveat wouldn't apply."
+              : 'Scored on genuine day-ahead inputs; the perfect-prog caveat does not apply.'
             : 'No metrics recorded for this run yet, so the perfect-prog caveat is unknown.'}
       </p>
     </div>

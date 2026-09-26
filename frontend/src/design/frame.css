@@ -365,6 +365,10 @@
   color: var(--muted);
   font-weight: 400;
 }
+/* a day holding some of its periods, not all: "2 of 48" in its Held column */
+.gf-days tr.is-partial td:first-of-type {
+  font-weight: 700;
+}
 
 /* ================================================================ the data table (Chart | Table) */
 

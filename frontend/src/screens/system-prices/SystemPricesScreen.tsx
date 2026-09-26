@@ -4,13 +4,13 @@
  * backend. Beside the chart: the key and the window's figures; below it,
  * each day in the window and the runs below zero.
  */
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { FetchBanner } from '../../components/FetchBanner'
 import { DataTable, KeyList, type KeyItem } from '../../design/charts'
 import { daysInWindow, daysScrollCue } from '../../design/days'
 import { fmt0, money, pct, plural } from '../../design/format'
-import { Head, Panel, PendingNote, RangeControl, Screen, StatusNote, Toolbar, ViewSwitch, type ChartOrTable } from '../../design/frame'
-import { emptyRangeText } from '../../design/range'
+import { Head, Panel, PendingNote, RangeControl, Screen, StatusNote, Toolbar, ViewSwitch } from '../../design/frame'
+import { emptyRangeText, useViewParam } from '../../design/range'
 import { HALF_HOUR, clock, dayLabel, halfHourWindow, rangeText, windowDomain } from '../../design/time'
 import { useLiveDataset } from '../../hooks/useLiveDataset'
 import { PriceChart } from './PriceChart'
@@ -36,7 +36,7 @@ export function SystemPricesScreen() {
   const days = useMemo(() => (range ? daysInWindow(rows, range) : []), [rows, range])
   const domain = useMemo(() => (range ? windowDomain(range.start, range.end) : null), [range])
   const runs = useMemo(() => negativeRuns(rows), [rows])
-  const [view, setView] = useState<ChartOrTable>('chart')
+  const [view, setView] = useViewParam()
   const windowText = range ? rangeText(range.start, range.end) : ''
   const ready = live.state === 'data' && domain !== null
   // The range has been read, rows or none: the days list can say which days are missing.
