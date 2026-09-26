@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -191,8 +192,38 @@ def test_gold_forecasts_grouped_policies_serve_native(monkeypatch, sources_db):
     )
     assert response.status_code == 200
     payload = response.json()
-    assert {(row["group"], row["value"]) for row in payload["rows"]} == {("p1", 1.0), ("p2", 2.0)}
+    assert {(row[payload["group"]], row["value"]) for row in payload["rows"]} == {
+        ("p1", 1.0),
+        ("p2", 2.0),
+    }
     assert payload["truncated"] is False
+
+
+def test_hourly_gap_rows_use_declared_group_column_over_http(
+    monkeypatch: pytest.MonkeyPatch, sources_db: Any
+) -> None:
+    """HTTP gap rows carry the declared series key and retain each group identity."""
+    first = datetime(2026, 9, 22, tzinfo=UTC)
+    _seed(
+        sources_db,
+        [
+            (first, "A", 1.0, first),
+            (first + timedelta(hours=2), "A", 3.0, first),
+            (first, "B", 2.0, first),
+        ],
+    )
+    client, url = _route(monkeypatch, sources_db, _spec())
+    response = client.get(url + "?start=2026-09-22&end=2026-09-22")
+    assert response.status_code == 200
+    payload = response.json()
+    assert all(row[payload["group"]] in {"A", "B"} for row in payload["rows"])
+    gap = next(
+        row
+        for row in payload["rows"]
+        if row["ts"] == rows._ts_ms(first + timedelta(hours=1)) and row[payload["group"]] == "A"
+    )
+    assert gap["value"] is None
+    assert all("group" not in row for row in payload["rows"])
 
 
 def _pn_case(monkeypatch, sources_db):
@@ -660,4 +691,6 @@ def test_complete_response_contract_and_truncation_reasons(monkeypatch, sources_
     assert payload["truncation"]["rows_before_defaults"] == 3
     assert payload["truncation"]["rows_after_filters"] == 1
     assert payload["truncation"]["returned_rows"] == 1
+    assert payload["truncation"]["bucket_ms"] is None
+    assert payload["truncation"]["aggregation"] is None
     assert payload["notes"]

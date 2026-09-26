@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 from datetime import UTC, date, datetime, timedelta
+from typing import Any
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -336,6 +337,27 @@ def test_calendar_day_grain_crosses_bst_to_gmt_without_phase_refusal(
         assert [row["value"] for row in result["rows"]] == [0.0, None, 14.0]
 
 
+@pytest.mark.parametrize("grain", ["1d", "24h"])
+def test_utc_midnight_daily_crosses_bst_to_gmt(
+    monkeypatch: pytest.MonkeyPatch, sources_db: Any, grain: str
+) -> None:
+    """A fixed UTC daily phase survives the London offset change and fills its gap."""
+    spec = _spec(grain=grain)
+    first = datetime(2026, 10, 20, tzinfo=UTC)
+    records = [
+        (first + timedelta(days=offset), "A", float(offset), first, first)
+        for offset in range(10)
+        if offset != 5
+    ]
+    _seed(sources_db, spec, records)
+    result = _run(monkeypatch, sources_db, spec, start="2026-10-22", end="2026-10-28")
+    assert result["row_count"] == 7
+    gaps = [row for row in result["rows"] if row["value"] is None]
+    assert len(gaps) == 1
+    assert gaps[0]["ts"] == rows._ts_ms(datetime(2026, 10, 25, tzinfo=UTC))
+    assert gaps[0][result["group"]] == "A"
+
+
 def test_calendar_day_grain_crosses_gmt_to_bst_without_phase_refusal(monkeypatch, sources_db):
     """Spring's shorter UTC day retains a London 23:00 daily phase."""
     london = ZoneInfo("Europe/London")
@@ -434,7 +456,11 @@ def test_gap_expansion_is_per_group(monkeypatch, sources_db):
     ]
     _seed(sources_db, _spec(), records)
     result = _run(monkeypatch, sources_db, _spec())
-    by_group = {group: [r for r in result["rows"] if r["group"] == group] for group in ("A", "B")}
+    assert all(row[result["group"]] in {"A", "B"} for row in result["rows"])
+    assert all("group" not in row for row in result["rows"])
+    by_group = {
+        group: [r for r in result["rows"] if r[result["group"]] == group] for group in ("A", "B")
+    }
     assert len(by_group["A"]) == len(by_group["B"]) == 24
     assert [r["value"] for r in by_group["A"][:4]] == [None, None, 1.0, None]
     assert [r["value"] for r in by_group["B"][:4]] == [None, None, None, 2.0]
@@ -548,8 +574,8 @@ def test_stack_mandatory_v2_filter_is_applied(monkeypatch, sources_db):
     stamp = datetime(2026, 9, 22, tzinfo=UTC)
     _seed(sources_db, spec, [(stamp, "v2", 2.0, stamp, stamp), (stamp, "v1", 1.0, stamp, stamp)])
     result = _run(monkeypatch, sources_db, spec, filters=[""])
-    assert {row["group"] for row in result["rows"]} == {"v2"}
-    assert any("Mandatory semantic filter" in note for note in result["notes"])
+    assert {row[result["group"]] for row in result["rows"]} == {"v2"}
+    assert "Mandatory semantic filter includes only rows where unit equals v2." in result["notes"]
 
 
 def test_dedup_precedes_row_filter_filters_and_window(monkeypatch, sources_db):
@@ -986,7 +1012,7 @@ def test_staggered_identities_cannot_share_bucket(monkeypatch, sources_db):
 
 @pytest.mark.parametrize("irregular", [False, True])
 def test_generation_units_downsample_to_fit(monkeypatch, sources_db, irregular):
-    """A bounded group aggregates native values and reports its effective grain."""
+    """A bounded group reports bucket width without inventing an irregular native grain."""
     monkeypatch.setattr(rows, "MAX_RESPONSE_ROWS", 5)
     first = datetime(2026, 9, 22, tzinfo=UTC)
     spec = _spec(grain="irregular" if irregular else "1h")
@@ -998,14 +1024,19 @@ def test_generation_units_downsample_to_fit(monkeypatch, sources_db, irregular):
     _seed(sources_db, spec, records)
     result = _run(monkeypatch, sources_db, spec)
     assert result["truncation"]["reasons"] == [
-        {"type": "downsample", "bucket_ms": result["grain_ms"]}
+        {"type": "downsample", "bucket_ms": result["truncation"]["bucket_ms"]}
     ]
+    assert (
+        result["grain_ms"] is None
+        if irregular
+        else result["grain_ms"] == result["truncation"]["bucket_ms"]
+    )
     assert result["row_count"] <= 5
     expected_first = 1.5 if irregular else 2.0
     assert (
         next(row["value"] for row in result["rows"] if row["value"] is not None) == expected_first
     )
-    assert all(row["group"] == "A" for row in result["rows"])
+    assert all(row[result["group"]] == "A" for row in result["rows"])
 
 
 def test_cap_includes_generated_gap_rows(monkeypatch, sources_db):
@@ -1094,21 +1125,52 @@ def test_varying_ancillary_fields_become_null_with_note(monkeypatch, sources_db)
         [
             {"column": "status", "unit": "", "label": "Status"},
             {"column": "flag", "unit": "", "label": "Flag"},
+            {"column": "constant", "unit": "", "label": "Constant"},
         ]
     )
     sources_db.con.execute(
         "CREATE TABLE silver_test_sample (timestamp_utc TIMESTAMPTZ, unit VARCHAR, "
-        "value DOUBLE, status VARCHAR, flag BOOLEAN)"
+        "value DOUBLE, status VARCHAR, flag BOOLEAN, constant VARCHAR)"
     )
     first = datetime(2026, 9, 22, tzinfo=UTC)
     sources_db.con.executemany(
-        "INSERT INTO silver_test_sample VALUES (?, 'A', 1, ?, ?)",
+        "INSERT INTO silver_test_sample VALUES (?, 'A', 1, ?, ?, 'same')",
         [(first, "up", True), (first + timedelta(hours=1), "down", False)],
     )
     result = _run(monkeypatch, sources_db, spec)
-    assert result["rows"][0]["status"] is None
-    assert result["rows"][0]["flag"] is None
+    bucket = next(row for row in result["rows"] if row["value"] is not None)
+    assert bucket["status"] is None
+    assert bucket["flag"] is None
+    assert bucket["constant"] == "same"
+    assert {"type": "ancillary_null", "columns": ["flag", "status"]} in result["truncation"][
+        "reasons"
+    ]
     assert any("nonnumeric" in note for note in result["notes"])
+
+
+def test_constant_ancillary_fields_do_not_report_null_reduction(
+    monkeypatch: pytest.MonkeyPatch, sources_db: Any
+) -> None:
+    """A text field retained in every bucket causes no ancillary reduction."""
+    monkeypatch.setattr(rows, "MAX_RESPONSE_ROWS", 5)
+    spec = _spec(ordered=False)
+    spec["dedup"] = None
+    spec["values"].append({"column": "status", "unit": "", "label": "Status"})
+    sources_db.con.execute(
+        "CREATE TABLE silver_test_sample (timestamp_utc TIMESTAMPTZ, unit VARCHAR, "
+        "value DOUBLE, status VARCHAR)"
+    )
+    first = datetime(2026, 9, 22, tzinfo=UTC)
+    sources_db.con.executemany(
+        "INSERT INTO silver_test_sample VALUES (?, 'A', 1, 'up')",
+        [(first,), (first + timedelta(hours=1),)],
+    )
+    result = _run(monkeypatch, sources_db, spec)
+    assert result["truncation"]["reasons"] == [
+        {"type": "downsample", "bucket_ms": result["truncation"]["bucket_ms"]}
+    ]
+    assert all(row["status"] == "up" for row in result["rows"] if row["value"] is not None)
+    assert not any("nonnumeric" in note for note in result["notes"])
 
 
 def test_date_clock_preserves_label_without_gas_day_derivation(monkeypatch, sources_db):

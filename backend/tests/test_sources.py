@@ -108,10 +108,10 @@ def _seed_committed_relation(sources_db, dataset, rows, *, absent=()):
     )
 
 
-def test_uk_days_dst_and_publication_anchor_not_future_delivery(
+def test_uk_days_dst_and_future_delivery_caps_latest_day_to_today(
     monkeypatch: pytest.MonkeyPatch, sources_db
 ) -> None:
-    """Detect UTC-day grouping and a planned 2077 delivery leaking into latest day."""
+    """UK day grouping retains future depth while capping latest day at today."""
     sources_db.con.execute(
         """
         CREATE TABLE silver_test_sample(
@@ -125,12 +125,14 @@ def test_uk_days_dst_and_publication_anchor_not_future_delivery(
         """
     )
     monkeypatch.setattr(sources, "SOURCES", _spec(_dataset()))
+    today = sources._today_uk()
+    monkeypatch.setattr(sources, "_today_uk", lambda: today)
     manifest = sources.build_manifest(sources_db)
     result = _one(sources._response(manifest))
     assert result["coverage"]["rows"] == 4
     assert result["coverage"]["first_day"] == "2026-08-10"
     assert result["coverage"]["day_count"] == 3
-    assert result["coverage"]["latest_local_day"] == sources._today_uk().isoformat()
+    assert result["coverage"]["latest_local_day"] == today.isoformat()
     assert result["coverage"]["last_published_day"] == "2026-08-09"
     assert sources_db.table_calls == 1
 

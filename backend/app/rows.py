@@ -678,6 +678,32 @@ def _bucket_sql(sql: str, request: Request, meta: Metadata, clock: str, width: i
     return f"SELECT {', '.join(select)} FROM ({sql}) AS native GROUP BY {by}"
 
 
+def _varying_ancillary_columns(
+    client: Any, sql: str, request: Request, meta: Metadata, clock: str, width: int
+) -> list[str]:
+    """Find nonnumeric measurements nulled by aggregation in any bucket."""
+    columns = sorted(
+        value["column"]
+        for value in request.dataset["values"]
+        if not _numeric_kind(meta.types[value["column"]])
+    )
+    if not columns:
+        return []
+    bucket = f"floor(epoch_ms({_instant(clock, meta.types)}) / {width})"
+    group = _quote(request.group) if request.group else "NULL"
+    counts = ", ".join(
+        f"count(DISTINCT {_quote(column)}) > 1 AS {_quote(column)}" for column in columns
+    )
+    varied = ", ".join(
+        f"coalesce(bool_or({_quote(column)}), false) AS {_quote(column)}" for column in columns
+    )
+    flags = client.query(
+        f"SELECT {varied} FROM (SELECT {counts} FROM ({sql}) AS native "
+        f"GROUP BY {bucket}, {group}) AS buckets"
+    ).to_dicts()[0]
+    return [column for column in columns if flags[column]]
+
+
 def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
     dataset = request.dataset
     meta = _metadata(client, request, config)
@@ -752,7 +778,11 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
     filtered_count = count
     notes = list(dataset["notes"])
     if dataset["row_filter"]:
-        notes.append("Mandatory semantic filter: " + str(dataset["row_filter"]))
+        row_filter = dataset["row_filter"]
+        notes.append(
+            f"Mandatory semantic filter includes only rows where "
+            f"{row_filter['column']} equals {row_filter['equals']}."
+        )
     if dataset["kind"] == "events" and dataset["id"].startswith("outages_"):
         notes.append("Rows coverage uses publication time; /api/sources uses its declared clock.")
     if dataset["kind"] != "reference":
@@ -815,10 +845,18 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
                     else occupied
                 )
                 if expanded <= MAX_RESPONSE_ROWS and (grain or occupied < count):
+                    varied_columns = _varying_ancillary_columns(
+                        client, selected, request, meta, clock, candidate
+                    )
                     width = candidate
                     selected = bucket
                     count = occupied
                     reasons.append({"type": "downsample", "bucket_ms": candidate})
+                    if varied_columns:
+                        reasons.append({"type": "ancillary_null", "columns": varied_columns})
+                        notes.append(
+                            "Varying nonnumeric values become null within downsampled buckets."
+                        )
                     if deep:
                         reasons.append({"type": "deep_range"})
                     break
@@ -828,9 +866,7 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
             frame = client.query(
                 f"SELECT * FROM ({selected}) AS buckets ORDER BY bucket_ms LIMIT 50001"
             )
-            if any(not _numeric_kind(meta.types[value["column"]]) for value in dataset["values"]):
-                notes.append("Varying nonnumeric values become null within downsampled buckets.")
-            grain = width
+            grain = width if native_grain is not None else None
         else:
             frame = _record_rows(client, selected, projection, clock, "series")
     else:
@@ -846,8 +882,6 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
             item["ts"] = max(ms, _ts_ms(window[2])) if window else ms
         elif clock and clock in item:
             item["ts"] = _ts_ms(item[clock]) if item[clock] is not None else None
-        if dataset["kind"] == "series":
-            item["group"] = item.get(request.group) if request.group else None
         rows.append({key: _serialize(value, notes) for key, value in item.items()})
     if dataset["kind"] == "series" and window and native_grain and grain and rows:
         lower_ms = _ts_ms(window[2])
@@ -857,23 +891,27 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
             and dataset["clock"]["grain"] in {"1d", "24h", "7d"}
             and _clock_kind(clock, meta.types) == "aware"
         )
-        phases_by_group: dict[Any, set[Any]] = {}
+        phases_by_group: dict[Any, set[int]] = {}
+        local_phases_by_group: dict[Any, set[Any]] = {}
         for row in rows:
+            group_value = row.get(request.group) if request.group else None
+            phases_by_group.setdefault(group_value, set()).add(row["ts"] % grain)
             if calendar_cadence:
                 local = datetime.fromtimestamp(row["ts"] / 1000, UTC).astimezone(LONDON)
                 phase = (
                     local.timetz().replace(tzinfo=None),
                     local.date().weekday() if grain == GRAINS["7d"] else None,
                 )
-            else:
-                phase = row["ts"] % grain
-            phases_by_group.setdefault(row["group"], set()).add(phase)
+                local_phases_by_group.setdefault(group_value, set()).add(phase)
         groups_seen = sorted(phases_by_group, key=lambda value: (value is None, str(value)))
-        observed = {(row["ts"], row["group"]): row for row in rows}
+        observed = {
+            (row["ts"], row.get(request.group) if request.group else None): row for row in rows
+        }
         expanded_rows = []
         for group_value in groups_seen:
-            if calendar_cadence:
-                phases = phases_by_group[group_value]
+            utc_phases = phases_by_group[group_value]
+            if calendar_cadence and len(utc_phases) != 1:
+                phases = local_phases_by_group[group_value]
                 if len(phases) != 1:
                     raise _limit(
                         "unsupported_cadence", "Filter the mixed identities or cadence phases."
@@ -903,25 +941,31 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
                 first = lower_ms // grain * grain
                 grid = (max(raw_ts, lower_ms) for raw_ts in range(first, upper_ms, grain))
             else:
-                phases = phases_by_group[group_value]
-                if len(phases) != 1:
+                if len(utc_phases) != 1:
                     raise _limit(
                         "unsupported_cadence", "Filter the mixed identities or cadence phases."
                     )
-                phase = next(iter(phases))
+                phase = next(iter(utc_phases))
                 first = lower_ms + (phase - lower_ms) % grain
                 grid = range(first, upper_ms, grain)
             for ts in grid:
                 record = observed.get((ts, group_value))
                 if record is None:
-                    record = {"ts": ts, "group": group_value}
+                    record = {"ts": ts}
+                    if request.group:
+                        record[request.group] = group_value
                     record.update({value["column"]: None for value in dataset["values"]})
                     record.update({col: None for col in dataset["clock"]["settlement_cols"]})
                 expanded_rows.append(record)
                 if len(expanded_rows) > MAX_RESPONSE_ROWS:
                     raise _limit("row_cap", "Narrow the date window or filter a dimension.")
         rows = sorted(
-            expanded_rows, key=lambda row: (row["ts"], row["group"] is None, str(row["group"]))
+            expanded_rows,
+            key=lambda row: (
+                row["ts"],
+                row.get(request.group) is None if request.group else True,
+                str(row.get(request.group)) if request.group else "",
+            ),
         )
     coverage = {
         "rows": meta.rows,
@@ -943,9 +987,9 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
             "rows_before_defaults": before_defaults,
             "rows_after_filters": filtered_count,
             "returned_rows": len(rows),
+            "bucket_ms": width,
+            "aggregation": "mean" if width else None,
         }
-        if width:
-            truncation.update(bucket_ms=width, aggregation="mean")
     if window and not rows and meta.rows:
         if meta.first_day and meta.last_day:
             notes.append(
