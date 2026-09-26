@@ -1,0 +1,897 @@
+"""Registry-backed, read-only rows selection for the source catalogue."""
+
+from __future__ import annotations
+
+import copy
+import math
+import re
+import threading
+import time
+from dataclasses import dataclass
+from datetime import UTC, date, datetime, timedelta
+from enum import StrEnum
+from typing import Any
+from zoneinfo import ZoneInfo
+
+import polars as pl
+
+from app.sources import _required_columns
+from app.sources_spec import SOURCES
+
+LONDON = ZoneInfo("Europe/London")
+MAX_RESPONSE_ROWS = 50_000
+MAX_DUPLICATE_PROOF = 50_000
+TTL_SECONDS = 600
+GRAINS = {
+    "15s": 15_000,
+    "5min": 300_000,
+    "15min": 900_000,
+    "30min": 1_800_000,
+    "60min": 3_600_000,
+    "1h": 3_600_000,
+    "24h": 86_400_000,
+    "1d": 86_400_000,
+    "7d": 604_800_000,
+}
+FILTER_VALUE = re.compile(r"[A-Za-z0-9 _.\-/:]{1,64}\Z")
+DATE_VALUE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}\Z")
+
+
+class RowsErrorCode(StrEnum):
+    UNKNOWN_DATASET = "unknown_dataset"
+    BAD_IDENTIFIER = "bad_identifier"
+    BAD_RANGE = "bad_range"
+    BAD_FILTER = "bad_filter"
+    BAD_GROUP = "bad_group"
+    WINDOW_UNAVAILABLE = "window_unavailable"
+    AMBIGUOUS_SERIES = "ambiguous_series"
+    RESULT_TOO_LARGE = "result_too_large"
+
+
+class RowsError(Exception):
+    def __init__(
+        self, code: RowsErrorCode, message: str, *, details: dict[str, Any] | None = None
+    ) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
+        self.details = details or {}
+        self.http_status = (
+            404
+            if code == RowsErrorCode.UNKNOWN_DATASET
+            else 413
+            if code == RowsErrorCode.RESULT_TOO_LARGE
+            else 422
+        )
+
+    def envelope(self) -> dict[str, Any]:
+        return {"error": {"code": self.code, "message": self.message, **self.details}}
+
+
+def _error(code: RowsErrorCode, message: str, **details: Any) -> RowsError:
+    return RowsError(code, message, details=details)
+
+
+def _quote(value: str) -> str:
+    return '"' + value.replace('"', '""') + '"'
+
+
+def _literal(value: Any) -> str:
+    if value is None:
+        return "NULL"
+    if isinstance(value, bool):
+        return "TRUE" if value else "FALSE"
+    if isinstance(value, (int, float)):
+        return str(value)
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+def _registry() -> dict[tuple[str, str], dict[str, Any]]:
+    return {
+        (source["key"], dataset["id"]): dataset
+        for source in SOURCES
+        for family in source["families"]
+        for dataset in family["datasets"]
+    }
+
+
+REGISTRY = _registry()
+
+
+def _projection(dataset: dict[str, Any]) -> tuple[str, ...]:
+    return tuple(sorted(_required_columns(dataset)))
+
+
+def _clock_column(dataset: dict[str, Any]) -> str | None:
+    if dataset["kind"] == "events":
+        return dataset["latest_day_rule"]["column"]
+    clock = dataset["clock"]
+    return clock["column"] if clock else None
+
+
+def _parse_date(value: str | None) -> date | None:
+    if value is None:
+        return None
+    if not DATE_VALUE.fullmatch(value):
+        raise _error(RowsErrorCode.BAD_RANGE, "Date must be YYYY-MM-DD.")
+    try:
+        return date.fromisoformat(value)
+    except ValueError as exc:
+        raise _error(RowsErrorCode.BAD_RANGE, "Date is invalid.") from exc
+
+
+@dataclass(frozen=True)
+class Request:
+    source: str
+    dataset: dict[str, Any]
+    start: date | None
+    end: date | None
+    group: str | None
+    filters: tuple[tuple[str, str], ...]
+    use_defaults: bool
+
+
+def validate(
+    source: str,
+    dataset_id: str,
+    start: str | None,
+    end: str | None,
+    group: str | None,
+    filters: list[str] | None,
+) -> Request:
+    dataset = REGISTRY.get((source, dataset_id))
+    if dataset is None:
+        raise _error(RowsErrorCode.UNKNOWN_DATASET, "Unknown source or dataset.")
+    if dataset["not_held_cause"]:
+        raise _error(
+            RowsErrorCode.UNKNOWN_DATASET,
+            "Dataset is not held.",
+            not_held_cause=dataset["not_held_cause"],
+        )
+    relations = (dataset["base_relation"], dataset["latest_relation"])
+    if not dataset["base_relation"] or any(
+        value is not None and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", value)
+        for value in relations
+    ):
+        raise _error(RowsErrorCode.BAD_IDENTIFIER, "Unregistered relation identifier.")
+    if any(not column or not isinstance(column, str) for column in _projection(dataset)):
+        raise _error(RowsErrorCode.BAD_IDENTIFIER, "Invalid declared projection.")
+    first = _parse_date(start)
+    last = _parse_date(end)
+    if dataset["kind"] == "reference" and (first or last):
+        raise _error(RowsErrorCode.BAD_RANGE, "Reference records have no date window.")
+    if first and last and first > last:
+        raise _error(RowsErrorCode.BAD_RANGE, "start is after end.")
+    if last == date.max:
+        raise _error(RowsErrorCode.BAD_RANGE, "End date exceeds supported bounds.")
+    dims = {dim["column"] for dim in dataset["dims"]}
+    if group is not None and group not in dims:
+        raise _error(RowsErrorCode.BAD_GROUP, "Group must be a declared dimension.")
+    if group is None and dataset["kind"] == "series":
+        group = next(
+            (dim["column"] for dim in dataset["dims"] if dim["role"] == "series"),
+            None,
+        ) or next((dim["column"] for dim in dataset["dims"]), None)
+    if filters is None:
+        parsed: dict[str, str] = {}
+        default = dataset["default_filter"]
+        if default:
+            parsed[default["column"]] = str(default["equals"])
+    elif filters == [""]:
+        parsed = {}
+    else:
+        if "" in filters:
+            raise _error(RowsErrorCode.BAD_FILTER, "Empty filter cannot be combined.")
+        parsed = {}
+        for item in filters:
+            if ":" not in item:
+                raise _error(RowsErrorCode.BAD_FILTER, "Filter needs column:value.")
+            column, value = item.split(":", 1)
+            if column not in dims or not FILTER_VALUE.fullmatch(value) or column in parsed:
+                raise _error(RowsErrorCode.BAD_FILTER, "Invalid or duplicate dimension filter.")
+            parsed[column] = value
+    if any(column not in dims for column in parsed):
+        raise _error(RowsErrorCode.BAD_IDENTIFIER, "Default filter is not a dimension.")
+    return Request(source, dataset, first, last, group, tuple(parsed.items()), filters is None)
+
+
+@dataclass(frozen=True)
+class Metadata:
+    relation: str | None
+    types: dict[str, str]
+    first_day: date | None
+    last_day: date | None
+    anchor_day: date | None
+    day_count: int | None
+    rows: int
+    cause: str | None = None
+
+
+_cache: dict[tuple[str, str, str], tuple[float, Metadata]] = {}
+_cache_lock = threading.Lock()
+
+
+def _cache_key(request: Request, config: str) -> tuple[str, str, str]:
+    return (config, request.source, request.dataset["id"])
+
+
+def cached_status(request: Request, config: str) -> Metadata | None:
+    with _cache_lock:
+        hit = _cache.get(_cache_key(request, config))
+        if hit and time.monotonic() - hit[0] < TTL_SECONDS:
+            return hit[1]
+    return None
+
+
+def _clock_kind(column: str, types: dict[str, str]) -> str | None:
+    kind = types[column].upper()
+    if kind == "DATE":
+        return "date"
+    if kind == "TIMESTAMPTZ" or "WITH TIME ZONE" in kind:
+        return "aware"
+    if kind.startswith("TIMESTAMP") and column.endswith("_utc"):
+        return "naive_utc"
+    return None
+
+
+def _instant(column: str, types: dict[str, str]) -> str:
+    name = _quote(column)
+    return f"timezone('UTC', {name})" if _clock_kind(column, types) == "naive_utc" else name
+
+
+def _uk_day(column: str, types: dict[str, str]) -> str:
+    name = _instant(column, types)
+    if _clock_kind(column, types) == "date":
+        return name
+    return f"CAST(timezone('Europe/London', {name}) AS DATE)"
+
+
+def _selected_sql(relation: str, dataset: dict[str, Any]) -> str:
+    """Retain every top ordered tie, then apply committed semantic selection."""
+    sql = f"SELECT * FROM {_quote(relation)}"
+    dedup = dataset["dedup"]
+    if dedup and dedup["order_by"]:
+        keys = ", ".join(_quote(key) for key in dedup["keys"])
+        order = ", ".join(
+            f"{_quote(item['column'])} {item['direction'].upper()} NULLS {item['nulls'].upper()}"
+            for item in dedup["order_by"]
+        )
+        sql = (
+            "SELECT * EXCLUDE (__rows_rank) FROM (SELECT *, rank() OVER "
+            f"(PARTITION BY {keys} ORDER BY {order}) AS __rows_rank FROM "
+            f"({sql}) AS before_dedup) AS ranked WHERE __rows_rank = 1"
+        )
+    row_filter = dataset["row_filter"]
+    if row_filter:
+        col = _quote(row_filter["column"])
+        sql = f"SELECT * FROM ({sql}) AS mandatory WHERE {col} = {_literal(row_filter['equals'])}"
+    snapshot = dataset["snapshot_column"]
+    if snapshot:
+        col = _quote(snapshot)
+        sql = (
+            f"SELECT * FROM ({sql}) AS snapshots WHERE {col} = "
+            f"(SELECT max({col}) FROM ({sql}) AS all_snapshots)"
+        )
+    return sql
+
+
+def _metadata(client: Any, request: Request, config: str) -> Metadata:
+    hit = cached_status(request, config)
+    if hit is not None:
+        return hit
+    dataset = request.dataset
+    tables = set(client.get_tables())
+    relation = dataset["latest_relation"]
+    if not relation or relation not in tables:
+        relation = dataset["base_relation"]
+    types: dict[str, str] = {}
+    if relation in tables:
+        rows = client.query(
+            "SELECT column_name, data_type FROM information_schema.columns "
+            f"WHERE table_schema = 'main' AND table_name = {_literal(relation)}"
+        ).to_dicts()
+        types = {row["column_name"]: row["data_type"] for row in rows}
+    missing = set(_projection(dataset)) - set(types)
+    clocks = {_clock_column(dataset), dataset["latest_day_rule"]["column"]}
+    if dataset["kind"] == "reference":
+        clocks = {_clock_column(dataset)}
+    unsupported = any(
+        column in types and _clock_kind(column, types) is None for column in clocks if column
+    )
+    if relation not in tables or missing or unsupported:
+        meta = Metadata(None, types, None, None, None, None, 0, "missing-in-catalogue")
+    else:
+        selected = _selected_sql(relation, dataset)
+        clock = _clock_column(dataset)
+        anchor = dataset["latest_day_rule"]["column"]
+        day_sql = _uk_day(clock, types) if clock else "CAST(NULL AS DATE)"
+        anchor_sql = _uk_day(anchor, types) if anchor else "CAST(NULL AS DATE)"
+        result = client.query(
+            f"SELECT count(*) AS n, min({day_sql}) AS first_day, "
+            f"max({day_sql}) AS last_day, count(DISTINCT {day_sql}) AS day_count, "
+            f"max({anchor_sql}) AS anchor_day FROM ({selected}) AS covered"
+        ).to_dicts()[0]
+        meta = Metadata(
+            relation,
+            types,
+            result["first_day"],
+            result["last_day"],
+            result["anchor_day"],
+            result["day_count"],
+            result["n"],
+        )
+    with _cache_lock:
+        if len(_cache) >= 256:
+            _cache.clear()
+        _cache[_cache_key(request, config)] = (time.monotonic(), meta)
+    return meta
+
+
+def _window(request: Request, meta: Metadata) -> tuple[date, date, datetime, datetime] | None:
+    if request.dataset["kind"] == "reference":
+        return None
+    anchor = meta.anchor_day
+    if isinstance(anchor, datetime):
+        anchor = anchor.date()
+    if request.end is None:
+        if anchor is None:
+            raise _error(RowsErrorCode.WINDOW_UNAVAILABLE, "Latest-day anchor is unavailable.")
+        end = min(anchor, datetime.now(UTC).astimezone(LONDON).date())
+    else:
+        end = request.end
+    try:
+        start = request.start or end - timedelta(days=6)
+        upper_day = end + timedelta(days=1)
+    except OverflowError as exc:
+        raise _error(RowsErrorCode.BAD_RANGE, "Default window overflows supported dates.") from exc
+    if start > end:
+        raise _error(RowsErrorCode.BAD_RANGE, "start is after resolved end.")
+    elapsed = (end - start).days
+    if elapsed > 400:
+        if request.dataset["kind"] == "events":
+            raise _error(RowsErrorCode.BAD_RANGE, "Event range exceeds 400 elapsed days.")
+        if meta.first_day is None or meta.last_day is None:
+            raise _error(RowsErrorCode.WINDOW_UNAVAILABLE, "Local clock depth is unavailable.")
+        if start < meta.first_day or end > meta.last_day:
+            raise _error(RowsErrorCode.BAD_RANGE, "Deep window exceeds local clock depth.")
+    lower = datetime.combine(start, datetime.min.time(), LONDON).astimezone(UTC)
+    upper = datetime.combine(upper_day, datetime.min.time(), LONDON).astimezone(UTC)
+    return start, end, lower, upper
+
+
+def _window_predicate(
+    window: tuple[date, date, datetime, datetime], column: str, types: dict[str, str]
+) -> str:
+    start, end, lower, upper = window
+    if _clock_kind(column, types) == "date":
+        return f"{_quote(column)} BETWEEN DATE '{start}' AND DATE '{end}'"
+    instant = _instant(column, types)
+    return (
+        f"{instant} >= TIMESTAMPTZ '{lower.isoformat()}' "
+        f"AND {instant} < TIMESTAMPTZ '{upper.isoformat()}'"
+    )
+
+
+def _filter_sql(filters: tuple[tuple[str, str], ...], types: dict[str, str]) -> str:
+    parts = [f"CAST({_quote(column)} AS VARCHAR) = {_literal(value)}" for column, value in filters]
+    return " AND ".join(parts) if parts else "TRUE"
+
+
+def _identity(dataset: dict[str, Any], clock: str | None) -> tuple[str, ...]:
+    passthrough = set(dataset["clock"]["settlement_cols"]) if dataset["clock"] else set()
+    dedup = dataset["dedup"]
+    fields = {dim["column"] for dim in dataset["dims"]}
+    if dedup:
+        fields.update(dedup["keys"])
+    return tuple(sorted(fields - passthrough - {clock}))
+
+
+def _ambiguity(
+    request: Request,
+    varying: list[str],
+    *,
+    observation: bool = False,
+    observed_group: Any = None,
+) -> RowsError:
+    dims = {dim["column"] for dim in request.dataset["dims"]}
+    keys = set(request.dataset["dedup"]["keys"]) if request.dataset["dedup"] else set()
+    varying_dims = sorted(set(varying) & dims) if not observation else []
+    varying_keys = sorted(set(varying) & keys) if not observation else []
+    hint = "Try a narrower date window."
+    if varying_dims:
+        preferred = next(
+            (
+                dim["column"]
+                for dim in request.dataset["dims"]
+                if dim["role"] == "series" and dim["column"] in varying_dims
+            ),
+            varying_dims[0],
+        )
+        hint = f"group={preferred}"
+        if (
+            request.group
+            and request.group != preferred
+            and observed_group is not None
+            and FILTER_VALUE.fullmatch(str(observed_group))
+        ):
+            hint += f"&filter={request.group}:{observed_group}"
+    elif observation:
+        hint = "Try a clean date window; no declared filter resolves this instant."
+    return _error(
+        RowsErrorCode.AMBIGUOUS_SERIES,
+        "Selected records do not identify one series.",
+        group=request.group,
+        varying_dimensions=varying_dims,
+        varying_keys=varying_keys,
+        varying_columns=sorted(varying),
+        hint=hint,
+    )
+
+
+def _check_entity(client: Any, request: Request, sql: str, clock: str) -> None:
+    identity = _identity(request.dataset, clock)
+    determined = {column for column, _ in request.filters}
+    if request.group:
+        determined.add(request.group)
+    row_filter = request.dataset["row_filter"]
+    if row_filter:
+        determined.add(row_filter["column"])
+    if set(identity) <= determined:
+        return
+    group = _quote(request.group) if request.group else "NULL"
+    cols = ", ".join(_quote(column) for column in identity)
+    conflict = client.query(
+        f"WITH selected AS ({sql}), identities AS "
+        f"(SELECT DISTINCT {_quote(clock)} AS __native_clock, "
+        f"{group} AS __native_group, {cols} FROM selected) "
+        "SELECT __native_clock, __native_group FROM identities "
+        "GROUP BY 1, 2 HAVING count(*) > 1 LIMIT 1"
+    ).to_dicts()
+    if conflict:
+        raise _ambiguity(
+            request,
+            sorted(set(identity) - determined),
+            observed_group=conflict[0]["__native_group"],
+        )
+
+
+def _byte_rows(frame: pl.DataFrame, columns: tuple[str, ...]) -> list[bytes]:
+    return [
+        frame.select(columns).slice(i, 1).write_ipc(None).getvalue() for i in range(frame.height)
+    ]
+
+
+def _native_collision_check(
+    client: Any, request: Request, sql: str, clock: str, projection: tuple[str, ...]
+) -> tuple[int, str]:
+    group = _quote(request.group) if request.group else "NULL"
+    key = f"{_quote(clock)}, {group}"
+    repeated = (
+        f"SELECT {key}, count(*) AS copies FROM ({sql}) AS selected "
+        f"GROUP BY {key} HAVING count(*) > 1"
+    )
+    count = client.query(
+        f"SELECT coalesce(sum(copies),0) AS n FROM ({repeated}) AS repeated"
+    ).to_dicts()[0]["n"]
+    if count > MAX_DUPLICATE_PROOF:
+        raise _error(
+            RowsErrorCode.RESULT_TOO_LARGE,
+            "Too many duplicate candidates to verify.",
+            reason="duplicate_verification_limit",
+            hint="Narrow the date window or filter a dimension.",
+        )
+    if count:
+        same = f"s.{_quote(clock)} IS NOT DISTINCT FROM r.{_quote(clock)}"
+        if request.group:
+            same += f" AND s.{group} IS NOT DISTINCT FROM r.{group}"
+        cols = ", ".join(f"s.{_quote(column)}" for column in projection)
+        frame = client.query(
+            f"WITH s AS ({sql}), r AS ({repeated}) SELECT {cols} FROM s JOIN r ON {same}"
+        )
+        keys = [clock] + ([request.group] if request.group else [])
+        signatures: dict[tuple[Any, ...], tuple[bytes, int]] = {}
+        byte_rows = _byte_rows(frame, projection)
+        for index, (values, raw) in enumerate(
+            zip(frame.select(keys).iter_rows(), byte_rows, strict=True)
+        ):
+            if values in signatures and signatures[values][0] != raw:
+                previous = signatures[values][1]
+                varying = [
+                    column
+                    for column in projection
+                    if _byte_rows(frame.select(column).slice(previous, 1), (column,))[0]
+                    != _byte_rows(frame.select(column).slice(index, 1), (column,))[0]
+                ]
+                raise _ambiguity(request, varying, observation=True)
+            signatures[values] = (raw, index)
+        removed = int(count) - len(signatures)
+    else:
+        removed = 0
+    distinct = f"SELECT DISTINCT {', '.join(_quote(c) for c in projection)} FROM ({sql}) AS checked"
+    return removed, distinct
+
+
+def _check_output_key(
+    client: Any, request: Request, sql: str, clock: str, types: dict[str, str]
+) -> None:
+    group = _quote(request.group) if request.group else "NULL"
+    instant = _instant(clock, types)
+    collision = client.query(
+        f"SELECT count(*) AS n FROM (SELECT epoch_ms({instant}) AS ts_ms, "
+        f"{group} AS group_value, count(*) AS copies FROM ({sql}) AS native "
+        "GROUP BY ts_ms, group_value HAVING count(*) > 1) AS collisions"
+    ).to_dicts()[0]["n"]
+    if collision:
+        raise _ambiguity(request, [clock], observation=True)
+
+
+def _check_bucket_identity(
+    client: Any, request: Request, sql: str, clock: str, types: dict[str, str], width: int
+) -> None:
+    identity = _identity(request.dataset, clock)
+    determined = {column for column, _ in request.filters}
+    if request.group:
+        determined.add(request.group)
+    row_filter = request.dataset["row_filter"]
+    if row_filter:
+        determined.add(row_filter["column"])
+    remaining = tuple(column for column in identity if column not in determined)
+    if not remaining:
+        return
+    group = _quote(request.group) if request.group else "NULL"
+    bucket = f"floor(epoch_ms({_instant(clock, types)}) / {width})"
+    cols = ", ".join(_quote(column) for column in remaining)
+    collisions = client.query(
+        f"WITH entities AS (SELECT DISTINCT {bucket} AS bucket_id, "
+        f"{group} AS group_value, {cols} FROM ({sql}) AS native) "
+        "SELECT count(*) AS n FROM (SELECT bucket_id, group_value FROM entities "
+        "GROUP BY bucket_id, group_value HAVING count(*) > 1) AS conflicts"
+    ).to_dicts()[0]["n"]
+    if collisions:
+        raise _limit("mixed_identity", "Filter the varying entity fields before downsampling.")
+
+
+def _serialize(value: Any, notes: list[str]) -> Any:
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=UTC)
+        return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, float) and not math.isfinite(value):
+        if "Nonfinite numeric values are shown as null." not in notes:
+            notes.append("Nonfinite numeric values are shown as null.")
+        return None
+    if isinstance(value, (list, dict)):
+        return str(value)
+    return value
+
+
+def _ts_ms(value: date | datetime) -> int:
+    if isinstance(value, datetime):
+        aware = value if value.tzinfo else value.replace(tzinfo=UTC)
+    else:
+        aware = datetime.combine(value, datetime.min.time(), UTC)
+    return int(aware.timestamp() * 1000)
+
+
+def _grain(dataset: dict[str, Any]) -> int | None:
+    clock = dataset["clock"]
+    return GRAINS.get(clock["grain"]) if clock else None
+
+
+def _limit(reason: str, hint: str) -> RowsError:
+    return _error(
+        RowsErrorCode.RESULT_TOO_LARGE,
+        "Result exceeds the safe row limit.",
+        reason=reason,
+        hint=hint,
+    )
+
+
+def _record_rows(
+    client: Any, sql: str, projection: tuple[str, ...], clock: str | None, kind: str
+) -> pl.DataFrame:
+    order = (
+        f"{_quote(clock)} DESC NULLS LAST"
+        if kind == "events" and clock
+        else ", ".join(_quote(column) + " ASC NULLS LAST" for column in projection)
+    )
+    if kind == "series" and clock:
+        order = _quote(clock) + " ASC NULLS LAST"
+    return client.query(
+        f"SELECT {', '.join(_quote(column) for column in projection)} "
+        f"FROM ({sql}) AS final ORDER BY {order} LIMIT {MAX_RESPONSE_ROWS + 1}"
+    )
+
+
+def _top_pn(client: Any, sql: str) -> tuple[list[str], int, int, int, int]:
+    ranked = client.query(
+        f"SELECT bm_unit_id, avg(level_to) AS mean_level FROM ({sql}) AS observations "
+        "WHERE bm_unit_id IS NOT NULL GROUP BY bm_unit_id "
+        "ORDER BY mean_level DESC NULLS LAST, bm_unit_id ASC LIMIT 20"
+    ).to_dicts()
+    ids = [row["bm_unit_id"] for row in ranked]
+    totals = client.query(
+        f"SELECT count(*) AS n, count(DISTINCT bm_unit_id) AS groups, "
+        f"count(*) FILTER (WHERE bm_unit_id IS NULL) AS null_rows "
+        f"FROM ({sql}) AS observations"
+    ).to_dicts()[0]
+    total = totals["n"]
+    selected = client.query(
+        f"SELECT count(*) AS n FROM ({sql}) AS observations WHERE bm_unit_id IN "
+        f"({', '.join(_literal(value) for value in ids) or 'NULL'})"
+    ).to_dicts()[0]["n"]
+    return ids, total, selected, totals["groups"], totals["null_rows"]
+
+
+def _bucket_sql(sql: str, request: Request, meta: Metadata, clock: str, width: int) -> str:
+    """Aggregate only after the native collision and identity gates."""
+    instant = _instant(clock, meta.types)
+    bucket = f"floor(epoch_ms({instant}) / {width}) * {width}"
+    groups = f", {_quote(request.group)}" if request.group else ""
+    select = [f"{bucket} AS bucket_ms{groups}"]
+    by = f"bucket_ms{groups}"
+    for value in request.dataset["values"]:
+        column = value["column"]
+        kind = meta.types[column].upper()
+        if any(part in kind for part in ("INT", "DECIMAL", "DOUBLE", "FLOAT", "REAL")):
+            select.append(f"avg({_quote(column)}) AS {_quote(column)}")
+        else:
+            select.append(
+                f"CASE WHEN count(DISTINCT {_quote(column)}) <= 1 "
+                f"THEN min({_quote(column)}) ELSE NULL END AS {_quote(column)}"
+            )
+    for col in request.dataset["clock"]["settlement_cols"]:
+        select.append(
+            f"CASE WHEN count(DISTINCT {_quote(col)}) <= 1 THEN min({_quote(col)}) "
+            f"ELSE NULL END AS {_quote(col)}"
+        )
+    return f"SELECT {', '.join(select)} FROM ({sql}) AS native GROUP BY {by}"
+
+
+def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
+    dataset = request.dataset
+    meta = _metadata(client, request, config)
+    if meta.cause:
+        raise _error(
+            RowsErrorCode.UNKNOWN_DATASET,
+            "Dataset schema is unavailable.",
+            not_held_cause=meta.cause,
+        )
+    assert meta.relation
+    window = _window(request, meta)
+    clock = _clock_column(dataset)
+    projection = _projection(dataset)
+    selected = _selected_sql(meta.relation, dataset)
+    if request.filters:
+        selected = (
+            f"SELECT * FROM ({selected}) AS filtered "
+            f"WHERE {_filter_sql(request.filters, meta.types)}"
+        )
+    if dataset["kind"] == "series" and clock:
+        _check_entity(client, request, selected, clock)
+    if window and clock:
+        predicate = _window_predicate(window, clock, meta.types)
+        selected = f"SELECT * FROM ({selected}) AS windowed WHERE {predicate}"
+    before_defaults = None
+    reasons: list[dict[str, Any]] = []
+    if request.use_defaults and dataset["default_filter"] and window and clock:
+        unfiltered = _selected_sql(meta.relation, dataset)
+        predicate = _window_predicate(window, clock, meta.types)
+        before_defaults = client.query(
+            f"SELECT count(*) AS n FROM ({unfiltered}) AS before_defaults WHERE {predicate}"
+        ).to_dicts()[0]["n"]
+        after = client.query(
+            f"SELECT count(*) AS n FROM ({selected}) AS after_defaults"
+        ).to_dicts()[0]["n"]
+        if before_defaults > after:
+            reasons.append({"type": "default_filter", "omitted_rows": before_defaults - after})
+    if dataset["kind"] == "series" and clock:
+        selected_before_collapse = selected
+        removed, selected = _native_collision_check(client, request, selected, clock, projection)
+        if request.source == "elexon" and dataset["id"] == "pn" and request.use_defaults:
+            ids, total, kept, total_groups, null_rows = _top_pn(client, selected)
+            before_defaults = total
+            unit_filter = f"bm_unit_id IN ({', '.join(_literal(value) for value in ids) or 'NULL'})"
+            if removed:
+                selected_raw_top = (
+                    f"SELECT * FROM ({selected_before_collapse}) AS top_units WHERE {unit_filter}"
+                )
+                removed, selected = _native_collision_check(
+                    client, request, selected_raw_top, clock, projection
+                )
+            else:
+                selected = f"SELECT * FROM ({selected}) AS top_units WHERE {unit_filter}"
+            if total > kept:
+                reasons.append(
+                    {
+                        "type": "default_top_n",
+                        "label": "top 20 units by mean notified end level",
+                        "selected_ids": ids,
+                        "omitted_rows": total - kept,
+                        "omitted_groups": total_groups - len(ids),
+                        "excluded_null_unit_rows": null_rows,
+                    }
+                )
+        _check_output_key(client, request, selected, clock, meta.types)
+        if removed:
+            reasons.append({"type": "exact_duplicate_rows", "removed_rows": removed})
+    count = client.query(f"SELECT count(*) AS n FROM ({selected}) AS final_count").to_dicts()[0][
+        "n"
+    ]
+    filtered_count = count
+    notes = list(dataset["notes"])
+    if dataset["row_filter"]:
+        notes.append("Mandatory semantic filter: " + str(dataset["row_filter"]))
+    if dataset["kind"] == "events" and dataset["id"].startswith("outages_"):
+        notes.append("Rows coverage uses publication time; /api/sources uses its declared clock.")
+    if dataset["kind"] != "reference":
+        notes.append("Independent source and rows metadata caches can temporarily differ.")
+    if clock and _clock_kind(clock, meta.types) == "date":
+        notes.append(
+            "DATE labels plot at UTC midnight; this is not a gas-day boundary or event instant."
+        )
+    grain = _grain(dataset) if dataset["kind"] == "series" else None
+    width = None
+    frame: pl.DataFrame
+    if dataset["kind"] == "series" and window and clock:
+        start, end, lower, upper = window
+        if grain is None:
+            notes.append("Irregular or unrecognized cadence: stored timestamps are not gap-filled.")
+        # Count the expanded grid before allocating it.
+        groups = client.query(
+            f"SELECT count(DISTINCT {_quote(request.group)}) AS n FROM ({selected}) AS groups"
+            if request.group
+            else f"SELECT CASE WHEN count(*) > 0 THEN 1 ELSE 0 END AS n FROM ({selected}) AS groups"
+        ).to_dicts()[0]["n"]
+        native_size = count
+        if grain and groups:
+            span_ms = int((upper - lower).total_seconds() * 1000)
+            native_size = groups * math.ceil(span_ms / grain)
+        deep = (end - start).days > 400
+        if native_size > MAX_RESPONSE_ROWS or deep:
+            if not dataset["values"]:
+                raise _limit("no_meaningful_aggregation", "Narrow the date window.")
+            candidates = [
+                size
+                for size in (
+                    900_000,
+                    1_800_000,
+                    3_600_000,
+                    7_200_000,
+                    14_400_000,
+                    21_600_000,
+                    43_200_000,
+                )
+                if (grain is None or size > grain and size % grain == 0)
+            ]
+            candidates.extend(day * 86_400_000 for day in range(1, 402))
+            for candidate in candidates:
+                if grain and (candidate <= grain or candidate % grain):
+                    continue
+                _check_bucket_identity(client, request, selected, clock, meta.types, candidate)
+                bucket = _bucket_sql(selected, request, meta, clock, candidate)
+                occupied = client.query(
+                    f"SELECT count(*) AS n FROM ({bucket}) AS bucket_count"
+                ).to_dicts()[0]["n"]
+                expanded = (
+                    groups * math.ceil(int((upper - lower).total_seconds() * 1000) / candidate)
+                    if grain
+                    else occupied
+                )
+                if expanded <= MAX_RESPONSE_ROWS and (grain or occupied < count):
+                    width = candidate
+                    selected = bucket
+                    count = occupied
+                    reasons.append({"type": "downsample", "bucket_ms": candidate})
+                    if deep:
+                        reasons.append({"type": "deep_range"})
+                    break
+            if width is None:
+                raise _limit("unsafe_downsample", "Narrow the date window or filter a dimension.")
+        if width:
+            frame = client.query(
+                f"SELECT * FROM ({selected}) AS buckets ORDER BY bucket_ms LIMIT 50001"
+            )
+            if grain:
+                grain = width
+        else:
+            frame = _record_rows(client, selected, projection, clock, "series")
+    else:
+        if count > MAX_RESPONSE_ROWS:
+            raise _limit("record_cap", "Narrow the date window or filter a dimension.")
+        frame = _record_rows(client, selected, projection, clock, dataset["kind"])
+    if frame.height > MAX_RESPONSE_ROWS:
+        raise _limit("row_cap", "Narrow the date window or filter a dimension.")
+    rows: list[dict[str, Any]] = []
+    for item in frame.to_dicts():
+        if width:
+            ms = int(item.pop("bucket_ms"))
+            item["ts"] = max(ms, _ts_ms(window[2])) if window else ms
+        elif clock and clock in item:
+            item["ts"] = _ts_ms(item[clock]) if item[clock] is not None else None
+        if dataset["kind"] == "series":
+            item["group"] = item.get(request.group) if request.group else None
+        rows.append({key: _serialize(value, notes) for key, value in item.items()})
+    if dataset["kind"] == "series" and window and grain and rows:
+        lower_ms = _ts_ms(window[2])
+        upper_ms = _ts_ms(window[3])
+        phases_by_group: dict[Any, set[int]] = {}
+        for row in rows:
+            phases_by_group.setdefault(row["group"], set()).add(row["ts"] % grain)
+        groups_seen = sorted(phases_by_group, key=lambda value: (value is None, str(value)))
+        observed = {(row["ts"], row["group"]): row for row in rows}
+        expanded_rows = []
+        for group_value in groups_seen:
+            if width:
+                first = lower_ms // grain * grain
+            else:
+                phases = phases_by_group[group_value]
+                if len(phases) != 1:
+                    raise _limit("unsupported_cadence", "Use a shorter date window.")
+                phase = next(iter(phases))
+                first = lower_ms + (phase - lower_ms) % grain
+            for raw_ts in range(first, upper_ms, grain):
+                ts = max(raw_ts, lower_ms) if width else raw_ts
+                record = observed.get((ts, group_value))
+                if record is None:
+                    record = {"ts": ts, "group": group_value}
+                    record.update({value["column"]: None for value in dataset["values"]})
+                    record.update({col: None for col in dataset["clock"]["settlement_cols"]})
+                expanded_rows.append(record)
+                if len(expanded_rows) > MAX_RESPONSE_ROWS:
+                    raise _limit("row_cap", "Narrow the date window or filter a dimension.")
+        rows = sorted(
+            expanded_rows, key=lambda row: (row["ts"], row["group"] is None, str(row["group"]))
+        )
+    coverage = {
+        "rows": meta.rows,
+        "first_day": meta.first_day.isoformat() if meta.first_day else None,
+        "last_day": meta.last_day.isoformat() if meta.last_day else None,
+        "day_count": meta.day_count,
+        "latest_local_day": min(
+            meta.anchor_day, datetime.now(UTC).astimezone(LONDON).date()
+        ).isoformat()
+        if meta.anchor_day
+        else None,
+        "days_in_window": (window[1] - window[0]).days + 1 if window else None,
+    }
+    truncation = None
+    if reasons:
+        truncation = {
+            "row_cap": MAX_RESPONSE_ROWS,
+            "reasons": reasons,
+            "rows_before_defaults": before_defaults,
+            "rows_after_filters": filtered_count,
+            "returned_rows": len(rows),
+        }
+        if width:
+            truncation.update(bucket_ms=width, aggregation="mean")
+    return {
+        "dataset": dataset["id"],
+        "source": request.source,
+        "kind": dataset["kind"],
+        "relation": meta.relation,
+        "window": {
+            "start": window[0].isoformat(),
+            "end": window[1].isoformat(),
+            "lower_utc": window[2].isoformat().replace("+00:00", "Z"),
+            "upper_utc": window[3].isoformat().replace("+00:00", "Z"),
+        }
+        if window
+        else None,
+        "grain_ms": grain,
+        "columns": {
+            "values": copy.deepcopy(dataset["values"]),
+            "dims": copy.deepcopy(dataset["dims"]),
+        },
+        "group": request.group,
+        "filters": dict(request.filters),
+        "rows": rows,
+        "row_count": len(rows),
+        "truncated": bool(reasons),
+        "truncation": truncation,
+        "coverage": coverage,
+        "notes": notes,
+    }
