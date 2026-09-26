@@ -13,3 +13,6 @@ frontend/dist/
 
 # Planning docs stay local (matches the gridflow repo convention)
 .planning/
+
+# Screenshot harness output (npm run shoot)
+frontend/.shots/
