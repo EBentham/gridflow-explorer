@@ -94,6 +94,7 @@ export function planPanels(ctx: PageContext): PanelPlan {
       zero: spec.zero,
       extremes: extremes ? (focusMain ?? main[0]) : null,
       belowZero,
+      axisWidth: spec.axisWidth,
     })
   }
   if (hasLower && lowerModel) {
@@ -108,6 +109,7 @@ export function planPanels(ctx: PageContext): PanelPlan {
       height: lower?.height ?? Math.round(CHART.height * 0.36),
       zero: lowerMark !== 'line',
       extremes: lower?.extremes ? lowerSeries[0] : null,
+      axisWidth: spec.axisWidth,
     })
   }
   const marks = new Map<string, Mark>([...main.map((d) => [seriesId(d), mainMark] as const), ...lowerSeries.map((d) => [seriesId(d), lowerMark] as const)])

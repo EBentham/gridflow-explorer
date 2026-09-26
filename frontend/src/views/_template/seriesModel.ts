@@ -216,7 +216,8 @@ export function periodName(t: number, stepMs: number | null, settlement: Map<num
   const s = settlement?.get(t)
   if (!s?.period) return base
   const day = s.date && s.date !== ukDate(t) ? ` of settlement day ${fmtDay(s.date)}` : ''
-  return `${base}, SP ${s.period}${day}`
+  // A no-break space keeps `SP 37` on one line where the name wraps.
+  return `${base}, SP ${s.period}${day}`
 }
 
 /** Runs of consecutive held values below zero, as [first, last] times; a gap ends a run. Only on a regular clock. */

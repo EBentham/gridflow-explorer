@@ -82,6 +82,12 @@ export interface ChartSpec {
    * mean size in the window, are named in the key as not drawn; never merged.
    */
   maxSeries?: number
+  /**
+   * A fixed width for the value axis, px. A page that draws a chart of its
+   * own under this one (in the working panel) gives both the same width, so
+   * their clocks line up.
+   */
+  axisWidth?: number
 }
 
 // ---------------------------------------------------------------- events and reference tables
