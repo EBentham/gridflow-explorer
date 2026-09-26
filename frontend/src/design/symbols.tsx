@@ -4,6 +4,7 @@
  * drawings of what each source measures, not the publishers' logos.
  */
 import type { ComponentType } from 'react'
+import { Emblem } from './glyphs'
 
 /** The three domains the catalogue groups sources into; each has a colour (`--dom-*`). */
 export type Domain = 'Electricity' | 'Gas' | 'Weather'
@@ -115,6 +116,21 @@ function OpenMeteo() {
   )
 }
 
+function Gold() {
+  // gridflow's own derived tables: a merit-order stack (the supply curve) with
+  // the demand line crossing it at the clearing point
+  return (
+    <>
+      <path className="gf-tint" d="M5 30 V24 H10 V21 H15 V17 H18 V30 Z" />
+      <g className="gf-stroke">
+        <path {...NS} d="M5 30 V24 H10 V21 H15 V17 H20 V11.5 H24.5 V6 H28" />
+        <path {...NS} d="M18 7 V30" />
+        <circle {...NS} className="gf-node" cx="18" cy="17" r="1.9" />
+      </g>
+    </>
+  )
+}
+
 const ART: Record<string, ComponentType> = {
   elexon: Elexon,
   neso: Neso,
@@ -124,6 +140,7 @@ const ART: Record<string, ComponentType> = {
   gie_agsi: Agsi,
   gie_alsi: Alsi,
   open_meteo: OpenMeteo,
+  gold: Gold,
 }
 
 /** A source's symbol standing on its short ground line, tinted by domain. */
@@ -133,6 +150,34 @@ export function SourceSymbol({ source, domain, size = 40 }: { source: string; do
     <svg className={`gf-sym is-${domain.toLowerCase()}`} width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
       <Art />
       {source !== 'gie_alsi' && <path className="gf-stroke gf-sym-ground" {...NS} d="M4 30.5 H28" />}
+    </svg>
+  )
+}
+
+/** Hatch ticks under a ground line, as in the screen emblems. */
+function Hatch({ x0, x1, y }: { x0: number; x1: number; y: number }) {
+  const d: string[] = []
+  for (let x = x0 + 2; x < x1; x += 4) d.push(`M${x} ${y + 1.5} l-2.4 3.6`)
+  return <path className="gf-hatch" {...NS} d={d.join(' ')} />
+}
+
+/**
+ * A dataset page's head emblem (DESIGN §5): its source's symbol drawn large,
+ * in the domain colour, standing on the hatched ground line the screen
+ * emblems use. A source with no drawing yet (a new source gets one in the
+ * same grammar, DESIGN §7) shows the data-centre emblem rather than another
+ * source's symbol.
+ */
+export function SourceEmblem({ source, domain }: { source: string; domain: Domain }) {
+  const Art = ART[source]
+  if (!Art) return <Emblem kind="datacentre" />
+  return (
+    <svg className={`gf-emblem gf-sym is-${domain.toLowerCase()}`} width="80" height="60" viewBox="0 0 80 60" aria-hidden="true">
+      <g transform="translate(15 6.5) scale(1.55)">
+        <Art />
+      </g>
+      <path className="gf-stroke gf-ground" {...NS} d="M0 53.5 H80" />
+      <Hatch x0={0} x1={80} y={53.5} />
     </svg>
   )
 }

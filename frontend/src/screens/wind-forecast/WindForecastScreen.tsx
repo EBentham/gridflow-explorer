@@ -5,10 +5,11 @@
  * (`src/fixtures/windForecast.ts`) and every panel drawing it carries the
  * dashed-ochre Fixture tag (DESIGN §9, EFFORT-PLAN OQ-6).
  */
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { DataTable, FanKey } from '../../design/charts'
 import { fmt1, pct } from '../../design/format'
-import { FixtureTag, Head, Panel, Screen, Toolbar, ViewSwitch, type ChartOrTable } from '../../design/frame'
+import { FixtureTag, Head, Panel, Screen, Toolbar, ViewSwitch } from '../../design/frame'
+import { useViewParam } from '../../design/range'
 import { clock, dayLabel, halfHourWindow, zoneAbbrev } from '../../design/time'
 import { WIND_FIXTURE_DATE, WIND_FIXTURE_DAY, WIND_FIXTURE_METRICS, WIND_FIXTURE_MODEL, WIND_FIXTURE_POLICY, WIND_FIXTURE_VARIANT } from '../../fixtures/windForecast'
 import { FanChart } from './FanChart'
@@ -19,7 +20,7 @@ const FIXTURE_NOTE = 'Synthetic data made in the browser. No wind model writes t
 const MW_TO_GW = 1 / 1000
 
 export function WindForecastScreen() {
-  const [view, setView] = useState<ChartOrTable>('chart')
+  const [view, setView] = useViewParam()
   const rows = useMemo(() => toFanRows(WIND_FIXTURE_DAY, MW_TO_GW), [])
   const written = Date.parse(WIND_FIXTURE_VARIANT.written_at)
   const deliveryDay = rows[0].t
@@ -67,7 +68,7 @@ export function WindForecastScreen() {
           tag={<FixtureTag title={FIXTURE_NOTE} />}
           src={
             <>
-              Synthetic rows shaped like <code>/api/forecasts/day</code>, model {model}, GW (made as MW), {rows.length} settlement periods of {dayLabel(deliveryDay)}
+              Synthetic rows shaped like <code>/api/forecasts/day</code>, model {model}, GW (the fixture is generated in MW), {rows.length} settlement periods of {dayLabel(deliveryDay)}
             </>
           }
         >
@@ -119,7 +120,7 @@ export function WindForecastScreen() {
             </>
           }
         >
-          <MetricsPanel metrics={WIND_FIXTURE_METRICS} caveat={WIND_FIXTURE_VARIANT.perfect_prog_caveat} />
+          <MetricsPanel metrics={WIND_FIXTURE_METRICS} caveat={WIND_FIXTURE_VARIANT.perfect_prog_caveat} fixture />
         </Panel>
 
         <Panel

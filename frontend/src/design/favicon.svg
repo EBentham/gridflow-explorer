@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- The Explorer's tab icon: the generation-mix pylon in paper strokes on the petrol rail colour, standing on the chartreuse land line (tokens.css, light theme). -->
+  <rect width="32" height="32" rx="6" fill="#155a6e"/>
+  <path d="M10.8 26.5 L14.6 5.5 M21.2 26.5 L17.4 5.5 M14.6 5.5 H17.4 M7.4 12.2 H24.6 M9.4 7.4 H22.6 M12.3 18.8 H19.7 M10.8 26.5 L19.7 18.8 M21.2 26.5 L12.3 18.8" fill="none" stroke="#f6f4ec" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M4.5 27.2 H27.5" stroke="#afc64e" stroke-width="2.4" stroke-linecap="round"/>
+</svg>

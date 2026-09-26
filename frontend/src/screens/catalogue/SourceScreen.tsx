@@ -1,13 +1,22 @@
 /**
  * One source's page (DESIGN §8): its datasets in groups, split into time
  * series, event feeds and reference tables, and which groups the Explorer
- * draws. Reads the source-list fixture until /api/sources lands.
+ * draws: a pinned screen, or a dataset page from `src/views/` (matched on
+ * the family's slug). Reads the source-list fixture until /api/sources lands.
  */
 import { Link, useParams } from 'react-router-dom'
 import { listText, plural } from '../../design/format'
 import { Head, Panel, Screen } from '../../design/frame'
 import { SourceSymbol } from '../../design/symbols'
 import { datasetCount, kindCounts, sourceByKey, views, type Family, type Kind } from '../../fixtures/catalogue'
+import { allViews, familySlug, viewFor } from '../../views/registry'
+
+/** Where the Explorer shows a family: its pinned screen, else its dataset page. */
+function explorerLink(source: string, f: Family): { to: string; label: string } | undefined {
+  if (f.view) return f.view
+  const page = viewFor(source, familySlug(f.label))
+  return page ? { to: page.route, label: page.config.title } : undefined
+}
 
 const schedules = (f: Family) => listText([...new Set(f.datasets.map((d) => d.schedule))])
 
@@ -21,7 +30,7 @@ function FamilyIds({ f }: { f: Family }) {
   )
 }
 
-function FamilyTable({ families }: { families: Family[] }) {
+function FamilyTable({ source, families }: { source: string; families: Family[] }) {
   return (
     <table className="gf-fam">
       <thead>
@@ -32,39 +41,50 @@ function FamilyTable({ families }: { families: Family[] }) {
         </tr>
       </thead>
       <tbody>
-        {families.map((f) => (
-          <tr key={f.label} className={f.view ? 'is-charted' : undefined}>
-            <th scope="row">
-              <span className="gf-fam-label">{f.label}</span>
-              <FamilyIds f={f} />
-            </th>
-            <td>{schedules(f)}</td>
-            <td>
-              {f.view ? (
-                <Link to={f.view.to} className="gf-view-link">
-                  {f.view.label}
-                </Link>
-              ) : (
-                <span className="is-none">Not yet</span>
-              )}
-            </td>
-          </tr>
-        ))}
+        {families.map((f) => {
+          const link = explorerLink(source, f)
+          return (
+            <tr key={f.label} className={link ? 'is-charted' : undefined}>
+              <th scope="row">
+                <span className="gf-fam-label">{f.label}</span>
+                <FamilyIds f={f} />
+              </th>
+              <td>{schedules(f)}</td>
+              <td>
+                {link ? (
+                  <Link to={link.to} className="gf-view-link">
+                    {link.label}
+                  </Link>
+                ) : (
+                  <span className="is-none">Not yet</span>
+                )}
+              </td>
+            </tr>
+          )
+        })}
       </tbody>
     </table>
   )
 }
 
-function FamilyList({ families }: { families: Family[] }) {
+function FamilyList({ source, families }: { source: string; families: Family[] }) {
   return (
     <ul className="gf-famlist">
-      {families.map((f) => (
-        <li key={f.label}>
-          <span className="gf-fam-label">{f.label}</span>
-          <FamilyIds f={f} />
-          <span className="gf-famlist-sched">Fetched {schedules(f)}</span>
-        </li>
-      ))}
+      {families.map((f) => {
+        const link = explorerLink(source, f)
+        return (
+          <li key={f.label}>
+            <span className="gf-fam-label">{f.label}</span>
+            <FamilyIds f={f} />
+            <span className="gf-famlist-sched">Fetched {schedules(f)}</span>
+            {link && (
+              <Link to={link.to} className="gf-view-link">
+                {link.label}
+              </Link>
+            )}
+          </li>
+        )
+      })}
     </ul>
   )
 }
@@ -88,7 +108,10 @@ export function SourceScreen() {
   }
   const by = Object.fromEntries(KIND_ORDER.map((k) => [k, s.families.filter((f) => f.kind === k)])) as Record<Kind, Family[]>
   const counts = kindCounts(s)
-  const charted = views(s)
+  // Pinned screens first, then the source's dataset pages, each once.
+  const charted = [...views(s), ...allViews().filter((v) => v.source === s.key).map((v) => ({ to: v.route, label: v.config.title }))].filter(
+    (v, i, all) => all.findIndex((w) => w.to === v.to) === i,
+  )
   const hasSide = by.events.length > 0 || by.reference.length > 0 || charted.length > 0
 
   return (
@@ -115,7 +138,7 @@ export function SourceScreen() {
           title="Time series"
           src={`${plural(counts.series, 'dataset', 'datasets')} in ${plural(by.series.length, 'group', 'groups')}. Fetched is how often gridflow asks the source for new rows.`}
         >
-          <FamilyTable families={by.series} />
+          <FamilyTable source={s.key} families={by.series} />
         </Panel>
         {hasSide && (
           <div className="gf-src-side">
@@ -134,12 +157,12 @@ export function SourceScreen() {
             )}
             {by.events.length > 0 && (
               <Panel title="Event feeds" src="Messages and actions rather than regular series; they would chart as timelines or counts.">
-                <FamilyList families={by.events} />
+                <FamilyList source={s.key} families={by.events} />
               </Panel>
             )}
             {by.reference.length > 0 && (
               <Panel title="Reference tables" src="Registers and lookups that other datasets join to.">
-                <FamilyList families={by.reference} />
+                <FamilyList source={s.key} families={by.reference} />
               </Panel>
             )}
           </div>

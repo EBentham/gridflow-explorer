@@ -13,8 +13,8 @@
  * `?theme=light|dark`, and the page emulates `prefers-color-scheme` to match.
  * Motion is emulated as reduced, so the turbine rotor stands still.
  *
- * Env: EXPLORER_API (backend), SHOOT_BROWSER (browser executable),
- * SHOOT_WIDTH (viewport width, default 1440).
+ * Env: EXPLORER_API (backend), SHOOT_BROWSER (browser executable; exit 2
+ * when it names a missing file), SHOOT_WIDTH (viewport width, default 1440).
  *
  * Exit code 1 when a route never became ready or threw; console errors and
  * failed requests are listed but don't fail the run on their own.
@@ -159,6 +159,12 @@ async function main() {
     .map(toRoute)
   if (routes.length === 0 || routes.some((r) => r === null)) usage()
 
+  // A named browser that isn't there is an error, not a cue to shoot with another one.
+  const named = process.env.SHOOT_BROWSER
+  if (named && !existsSync(named)) {
+    console.error(`SHOOT_BROWSER names ${named}, and there is no file there.`)
+    process.exit(2)
+  }
   const executablePath = BROWSERS.find((p) => existsSync(p))
   if (!executablePath) {
     console.error('No browser found. Set SHOOT_BROWSER to an Edge or Chrome executable.')

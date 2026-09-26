@@ -6,9 +6,10 @@ holds the history). The direction is **I, "Petrol night"**, extended with the
 
 - **Tokens:** [`src/design/tokens.css`](src/design/tokens.css), the only source of colour,
   type and size.
-- **Reference implementation:** the prototype in `src/prototype/r2/i/`. Run it at
-  `/sources?variant=i` in dev. It is the executable spec until the port phase replaces the
-  real screens with it and deletes `src/prototype/`.
+- **Reference implementation:** the shared modules in `src/design/` (`charts.tsx`,
+  `chartTheme.ts`, `frame.tsx`, `symbols.tsx`), the pinned screens in
+  `src/screens/{generation-mix,system-prices,wind-forecast}/`, and the dataset page template
+  in `src/views/` (its `README.md` is the builder's contract).
 
 ## 1. Identity: the gridflow site's world
 
@@ -104,9 +105,9 @@ Sentence case everywhere.
 - **Tooltips** are compact, `--tip-*` surface, one row per series with a swatch.
 - **Fuel identity is never colour-only:** a key panel with the latest values, selectable to
   focus one fuel.
-- **Reference implementation:** `NightGenerationChart`, `NightPriceChart` (price with an NIV
-  bar panel on a shared clock), `NightFanChart` and `MixBar` in `r2/i/charts.tsx`, built on
-  `design/time.ts`, `design/fuels.ts` and `design/charts.tsx`.
+- **Reference implementation:** `GenerationChart`, `PriceChart` (price with an NIV bar panel
+  on a shared clock), `FanChart` and `MixBar` in `src/screens/`, built on `design/time.ts`,
+  `design/fuels.ts`, `design/charts.tsx` and `design/chartTheme.ts`.
 - **The port phase builds one shared Recharts theme module** covering axes, tick/unit
   styles, tooltip box, legend/key, day rules, highlight band, extremes and fan key. Every
   dataset view composes from it; no view styles Recharts ad hoc.
@@ -137,7 +138,7 @@ the dataset's name:
   messages, trades, notices).
 - **Reference tables:** no clock (registers, lookups, topology, tariffs).
 
-**Source symbols** (`r2/i/symbols.tsx`) are line-art drawings of what each source measures,
+**Source symbols** (`src/design/symbols.tsx`) are line-art drawings of what each source measures,
 not the publishers' logos:
 - Elexon: a settlement clock;
 - NESO Carbon Intensity: a stack with a plume;
@@ -165,7 +166,8 @@ round caps, non-scaling 1.4px strokes.
 ## 9. Fixture and honesty rules
 
 - Anything synthetic carries a visible dashed-ochre "Fixture" tag wherever it appears. The
-  wind forecast is currently the only fixture.
+  wind forecast and the template demo (`/sources/demo/dataset-page`, deleted by P4-0) are
+  the only fixtures.
 - A dataset being configured in gridflow does not mean it is held locally. Only datasets
   the Explorer actually reads show coverage, dates or values.
 - Every chart names its dataset, unit and window. No invented statistics, no fake live

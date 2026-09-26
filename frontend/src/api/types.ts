@@ -27,6 +27,13 @@ export interface ApiErrorBody {
   error: {
     code: string
     message: string
+    /** The rows endpoint's 404 for a dataset that isn't held (`src/views/contract.ts`). */
+    not_held_cause?: string | null
+    /** The rows endpoint's 413: which limit the request hit. */
+    reason?: string | null
+    /** The rows endpoint's 413 and 422: how to narrow or fix the request. */
+    hint?: string | null
+    [extra: string]: unknown
   }
 }
 

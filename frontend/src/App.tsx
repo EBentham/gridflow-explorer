@@ -7,11 +7,13 @@ import { GenerationMixScreen } from './screens/generation-mix/GenerationMixScree
 import { SystemPricesScreen } from './screens/system-prices/SystemPricesScreen'
 import { WindForecastScreen } from './screens/wind-forecast/WindForecastScreen'
 import { Shell } from './shell/Shell'
+import { FamilyRoute } from './views/FamilyRoute'
 
 /**
  * Every screen sits in the shell. The brand, and `/`, open the catalogue;
  * the pinned screens keep their routes; /forecasts is reached from the
- * catalogue, not the rail.
+ * catalogue, not the rail. A dataset family's page is
+ * `/sources/<source>/<family>`, found in `src/views/` by the registry.
  */
 function App() {
   return (
@@ -20,6 +22,7 @@ function App() {
         <Route index element={<Navigate to="/sources" replace />} />
         <Route path="sources" element={<CatalogueScreen />} />
         <Route path="sources/:sourceKey" element={<SourceScreen />} />
+        <Route path="sources/:sourceKey/:familySlug" element={<FamilyRoute />} />
         <Route path="datasets/generation-mix" element={<GenerationMixScreen />} />
         <Route path="datasets/system-prices" element={<SystemPricesScreen />} />
         <Route path="forecasts" element={<ForecastScreen />} />
