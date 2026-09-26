@@ -47,8 +47,8 @@ def test_family_page_counts_routes_and_corrections() -> None:
     families = [(s, f) for s in SOURCES for f in s["families"]]
     assert Counter(f["page"] for _, f in families) == {
         "build": 45,
-        "table-only": 11,
-        "not-built": 11,
+        "table-only": 12,
+        "not-built": 10,
         "pinned": 2,
         "external": 1,
     }
@@ -61,6 +61,15 @@ def test_family_page_counts_routes_and_corrections() -> None:
         f for s, f in families if s["key"] == "gold" and f["label"] == "Demand forecasts"
     )
     assert gold_forecasts["route"] == "/forecasts"
+
+    emission_factors = next(
+        f for s, f in families if s["key"] == "neso" and f["slug"] == "emission-factors-by-fuel"
+    )
+    assert emission_factors["kind"] == "reference"
+    assert emission_factors["page"] == "table-only"
+    assert emission_factors["route"] == "/sources/neso/emission-factors-by-fuel"
+    assert emission_factors["datasets"][0]["verdict"] == "reference-table"
+    assert emission_factors["datasets"][0]["not_held_cause"] is None
     assert {d["id"] for d in gold_forecasts["datasets"]} == {
         "gold_forecasts",
         "gold_forecast_metrics",

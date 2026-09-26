@@ -258,14 +258,32 @@ def build_manifest(client: Any, *, generated_at: datetime | None = None) -> dict
                     public.update(held=False, relation=None, not_held_cause=cause, coverage=None)
                 else:
                     selected = latest if latest and latest in tables else candidate
-                    missing = _required_columns(dataset) - set(columns.get(selected, {}))
-                    if selected not in tables or missing:
+                    types = columns.get(selected, {})
+                    missing = _required_columns(dataset) - set(types)
+                    invalid_dates = []
+                    if selected in tables:
+                        date_columns = []
+                        if dataset["kind"] != "reference":
+                            clock = dataset["clock"]
+                            if clock and clock["column"]:
+                                date_columns.append(clock["column"])
+                            rule = dataset["latest_day_rule"]
+                            if rule["mode"] == "max":
+                                date_columns.append(rule["column"])
+                        for column in set(date_columns) - missing:
+                            try:
+                                _uk_date(column, types)
+                            except ValueError as exc:
+                                invalid_dates.append(str(exc))
+                    if selected not in tables or missing or invalid_dates:
                         LOG.warning(
-                            "Missing catalogue schema for %s/%s: relation=%s missing=%s",
+                            "Missing catalogue schema for %s/%s: relation=%s "
+                            "missing=%s invalid_dates=%s",
                             source["key"],
                             dataset["id"],
                             selected,
                             sorted(missing) if selected in tables else ["<relation>"],
+                            sorted(invalid_dates),
                         )
                         public.update(
                             held=False,

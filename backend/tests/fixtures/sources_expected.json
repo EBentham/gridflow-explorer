@@ -788,7 +788,7 @@
     "id": "intensity_factors",
     "family": "Emission factors by fuel",
     "schedule": "weekly",
-    "held": false
+    "held": true
   },
   {
     "source": "neso_data_portal",

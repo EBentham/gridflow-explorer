@@ -699,7 +699,7 @@ SOURCES = [
                         "dims": [{"column": "boundary", "role": "filter", "cardinality": 18}],
                         "default_filter": None,
                         "dedup": {
-                            "keys": ["settlement_date", "settlement_period"],
+                            "keys": ["settlement_date", "settlement_period", "boundary"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
@@ -799,7 +799,7 @@ SOURCES = [
                         "dims": [],
                         "default_filter": None,
                         "dedup": {
-                            "keys": ["settlement_date"],
+                            "keys": ["forecast_date"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
@@ -854,7 +854,7 @@ SOURCES = [
                         "dims": [{"column": "boundary", "role": "filter", "cardinality": 18}],
                         "default_filter": None,
                         "dedup": {
-                            "keys": ["settlement_date", "settlement_period"],
+                            "keys": ["settlement_date", "settlement_period", "boundary"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
@@ -898,7 +898,7 @@ SOURCES = [
                         "dims": [{"column": "boundary", "role": "filter", "cardinality": 18}],
                         "default_filter": None,
                         "dedup": {
-                            "keys": ["settlement_date", "settlement_period"],
+                            "keys": ["settlement_date", "settlement_period", "boundary"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
@@ -1225,7 +1225,7 @@ SOURCES = [
                         ],
                         "default_filter": None,
                         "dedup": {
-                            "keys": ["settlement_date", "settlement_period"],
+                            "keys": ["settlement_date", "bm_unit_id"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
@@ -4977,22 +4977,18 @@ SOURCES = [
                 "slug": "emission-factors-by-fuel",
                 "label": "Emission factors by fuel",
                 "kind": "reference",
-                "page": "not-built",
-                "route": None,
+                "page": "table-only",
+                "route": "/sources/neso/emission-factors-by-fuel",
                 "notes": [],
                 "datasets": [
                     {
                         "id": "intensity_factors",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "verdict": "not-held",
+                        "verdict": "reference-table",
                         "base_relation": "silver_neso_intensity_factors",
                         "latest_relation": None,
-                        "not_held_cause": "never-fetched: no bronze/neso/intensity_factors "
-                        "dir; transformer registered as a reference "
-                        "dataset writing "
-                        "silver/neso/intensity_factors/intensity_factors.parquet "
-                        "(GF/silver/neso/carbon_intensity.py:236-262)",
+                        "not_held_cause": None,
                         "clock": {"column": "ingested_at", "grain": "none", "settlement_cols": []},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
@@ -7832,7 +7828,7 @@ SOURCES = [
                         "base_relation": "silver_gie_agsi_unavailability",
                         "latest_relation": "silver_gie_agsi_unavailability_latest",
                         "not_held_cause": None,
-                        "clock": {"column": "start", "grain": "event", "settlement_cols": []},
+                        "clock": None,
                         "latest_day_rule": {"mode": "max", "column": "event_time"},
                         "values": [
                             {

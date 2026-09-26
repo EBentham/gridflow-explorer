@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import copy
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import pytest
 
 from app import sources
+from app.sources_spec import SOURCES as COMMITTED_SOURCES
 
 
 def _spec(*datasets):
@@ -60,6 +61,51 @@ def _dataset(dataset_id="sample", **updates):
 
 def _one(snapshot):
     return snapshot["sources"][0]["families"][0]["datasets"][0]
+
+
+def _committed(dataset_id):
+    return copy.deepcopy(
+        next(
+            d
+            for source in COMMITTED_SOURCES
+            for family in source["families"]
+            for d in family["datasets"]
+            if d["id"] == dataset_id
+        )
+    )
+
+
+def _seed_committed_relation(sources_db, dataset, rows, *, absent=()):
+    """Make a live-shaped relation while using the committed selection policy."""
+    columns = sorted(sources._required_columns(dataset) - set(absent))
+    types = {
+        column: (
+            "DATE"
+            if column in {"settlement_date", "forecast_date"}
+            else "INTEGER"
+            if column == "settlement_period"
+            else "VARCHAR"
+            if column in {"boundary", "bm_unit_id", "fuel_type", "national_grid_bm_unit"}
+            else "TIMESTAMPTZ"
+            if column in {"timestamp_utc", "published_at"}
+            else "DOUBLE"
+        )
+        for column in columns
+    }
+    definitions = ", ".join(f'"{column}" {types[column]}' for column in columns)
+    sources_db.con.execute(f'CREATE TABLE "{dataset["base_relation"]}" ({definitions})')
+    defaults = {
+        "DATE": date(2026, 9, 1),
+        "INTEGER": 1,
+        "VARCHAR": "unit-a",
+        "TIMESTAMPTZ": datetime(2026, 9, 1, tzinfo=UTC),
+        "DOUBLE": 1.0,
+    }
+    placeholders = ", ".join("?" for _ in columns)
+    sources_db.con.executemany(
+        f'INSERT INTO "{dataset["base_relation"]}" VALUES ({placeholders})',
+        [[row.get(column, defaults[types[column]]) for column in columns] for row in rows],
+    )
 
 
 def test_uk_days_dst_and_publication_anchor_not_future_delivery(
@@ -116,6 +162,86 @@ def test_latest_relation_and_missing_column_isolated(
     assert cards[1]["relation"] == "silver_test_other"
     assert "test/sample" in caplog.text
     assert "value" in caplog.text
+
+
+@pytest.mark.parametrize(
+    ("field", "invalid_type"),
+    [("clock", "VARCHAR"), ("clock", "BIGINT"), ("anchor", "VARCHAR")],
+)
+def test_missing_spec_column_only_disables_affected_dataset_with_type_mismatch(
+    monkeypatch: pytest.MonkeyPatch, sources_db, caplog, field, invalid_type
+) -> None:
+    sources_db.con.execute(
+        f"CREATE TABLE silver_test_sample("
+        f"timestamp_utc {invalid_type if field == 'clock' else 'TIMESTAMPTZ'}, "
+        f"published_at {invalid_type if field == 'anchor' else 'TIMESTAMPTZ'}, "
+        "value DOUBLE)"
+    )
+    sources_db.con.execute(
+        "CREATE TABLE silver_test_other("
+        "timestamp_utc TIMESTAMPTZ, published_at TIMESTAMPTZ, value DOUBLE); "
+        "INSERT INTO silver_test_other VALUES ('2026-09-01', '2026-09-01', 1)"
+    )
+    monkeypatch.setattr(sources, "SOURCES", _spec(_dataset(), _dataset("other")))
+    cards = sources.build_manifest(sources_db)["sources"][0]["families"][0]["datasets"]
+    assert cards[0]["held"] is False
+    assert cards[0]["relation"] is None
+    assert cards[0]["not_held_cause"] == "missing-in-catalogue"
+    assert cards[0]["coverage"] is None
+    assert cards[1]["held"] is True
+    assert cards[1]["coverage"]["rows"] == 1
+    assert caplog.text.count("test/sample") == 1
+
+
+@pytest.mark.parametrize("dataset_id", ["tsdf", "inddem", "indgen"])
+def test_vintage_dedup_preserves_entity_keys(
+    monkeypatch: pytest.MonkeyPatch, sources_db, dataset_id
+) -> None:
+    dataset = _committed(dataset_id)
+    _seed_committed_relation(
+        sources_db,
+        dataset,
+        [
+            {"boundary": "N", "published_at": datetime(2026, 9, 1, tzinfo=UTC)},
+            {"boundary": "N", "published_at": datetime(2026, 9, 2, tzinfo=UTC)},
+            {"boundary": "S", "published_at": datetime(2026, 9, 1, tzinfo=UTC)},
+        ],
+    )
+    monkeypatch.setattr(sources, "SOURCES", _spec(dataset))
+    card = _one(sources.build_manifest(sources_db))
+    assert card["held"] is True
+    assert card["coverage"]["rows"] == 2
+    selected = sources_db.query(sources._selected_sql(dataset["base_relation"], dataset))
+    assert set(selected["boundary"].to_list()) == {"N", "S"}
+
+
+@pytest.mark.parametrize(
+    ("dataset_id", "absent", "entity_column"),
+    [
+        ("tsdfd", ("settlement_date",), "forecast_date"),
+        ("uou2t14d", ("settlement_period",), "bm_unit_id"),
+    ],
+)
+def test_daily_vintage_keys_match_held_relation(
+    monkeypatch: pytest.MonkeyPatch, sources_db, dataset_id, absent, entity_column
+) -> None:
+    dataset = _committed(dataset_id)
+    second_entity = date(2026, 9, 2) if dataset_id == "tsdfd" else "unit-b"
+    _seed_committed_relation(
+        sources_db,
+        dataset,
+        [
+            {},
+            {"published_at": datetime(2026, 9, 2, tzinfo=UTC)},
+            {entity_column: second_entity},
+        ],
+        absent=absent,
+    )
+    monkeypatch.setattr(sources, "SOURCES", _spec(dataset))
+    card = _one(sources.build_manifest(sources_db))
+    assert card["held"] is True
+    assert card["relation"] == dataset["base_relation"]
+    assert card["coverage"]["rows"] == 2
 
 
 def test_declared_not_held_relation_warns_but_stays_unheld(
