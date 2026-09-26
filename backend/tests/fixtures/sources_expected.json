@@ -1,0 +1,1206 @@
+[
+  {
+    "source": "elexon",
+    "id": "fuelhh",
+    "family": "Generation by fuel type, half-hourly",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "system_prices",
+    "family": "System prices and net imbalance volume",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "fuelinst",
+    "family": "Generation by fuel type, instantaneous",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "agpt",
+    "family": "Actual generation by production type",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "agws",
+    "family": "Actual generation by production type",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "mid",
+    "family": "Market index price",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "market_depth",
+    "family": "Market depth",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "freq",
+    "family": "System frequency",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "indo",
+    "family": "Demand outturn",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "itsdo",
+    "family": "Demand outturn",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "indod",
+    "family": "Demand outturn",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "atl",
+    "family": "Demand outturn",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "ndf",
+    "family": "Demand forecasts",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "tsdf",
+    "family": "Demand forecasts",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "ndfd",
+    "family": "Demand forecasts",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "tsdfd",
+    "family": "Demand forecasts",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "inddem",
+    "family": "Indicated demand and generation",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "indgen",
+    "family": "Indicated demand and generation",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "imbalngc",
+    "family": "Indicated imbalance and export limits",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "melngc",
+    "family": "Indicated imbalance and export limits",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "lolpdrm",
+    "family": "Loss of load probability and de-rated margin",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "windfor",
+    "family": "Wind generation forecast",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "fou2t14d",
+    "family": "Availability, 2 to 14 days ahead",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "uou2t14d",
+    "family": "Availability, 2 to 14 days ahead",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "temp",
+    "family": "Temperature",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "nonbm",
+    "family": "Non-BM STOR",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "netbsad",
+    "family": "Net balancing services adjustment",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "pn",
+    "family": "Physical notifications per BM unit",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "boal",
+    "family": "Bid-offer acceptances",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "disbsad",
+    "family": "Disaggregated balancing services adjustments",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "remit",
+    "family": "REMIT outage messages",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "soso",
+    "family": "System operator to system operator trades",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "elexon",
+    "id": "bmunits_reference",
+    "family": "BM unit register",
+    "schedule": "weekly",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "actual_load",
+    "family": "Load, actual and forecast",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "load_forecast",
+    "family": "Load, actual and forecast",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "load_forecast_weekly",
+    "family": "Load, actual and forecast",
+    "schedule": "weekly",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "load_forecast_monthly",
+    "family": "Load, actual and forecast",
+    "schedule": "monthly",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "load_forecast_yearly",
+    "family": "Load, actual and forecast",
+    "schedule": "yearly",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "forecast_margin",
+    "family": "Installed capacity, yearly",
+    "schedule": "yearly",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "actual_generation",
+    "family": "Generation, actual and forecast",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "generation_forecast",
+    "family": "Generation, actual and forecast",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "wind_solar_forecast",
+    "family": "Generation, actual and forecast",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "actual_generation_units",
+    "family": "Generation, actual and forecast",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "day_ahead_prices",
+    "family": "Day-ahead prices",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "water_reservoirs",
+    "family": "Hydro reservoirs",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "cross_border_flows",
+    "family": "Cross-border flows and schedules",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "commercial_schedules",
+    "family": "Cross-border flows and schedules",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "net_positions",
+    "family": "Cross-border flows and schedules",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "net_transfer_capacity",
+    "family": "Transfer capacity",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "dc_link_intraday_transfer_limits",
+    "family": "Transfer capacity",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "offered_transfer_capacity_continuous",
+    "family": "Transfer capacity",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsoe",
+    "id": "offered_transfer_capacity_implicit",
+    "family": "Transfer capacity",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsoe",
+    "id": "offered_transfer_capacity_explicit",
+    "family": "Transfer capacity",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsoe",
+    "id": "transfer_capacity_use",
+    "family": "Transfer capacity",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsoe",
+    "id": "total_nominated_capacity",
+    "family": "Transfer capacity",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "total_capacity_allocated",
+    "family": "Transfer capacity",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "auction_revenue",
+    "family": "Auction revenue and congestion income",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "congestion_income",
+    "family": "Auction revenue and congestion income",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsoe",
+    "id": "imbalance_prices",
+    "family": "Imbalance prices and volumes",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsoe",
+    "id": "imbalance_volume",
+    "family": "Imbalance prices and volumes",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsoe",
+    "id": "current_balancing_state",
+    "family": "Imbalance prices and volumes",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "activated_balancing_prices",
+    "family": "Balancing energy and reserves",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsoe",
+    "id": "aggregated_balancing_energy_bids",
+    "family": "Balancing energy and reserves",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsoe",
+    "id": "contracted_reserves",
+    "family": "Balancing energy and reserves",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsoe",
+    "id": "procured_balancing_capacity",
+    "family": "Balancing energy and reserves",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "cross_zonal_balancing_capacity",
+    "family": "Balancing energy and reserves",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsoe",
+    "id": "balancing_financial_expenses_income",
+    "family": "Balancing energy and reserves",
+    "schedule": "monthly",
+    "held": false
+  },
+  {
+    "source": "entsoe",
+    "id": "outages_generation",
+    "family": "Outages, unavailable capacity per interval",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "outages_production",
+    "family": "Outages, unavailable capacity per interval",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "outages_consumption",
+    "family": "Outages, unavailable capacity per interval",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "outages_transmission",
+    "family": "Outages, unavailable capacity per interval",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "outages_offshore_grid",
+    "family": "Outages, unavailable capacity per interval",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsoe",
+    "id": "redispatching_cross_border",
+    "family": "Redispatch and countertrading",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsoe",
+    "id": "redispatching_internal",
+    "family": "Redispatch and countertrading",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "countertrading",
+    "family": "Redispatch and countertrading",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsoe",
+    "id": "congestion_management_costs",
+    "family": "Redispatch and countertrading",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsoe",
+    "id": "balancing_energy_bids",
+    "family": "Balancing energy bids",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "installed_capacity",
+    "family": "Installed capacity, yearly",
+    "schedule": "weekly",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "installed_capacity_units",
+    "family": "Installed capacity, yearly",
+    "schedule": "yearly",
+    "held": true
+  },
+  {
+    "source": "entsoe",
+    "id": "generation_units_master_data",
+    "family": "Generation unit register",
+    "schedule": "weekly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "carbon_intensity",
+    "family": "National carbon intensity",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "intensity_current",
+    "family": "National carbon intensity",
+    "schedule": "hourly",
+    "held": false
+  },
+  {
+    "source": "neso",
+    "id": "intensity_period",
+    "family": "National carbon intensity",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "intensity_at",
+    "family": "National carbon intensity",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "intensity_fw24h",
+    "family": "National carbon intensity",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "intensity_fw48h",
+    "family": "National carbon intensity",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "intensity_pt24h",
+    "family": "National carbon intensity",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "intensity_today",
+    "family": "National carbon intensity",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "neso",
+    "id": "intensity_date",
+    "family": "National carbon intensity",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "intensity_stats",
+    "family": "Intensity statistics",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "intensity_stats_block",
+    "family": "Intensity statistics",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "generation",
+    "family": "Generation mix, per cent",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "generation_current",
+    "family": "Generation mix, per cent",
+    "schedule": "hourly",
+    "held": false
+  },
+  {
+    "source": "neso",
+    "id": "generation_pt24h",
+    "family": "Generation mix, per cent",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "regional_current",
+    "family": "Regional intensity",
+    "schedule": "hourly",
+    "held": false
+  },
+  {
+    "source": "neso",
+    "id": "regional_england",
+    "family": "Regional intensity",
+    "schedule": "hourly",
+    "held": false
+  },
+  {
+    "source": "neso",
+    "id": "regional_scotland",
+    "family": "Regional intensity",
+    "schedule": "hourly",
+    "held": false
+  },
+  {
+    "source": "neso",
+    "id": "regional_wales",
+    "family": "Regional intensity",
+    "schedule": "hourly",
+    "held": false
+  },
+  {
+    "source": "neso",
+    "id": "regional_postcode",
+    "family": "Regional intensity",
+    "schedule": "hourly",
+    "held": false
+  },
+  {
+    "source": "neso",
+    "id": "regional_regionid",
+    "family": "Regional intensity",
+    "schedule": "hourly",
+    "held": false
+  },
+  {
+    "source": "neso",
+    "id": "regional_intensity",
+    "family": "Regional intensity windows",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "regional_intensity_postcode",
+    "family": "Regional intensity windows",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "regional_intensity_regionid",
+    "family": "Regional intensity windows",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "regional_intensity_fw24h",
+    "family": "Regional intensity windows",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "regional_intensity_fw24h_postcode",
+    "family": "Regional intensity windows",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "regional_intensity_fw24h_regionid",
+    "family": "Regional intensity windows",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "regional_intensity_fw48h",
+    "family": "Regional intensity windows",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "regional_intensity_fw48h_postcode",
+    "family": "Regional intensity windows",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "regional_intensity_fw48h_regionid",
+    "family": "Regional intensity windows",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "regional_intensity_pt24h",
+    "family": "Regional intensity windows",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "regional_intensity_pt24h_postcode",
+    "family": "Regional intensity windows",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "regional_intensity_pt24h_regionid",
+    "family": "Regional intensity windows",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "neso",
+    "id": "intensity_factors",
+    "family": "Emission factors by fuel",
+    "schedule": "weekly",
+    "held": true
+  },
+  {
+    "source": "neso_data_portal",
+    "id": "historic_generation_mix",
+    "family": "Historic generation mix",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "neso_data_portal",
+    "id": "embedded_wind_solar_forecast",
+    "family": "Embedded wind and solar forecast",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "neso_data_portal",
+    "id": "daily_wind_availability",
+    "family": "Wind availability per BM unit",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "open_meteo",
+    "id": "historical_demand",
+    "family": "Weather at demand centres",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "open_meteo",
+    "id": "forecast_demand",
+    "family": "Weather at demand centres",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "open_meteo",
+    "id": "historical_wind",
+    "family": "Weather at wind sites",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "open_meteo",
+    "id": "forecast_wind",
+    "family": "Weather at wind sites",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "open_meteo",
+    "id": "historical_solar",
+    "family": "Weather at solar sites",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "open_meteo",
+    "id": "forecast_solar",
+    "family": "Weather at solar sites",
+    "schedule": "hourly",
+    "held": true
+  },
+  {
+    "source": "gold",
+    "id": "gold_stack_clearing",
+    "family": "Power stack clearing",
+    "schedule": null,
+    "held": true
+  },
+  {
+    "source": "gold",
+    "id": "gold_stack_residual_demand",
+    "family": "Power stack clearing",
+    "schedule": null,
+    "held": true
+  },
+  {
+    "source": "gold",
+    "id": "gold_stack_supply_curve_points",
+    "family": "Power stack clearing",
+    "schedule": null,
+    "held": true
+  },
+  {
+    "source": "gold",
+    "id": "gold_forecasts",
+    "family": "Demand forecasts",
+    "schedule": null,
+    "held": true
+  },
+  {
+    "source": "gold",
+    "id": "gold_forecast_metrics",
+    "family": "Demand forecasts",
+    "schedule": null,
+    "held": true
+  },
+  {
+    "source": "gold",
+    "id": "gold_uk_imbalance_context",
+    "family": "System prices joined with carbon intensity",
+    "schedule": null,
+    "held": true
+  },
+  {
+    "source": "gold",
+    "id": "gold_gb_day_ahead_benchmark",
+    "family": "GB day-ahead benchmark from the market index price",
+    "schedule": null,
+    "held": true
+  },
+  {
+    "source": "gold",
+    "id": "gold_eu_gas_storage",
+    "family": "Gas storage by country",
+    "schedule": null,
+    "held": true
+  },
+  {
+    "source": "gold",
+    "id": "system_marginal_price",
+    "family": "System prices with spread and calendar features",
+    "schedule": null,
+    "held": false
+  },
+  {
+    "source": "entsog",
+    "id": "physical_flows",
+    "family": "Physical flows",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "aggregated_physical_flows",
+    "family": "Physical flows",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "nominations",
+    "family": "Nominations and allocations",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "renominations",
+    "family": "Nominations and allocations",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "allocations",
+    "family": "Nominations and allocations",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "firm_available",
+    "family": "Firm and interruptible capacity",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "firm_booked",
+    "family": "Firm and interruptible capacity",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "firm_technical",
+    "family": "Firm and interruptible capacity",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "interruptible_available",
+    "family": "Firm and interruptible capacity",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "interruptible_booked",
+    "family": "Firm and interruptible capacity",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "interruptible_total",
+    "family": "Firm and interruptible capacity",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "available_through_oversubscription",
+    "family": "Released capacity",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "available_through_surrender",
+    "family": "Released capacity",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "available_through_uioli_long_term",
+    "family": "Released capacity",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "available_through_uioli_short_term",
+    "family": "Released capacity",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "gcv",
+    "family": "Gas quality",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "wobbe_index",
+    "family": "Gas quality",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "methane_content",
+    "family": "Gas quality",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "hydrogen_content",
+    "family": "Gas quality",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "oxygen_content",
+    "family": "Gas quality",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "cmp_unsuccessful_requests",
+    "family": "Congestion management",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "cmp_auction_premiums",
+    "family": "Congestion management",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "cmp_unavailable_firm_capacity",
+    "family": "Unavailable firm capacity",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "interruptions",
+    "family": "Interruptions and urgent market messages",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsog",
+    "id": "urgent_market_messages",
+    "family": "Interruptions and urgent market messages",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "entsog",
+    "id": "tariffs",
+    "family": "Tariffs",
+    "schedule": "monthly",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "tariff_simulations",
+    "family": "Tariffs",
+    "schedule": "monthly",
+    "held": true
+  },
+  {
+    "source": "entsog",
+    "id": "connection_points",
+    "family": "Network topology",
+    "schedule": "weekly",
+    "held": false
+  },
+  {
+    "source": "entsog",
+    "id": "operators",
+    "family": "Network topology",
+    "schedule": "weekly",
+    "held": false
+  },
+  {
+    "source": "entsog",
+    "id": "balancing_zones",
+    "family": "Network topology",
+    "schedule": "weekly",
+    "held": false
+  },
+  {
+    "source": "entsog",
+    "id": "operator_point_directions",
+    "family": "Network topology",
+    "schedule": "weekly",
+    "held": false
+  },
+  {
+    "source": "entsog",
+    "id": "interconnections",
+    "family": "Network topology",
+    "schedule": "weekly",
+    "held": false
+  },
+  {
+    "source": "entsog",
+    "id": "aggregate_interconnections",
+    "family": "Network topology",
+    "schedule": "weekly",
+    "held": false
+  },
+  {
+    "source": "gie_agsi",
+    "id": "storage",
+    "family": "Storage by country and site",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "gie_agsi",
+    "id": "storage_reports",
+    "family": "Storage by country and site",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "gie_agsi",
+    "id": "unavailability",
+    "family": "Storage unavailability",
+    "schedule": "daily",
+    "held": true
+  },
+  {
+    "source": "gie_agsi",
+    "id": "news",
+    "family": "Transparency news",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "gie_agsi",
+    "id": "news_item",
+    "family": "Transparency news",
+    "schedule": "daily",
+    "held": false
+  },
+  {
+    "source": "gie_agsi",
+    "id": "about_summary",
+    "family": "Facility and company listings",
+    "schedule": "weekly",
+    "held": false
+  },
+  {
+    "source": "gie_agsi",
+    "id": "about_listing",
+    "family": "Facility and company listings",
+    "schedule": "weekly",
+    "held": false
+  },
+  {
+    "source": "gie_alsi",
+    "id": "lng",
+    "family": "LNG inventory and send-out",
+    "schedule": "daily",
+    "held": true
+  }
+]
