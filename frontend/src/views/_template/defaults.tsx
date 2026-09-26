@@ -6,7 +6,7 @@
 import { DAY_MS, instantLabel, periodLabel, stepNoun } from '../../design/time'
 import type { DatasetView, PageContext, PanelSlots, SlotSpec } from '../define'
 import { EventsBody } from './EventsBody'
-import { daySeries, relatedParts, unitsOf } from './panelHelpers'
+import { daySeries, plannedParts, relatedParts, unitsOf } from './panelHelpers'
 import { About, EventsDays, EventsSummary, ReferenceCounts, ReferenceSummary, SeriesDays, SeriesKey, SourceLine } from './panels'
 import { ReferenceBody } from './ReferenceBody'
 import { SeriesBody } from './SeriesBody'
@@ -14,15 +14,26 @@ import { latestValue } from './seriesModel'
 import { planPanels } from './seriesPanels'
 import { meansText } from './text'
 
-/** The main panel's source line: each dataset drawn with its columns, split and unit, then the window. */
+/**
+ * The main panel's source line: each dataset drawn with its columns, split
+ * and unit, then the window. Before the rows are read, or when they fail, it
+ * names what the page asks for instead.
+ */
 export function mainSrc(ctx: PageContext) {
-  if (ctx.view.body === 'series' && ctx.series) {
-    const drawn = planPanels(ctx).panels.flatMap((p) => p.series)
+  if (ctx.view.body === 'series') {
+    const drawn = ctx.series ? planPanels(ctx).panels.flatMap((p) => p.series) : []
+    if (!ctx.series || !drawn.length) {
+      const planned = plannedParts(ctx)
+      return <SourceLine ctx={ctx} columns={planned.columns} by={planned.by} unit={planned.unit} also={planned.also} />
+    }
     const own = drawn.filter((d) => d.from === 'self')
     const shown = own.length ? own : ctx.series.drawn
     return <SourceLine ctx={ctx} columns={[...new Set(shown.map((d) => d.column))]} by={ctx.series.group} unit={unitsOf(shown)} also={relatedParts(ctx, drawn)} />
   }
-  if (ctx.view.body === 'events') return <SourceLine ctx={ctx} what="one row per event, by its time" />
+  if (ctx.view.body === 'events') {
+    const clock = ctx.dataset.clock?.column
+    return <SourceLine ctx={ctx} what={clock ? <>one row per event, at its <code>{clock}</code></> : 'one row per event, by its time'} />
+  }
   return <SourceLine ctx={ctx} what="every row as held" window={false} />
 }
 
@@ -43,7 +54,11 @@ const SERIES: Required<PanelSlots> = {
     title: 'Key',
     src: (ctx) => {
       const model = ctx.series
-      const drawn = planPanels(ctx).panels.flatMap((p) => p.series)
+      const drawn = model ? planPanels(ctx).panels.flatMap((p) => p.series) : []
+      if (!drawn.length) {
+        const planned = plannedParts(ctx)
+        return <SourceLine ctx={ctx} unit={planned.unit} also={planned.also.map((p) => ({ ...p, columns: undefined, by: null }))} what="latest held values" window={false} />
+      }
       const own = drawn.filter((d) => d.from === 'self')
       const latest = model && own[0] ? latestValue(model, own[0]) : null
       return (
@@ -63,7 +78,10 @@ const SERIES: Required<PanelSlots> = {
     src: (ctx) => {
       const def = daySeries(ctx)
       const model = ctx.series
-      if (!def || !model) return <SourceLine ctx={ctx} what="per UK day" />
+      if (!def || !model) {
+        const planned = plannedParts(ctx)
+        return <SourceLine ctx={ctx} columns={planned.columns} unit={planned.unit} what="per UK day" />
+      }
       const daily = model.stepMs !== null && model.stepMs >= DAY_MS
       const held = model.bucketed && model.stepMs ? meansText(model.stepMs) : stepNoun(model.stepMs)
       return <SourceLine ctx={ctx} columns={[def.column]} unit={def.unit.label} what={`${def.label} per UK day: ${daily ? 'the value' : `${held} held, mean, lowest and highest`}`} />

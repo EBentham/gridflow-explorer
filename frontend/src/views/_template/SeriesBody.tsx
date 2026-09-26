@@ -2,14 +2,16 @@
  * The series body: the chart (Chart) or the rows (Table) of a series
  * dataset. The chart comes from `planPanels`; the table holds every column,
  * text ones too, one row per time (or, past a dozen series, one per time and
- * group), oldest first. Settlement date and period appear only when the rows
- * carry them.
+ * group), oldest first, and the related series the chart draws, read at the
+ * same times (a dash where the related dataset has no row at that time).
+ * Settlement date and period appear only when the rows carry them.
  */
 import type { ReactNode } from 'react'
 import { windowDomain, periodLabel } from '../../design/time'
 import type { SeriesRow, SeriesRowsResponse } from '../contract'
 import type { PageContext } from '../define'
 import { SeriesChart } from './SeriesChart'
+import type { WideRow } from './seriesModel'
 import { planPanels } from './seriesPanels'
 import { displayUnit } from './units'
 import { WindowedTable, type TableCol } from './WindowedTable'
@@ -33,9 +35,18 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
         { key: 'sp', label: 'SP', num: true, render: (r) => settlement.get(r.t)?.settlement_period ?? dash, sortValue: (r) => settlement.get(r.t)?.settlement_period ?? null },
       ]
     : []
+  const related = planPanels(ctx)
+    .panels.flatMap((p) => p.series)
+    .filter((d) => d.from !== 'self')
   const caption = `${ctx.view.title ?? ctx.view.label}, ${ctx.windowText}${model.bucketed ? ', as period means' : ''}. Select a column heading to sort.`
 
   if (model.all.length <= WIDE_MAX) {
+    const relatedAt = new Map<string, Map<number, WideRow>>()
+    for (const d of related) if (!relatedAt.has(d.from)) relatedAt.set(d.from, new Map((ctx.related[d.from]?.series?.rows ?? []).map((r) => [r.t, r])))
+    const relatedValue = (from: string, field: string, t: number) => {
+      const v = relatedAt.get(from)?.get(t)?.[field]
+      return typeof v === 'number' ? v : null
+    }
     const textCols = model.group === null ? model.textColumns : []
     const texts = new Map<number, SeriesRow>()
     if (textCols.length) for (const r of response.rows) texts.set(r.ts, r)
@@ -54,6 +65,16 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
           const v = r[d.field]
           return typeof v === 'number' ? v : null
         },
+      })),
+      ...related.map((d) => ({
+        key: `${d.from}:${d.field}`,
+        label: d.unit.label ? `${d.label}, ${d.unit.label}` : d.label,
+        num: true,
+        render: (r: (typeof model.rows)[number]) => {
+          const v = relatedValue(d.from, d.field, r.t)
+          return v === null ? dash : d.unit.plain(v)
+        },
+        sortValue: (r: (typeof model.rows)[number]) => relatedValue(d.from, d.field, r.t),
       })),
       ...textCols.map((c) => ({
         key: `text:${c.column}`,
@@ -107,7 +128,8 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
       sortValue: (r: SeriesRow) => (r[c.column] === null || r[c.column] === undefined ? null : String(r[c.column])),
     })),
   ]
-  return <WindowedTable columns={columns} rows={response.rows} caption={caption} initialSort={{ key: 't', dir: 'asc' }} />
+  const chartOnly = related.length ? ` ${[...new Set(related.map((d) => d.label))].join(', ')} ${related.length > 1 ? 'are' : 'is'} in the chart only.` : ''
+  return <WindowedTable columns={columns} rows={response.rows} caption={`${caption}${chartOnly}`} initialSort={{ key: 't', dir: 'asc' }} />
 }
 
 export function SeriesBody({ ctx }: { ctx: PageContext }) {

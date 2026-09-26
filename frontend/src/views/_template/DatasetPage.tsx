@@ -23,7 +23,7 @@ import { SourceEmblem } from '../../design/symbols'
 import { rangeText } from '../../design/time'
 import type { DateRange } from '../../lib/range'
 import type { Manifest, ManifestDataset, ManifestFamily, RowsRequest, RowsResponse } from '../contract'
-import type { DatasetView, PageContext, PanelSlots, QuerySpec, RelatedData, ViewConfig } from '../define'
+import type { DatasetView, PageContext, PanelSlots, QuerySpec, RelatedData, SlotSpec, ViewConfig } from '../define'
 import { adapterFor } from '../_data/adapters'
 import { useManifest, useRowsList, type Load } from '../_data/hooks'
 import { hasSourcePage, type RegisteredView } from '../registry'
@@ -54,25 +54,25 @@ function resolveQuery(view: DatasetView, params: URLSearchParams): QuerySpec {
 
 const repeats = (xs: string[]) => [...new Set(xs.filter((x, i) => xs.indexOf(x) !== i))]
 
-/** What the config asks for that gridflow's source list doesn't have, each as a sentence. The page shows these instead of data. */
+/** What the view config asks for that gridflow's source list doesn't have, each as a sentence. The page shows these instead of data. */
 function configProblems(config: ViewConfig, family: ManifestFamily, manifest: Manifest): string[] {
   const out: string[] = []
-  if (!config.datasets.length) out.push('The config lists no dataset.')
-  for (const id of repeats(config.datasets.map((v) => v.id))) out.push(`The config lists ${id} twice.`)
+  if (!config.datasets.length) out.push('This page lists no dataset.')
+  for (const id of repeats(config.datasets.map((v) => v.id))) out.push(`This page lists ${id} twice.`)
   for (const v of config.datasets) {
     const d = family.datasets.find((x) => x.id === v.id)
     if (!d) {
-      out.push(`The config names ${v.id}, which isn't in the ${family.label} family.`)
+      out.push(`This page names ${v.id}, which isn't in the ${family.label} group.`)
       continue
     }
     const known = new Set(d.values.map((x) => x.column))
-    if (v.body === 'series') for (const s of v.values ?? []) if (!known.has(s.column)) out.push(`The config draws ${s.column}, which ${d.id} doesn't have.`)
+    if (v.body === 'series') for (const s of v.values ?? []) if (!known.has(s.column)) out.push(`This page draws ${s.column}, which ${d.id} doesn't have.`)
     const query = typeof v.query === 'object' ? v.query : undefined
-    if (query?.group && !d.dims.some((x) => x.column === query.group)) out.push(`The config splits ${d.id} by ${query.group}, which isn't one of its columns to split by.`)
-    for (const k of repeats((v.related ?? []).map((r) => r.key))) out.push(`The config uses the related key ${k} twice.`)
+    if (query?.group && !d.dims.some((x) => x.column === query.group)) out.push(`This page splits ${d.id} by ${query.group}, which isn't one of its columns to split by.`)
+    for (const k of repeats((v.related ?? []).map((r) => r.key))) out.push(`This page reads two datasets under the name ${k}.`)
     for (const r of v.related ?? []) {
       const listed = manifest.sources.find((s) => s.key === r.source)?.families.some((f) => f.datasets.some((x) => x.id === r.dataset))
-      if (!listed) out.push(`The config reads ${r.dataset} from ${r.source} beside ${d.id}, and gridflow's source list has no such dataset.`)
+      if (!listed) out.push(`This page reads ${r.dataset} from ${r.source} beside ${d.id}, and gridflow's source list has no such dataset.`)
     }
   }
   return out
@@ -151,7 +151,7 @@ function MainStatus({ state, error, dataset, window }: { state: ViewState; error
 function ConfigProblems({ problems }: { problems: string[] }) {
   return (
     <div className="gf-state is-error" role="alert">
-      <p>This page's config doesn't match gridflow's source list, so it shows nothing:</p>
+      <p>This page asks for what gridflow's source list doesn't have, so it shows nothing:</p>
       <ul>
         {problems.map((p) => (
           <li key={p}>{p}</li>
@@ -179,11 +179,14 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
   const view = active?.view ?? config.datasets[0]
   const dataset = active?.dataset
   const reference = dataset?.kind === 'reference'
+  // The switch offers the held datasets, and the open one even when it isn't held, so it shows where you are.
+  const switchable = entries.filter((e) => e.dataset?.held || e === active)
 
   // Undefined while the source list is read: the range waits for its anchor rather than guess one.
   const latest = manifest.state !== 'data' ? undefined : dataset?.held ? (dataset.coverage?.latest_local_day ?? null) : null
   const range = useAnchoredRange(latest)
-  const window = reference ? null : range.range
+  // A table with no clock has no window; nor does a dataset that isn't held, as nothing is read.
+  const window = reference || dataset?.held === false ? null : range.range
   const queryKey = JSON.stringify(resolveQuery(view, params))
   const ready = Boolean(dataset?.held && !problems.length && (reference || window))
 
@@ -309,6 +312,12 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
 
   const slots = slotsFor(view)
   const settled = state === 'data' || state === 'empty'
+  const srcOf = (area: keyof PanelSlots, slot: SlotSpec): ReactNode => {
+    if (!ctx) return source ? `${sourceName(source)}, reading its source list…` : undefined
+    // A dataset that isn't held has no columns, unit or window to name, whatever the slot would say.
+    if (!ctx.dataset.held && area !== 'side') return <SourceLine ctx={ctx} what="not held locally" window={false} />
+    return slot.src ? slot.src(ctx) : <SourceLine ctx={ctx} />
+  }
   const body = (area: keyof PanelSlots): ReactNode => {
     const { Body } = slots[area]
     if (area === 'main') {
@@ -316,7 +325,7 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
       if (manifest.state === 'data' && !family) {
         return (
           <p className="gf-state is-error" role="alert">
-            gridflow's source list has no family {entry.family} under {entry.source}, so this page has nothing to read.
+            gridflow's source list has no group {entry.family} under {entry.source}, so this page has nothing to read.
           </p>
         )
       }
@@ -360,18 +369,18 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
         badge={fixture ? <FixtureTag title={FIXTURE_NOTE}>Fixture data: made in the browser</FixtureTag> : undefined}
       />
       <Toolbar>
-        {held.length > 1 && <Segmented label="Dataset" options={held.map((e) => ({ value: e.view.id, label: e.view.label }))} value={view.id} onChange={switchTo} />}
-        {!reference && <RangeControl state={range} />}
-        {hasChart && <ViewSwitch value={mode} onChange={setMode} />}
+        {switchable.length > 1 && <Segmented label="Dataset" options={switchable.map((e) => ({ value: e.view.id, label: e.view.label }))} value={view.id} onChange={switchTo} />}
+        {!reference && dataset?.held !== false && <RangeControl state={range} />}
+        {hasChart && dataset?.held !== false && <ViewSwitch value={mode} onChange={setMode} />}
+        {ctx && dataset?.held && view.controls && <view.controls ctx={ctx} />}
         {reference && <span className="gf-toolbar-note">A table with no clock: no range and no chart.</span>}
         {family && <FamilyNote family={family} config={config} />}
       </Toolbar>
       <div className="gf-grid">
         {AREAS.map(([area, gridArea]) => {
           const slot = slots[area]
-          const src = ctx ? (slot.src ? slot.src(ctx) : <SourceLine ctx={ctx} />) : source ? `${sourceName(source)}, reading its source list…` : undefined
           return (
-            <Panel key={area} area={gridArea} title={panelTitle(view, area, ctx)} src={src} tag={tag}>
+            <Panel key={area} area={gridArea} title={panelTitle(view, area, ctx)} src={srcOf(area, slot)} tag={tag}>
               {body(area)}
             </Panel>
           )

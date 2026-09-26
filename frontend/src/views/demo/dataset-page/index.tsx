@@ -10,9 +10,11 @@
  * extremes), `?dataset=demo_notices` (events), `?dataset=demo_units`
  * (reference), `?dataset=demo_forecast` (not held), each with `&view=table`,
  * `&days=30` (a window past the local depth, drawn as hourly means) and
- * `&fixture=error|refreshing|empty|toomany`.
+ * `&fixture=error|refreshing|empty|toomany`; the notices take `&area=all`
+ * (the page's own control, clearing the default filter).
  */
 import { defineView } from '../../define'
+import { AreaControl } from './AreaControl'
 
 const view = defineView({
   title: 'Dataset page demo',
@@ -69,9 +71,13 @@ const view = defineView({
         { field: 'unavailable_mw', label: 'Unavailable', format: 'number', unit: 'MW', display: 'MW' },
         { field: 'starts_at', label: 'Starts', format: 'time' },
         { field: 'ends_at', label: 'Ends', format: 'time' },
+        { field: 'area', label: 'Area' },
       ],
-      filters: ['event_type', 'status', 'fuel'],
+      filters: ['event_type', 'status', 'fuel', 'area'],
       strip: true,
+      // The dataset's default filter keeps GB only; the page's own switch clears it.
+      query: (params) => (params.get('area') === 'all' ? { filters: null } : {}),
+      controls: AreaControl,
     },
     {
       id: 'demo_units',

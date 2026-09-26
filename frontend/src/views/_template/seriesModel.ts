@@ -8,7 +8,7 @@
  * there at all (it is on another clock).
  */
 import { SERIES_COLORS } from '../../design/chartTheme'
-import { datesBetween, dayStart, londonMidnight, stepsInDay } from '../../design/time'
+import { datesBetween, dayStart, HOUR_MS, londonMidnight, stepsInDay } from '../../design/time'
 import type { DateRange } from '../../lib/range'
 import type { SeriesRowsResponse, ValueColumn } from '../contract'
 import type { GroupSpec, ValueSpec } from '../define'
@@ -254,7 +254,8 @@ export function daySummaries(model: SeriesModel, window: DateRange, def?: Series
     return {
       day,
       start,
-      expected: model.bucketed ? null : stepsInDay(start, model.stepMs),
+      // Buckets are UTC-aligned: those of an hour or less fall on UK hours, longer ones straddle UK days.
+      expected: model.bucketed && model.stepMs !== null && model.stepMs > HOUR_MS ? null : stepsInDay(start, model.stepMs),
       held,
       mean: def && held ? sum / held : null,
       low,

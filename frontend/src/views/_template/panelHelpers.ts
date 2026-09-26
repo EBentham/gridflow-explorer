@@ -4,8 +4,9 @@
  */
 import { listText } from '../../design/format'
 import { datesBetween, dayStart, londonMidnight } from '../../design/time'
-import type { ManifestSource } from '../contract'
-import type { PageContext } from '../define'
+import type { ManifestDataset, ManifestSource } from '../contract'
+import type { PageContext, ValueSpec } from '../define'
+import { displayUnit } from './units'
 import { daySummaries, seriesId, type SeriesDef } from './seriesModel'
 import { planPanels } from './seriesPanels'
 import type { HeldDay } from './text'
@@ -66,4 +67,33 @@ export function relatedParts(ctx: PageContext, series: SeriesDef[], withColumns 
       unit: unitsOf(defs),
     }
   })
+}
+
+/** The units a dataset's value columns print in, from the config's specs and the manifest: `GW`, or `unit unconfirmed`. */
+function plannedUnit(dataset: ManifestDataset | null, columns: string[], specs: ValueSpec[] | undefined): string | null {
+  const labels = columns.map((c) => {
+    const spec = specs?.find((s) => s.column === c)
+    const unit = displayUnit(spec?.unit ?? dataset?.values.find((v) => v.column === c)?.unit, spec?.display)
+    return unit.numeric ? (unit.label ?? 'unit unconfirmed') : null
+  })
+  const known = [...new Set(labels.filter((l): l is string => l !== null))]
+  return known.length ? listText(known) : null
+}
+
+/**
+ * A series page's source line before its rows are read, or when they failed:
+ * the columns it asks for, their unit and split, and each related dataset,
+ * from the config and the manifest rather than from rows.
+ */
+export function plannedParts(ctx: PageContext): { columns: string[]; by: string | null; unit: string | null; also: SourcePart[] } {
+  const view = ctx.view
+  const specs = view.body === 'series' ? view.values : undefined
+  const columns = specs?.map((v) => v.column) ?? ctx.dataset.values.map((v) => v.column)
+  const query = typeof view.query === 'object' ? view.query : undefined
+  const also = (view.related ?? []).map((spec) => {
+    const rel = ctx.related[spec.key]
+    const cols = spec.values?.map((v) => v.column) ?? rel?.dataset?.values.map((v) => v.column) ?? []
+    return { source: rel?.source ?? null, dataset: spec.dataset, columns: cols, by: spec.query?.group ?? null, unit: plannedUnit(rel?.dataset ?? null, cols, spec.values) }
+  })
+  return { columns, by: query?.group ?? null, unit: plannedUnit(ctx.dataset, columns, specs), also }
 }

@@ -5,7 +5,7 @@
  * of tens of thousands of rows scrolls as lightly as a day of half-hours.
  * Every row is one line of fixed height; cells don't wrap.
  */
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 export interface TableCol<R> {
   key: string
@@ -66,6 +66,18 @@ export function WindowedTable<R>({
 }) {
   const [sort, setSort] = useState<SortState | null>(initialSort ?? null)
   const [scrollTop, setScrollTop] = useState(0)
+  const box = useRef<HTMLDivElement>(null)
+  // Wider than its panel: the columns past the edge are named in a hint, as scrollbars can be hidden.
+  const [sideways, setSideways] = useState(false)
+  useEffect(() => {
+    const el = box.current
+    if (!el || typeof ResizeObserver === 'undefined') return undefined
+    const observer = new ResizeObserver(() => setSideways(el.scrollWidth > el.clientWidth + 1))
+    observer.observe(el)
+    const table = el.querySelector('table')
+    if (table) observer.observe(table)
+    return () => observer.disconnect()
+  }, [])
 
   const sorted = useMemo(() => {
     const col = sort && columns.find((c) => c.key === sort.key)
@@ -93,47 +105,50 @@ export function WindowedTable<R>({
     setSort((s) => (s?.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: columns.find((c) => c.key === key)?.num ? 'desc' : 'asc' }))
 
   return (
-    <div className="gf-wtable" style={{ maxHeight }} onScroll={windowed ? (e) => setScrollTop(e.currentTarget.scrollTop) : undefined}>
-      <table>
-        <caption>{caption}</caption>
-        <thead>
-          <tr>
-            {columns.map((c) => {
-              const dir = sort?.key === c.key ? sort.dir : null
-              return (
-                <th key={c.key} scope="col" className={c.num ? 'is-num' : undefined} aria-sort={dir === 'asc' ? 'ascending' : dir === 'desc' ? 'descending' : undefined}>
-                  {c.sortValue ? (
-                    <button type="button" onClick={() => toggle(c.key)}>
-                      {c.label}
-                      <SortMark dir={dir} />
-                    </button>
-                  ) : (
-                    c.label
-                  )}
-                </th>
-              )
-            })}
-          </tr>
-        </thead>
-        <tbody>
-          {first > 0 && <tr className="gf-wtable-pad" style={{ height: first * ROW_H }} aria-hidden="true" />}
-          {visible.map((row, i) => (
-            <tr key={rowKey ? rowKey(row, first + i) : first + i} className={rowClass?.(row)}>
-              {columns.map((c) => (
-                <td key={c.key} className={c.num ? 'is-num' : undefined}>
-                  {c.render(row)}
-                </td>
-              ))}
+    <>
+      <div ref={box} className="gf-wtable" style={{ maxHeight }} onScroll={windowed ? (e) => setScrollTop(e.currentTarget.scrollTop) : undefined}>
+        <table>
+          <caption>{caption}</caption>
+          <thead>
+            <tr>
+              {columns.map((c) => {
+                const dir = sort?.key === c.key ? sort.dir : null
+                return (
+                  <th key={c.key} scope="col" className={c.num ? 'is-num' : undefined} aria-sort={dir === 'asc' ? 'ascending' : dir === 'desc' ? 'descending' : undefined}>
+                    {c.sortValue ? (
+                      <button type="button" onClick={() => toggle(c.key)}>
+                        {c.label}
+                        <SortMark dir={dir} />
+                      </button>
+                    ) : (
+                      c.label
+                    )}
+                  </th>
+                )
+              })}
             </tr>
-          ))}
-          {last < sorted.length && <tr className="gf-wtable-pad" style={{ height: (sorted.length - last) * ROW_H }} aria-hidden="true" />}
-          {sorted.length === 0 && (
-            <tr className="gf-wtable-empty">
-              <td colSpan={columns.length}>{empty}</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {first > 0 && <tr className="gf-wtable-pad" style={{ height: first * ROW_H }} aria-hidden="true" />}
+            {visible.map((row, i) => (
+              <tr key={rowKey ? rowKey(row, first + i) : first + i} className={rowClass?.(row)}>
+                {columns.map((c) => (
+                  <td key={c.key} className={c.num ? 'is-num' : undefined}>
+                    {c.render(row)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            {last < sorted.length && <tr className="gf-wtable-pad" style={{ height: (sorted.length - last) * ROW_H }} aria-hidden="true" />}
+            {sorted.length === 0 && (
+              <tr className="gf-wtable-empty">
+                <td colSpan={columns.length}>{empty}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      {sideways && <p className="gf-hint">The table is wider than the panel: scroll it sideways for the rest of its columns.</p>}
+    </>
   )
 }

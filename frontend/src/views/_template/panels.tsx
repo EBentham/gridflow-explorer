@@ -9,7 +9,7 @@ import { KeyList, type KeyItem } from '../../design/charts'
 import { listText, plural } from '../../design/format'
 import { dayLabel, instantLabel, stepNoun } from '../../design/time'
 import type { EventsRowsResponse, ManifestDataset, ManifestSource, ReferenceRowsResponse } from '../contract'
-import type { PageContext, ReferenceView, SeriesView } from '../define'
+import type { EventsView, PageContext, ReferenceView, SeriesView } from '../define'
 import { daySeries, heldDays, type SourcePart } from './panelHelpers'
 import { daySummaries, latestValue, seriesId, type SeriesDef } from './seriesModel'
 import { planPanels } from './seriesPanels'
@@ -124,9 +124,9 @@ function markOf(kind: string | undefined, color: string): KeyItem['mark'] {
 /** The series key: every drawn series with its mark and latest value; select one to draw it alone. */
 export function SeriesKey({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
-  if (!model) return null
   const plan = planPanels(ctx)
   const drawn = plan.panels.flatMap((p) => p.series)
+  if (!model || !drawn.length) return <p className="gf-hint">Nothing is held in this window, so there is nothing to key.</p>
   const latestOf = (d: SeriesDef) => {
     const m = d.from === 'self' ? model : ctx.related[d.from]?.series
     return m ? latestValue(m, d) : null
@@ -165,7 +165,7 @@ export function SeriesKey({ ctx }: { ctx: PageContext }) {
 export function SeriesDays({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
   const def = daySeries(ctx)
-  if (!model || !ctx.window || !def) return <p className="gf-hint">No series in this window to summarise.</p>
+  if (!model || !ctx.window || !def) return <p className="gf-hint">Nothing is held in this window, so there are no days to summarise.</p>
   const days = daySummaries(model, ctx.window, def)
   const daily = model.stepMs !== null && model.stepMs >= 86_400_000
   const fmt = (x: { v: number } | null) => (x ? def.unit.plain(x.v) : '–')
@@ -285,7 +285,7 @@ export function EventsSummary({ ctx }: { ctx: PageContext }) {
             ))}
         </dl>
       )}
-      {by && <p className="gf-hint">Counts by <code>{by}</code>. Filter the table below it to read one group.</p>}
+      {by && <p className="gf-hint">Counts by <code>{by}</code>. Filter the table to read one group.</p>}
     </>
   )
 }
@@ -398,10 +398,11 @@ export function ReferenceCounts({ ctx }: { ctx: PageContext }) {
 export function About({ ctx }: { ctx: PageContext }) {
   const d = ctx.dataset
   const view = ctx.view
-  const specs = view.body === 'series' ? (view as SeriesView).values : undefined
+  // Charts show MW as GW; tables keep MW unless a column asks otherwise (cells.tsx).
+  const series = view.body === 'series'
   const columns = d.values.map((v) => {
-    const spec = specs?.find((s) => s.column === v.column)
-    const unit = displayUnit(spec?.unit ?? v.unit, spec?.display)
+    const spec = series ? (view as SeriesView).values?.find((s) => s.column === v.column) : (view as EventsView | ReferenceView).columns?.find((c) => c.field === v.column)
+    const unit = displayUnit(spec?.unit ?? v.unit, spec?.display ?? (series ? 'GW' : 'MW'))
     const note = !unit.numeric ? 'text' : unit.label === null ? 'unit unconfirmed' : unit.source === 'MW' && unit.label === 'GW' ? 'MW, shown as GW' : unit.label
     return { column: v.column, note }
   })
@@ -449,7 +450,7 @@ export function About({ ctx }: { ctx: PageContext }) {
       )}
       <div>
         <dt>Cadence</dt>
-        <dd>{cadenceOf(ctx.response?.grain_ms ?? null, d)}</dd>
+        <dd>{d.held ? cadenceOf(ctx.response?.grain_ms ?? null, d) : 'Not known: nothing of it is held'}</dd>
       </div>
       <div>
         <dt>Held locally</dt>

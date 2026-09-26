@@ -143,6 +143,12 @@ interface DatasetViewBase {
   related?: RelatedSpec[]
   /** Replace what a panel shows for this dataset. Omitted panels keep the body's default. */
   panels?: PanelSlots
+  /**
+   * The page's own toolbar controls, after Chart | Table: a `Segmented` or a
+   * select that reads and writes the page's own URL parameters (`ctx.param`,
+   * `ctx.setParam`), which `query` then reads. Drawn once the source list is read.
+   */
+  controls?: ComponentType<{ ctx: PageContext }>
 }
 
 export interface SeriesView extends DatasetViewBase {

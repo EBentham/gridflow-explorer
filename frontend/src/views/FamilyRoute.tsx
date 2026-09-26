@@ -53,7 +53,10 @@ export function FamilyRoute() {
             </>
           )}
         </nav>
-        <Head title="No page yet" sub={`The Explorer has no page for “${familySlug ?? ''}” under “${sourceKey ?? ''}”. Its source page lists what gridflow holds.`} />
+        <Head
+          title="No page yet"
+          sub={`The Explorer has no page for “${familySlug ?? ''}” under “${sourceKey ?? ''}”. ${sourceKey && hasSourcePage(sourceKey) ? 'Its source page' : 'All sources'} lists what gridflow holds.`}
+        />
       </Screen>
     )
   }

@@ -50,12 +50,12 @@ export function CountStrip({ times, window, per, noun = 'events' }: { times: num
   }
 
   return (
-    <ChartFrame height={118} caption={axisClockCaption(domain[0], domain[1])}>
+    <ChartFrame height={128} caption={axisClockCaption(domain[0], domain[1])}>
       <ComposedChart data={rows} margin={{ ...CHART.margin, top: 22 }} barCategoryGap="18%">
         <CartesianGrid {...GRID} />
         <DayRules midnights={ticks.midnights} />
         <XAxis {...timeAxis(domain, ticks)} />
-        <YAxis {...valueAxis(unit, scale, { width: 36, format: fmt0 })} allowDecimals={false} />
+        <YAxis {...valueAxis(unit, scale, { width: 36, format: fmt0 })} allowDecimals={false} interval={0} />
         <Tooltip content={renderTip} cursor={CURSOR} isAnimationActive={false} />
         <Bar dataKey="n" fill="var(--kind-events)" isAnimationActive={false} maxBarSize={40} />
       </ComposedChart>

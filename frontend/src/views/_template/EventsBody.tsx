@@ -67,6 +67,8 @@ export function EventsBody({ ctx }: { ctx: PageContext }) {
               if (v !== null && v !== undefined) counts.set(String(v), (counts.get(String(v)) ?? 0) + 1)
             }
             const current = ctx.param(filterParam(f)) ?? ''
+            // A value linked from another window may hold no event in this one: offer it, with its zero.
+            if (current && !counts.has(current)) counts.set(current, 0)
             return (
               <label key={f} className="gf-filter">
                 <span>{headerOf({ ...spec, unit: undefined })}</span>
