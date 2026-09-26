@@ -1,0 +1,104 @@
+/* The v0.3 forecast screen's own rules, kept as they were (it is wrapped in
+   the new shell but not restyled) with every colour moved onto the tokens. */
+
+.chart-card {
+  max-width: 1100px;
+}
+
+.loading-state,
+.error-state,
+.empty-state {
+  padding: 16px 0;
+}
+
+.error-state {
+  color: var(--status-fail);
+}
+
+.error-state-refresh,
+.empty-state {
+  color: var(--muted);
+}
+
+.forecast-controls {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.forecast-date-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.forecast-date-picker input {
+  color: var(--ink);
+  background: var(--raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+}
+
+.forecast-variant-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+
+.forecast-variant-picker label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.forecast-gate-fail {
+  color: var(--status-fail);
+  font-size: 12px;
+}
+
+.forecast-gate-unknown {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.forecast-metrics {
+  margin-top: 24px;
+  max-width: 1100px;
+}
+
+.forecast-metrics-variant {
+  margin-bottom: 20px;
+}
+
+.perfect-prog-caveat {
+  max-width: 640px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+}
+
+.forecast-metrics-table {
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.forecast-metrics-table th,
+.forecast-metrics-table td {
+  border: 1px solid var(--rule);
+  padding: 4px 10px;
+  text-align: left;
+}

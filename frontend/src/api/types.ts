@@ -20,8 +20,8 @@ export interface DatasetSummary {
   series: SeriesSpec[]
 }
 
-/** One record from `/api/datasets/{id}/data` — a timestamp plus one value per series. */
-export type DataRecord = Record<string, string | number>
+/** One record from `/api/datasets/{id}/data`: a timestamp plus one value per series (null where none is held). */
+export type DataRecord = Record<string, string | number | null>
 
 export interface ApiErrorBody {
   error: {

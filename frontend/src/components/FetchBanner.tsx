@@ -1,49 +1,48 @@
 import { useEffect, useRef } from 'react'
-import type { DatasetSummary } from '../api/types'
+import { listText } from '../design/format'
+import { fmtDay } from '../design/time'
 import { useCoverage } from '../hooks/useCoverage'
 import { useFetchJob } from '../hooks/useFetchJob'
 import type { DateRange } from '../lib/range'
 
 interface FetchBannerProps {
-  dataset: DatasetSummary
+  datasetId: string
+  /** The publisher gridflow fetches from, for the button: "Elexon". */
+  source: string
   range: DateRange
   onComplete: () => void
 }
 
+const LISTED_DAYS = 5
+
+/** `Fri 18 Sep, Sat 19 Sep and Sun 20 Sep`: up to five missing days, else nothing. */
+function missingText(dates: string[]): string {
+  return dates.length > LISTED_DAYS ? '' : listText(dates.map(fmtDay))
+}
+
 /**
- * Coverage-driven fetch affordance: reports how much of `range` is missing
- * locally, offers a button to fetch it, and shows calm state through the
- * P3 job lifecycle. Owns its own `useCoverage`/`useFetchJob` — the screen
- * need only render it and pass `onComplete` (the screen's own data
- * refetch), called once the job succeeds or lands back at `idle`
- * mid-poll (finished-with-unknown-outcome — a vanished job is still worth
- * refreshing against); this component refetches its own coverage on the
- * same edge.
+ * Coverage-driven fetch for the two live datasets: says how much of `range`
+ * isn't held locally, offers to fetch it through gridflow, and reports the
+ * job until it lands. Owns its own coverage read and job hook; the screen
+ * passes `onComplete` (its own reload), called once the job succeeds, or
+ * lands back at `idle` mid-poll (a vanished job is still worth reloading
+ * against). Coverage is re-read on the same edge.
  *
- * Callers should key this component on the range (`key={range.start +
- * range.end}`) so a range change remounts it, resetting any stale job
- * state from a previous range's fetch rather than showing it against the
- * new one.
+ * Key it on the range (`key={range.start + range.end}`) so a range change
+ * remounts it instead of showing a previous range's job state.
  */
-export function FetchBanner({ dataset, range, onComplete }: FetchBannerProps) {
-  const {
-    coverage,
-    loading: coverageLoading,
-    refetch: refetchCoverage,
-  } = useCoverage(dataset.id, range)
-  const { job, starting, error, start } = useFetchJob(dataset.id)
+export function FetchBanner({ datasetId, source, range, onComplete }: FetchBannerProps) {
+  const { coverage, loading: coverageLoading, refetch: refetchCoverage } = useCoverage(datasetId, range)
+  const { job, starting, error, start } = useFetchJob(datasetId)
 
   const prevStateRef = useRef<string | undefined>(undefined)
   useEffect(() => {
-    // `idle` reached while a job was being tracked (mount-discovered or
-    // self-started) means the job vanished server-side rather than
-    // succeeding or failing outright — finished-with-unknown-outcome. Treat
-    // it the same as `succeeded` for the refetch: no error wall, just pick
-    // up whatever landed. `job` starts `null`, never a fabricated `idle`, so
-    // this only fires on a genuine transition observed via polling.
+    // `idle` reached while a job was being tracked means it vanished server
+    // side rather than succeeding or failing: finished with an unknown
+    // outcome. Reload the same as for `succeeded`. `job` starts null, never
+    // a made-up `idle`, so this fires only on a transition seen by polling.
     const isCompletion =
-      (job?.state === 'succeeded' && prevStateRef.current !== 'succeeded') ||
-      (job?.state === 'idle' && prevStateRef.current !== 'idle')
+      (job?.state === 'succeeded' && prevStateRef.current !== 'succeeded') || (job?.state === 'idle' && prevStateRef.current !== 'idle')
     if (isCompletion) {
       refetchCoverage()
       onComplete()
@@ -53,47 +52,46 @@ export function FetchBanner({ dataset, range, onComplete }: FetchBannerProps) {
 
   if (starting || job?.state === 'running') {
     return (
-      <div className="fetch-banner fetch-banner-running" role="status">
-        Fetching missing {dataset.title.toLowerCase()} data…
+      <div className="gf-coverage" role="status">
+        Fetching from {source} through gridflow. The chart reloads when the job finishes.
       </div>
     )
   }
 
   if (job?.state === 'succeeded' && coverageLoading) {
     return (
-      <div className="fetch-banner fetch-banner-running" role="status">
-        Fetch complete — refreshing…
+      <div className="gf-coverage" role="status">
+        The fetch finished. Reading the new rows.
       </div>
     )
   }
 
   if (job?.state === 'failed') {
     return (
-      <div className="fetch-banner fetch-banner-failed" role="alert">
-        Fetch failed: {job.message ?? 'unknown error'}
+      <div className="gf-coverage is-failed" role="alert">
+        The fetch failed: {job.message ?? 'gridflow gave no reason'}
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="fetch-banner fetch-banner-failed" role="alert">
-        Fetch failed: {error.message}
+      <div className="gf-coverage is-failed" role="alert">
+        Couldn't start the fetch: {error.message}
       </div>
     )
   }
 
-  if (!coverage || coverage.missing_day_count === 0) {
-    return null
-  }
+  if (!coverage || coverage.missing_day_count === 0) return null
 
+  const listed = missingText(coverage.missing_dates)
   return (
-    <div className="fetch-banner fetch-banner-idle">
+    <div className="gf-coverage" role="status">
       <span>
-        {coverage.missing_day_count} of {coverage.requested_day_count} days missing locally
+        {coverage.missing_day_count} of {coverage.requested_day_count} days in this range aren't held locally{listed ? `: ${listed}` : ''}.
       </span>
       <button type="button" onClick={() => start(range)}>
-        Fetch missing data
+        Fetch them from {source}
       </button>
     </div>
   )
