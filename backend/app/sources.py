@@ -10,7 +10,8 @@ from datetime import UTC, date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
 
 from app.deps import client_ctx
 from app.errors import RefreshInProgress
@@ -23,6 +24,38 @@ TTL_SECONDS = 600
 _lock = threading.Lock()
 _snapshot: dict[str, Any] | None = None
 _refreshed_at = 0.0
+
+
+@router.get("/api/sources/{source_key}/{dataset_id}/rows", response_model=None)
+def get_rows(source_key: str, dataset_id: str, request: Request) -> dict[str, Any] | JSONResponse:
+    """Validate the registry contract before guarded catalogue acquisition."""
+    from app import rows
+    from app.settings import get_settings
+
+    query = request.query_params
+    filters = query.getlist("filter") if "filter" in query else None
+    try:
+        parsed = rows.validate(
+            source_key,
+            dataset_id,
+            query.get("start"),
+            query.get("end"),
+            query.get("group"),
+            filters,
+        )
+        config = str(get_settings().duckdb_path)
+        status = rows.cached_status(parsed, config)
+        if status and status.cause:
+            raise rows.RowsError(
+                rows.RowsErrorCode.UNKNOWN_DATASET,
+                "Dataset schema is unavailable.",
+                details={"not_held_cause": status.cause},
+            )
+        with client_ctx() as client:
+            return rows.execute(client, parsed, config)
+    except rows.RowsError as exc:
+        return JSONResponse(status_code=exc.http_status, content=exc.envelope())
+
 
 _PUBLIC_DATASET = (
     "id",
@@ -210,9 +243,14 @@ def _coverage(
     if reference:
         result["last_ingested"] = _iso_z(row["last_ingested"])
     else:
-        # Preserve the uncapped anchor in the private cache. The cap is applied
-        # to a response copy so a cache crossing UK midnight gets today's date.
-        result["_anchor_day"] = _day_string(row["anchor_day"])
+        # Preserve the uncapped window day across cache refreshes.
+        # Events window on the latest-day rule, including clockless events.
+        window_day = (
+            row["anchor_day"]
+            if dataset["kind"] == "events" and dataset["latest_day_rule"]["mode"] == "max"
+            else row["last_day"]
+        )
+        result["_anchor_day"] = _day_string(window_day)
     return result
 
 
