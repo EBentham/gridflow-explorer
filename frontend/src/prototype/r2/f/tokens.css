@@ -1,34 +1,40 @@
-/* Slot f: starter tokens from the gridflow site (R3 boards). The agent that owns
-   this folder replaces everything here. Scoped to :root[data-variant='f'] only. */
+/* Slot f, "Horizon mast". The gridflow site's tokens, carried into a working
+   tool: a petrol masthead whose skyline is the selected range, over a single
+   paper column. Everything is scoped to :root[data-variant='f']. */
+
+/* ================================================================ light */
 :root[data-variant='f'] {
   --scheme: light;
   --font-ui: 'Hanken Grotesk', system-ui, sans-serif;
   --font-display: 'Bricolage Grotesque', 'Hanken Grotesk', sans-serif;
   --font-data: 'Hanken Grotesk', sans-serif;
+  --font-mono: 'Red Hat Mono', ui-monospace, monospace;
   --chart-font: 'Hanken Grotesk', sans-serif;
   --text-size: 15px;
-  --h1-size: 40px;
-  --h1-weight: 750;
-  --h2-size: 20px;
   --radius-sm: 3px;
+  --f-gutter: 48px;
+  --f-max: 1200px;
+
   --bg: #f6f4ec;
   --surface: #f6f4ec;
   --panel: #eeebdf;
   --ink: #1c2b22;
-  --ink-2: #3f4a3b;
+  --ink-2: #2e3b33;
   --muted: #5d6a55;
   --rule: #dfdaca;
-  --rule-strong: #b9b39e;
-  --accent: #155a6e;
-  --accent-ink: #f6f4ec;
+  --rule-strong: #c4bea8;
+  --accent: #afc64e;
+  --accent-ink: #1c2b22;
   --hover: rgb(21 90 110 / 0.07);
-  --selected: rgb(175 198 78 / 0.3);
+  --selected: rgb(175 198 78 / 0.36);
   --focus: #afc64e;
+
   --chart-surface: #f6f4ec;
-  --chart-grid: #e4e0d2;
-  --chart-grid-strong: #cfc9b6;
-  --chart-axis: #8f8a78;
-  --chart-tick: #5d6a55;
+  --chart-grid: #e4dfcf;
+  --chart-grid-strong: #c9c2ac;
+  --chart-axis: #5d6a55;
+  --chart-zero: #6c7666;
+  --chart-tick: #4a5745;
   --chart-cursor: #1c2b22;
   --chart-price: #155a6e;
   --chart-price-2: #c77e3c;
@@ -37,16 +43,19 @@
   --chart-fan: #155a6e;
   --chart-fan-soft: #789fa7;
   --chart-actual: #1c2b22;
-  --heat-lo: #eeebdf;
-  --heat-hi: #155a6e;
-  --status-pass: #516334;
-  --status-fail: #a3322a;
+  --f-band: rgb(175 198 78 / 0.46);
+  --f-band-key: #d5dca4;
+
   --tip-bg: #fbfaf5;
-  --tip-border: #cfc9b6;
+  --tip-border: #c9c2ac;
   --tip-ink: #1c2b22;
   --tip-muted: #5d6a55;
-  --fixture-ink: #8a6f1e;
+  --tip-shadow: 0 3px 10px rgb(28 43 34 / 0.1);
+  --status-pass: #516334;
+  --status-fail: #a3322a;
+  --fixture-ink: #7a5f14;
   --fixture-bg: #efe6c4;
+
   --fuel-nuclear: #155a6e;
   --fuel-hydro: #6fa8c9;
   --fuel-biomass: #c2a14a;
@@ -56,33 +65,144 @@
   --fuel-other: #a39a6a;
   --fuel-pumped_storage: #7c6aa8;
   --fuel-imports: #66793b;
+
+  /* the mast: day */
+  --f-sky: #155a6e;
+  --f-land: #afc64e;
+  --f-ridge: #1c2b22;
+  --f-ridge-o: 0.42;
+  --f-ridge-w: 1.2px;
+  --f-hills: #66793b;
+  --f-ground: #afc64e;
+  --f-ground-line: #1c2b22;
+  --f-ground-ink: #1c2b22;
+  --f-art-sky: #f6f4ec;
+  --f-art-land: #1c2b22;
+  --f-solar: #155a6e;
+  --f-mast-ink: #f6f4ec;
+  --f-mast-ink-2: #cfe0dc;
+  --f-nav: #d5e4e1;
+  --f-ring-fill: #f6f4ec;
+  --f-ring-stroke: #1c2b22;
+}
+
+/* ================================================================ dark: night falls on the mast */
+@media (prefers-color-scheme: dark) {
+  :root[data-variant='f']:not([data-theme='light']) {
+    --scheme: dark;
+    --bg: #0f2328;
+    --surface: #0f2328;
+    --panel: #0b1c21;
+    --ink: #eef2ea;
+    --ink-2: #cfe0dc;
+    --muted: #9db7b9;
+    --rule: #22404a;
+    --rule-strong: #3a5f6c;
+    --accent: #afc64e;
+    --accent-ink: #1c2b22;
+    --hover: rgb(207 224 220 / 0.07);
+    --selected: rgb(175 198 78 / 0.24);
+    --focus: #afc64e;
+
+    --chart-surface: #0f2328;
+    --chart-grid: #1c363d;
+    --chart-grid-strong: #2e5059;
+    --chart-axis: #7e9ea3;
+    --chart-zero: #a9c7c4;
+    --chart-tick: #a9c7c4;
+    --chart-cursor: #f6f4ec;
+    --chart-price: #8cc7d1;
+    --chart-price-2: #d98f4e;
+    --chart-niv-short: #d98f4e;
+    --chart-niv-long: #56aab4;
+    --chart-fan: #8cc0dc;
+    --chart-fan-soft: #4f8fb0;
+    --chart-actual: #f6f4ec;
+    --f-band: rgb(175 198 78 / 0.22);
+    --f-band-key: #3b5433;
+
+    --tip-bg: #0b1c21;
+    --tip-border: #3a5f6c;
+    --tip-ink: #f6f4ec;
+    --tip-muted: #a9c7c4;
+    --tip-shadow: 0 4px 14px rgb(0 0 0 / 0.4);
+    --status-pass: #b5cc62;
+    --status-fail: #e58a7c;
+    --fixture-ink: #e9ddaf;
+    --fixture-bg: rgb(194 161 74 / 0.16);
+
+    --fuel-nuclear: #4f8fb0;
+    --fuel-hydro: #8cc0dc;
+    --fuel-biomass: #d2b45c;
+    --fuel-wind: #56aab4;
+    --fuel-gas: #d98f4e;
+    --fuel-peaking: #b0583a;
+    --fuel-other: #b3aa7c;
+    --fuel-pumped_storage: #9a88c8;
+    --fuel-imports: #8aa153;
+
+    --f-sky: #0a1b21;
+    --f-land: #25341e;
+    --f-ridge: #afc64e;
+    --f-ridge-o: 1;
+    --f-ridge-w: 1.6px;
+    --f-hills: #192516;
+    --f-ground: #34431d;
+    --f-ground-line: #6b7f3c;
+    --f-ground-ink: #dfe8bd;
+    --f-art-sky: #93b3b6;
+    --f-art-land: #71884f;
+    --f-solar: #16414c;
+    --f-mast-ink: #f3f5ee;
+    --f-mast-ink-2: #a9c7c4;
+    --f-nav: #bcd3d0;
+    --f-ring-fill: #0a1b21;
+    --f-ring-stroke: #afc64e;
+  }
 }
 :root[data-variant='f'][data-theme='dark'] {
   --scheme: dark;
-  --bg: #0f2228;
-  --surface: #132a30;
-  --panel: #0c1c21;
-  --ink: #f6f4ec;
+  --bg: #0f2328;
+  --surface: #0f2328;
+  --panel: #0b1c21;
+  --ink: #eef2ea;
   --ink-2: #cfe0dc;
-  --muted: #98b4b9;
-  --rule: #23404a;
-  --rule-strong: #35596a;
+  --muted: #9db7b9;
+  --rule: #22404a;
+  --rule-strong: #3a5f6c;
   --accent: #afc64e;
   --accent-ink: #1c2b22;
-  --chart-surface: #132a30;
-  --chart-grid: #1f3a42;
-  --chart-grid-strong: #2f5058;
-  --chart-axis: #4c6d75;
+  --hover: rgb(207 224 220 / 0.07);
+  --selected: rgb(175 198 78 / 0.24);
+  --focus: #afc64e;
+
+  --chart-surface: #0f2328;
+  --chart-grid: #1c363d;
+  --chart-grid-strong: #2e5059;
+  --chart-axis: #7e9ea3;
+  --chart-zero: #a9c7c4;
   --chart-tick: #a9c7c4;
   --chart-cursor: #f6f4ec;
-  --chart-price: #cfe0dc;
+  --chart-price: #8cc7d1;
+  --chart-price-2: #d98f4e;
+  --chart-niv-short: #d98f4e;
+  --chart-niv-long: #56aab4;
   --chart-fan: #8cc0dc;
   --chart-fan-soft: #4f8fb0;
   --chart-actual: #f6f4ec;
-  --tip-bg: #0c1c21;
-  --tip-border: #35596a;
+  --f-band: rgb(175 198 78 / 0.22);
+  --f-band-key: #3b5433;
+
+  --tip-bg: #0b1c21;
+  --tip-border: #3a5f6c;
   --tip-ink: #f6f4ec;
   --tip-muted: #a9c7c4;
+  --tip-shadow: 0 4px 14px rgb(0 0 0 / 0.4);
+  --status-pass: #b5cc62;
+  --status-fail: #e58a7c;
+  --fixture-ink: #e9ddaf;
+  --fixture-bg: rgb(194 161 74 / 0.16);
+
   --fuel-nuclear: #4f8fb0;
   --fuel-hydro: #8cc0dc;
   --fuel-biomass: #d2b45c;
@@ -92,4 +212,527 @@
   --fuel-other: #b3aa7c;
   --fuel-pumped_storage: #9a88c8;
   --fuel-imports: #8aa153;
+
+  --f-sky: #0a1b21;
+  --f-land: #25341e;
+  --f-ridge: #afc64e;
+  --f-ridge-o: 1;
+  --f-ridge-w: 1.6px;
+  --f-hills: #192516;
+  --f-ground: #34431d;
+  --f-ground-line: #6b7f3c;
+  --f-ground-ink: #dfe8bd;
+  --f-art-sky: #93b3b6;
+  --f-art-land: #71884f;
+  --f-solar: #16414c;
+  --f-mast-ink: #f3f5ee;
+  --f-mast-ink-2: #a9c7c4;
+  --f-nav: #bcd3d0;
+  --f-ring-fill: #0a1b21;
+  --f-ring-stroke: #afc64e;
+}
+
+/* ================================================================ shell */
+:root[data-variant='f'] .f-app {
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+:root[data-variant='f'] code {
+  display: inline;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  line-height: inherit;
+  color: var(--ink);
+}
+:root[data-variant='f'] .f-skip {
+  position: absolute;
+  left: 12px;
+  top: -48px;
+  z-index: 10;
+  padding: 8px 14px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: 3px;
+  font-weight: 600;
+  text-decoration: none;
+}
+:root[data-variant='f'] .f-skip:focus {
+  top: 12px;
+}
+
+/* the mast */
+:root[data-variant='f'] .f-mast {
+  position: relative;
+  height: 184px;
+  background: var(--f-sky);
+  overflow: hidden;
+}
+:root[data-variant='f'] .f-mast-art {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+}
+:root[data-variant='f'] .f-sky {
+  fill: var(--f-sky);
+}
+:root[data-variant='f'] .f-land {
+  fill: var(--f-land);
+}
+:root[data-variant='f'] .f-ridge {
+  stroke: var(--f-ridge);
+  stroke-opacity: var(--f-ridge-o);
+  stroke-width: var(--f-ridge-w);
+  stroke-linejoin: round;
+}
+:root[data-variant='f'] .f-ridge.is-dashed {
+  stroke: var(--f-art-sky);
+  stroke-opacity: 1;
+  stroke-width: 1.6px;
+  stroke-dasharray: 5 4;
+}
+:root[data-variant='f'] .f-hills {
+  fill: var(--f-hills);
+}
+:root[data-variant='f'] .f-solar path {
+  fill: var(--f-solar);
+  stroke: var(--f-art-sky);
+  stroke-width: 0.7;
+}
+:root[data-variant='f'] .f-art-fill {
+  fill: var(--f-art-sky);
+}
+:root[data-variant='f'] .f-art-line {
+  stroke: var(--f-art-sky);
+  stroke-linecap: round;
+  fill: none;
+}
+:root[data-variant='f'] .f-art-sky {
+  stroke: var(--f-art-sky);
+  fill: none;
+}
+:root[data-variant='f'] .f-art-land {
+  stroke: var(--f-art-land);
+  fill: none;
+}
+:root[data-variant='f'] .f-ground {
+  fill: var(--f-ground);
+}
+:root[data-variant='f'] .f-ground-line,
+:root[data-variant='f'] .f-ground-ticks path {
+  stroke: var(--f-ground-line);
+  stroke-width: 1.2;
+}
+:root[data-variant='f'] .f-ground-ticks text {
+  fill: var(--f-ground-ink);
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+:root[data-variant='f'] .f-leader {
+  stroke: var(--f-mast-ink);
+  stroke-width: 1;
+}
+:root[data-variant='f'] .f-ring-dot {
+  fill: var(--f-ring-fill);
+  stroke: var(--f-ring-stroke);
+  stroke-width: 1.2;
+}
+:root[data-variant='f'] .f-extremes text {
+  font-family: var(--font-ui);
+}
+:root[data-variant='f'] .f-ext-v {
+  fill: var(--f-mast-ink);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  font-variation-settings: 'wdth' 88;
+}
+:root[data-variant='f'] .f-ext-d {
+  fill: var(--f-mast-ink-2);
+  font-size: 12.5px;
+}
+
+:root[data-variant='f'] .f-mast-row {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 32px;
+  padding: 16px max(var(--f-gutter), calc((100% - var(--f-max)) / 2)) 0;
+  pointer-events: none;
+}
+:root[data-variant='f'] .f-mast-row > * {
+  pointer-events: auto;
+}
+:root[data-variant='f'] .f-brand {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  font-variation-settings: 'wdth' 88;
+  color: var(--f-mast-ink-2);
+  white-space: nowrap;
+}
+:root[data-variant='f'] .f-brand b {
+  font-weight: 800;
+  color: var(--f-mast-ink);
+}
+:root[data-variant='f'] .f-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 30px;
+}
+:root[data-variant='f'] .f-nav-link {
+  color: var(--f-nav);
+  font-size: 15px;
+  text-decoration: none;
+  text-underline-offset: 7px;
+  text-decoration-thickness: 2px;
+  transition: color 150ms ease-out;
+}
+:root[data-variant='f'] .f-nav-link:hover {
+  color: var(--f-mast-ink);
+  text-decoration: underline;
+  text-decoration-color: rgb(207 224 220 / 0.5);
+}
+:root[data-variant='f'] .f-nav-link.is-active {
+  color: var(--f-mast-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: #afc64e;
+}
+:root[data-variant='f'] .f-nav-link:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+:root[data-variant='f'] .f-nav-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--f-mast-ink-2);
+  border: 1px dashed currentColor;
+  border-radius: 3px;
+  vertical-align: 1px;
+}
+
+/* ================================================================ workspace */
+:root[data-variant='f'] .f-work {
+  box-sizing: border-box;
+  max-width: calc(var(--f-max) + 2 * var(--f-gutter));
+  margin: 0 auto;
+  padding: 14px var(--f-gutter) 96px;
+}
+:root[data-variant='f'] .f-horizon-cap {
+  margin: 0 0 44px;
+  max-width: 108ch;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+:root[data-variant='f'] .f-horizon-cap b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+:root[data-variant='f'] .f-head {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 12px 64px;
+  align-items: end;
+}
+:root[data-variant='f'] .f-head-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+}
+:root[data-variant='f'] .f-head h1 {
+  font-family: var(--font-display);
+  font-size: 46px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.026em;
+  font-variation-settings: 'wdth' 85, 'opsz' 60;
+  text-wrap: balance;
+}
+:root[data-variant='f'] .f-head-sub p {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+:root[data-variant='f'] .f-head-sub .f-stamp {
+  margin-top: 6px;
+  font-size: 14.5px;
+  color: var(--muted);
+}
+
+:root[data-variant='f'] .f-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px 24px;
+  margin: 28px 0 36px;
+  padding-bottom: 14px;
+  border-bottom: 1.5px solid var(--ink);
+}
+:root[data-variant='f'] .f-toolbar-note {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+:root[data-variant='f'] .gf-seg {
+  border-color: var(--rule-strong);
+  border-radius: 3px;
+}
+:root[data-variant='f'] .gf-seg button {
+  padding: 6px 14px;
+  font-size: 14px;
+  color: var(--ink-2);
+  border-left-color: var(--rule-strong);
+}
+:root[data-variant='f'] .gf-seg button.is-on {
+  font-weight: 600;
+}
+:root[data-variant='f'] .gf-range-note {
+  font-size: 14px;
+}
+:root[data-variant='f'] .gf-coverage {
+  margin: -16px 0 28px;
+}
+
+:root[data-variant='f'] .f-state {
+  margin: 0;
+  padding: 56px 0;
+  color: var(--muted);
+}
+:root[data-variant='f'] .f-state.is-error {
+  color: var(--status-fail);
+}
+
+/* figures */
+:root[data-variant='f'] .f-fig {
+  margin: 0 0 72px;
+}
+:root[data-variant='f'] .f-fig-head {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  font-variation-settings: 'wdth' 92;
+}
+:root[data-variant='f'] .f-figcap {
+  margin-top: 14px;
+  max-width: 96ch;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+:root[data-variant='f'] .f-clock {
+  margin: 4px 18px 0 0;
+  text-align: right;
+  font-size: 12px;
+  color: var(--chart-tick);
+}
+:root[data-variant='f'] .f-chart .recharts-cartesian-axis-tick-line {
+  stroke: var(--chart-axis);
+}
+
+/* annotations */
+:root[data-variant='f'] .f-band {
+  fill: var(--f-band);
+}
+:root[data-variant='f'] .f-ring circle {
+  fill: var(--chart-surface);
+  stroke: var(--ink);
+  stroke-width: 1.25;
+}
+:root[data-variant='f'] .f-ring text {
+  font-family: var(--chart-font);
+  font-size: 12.5px;
+  fill: var(--ink);
+  paint-order: stroke;
+  stroke: var(--chart-surface);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+:root[data-variant='f'] .f-ring-v {
+  font-weight: 700;
+}
+
+/* keys */
+:root[data-variant='f'] .f-key-note {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+:root[data-variant='f'] .f-key-row {
+  list-style: none;
+  margin: 0 0 6px -8px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+:root[data-variant='f'] .f-key-row.is-static {
+  margin-left: 0;
+  gap: 4px 22px;
+}
+:root[data-variant='f'] .f-key-row.is-static li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+:root[data-variant='f'] .f-key-row button {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color 150ms ease-out;
+}
+:root[data-variant='f'] .f-key-row button:hover {
+  background: var(--hover);
+}
+:root[data-variant='f'] .f-key-row button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+:root[data-variant='f'] .f-key-row .is-focus button {
+  background: var(--selected);
+}
+:root[data-variant='f'] .f-key-row .is-muted {
+  opacity: 0.45;
+}
+:root[data-variant='f'] .f-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 1px;
+}
+:root[data-variant='f'] .f-key-v {
+  color: var(--muted);
+}
+
+/* share of the window */
+:root[data-variant='f'] .f-share {
+  padding-top: 2px;
+}
+:root[data-variant='f'] .f-share-row {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+}
+:root[data-variant='f'] .f-share-seg {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+:root[data-variant='f'] .f-share-lab {
+  display: block;
+  min-height: 40px;
+  padding: 0 6px 6px 0;
+  font-size: 13.5px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+:root[data-variant='f'] .f-share-lab b {
+  display: block;
+  font-weight: 600;
+  color: var(--ink);
+}
+:root[data-variant='f'] .f-share-lab span {
+  color: var(--muted);
+}
+:root[data-variant='f'] .f-share-fill {
+  display: block;
+  height: 44px;
+}
+:root[data-variant='f'] .f-share-axis {
+  position: relative;
+  height: 28px;
+  margin-top: 8px;
+  border-top: 1.2px solid var(--ink);
+}
+:root[data-variant='f'] .f-share-axis span {
+  position: absolute;
+  top: 0;
+  padding-top: 9px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+:root[data-variant='f'] .f-share-axis span::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: 6px;
+  border-left: 1.2px solid var(--ink);
+}
+:root[data-variant='f'] .f-share-axis span:first-child {
+  transform: none;
+}
+:root[data-variant='f'] .f-share-axis span:first-child::before {
+  left: 0;
+}
+:root[data-variant='f'] .f-share-axis .is-total {
+  transform: translateX(-100%);
+  font-weight: 700;
+  color: var(--ink);
+}
+:root[data-variant='f'] .f-share-axis .is-total::before {
+  left: auto;
+  right: 0;
+}
+
+/* run gates */
+:root[data-variant='f'] .f-gates {
+  display: grid;
+  gap: 10px;
+}
+:root[data-variant='f'] .gf-metrics thead th {
+  color: var(--muted);
+}
+:root[data-variant='f'] .gf-table-wrap {
+  border-radius: 3px;
+}
+
+@media (max-width: 960px) {
+  :root[data-variant='f'] {
+    --f-gutter: 28px;
+  }
+  :root[data-variant='f'] .f-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  :root[data-variant='f'] .f-head h1 {
+    font-size: 38px;
+  }
 }

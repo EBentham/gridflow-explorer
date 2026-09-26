@@ -1,30 +1,33 @@
-import { DEFAULT_LANGUAGE } from '../../../design/charts'
 import type { ShellProps, VariantDef } from '../../context'
-import { ProtoLink } from '../../controls'
+import { CablePanel } from './CablePanel'
+import { LANGUAGE_J } from './charts'
+import { GenerationScreenJ, PricesScreenJ, WindScreenJ } from './screens'
 import './tokens.css'
+import './j.css'
 
-/** Slot j starter shell. The owning agent replaces this file's contents. */
+/**
+ * Slot j, "Cable network": the navigation is drawn as the site's cable
+ * routes. Each screen is a ring terminal on a cable from its source; the
+ * workspace beside it keeps the site's paper-chart grammar.
+ */
 function Shell({ nav, children }: ShellProps) {
   return (
-    <div style={{ padding: 32 }}>
-      <nav style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
-        {nav.map((n) => (
-          <ProtoLink key={n.to} to={n.to}>
-            {n.label}
-          </ProtoLink>
-        ))}
-      </nav>
-      {children}
+    <div className="j-app">
+      <aside className="j-panel">
+        <CablePanel nav={nav} />
+      </aside>
+      <main className="j-work">{children}</main>
     </div>
   )
 }
 
 export const variant: VariantDef = {
   key: 'j',
-  name: 'Slot j',
-  line: 'Not built yet.',
-  language: DEFAULT_LANGUAGE,
+  name: 'Cable network',
+  line: 'Navigation drawn as the site’s cable routes: every screen is a terminal on a cable from its source.',
+  language: LANGUAGE_J,
   Shell,
   keyPlacement: 'aside',
+  screens: { generation: GenerationScreenJ, prices: PricesScreenJ, wind: WindScreenJ },
   round: 2,
 }

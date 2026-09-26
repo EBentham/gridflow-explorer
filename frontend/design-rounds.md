@@ -90,3 +90,29 @@ enamel signage. Wildcard from the roll: emission-line rail (challenger 4).
 
 Rejected before build: oscilloscope (it is the current explorer's look #2), Game Boy /
 calendar / streetwear / iridescent cloud (fail Operate or fail product truth).
+
+### Round 1 verdict (Bobbo, 2026-09-26)
+
+"None of these are amazing." Rejected as looks: all five invented a new identity. Kept as
+method: UK-clock axis, 9-band fuel structure, one system-price line with NIV below it,
+labelled wind fixture, heat-strip and system-strip ideas as mechanics only.
+
+## Round 2 — the gridflow site's world, five ways (2026-09-26)
+
+Direction pinned by Bobbo: same fonts, colours and drawing language as the gridflow site's
+R3 boards (R3-1 "The new grid, drawn", R3-2 "The transition, in data", R3-3 "Above ground,
+below ground"), i.e. Bricolage Grotesque + Hanken Grotesk + Red Hat Mono on paper `#F6F4EC`,
+ink `#1C2B22`, petrol `#155A6E`, chartreuse `#AFC64E`. The fuel palette extends the site's six
+fuel colours to nine bands. CVD ΔE 12.8 and normal-vision ΔE 18.2 on paper pass; the chroma
+floor is waived because the brand's hues are deliberately muted. The dark set on `#132A30`
+passes CVD 13.5, normal 15.8 and contrast ≥3:1.
+
+Built by five parallel Opus 5.5 agents (Bobbo's call), one folder each (`src/prototype/r2/<k>`):
+- **F, Horizon mast.** A petrol masthead whose landscape skyline is drawn from live data;
+  a single-column paper workspace.
+- **G, Above ground, below ground.** Chart above a ground line; provenance strata below it,
+  where coverage gaps show as breaks in the bedrock.
+- **H, Annotated editorial.** No drawing. Computed annotations, highlight bands and a data
+  summary per chart.
+- **I, Petrol night.** Dark-first petrol ground, a line-art glyph rail, chartreuse as the one accent.
+- **J, Cable network.** Nav drawn as the site's cable routes; the fixture shows as a dashed node.
