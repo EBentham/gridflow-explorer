@@ -26,9 +26,40 @@ export function fmt1(v: number): string {
 
 /** Money with the sign outside the currency symbol: `−£67.40`. */
 export function money(v: number, digits = 0): string {
+  return currency(v, '£', digits)
+}
+
+/** Any currency, sign outside the symbol: `−€67.40`. */
+export function currency(v: number, symbol: string, digits = 0): string {
   const f = 10 ** digits
   const r = Math.round(v * f) / f
-  return signed(r, (a) => `£${a.toLocaleString('en-GB', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`)
+  return r === 0 ? `${symbol}${(0).toFixed(digits)}` : signed(r, (a) => `${symbol}${a.toLocaleString('en-GB', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`)
+}
+
+/** Any number of decimals, en-GB grouping, a true minus: `fmtN(-0.5, 2)` is `−0.50`. */
+export function fmtN(v: number, digits: number): string {
+  const f = 10 ** digits
+  const r = Math.round(v * f) / f
+  if (r === 0) return (0).toFixed(digits)
+  return signed(r, (a) => a.toLocaleString('en-GB', { minimumFractionDigits: digits, maximumFractionDigits: digits }))
+}
+
+/** Decimals an axis step needs to print distinct ticks: 0 for 5, 1 for 2.5 or 0.5, 2 for 0.25. */
+export function stepDigits(step: number): number {
+  if (!Number.isFinite(step) || step <= 0) return 0
+  for (let d = 0; d < 6; d += 1) {
+    if (Math.abs(Math.round(step * 10 ** d) - step * 10 ** d) < 1e-6) return d
+  }
+  return 6
+}
+
+/** Decimals for a value with no settled precision: fewer as it grows (1234 → 0, 12.3 → 1, 0.123 → 3). */
+export function autoDigits(v: number): number {
+  const a = Math.abs(v)
+  if (a >= 100 || a === 0) return 0
+  if (a >= 10) return 1
+  if (a >= 1) return 2
+  return 3
 }
 
 /** A share in whole per cent: `38%`. */

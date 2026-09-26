@@ -26,6 +26,25 @@ export const CHART = {
   margin: { top: 26, right: 18, bottom: 6, left: 2 },
 } as const
 
+/**
+ * Colours for series that have no entity colour of their own (areas, sites,
+ * providers), drawn from the existing chart and fuel tokens in an order that
+ * keeps neighbours apart. Never chartreuse: that means "where you are". A
+ * page assigns them by entity (sorted, or pinned in its config), so a colour
+ * follows its entity rather than a series' rank; fuels keep `--fuel-*`.
+ */
+export const SERIES_COLORS = [
+  'var(--chart-price)',
+  'var(--chart-price-2)',
+  'var(--fuel-wind)',
+  'var(--fuel-biomass)',
+  'var(--fuel-pumped_storage)',
+  'var(--fuel-peaking)',
+  'var(--fuel-hydro)',
+  'var(--fuel-imports)',
+  'var(--fuel-other)',
+] as const
+
 export const TICK = { fill: 'var(--chart-tick)', fontSize: CHART.font, fontFamily: 'var(--chart-font)' }
 
 /** The horizontal grid: day rules stand in for vertical lines. */

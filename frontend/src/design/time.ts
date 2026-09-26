@@ -150,6 +150,77 @@ export function halfHourWindow(ms: number): string {
   return `${dayLabel(ms)}, ${clock(ms)}–${clock(ms + HALF_HOUR)} ${zoneAbbrev(ms)}`
 }
 
+export const MINUTE_MS = 60 * 1000
+export const HOUR_MS = 60 * MINUTE_MS
+export const DAY_MS = DAY
+
+/** `14:35:15`: seconds are the same on every clock, London's offset being whole hours. */
+function clockSeconds(ms: number): string {
+  return `${clock(ms)}:${pad(Math.floor(ms / 1000) % 60)}`
+}
+
+/** `Tue 15 Sep, 14:37 BST`: one instant on the UK clock (`seconds` for sub-minute readings). */
+export function instantLabel(ms: number, { seconds = false }: { seconds?: boolean } = {}): string {
+  return `${dayLabel(ms)}, ${seconds ? clockSeconds(ms) : clock(ms)} ${zoneAbbrev(ms)}`
+}
+
+/**
+ * The period a row covers, named from its step, for tooltips and tables:
+ * - under a minute: the instant with seconds (`Tue 15 Sep, 14:35:15 BST`);
+ * - under a day: the window (`Tue 15 Sep, 14:30–15:00 BST`), with both days
+ *   named when it crosses a midnight;
+ * - a day: the UK day (`Tue 15 Sep`); a week: `Week from Tue 15 Sep`;
+ * - no step (irregular, events): the instant.
+ * A daily row on a DATE clock arrives at UTC midnight, which is inside the
+ * same UK day, so the day label is right for both kinds of daily clock.
+ */
+export function periodLabel(ms: number, stepMs: number | null): string {
+  if (stepMs === null || stepMs <= 0) return instantLabel(ms)
+  if (stepMs < MINUTE_MS) return instantLabel(ms, { seconds: true })
+  if (stepMs >= 7 * DAY) return `Week from ${dayLabel(ms)}`
+  if (stepMs >= DAY) return dayLabel(ms)
+  const end = ms + stepMs
+  const sameDay = ukDate(end) === ukDate(ms) || end === nextLondonMidnight(londonMidnight(ms))
+  if (sameDay) return `${dayLabel(ms)}, ${clock(ms)}–${clock(end)} ${zoneAbbrev(ms)}`
+  return `${dayLabel(ms)}, ${clock(ms)} to ${dayLabel(end)}, ${clock(end)} ${zoneAbbrev(end)}`
+}
+
+/** What one step of a clock is called, plural: `half-hours`, `hours`, `15-second readings`. */
+export function stepNoun(stepMs: number | null): string {
+  if (stepMs === HALF_HOUR) return 'half-hours'
+  if (stepMs === 15 * MINUTE_MS) return 'quarter-hours'
+  if (stepMs === HOUR_MS) return 'hours'
+  if (stepMs === DAY) return 'days'
+  if (stepMs !== null && stepMs < MINUTE_MS) return `${Math.round(stepMs / 1000)}-second readings`
+  if (stepMs !== null && stepMs < HOUR_MS) return `${Math.round(stepMs / MINUTE_MS)}-minute readings`
+  if (stepMs !== null && stepMs < DAY) return `${Math.round(stepMs / HOUR_MS)}-hour periods`
+  return 'readings'
+}
+
+/** How often a clock ticks, in words: `Half-hourly`, `Every 15 seconds`, `Daily`. */
+export function cadenceText(stepMs: number): string {
+  if (stepMs === HALF_HOUR) return 'Half-hourly'
+  if (stepMs === HOUR_MS) return 'Hourly'
+  if (stepMs === DAY) return 'Daily'
+  if (stepMs === 7 * DAY) return 'Weekly'
+  if (stepMs < MINUTE_MS) return `Every ${Math.round(stepMs / 1000)} seconds`
+  if (stepMs < HOUR_MS) return `Every ${Math.round(stepMs / MINUTE_MS)} minutes`
+  if (stepMs < DAY) return `Every ${Math.round(stepMs / HOUR_MS)} hours`
+  return `Every ${Math.round(stepMs / DAY)} days`
+}
+
+/**
+ * Steps a UK day holds on a regular clock (48 half-hours, or 46 and 50 on
+ * clock-change days; 1 for a daily clock); null when the step doesn't divide
+ * a day, is longer than one, or is unknown.
+ */
+export function stepsInDay(midnight: number, stepMs: number | null): number | null {
+  if (stepMs === null || stepMs <= 0) return null
+  if (stepMs === DAY) return 1
+  if (stepMs > DAY || HOUR_MS % stepMs !== 0) return null
+  return Math.round((nextLondonMidnight(midnight) - midnight) / stepMs)
+}
+
 /** Axis caption naming the clock, e.g. `UK time (BST)` or `UK time (GMT/BST)`. */
 export function axisClockCaption(startMs: number, endMs: number): string {
   const a = zoneAbbrev(startMs)
