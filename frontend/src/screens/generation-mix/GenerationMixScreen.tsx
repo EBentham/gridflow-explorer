@@ -139,7 +139,7 @@ export function GenerationMixScreen() {
         >
           <PendingNote state={live.state} />
           {read && (
-            <div className="gf-days">
+            <div className="gf-days is-tight">
               <table>
                 <thead>
                   <tr>
