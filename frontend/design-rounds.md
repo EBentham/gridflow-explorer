@@ -141,6 +141,28 @@ modelling, trading research and understanding the system. The rail can't hold th
   dataset is not necessarily held locally, so coverage appears only for charted datasets.
   Uncharted datasets say "not read by the Explorer yet".
 
+## I, refinement 2: landing layout and lock (2026-09-26)
+
+- **Landing page:** three options were shown (A Landscape, B Strata, C Domains). Bobbo took
+  **A's scene band on top of C's domain columns.** Dropped along the way:
+  - the "In the Explorer" tiles (they don't scale; pinned screens live in the rail);
+  - the per-source status column;
+  - the side key column;
+  - jargon lines.
+
+  Added in their place:
+  - line-art source symbols;
+  - domain colours;
+  - per-source composition bars;
+  - a low-key kind key.
+- **Kinds verified** against silver key shapes. Twelve labels were corrected, all ENTSO-E and
+  ENTSO-G.
+- **Light/dark switch** added to the rail foot.
+- **LOCKED by Bobbo, 2026-09-26.** The spec is `DESIGN.md` and the tokens are
+  `src/design/tokens.css`. Porting the design onto the real app, building the shared
+  Recharts theme module and deleting `src/prototype/` move to the next milestone's first
+  phase (`.planning/HANDOFF-2026-09-26-explorer-milestone.md`).
+
 ## Plumbing handoff, running list
 
 - Real wind forecast endpoint when the wind model lands (`fixtures/windForecast.ts` still in use).

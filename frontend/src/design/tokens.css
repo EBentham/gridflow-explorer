@@ -1,0 +1,312 @@
+/* gridflow Explorer design tokens: LOCKED 2026-09-26 (design loop, direction I
+   "Petrol night" plus the source catalogue). The spec is frontend/DESIGN.md.
+
+   These are the only colour, type and size values the app may use; components
+   read them as var(--token). Light is the default. Dark applies when the OS
+   prefers dark (unless data-theme="light") or when data-theme="dark" is set
+   on <html>. Both dark blocks must stay identical.
+
+   Status: extracted from the prototype (src/prototype/r2/i/tokens.css and
+   home.css). The prototype still carries its own copy until the port phase
+   wires this file into the app and deletes src/prototype/. */
+
+:root {
+  --scheme: light;
+  --font-ui: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-display: 'Bricolage Grotesque', 'Hanken Grotesk', sans-serif;
+  --font-data: 'Hanken Grotesk', sans-serif;
+  --font-id: 'Red Hat Mono', ui-monospace, monospace;
+  --chart-font: 'Hanken Grotesk', sans-serif;
+  --text-size: 14px;
+  --h1-size: 30px;
+  --h1-weight: 720;
+  --h1-tracking: -0.018em;
+  --h2-size: 15px;
+  --radius-sm: 3px;
+  --rail-w: 96px;
+  --land-h: 9px;
+  --gap-2: 12px;
+  --gap-3: 12px;
+
+  --bg: #ece9dd;
+  --surface: #f6f4ec;
+  --panel: #f6f4ec;
+  --raised: #fbfaf5;
+  --ink: #1c2b22;
+  --ink-2: #3f4a3b;
+  --muted: #5d6a55;
+  --rule: #dfdaca;
+  --rule-strong: #c4bea9;
+  --accent: #afc64e;
+  --accent-ink: #1c2b22;
+  --accent-hover: #c3d86a;
+  --hover: rgb(21 90 110 / 0.06);
+  --selected: rgb(175 198 78 / 0.34);
+  --focus: #afc64e;
+  --band: rgb(175 198 78 / 0.4);
+  --band-css: rgb(175 198 78 / 0.4);
+  --link-line: #66793b;
+  --code-ink: #1c2b22;
+  --rail-bg: #155a6e;
+  --rail-ink: #f6f4ec;
+  --rail-ink-2: #cfe0dc;
+  --rail-muted: #a9c7c4;
+  --rail-rule: rgb(207 224 220 / 0.2);
+  --rail-hover: rgb(246 244 236 / 0.07);
+  --rail-fixture: #e2cd8a;
+  --hill-far: #2a7483;
+  --hill-near: #3e8c97;
+  --land: #afc64e;
+  --land-bg: #ece9dd;
+  --land-hatch: #66793b;
+  --glyph: #155a6e;
+  --glyph-ground: #66793b;
+  --chart-surface: #f6f4ec;
+  --chart-grid: #e4e0d2;
+  --chart-grid-strong: #cfc9b6;
+  --chart-axis: #8f8a78;
+  --chart-tick: #5d6a55;
+  --chart-cursor: rgb(28 43 34 / 0.6);
+  --chart-price: #155a6e;
+  --chart-price-2: #c77e3c;
+  --chart-niv-short: #c77e3c;
+  --chart-niv-long: #3e8c97;
+  --chart-fan: #155a6e;
+  --chart-fan-soft: #3e8c97;
+  --chart-actual: #1c2b22;
+  --heat-lo: #eeebdf;
+  --heat-hi: #155a6e;
+  --status-pass: #516334;
+  --status-fail: #a3322a;
+  --tip-bg: #fbfaf5;
+  --tip-border: #cfc9b6;
+  --tip-ink: #1c2b22;
+  --tip-muted: #5d6a55;
+  --tip-shadow: 0 4px 14px rgb(28 43 34 / 0.12);
+  --fixture-ink: #7a5f14;
+  --fixture-bg: #efe6c4;
+  --fuel-nuclear: #155a6e;
+  --fuel-hydro: #6fa8c9;
+  --fuel-biomass: #c2a14a;
+  --fuel-wind: #3e8c97;
+  --fuel-gas: #c77e3c;
+  --fuel-peaking: #8b3f1f;
+  --fuel-other: #a39a6a;
+  --fuel-pumped_storage: #7c6aa8;
+  --fuel-imports: #66793b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --scheme: dark;
+    --bg: #0e2328;
+    --surface: #132a30;
+    --panel: #132a30;
+    --raised: #1a3740;
+    --ink: #f6f4ec;
+    --ink-2: #cfe0dc;
+    --muted: #a9c7c4;
+    --rule: #22424a;
+    --rule-strong: #34585f;
+    --accent: #afc64e;
+    --accent-ink: #1c2b22;
+    --accent-hover: #c3d86a;
+    --hover: rgb(207 224 220 / 0.07);
+    --selected: rgb(175 198 78 / 0.2);
+    --focus: #afc64e;
+    --band: url(#i-band-hatch);
+    --band-css: repeating-linear-gradient(-45deg, rgb(175 198 78 / 0.6) 0 1px, rgb(175 198 78 / 0.08) 1px 4.2px);
+    --link-line: #8aa153;
+    --code-ink: #e6eee9;
+    --rail-bg: #0a1a1f;
+    --rail-ink: #f6f4ec;
+    --rail-ink-2: #cfe0dc;
+    --rail-muted: #8fb0b0;
+    --rail-rule: rgb(207 224 220 / 0.12);
+    --rail-hover: rgb(207 224 220 / 0.06);
+    --rail-fixture: #d2b45c;
+    --hill-far: #10303a;
+    --hill-near: #17444f;
+    --land: #afc64e;
+    --land-bg: #0a1a1f;
+    --land-hatch: #516334;
+    --glyph: #a9c7c4;
+    --glyph-ground: #3f5a2a;
+    --chart-surface: #132a30;
+    --chart-grid: #1d3a42;
+    --chart-grid-strong: #2e5159;
+    --chart-axis: #4a6d75;
+    --chart-tick: #a9c7c4;
+    --chart-cursor: rgb(246 244 236 / 0.55);
+    --chart-price: #f6f4ec;
+    --chart-price-2: #d98f4e;
+    --chart-niv-short: #d98f4e;
+    --chart-niv-long: #56aab4;
+    --chart-fan: #8cc0dc;
+    --chart-fan-soft: #56aab4;
+    --chart-actual: #f6f4ec;
+    --heat-lo: #1a3740;
+    --heat-hi: #8cc0dc;
+    --status-pass: #a3bd62;
+    --status-fail: #e59a7e;
+    --tip-bg: #1a3740;
+    --tip-border: #34585f;
+    --tip-ink: #f6f4ec;
+    --tip-muted: #a9c7c4;
+    --tip-shadow: 0 6px 18px rgb(3 12 15 / 0.45);
+    --fixture-ink: #d2b45c;
+    --fixture-bg: rgb(210 180 92 / 0.1);
+    --fuel-nuclear: #4f8fb0;
+    --fuel-hydro: #8cc0dc;
+    --fuel-biomass: #d2b45c;
+    --fuel-wind: #56aab4;
+    --fuel-gas: #d98f4e;
+    --fuel-peaking: #b0583a;
+    --fuel-other: #b3aa7c;
+    --fuel-pumped_storage: #9a88c8;
+    --fuel-imports: #8aa153;
+  }
+}
+
+:root[data-theme='dark'] {
+  --scheme: dark;
+  --bg: #0e2328;
+  --surface: #132a30;
+  --panel: #132a30;
+  --raised: #1a3740;
+  --ink: #f6f4ec;
+  --ink-2: #cfe0dc;
+  --muted: #a9c7c4;
+  --rule: #22424a;
+  --rule-strong: #34585f;
+  --accent: #afc64e;
+  --accent-ink: #1c2b22;
+  --accent-hover: #c3d86a;
+  --hover: rgb(207 224 220 / 0.07);
+  --selected: rgb(175 198 78 / 0.2);
+  --focus: #afc64e;
+  --band: url(#i-band-hatch);
+  --band-css: repeating-linear-gradient(-45deg, rgb(175 198 78 / 0.6) 0 1px, rgb(175 198 78 / 0.08) 1px 4.2px);
+  --link-line: #8aa153;
+  --code-ink: #e6eee9;
+  --rail-bg: #0a1a1f;
+  --rail-ink: #f6f4ec;
+  --rail-ink-2: #cfe0dc;
+  --rail-muted: #8fb0b0;
+  --rail-rule: rgb(207 224 220 / 0.12);
+  --rail-hover: rgb(207 224 220 / 0.06);
+  --rail-fixture: #d2b45c;
+  --hill-far: #10303a;
+  --hill-near: #17444f;
+  --land: #afc64e;
+  --land-bg: #0a1a1f;
+  --land-hatch: #516334;
+  --glyph: #a9c7c4;
+  --glyph-ground: #3f5a2a;
+  --chart-surface: #132a30;
+  --chart-grid: #1d3a42;
+  --chart-grid-strong: #2e5159;
+  --chart-axis: #4a6d75;
+  --chart-tick: #a9c7c4;
+  --chart-cursor: rgb(246 244 236 / 0.55);
+  --chart-price: #f6f4ec;
+  --chart-price-2: #d98f4e;
+  --chart-niv-short: #d98f4e;
+  --chart-niv-long: #56aab4;
+  --chart-fan: #8cc0dc;
+  --chart-fan-soft: #56aab4;
+  --chart-actual: #f6f4ec;
+  --heat-lo: #1a3740;
+  --heat-hi: #8cc0dc;
+  --status-pass: #a3bd62;
+  --status-fail: #e59a7e;
+  --tip-bg: #1a3740;
+  --tip-border: #34585f;
+  --tip-ink: #f6f4ec;
+  --tip-muted: #a9c7c4;
+  --tip-shadow: 0 6px 18px rgb(3 12 15 / 0.45);
+  --fixture-ink: #d2b45c;
+  --fixture-bg: rgb(210 180 92 / 0.1);
+  --fuel-nuclear: #4f8fb0;
+  --fuel-hydro: #8cc0dc;
+  --fuel-biomass: #d2b45c;
+  --fuel-wind: #56aab4;
+  --fuel-gas: #d98f4e;
+  --fuel-peaking: #b0583a;
+  --fuel-other: #b3aa7c;
+  --fuel-pumped_storage: #9a88c8;
+  --fuel-imports: #8aa153;
+}
+
+/* ---------------------------------------------------------------- catalogue: domains, dataset kinds, landing scene, strata */
+
+:root {
+  --dom-electricity: #155a6e;
+  --dom-gas: #b56a2a;
+  --dom-weather: #8a6d1c;
+  --kind-series: #3e8c97;
+  --kind-events: #c77e3c;
+  --kind-reference: #a39a6a;
+  --scene-sky: #155a6e;
+  --scene-far: #2a7483;
+  --scene-near: #3e8c97;
+  --scene-land: #afc64e;
+  --scene-land-ink: #1c2b22;
+  --scene-land-hatch: #66793b;
+  --scene-ink: #f6f4ec;
+  --scene-ink-2: #cfe0dc;
+  --strata-gold: #e9ddaf;
+  --strata-silver: #dce2df;
+  --strata-bronze: #e2cdb3;
+  --strata-ink: #1c2b22;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --dom-electricity: #8cc0dc;
+    --dom-gas: #d98f4e;
+    --dom-weather: #d2b45c;
+    --kind-series: #56aab4;
+    --kind-events: #d98f4e;
+    --kind-reference: #b3aa7c;
+    --scene-sky: #0a1a1f;
+    --scene-far: #10303a;
+    --scene-near: #17444f;
+    --scene-land: #3f5a2a;
+    --scene-land-ink: #f6f4ec;
+    --scene-land-hatch: #516334;
+    --scene-ink: #f6f4ec;
+    --scene-ink-2: #cfe0dc;
+    --strata-gold: #4a4127;
+    --strata-silver: #2c3d3d;
+    --strata-bronze: #4a3827;
+    --strata-ink: #f6f4ec;
+  }
+}
+:root[data-theme='dark'] {
+  --dom-electricity: #8cc0dc;
+  --dom-gas: #d98f4e;
+  --dom-weather: #d2b45c;
+  --kind-series: #56aab4;
+  --kind-events: #d98f4e;
+  --kind-reference: #b3aa7c;
+  --scene-sky: #0a1a1f;
+  --scene-far: #10303a;
+  --scene-near: #17444f;
+  --scene-land: #3f5a2a;
+  --scene-land-ink: #f6f4ec;
+  --scene-land-hatch: #516334;
+  --scene-ink: #f6f4ec;
+  --scene-ink-2: #cfe0dc;
+  --strata-gold: #4a4127;
+  --strata-silver: #2c3d3d;
+  --strata-bronze: #4a3827;
+  --strata-ink: #f6f4ec;
+}
+
+
+/* domain column header bands (same in both modes; ink on them is --scene-ink) */
+:root {
+  --dcol-electricity: var(--scene-sky);
+  --dcol-gas: #8f4f1d;
+  --dcol-weather: #6f5a17;
+}
