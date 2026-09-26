@@ -48,6 +48,21 @@ function usage() {
   process.exit(2)
 }
 
+/**
+ * Git Bash rewrites a leading-slash argument into a Windows path under its
+ * install root (`/sources` arrives as `C:/Program Files/Git/sources`), so
+ * undo that; a route may also be given without its leading slash.
+ */
+function toRoute(arg) {
+  let a = arg.replace(/\\/g, '/')
+  if (/^[a-z]:\//i.test(a)) {
+    const root = (process.env.EXEPATH ?? '').replace(/\\/g, '/').replace(/\/(usr\/)?bin\/?$/i, '').toLowerCase()
+    if (!root || !a.toLowerCase().startsWith(`${root}/`)) return null
+    a = a.slice(root.length)
+  }
+  return a.startsWith('/') ? a : `/${a}`
+}
+
 /** `/sources/elexon` -> `sources-elexon`; `/` -> `root`. */
 function slugOf(route) {
   return route.replace(/^\/+|\/+$/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'root'
@@ -138,8 +153,11 @@ async function shoot(browser, base, route) {
 }
 
 async function main() {
-  const routes = process.argv.slice(2).filter((a) => a !== '--')
-  if (routes.length === 0 || routes.some((r) => !r.startsWith('/'))) usage()
+  const routes = process.argv
+    .slice(2)
+    .filter((a) => a !== '--')
+    .map(toRoute)
+  if (routes.length === 0 || routes.some((r) => r === null)) usage()
 
   const executablePath = BROWSERS.find((p) => existsSync(p))
   if (!executablePath) {
