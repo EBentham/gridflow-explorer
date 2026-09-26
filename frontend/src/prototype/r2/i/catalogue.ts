@@ -2,6 +2,9 @@
  * PROTOTYPE FIXTURE: the source catalogue, mirrored by hand from gridflow's
  * config/sources.yaml on 26 Sep 2026 (dataset ids and fetch schedules as
  * configured there). Family labels and blurbs are written for the Explorer.
+ * Kinds follow each dataset's silver table shape, checked 26 Sep 2026: time
+ * series are keyed on a regular clock, event feeds on a per-action or
+ * per-message id, reference tables have no clock.
  * "Configured" is not "has local rows": only the charted datasets carry
  * coverage. The plumbing phase replaces this with a manifest endpoint.
  */
@@ -166,14 +169,11 @@ export const SOURCES: Source[] = [
           ...ds('monthly', 'balancing_financial_expenses_income'),
         ],
       },
-      { label: 'Outages', kind: 'events', datasets: ds('daily', 'outages_generation', 'outages_production', 'outages_consumption', 'outages_transmission', 'outages_offshore_grid') },
-      { label: 'Redispatch and countertrading', kind: 'events', datasets: ds('daily', 'redispatching_cross_border', 'redispatching_internal', 'countertrading', 'congestion_management_costs') },
-      { label: 'Balancing energy bids', kind: 'events', datasets: ds('daily', 'balancing_energy_bids') },
-      {
-        label: 'Installed capacity and unit registers',
-        kind: 'reference',
-        datasets: [...ds('weekly', 'installed_capacity', 'generation_units_master_data'), ...ds('yearly', 'installed_capacity_units')],
-      },
+      { label: 'Outages, unavailable capacity per interval', kind: 'series', datasets: ds('daily', 'outages_generation', 'outages_production', 'outages_consumption', 'outages_transmission', 'outages_offshore_grid') },
+      { label: 'Redispatch and countertrading', kind: 'series', datasets: ds('daily', 'redispatching_cross_border', 'redispatching_internal', 'countertrading', 'congestion_management_costs') },
+      { label: 'Balancing energy bids', kind: 'series', datasets: ds('daily', 'balancing_energy_bids') },
+      { label: 'Installed capacity, yearly', kind: 'series', datasets: [...ds('weekly', 'installed_capacity'), ...ds('yearly', 'installed_capacity_units')] },
+      { label: 'Generation unit register', kind: 'reference', datasets: ds('weekly', 'generation_units_master_data') },
     ],
   },
   {
@@ -196,7 +196,8 @@ export const SOURCES: Source[] = [
         datasets: ds('daily', 'available_through_oversubscription', 'available_through_surrender', 'available_through_uioli_long_term', 'available_through_uioli_short_term'),
       },
       { label: 'Gas quality', kind: 'series', datasets: ds('daily', 'gcv', 'wobbe_index', 'methane_content', 'hydrogen_content', 'oxygen_content') },
-      { label: 'Congestion management', kind: 'events', datasets: ds('daily', 'cmp_unsuccessful_requests', 'cmp_unavailable_firm_capacity', 'cmp_auction_premiums') },
+      { label: 'Congestion management', kind: 'events', datasets: ds('daily', 'cmp_unsuccessful_requests', 'cmp_auction_premiums') },
+      { label: 'Unavailable firm capacity', kind: 'reference', datasets: ds('daily', 'cmp_unavailable_firm_capacity') },
       { label: 'Interruptions and urgent market messages', kind: 'events', datasets: ds('daily', 'interruptions', 'urgent_market_messages') },
       { label: 'Tariffs', kind: 'reference', datasets: ds('monthly', 'tariffs', 'tariff_simulations') },
       {
