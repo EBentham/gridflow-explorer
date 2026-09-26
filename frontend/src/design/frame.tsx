@@ -211,3 +211,15 @@ export function StatusNote({ state, error, empty }: { state: ViewState; error?: 
   if (state === 'empty') return <p className="gf-state">{empty ?? 'Nothing is held locally for this range.'}</p>
   return null
 }
+
+/**
+ * A secondary panel's line while the range hasn't been read: quieter than
+ * `StatusNote`, which the main panel carries, so the error isn't repeated in
+ * every panel. Silent once the range has been read (data or empty).
+ */
+export function PendingNote({ state }: { state: ViewState }) {
+  if (state === 'loading') return <p className="gf-hint">Reading the range…</p>
+  if (state === 'refreshing') return <p className="gf-hint">Waiting for the local store.</p>
+  if (state === 'error') return <p className="gf-hint">Nothing to show: this range didn't load.</p>
+  return null
+}

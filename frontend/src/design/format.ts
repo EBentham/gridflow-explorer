@@ -64,3 +64,9 @@ export function niceTicks(min: number, max: number, target = 5): Scale {
 export function plural(n: number, one: string, many: string): string {
   return `${n.toLocaleString('en-GB')} ${n === 1 ? one : many}`
 }
+
+/** "a", "a and b", "a, b and c": a plain-English list, no serial comma. */
+export function listText(items: string[]): string {
+  if (items.length <= 1) return items.join('')
+  return `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`
+}

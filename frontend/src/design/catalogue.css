@@ -387,6 +387,7 @@
   border-bottom: 1px solid var(--rule);
 }
 .gf-fam thead th {
+  white-space: nowrap;
   padding-top: 2px;
   padding-bottom: 6px;
   font-size: 12.5px;

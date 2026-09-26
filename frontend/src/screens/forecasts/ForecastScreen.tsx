@@ -1,14 +1,24 @@
+/**
+ * /forecasts: the v0.3 forecast screen over gridflow_models' forecast store.
+ * Its design is owned by gridflow_models v1.7 P4, so v0.4 wraps it in the
+ * new shell without restyling it (EFFORT-PLAN OQ-2); only its colours moved
+ * onto the tokens. The catalogue reaches it from its note on gridflow's own
+ * tables; it isn't pinned.
+ */
 import { useMemo, useState } from 'react'
-import { ChartCard } from '../components/ChartCard'
-import { EmptyState } from '../components/EmptyState'
-import { ErrorState } from '../components/ErrorState'
-import { ForecastFanChart } from '../components/ForecastFanChart'
-import { LoadingState } from '../components/LoadingState'
-import type { ForecastMetric, ForecastVariant } from '../api/types'
-import { variantKey } from '../api/types'
-import { useForecastDay } from '../hooks/useForecastDay'
-import { useForecastMetrics } from '../hooks/useForecastMetrics'
-import { useForecastVariants } from '../hooks/useForecastVariants'
+import { Screen, type ViewState } from '../../design/frame'
+import { useDocumentTitle } from '../../design/title'
+import { ChartCard } from './ChartCard'
+import { EmptyState } from './EmptyState'
+import { ErrorState } from './ErrorState'
+import { ForecastFanChart } from './ForecastFanChart'
+import { LoadingState } from './LoadingState'
+import type { ForecastMetric, ForecastVariant } from '../../api/types'
+import { variantKey } from '../../api/types'
+import { useForecastDay } from '../../hooks/useForecastDay'
+import { useForecastMetrics } from '../../hooks/useForecastMetrics'
+import { useForecastVariants } from '../../hooks/useForecastVariants'
+import './forecasts.css'
 
 function titleFor(variants: ForecastVariant[], key: string): string {
   return variants.find((v) => variantKey(v.model_id, v.vintage_policy_id) === key)?.title ?? key
@@ -157,19 +167,45 @@ export function ForecastScreen() {
 
   const { data: dayRecords, loading: dayLoading, error: dayError } = useForecastDay(date, variantKeys)
   const { data: metrics, loading: metricsLoading, error: metricsError } = useForecastMetrics(variantKeys)
+  useDocumentTitle('Forecasts')
 
-  if (variantsLoading) return <LoadingState />
-  if (variantsError) return <ErrorState error={variantsError} />
+  const failure = variantsError ?? dayError ?? metricsError
+  const state: ViewState = variantsLoading
+    ? 'loading'
+    : failure
+      ? failure.code === 'refresh_in_progress'
+        ? 'refreshing'
+        : 'error'
+      : !variants || variants.length === 0
+        ? 'empty'
+        : dayLoading || metricsLoading
+          ? 'loading'
+          : dayRecords && dayRecords.length > 0
+            ? 'data'
+            : 'empty'
+
+  if (variantsLoading)
+    return (
+      <Screen state={state}>
+        <LoadingState />
+      </Screen>
+    )
+  if (variantsError)
+    return (
+      <Screen state={state}>
+        <ErrorState error={variantsError} />
+      </Screen>
+    )
 
   if (!variants || variants.length === 0) {
     return (
-      <div>
+      <Screen state={state}>
         <h2>Forecasts</h2>
         <EmptyState>
           No forecast Variants in the local store yet — run a gridflow_models training job to populate
           one.
         </EmptyState>
-      </div>
+      </Screen>
     )
   }
 
@@ -181,7 +217,7 @@ export function ForecastScreen() {
   }
 
   return (
-    <div>
+    <Screen state={state}>
       <h2>Forecasts</h2>
       <div className="forecast-controls">
         <label className="forecast-date-picker">
@@ -246,6 +282,6 @@ export function ForecastScreen() {
       ) : (
         <MetricsPanel metrics={metrics ?? []} variantKeys={variantKeys} variants={variants} />
       )}
-    </div>
+    </Screen>
   )
 }

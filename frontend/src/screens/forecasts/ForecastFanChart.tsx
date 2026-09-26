@@ -1,9 +1,9 @@
 import type { ReactElement, ReactNode } from 'react'
 import { Area, CartesianGrid, ComposedChart, Legend, Line, Tooltip, XAxis, YAxis } from 'recharts'
-import type { ForecastDayRecord, ForecastVariant } from '../api/types'
-import { variantKey } from '../api/types'
-import { colorFor } from '../lib/palette'
-import { tooltipContentStyle, tooltipItemStyle, tooltipLabelStyle } from '../lib/tooltip'
+import type { ForecastDayRecord, ForecastVariant } from '../../api/types'
+import { variantKey } from '../../api/types'
+import { colorFor } from './palette'
+import { tooltipContentStyle, tooltipItemStyle, tooltipLabelStyle } from './tooltip'
 
 interface ForecastFanChartProps {
   records: ForecastDayRecord[]
@@ -21,13 +21,6 @@ const BANDS = [
   { low: 'q_0.1', high: 'q_0.9', opacity: 0.22, label: '10th-90th pct' },
   { low: 'q_0.25', high: 'q_0.75', opacity: 0.35, label: '25th-75th pct' },
 ] as const
-
-function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`
-}
 
 /** Formats a UTC ISO timestamp (`2026-08-10T00:00:00Z`) as `HH:mm`. */
 function formatTimeOfDay(isoTimestamp: string): string {
@@ -91,7 +84,8 @@ function renderVariantLayers(key: string, title: string, color: string): ReactEl
       dataKey={`${key}__${band.low}__span`}
       stackId={`${key}-${band.low}`}
       stroke="none"
-      fill={hexToRgba(color, band.opacity)}
+      fill={color}
+      fillOpacity={band.opacity}
       isAnimationActive={false}
       name={`${title} ${band.label}`}
     />,
@@ -138,15 +132,16 @@ export function ForecastFanChart({ records, variants }: ForecastFanChartProps) {
 
   return (
     <ComposedChart data={rows}>
-      <CartesianGrid strokeDasharray="3 3" />
+      <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
       <XAxis
         dataKey="delivery_time"
         tickFormatter={formatTimeOfDay}
-        tick={{ fontSize: 11 }}
+        tick={{ fontSize: 11, fill: 'var(--chart-tick)' }}
+        stroke="var(--chart-axis)"
         minTickGap={40}
-        label={{ value: 'Settlement time (UTC)', position: 'insideBottom', offset: -5 }}
+        label={{ value: 'Settlement time (UTC)', position: 'insideBottom', offset: -5, fill: 'var(--chart-tick)' }}
       />
-      <YAxis />
+      <YAxis tick={{ fill: 'var(--chart-tick)' }} stroke="var(--chart-axis)" />
       <Tooltip
         contentStyle={tooltipContentStyle}
         labelStyle={tooltipLabelStyle}

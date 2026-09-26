@@ -10,9 +10,11 @@
  * deletes it.
  */
 
+import type { Domain } from '../design/symbols'
+
+export type { Domain }
 export type Kind = 'series' | 'events' | 'reference'
 export type Schedule = 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly'
-export type Domain = 'Electricity' | 'Gas' | 'Weather'
 
 export interface Dataset {
   id: string
@@ -243,12 +245,26 @@ export const SOURCES: Source[] = [
   },
 ]
 
-/** gridflow's own gold layer: views and builders over the silver tables. */
-export const GOLD = [
-  { id: 'gold_uk_imbalance_context', label: 'System prices joined with carbon intensity' },
-  { id: 'gold_gb_day_ahead_benchmark', label: 'GB day-ahead benchmark from the market index price' },
-  { id: 'gold_eu_gas_storage', label: 'Gas storage by country' },
-  { id: 'system_marginal_price', label: 'System prices with spread and calendar features' },
+export interface GoldGroup {
+  /** Plain words, written to sit in a sentence. */
+  label: string
+  relations: string[]
+  /** Set when an Explorer screen reads this group. */
+  view?: { to: string; label: string }
+}
+
+/**
+ * gridflow's own tables (its gold layer), built from the sources above by
+ * gridflow and gridflow_models. The relations were listed and counted through
+ * GridflowClient on 26 Sep 2026 (v0.4 local-population research); the earlier
+ * `system_marginal_price` entry is gone because no relation of that name exists.
+ */
+export const GOLD: GoldGroup[] = [
+  { label: 'the power stack', relations: ['gold_stack_supply_curve_points', 'gold_stack_clearing', 'gold_stack_residual_demand'] },
+  { label: 'system prices joined with carbon intensity', relations: ['gold_uk_imbalance_context'] },
+  { label: 'a GB day-ahead benchmark from the market index price', relations: ['gold_gb_day_ahead_benchmark'] },
+  { label: 'gas storage by country', relations: ['gold_eu_gas_storage'] },
+  { label: 'demand forecasts with their scores', relations: ['gold_forecasts', 'gold_forecast_metrics'], view: { to: '/forecasts', label: 'Forecasts' } },
 ]
 
 export const DOMAINS: Domain[] = ['Electricity', 'Gas', 'Weather']
