@@ -5,21 +5,31 @@ import type { ApiErrorBody } from './types'
  * (e.g. `unknown_dataset`, `refresh_in_progress`) so screens can special-case
  * specific codes, the HTTP `status` when there was a response, and what the
  * rows endpoint adds to its envelope: why a dataset isn't held
- * (`notHeldCause`) and how to narrow a window that holds too much (`hint`).
+ * (`notHeldCause`), which limit a 413 hit (`reason`), how to narrow the
+ * request (`hint`), and any other fields (`detail`, e.g. an
+ * `ambiguous_series` error's `varying_dimensions`).
  */
 export class ApiError extends Error {
   code: string
   status?: number
   notHeldCause?: string
+  reason?: string
   hint?: string
+  detail: Record<string, unknown>
 
-  constructor(code: string, message: string, extra: { status?: number; notHeldCause?: string | null; hint?: string | null } = {}) {
+  constructor(
+    code: string,
+    message: string,
+    extra: { status?: number; notHeldCause?: string | null; reason?: string | null; hint?: string | null; detail?: Record<string, unknown> } = {},
+  ) {
     super(message)
     this.name = 'ApiError'
     this.code = code
     this.status = extra.status
     this.notHeldCause = extra.notHeldCause ?? undefined
+    this.reason = extra.reason ?? undefined
     this.hint = extra.hint ?? undefined
+    this.detail = extra.detail ?? {}
   }
 }
 
@@ -28,7 +38,7 @@ export class ApiError extends Error {
  *
  * A handled backend error has the `{error: {code, message}}` envelope
  * (P1-PLAN.md "Error shape"), which the rows endpoint extends with
- * `not_held_cause` and `hint`. A genuine 500 has no such envelope, so the
+ * `not_held_cause`, `reason`, `hint` and more. A genuine 500 has no such envelope, so the
  * JSON parse is guarded and falls back to the HTTP status text.
  *
  * `init` defaults every existing GET call site's behaviour unchanged; P3's
@@ -46,11 +56,8 @@ export async function fetchJson<T>(path: string, signal?: AbortSignal, init?: Re
     }
 
     if (body?.error) {
-      throw new ApiError(body.error.code, body.error.message, {
-        status: response.status,
-        notHeldCause: body.error.not_held_cause,
-        hint: body.error.hint,
-      })
+      const { code, message, not_held_cause, reason, hint, ...detail } = body.error
+      throw new ApiError(code, message, { status: response.status, notHeldCause: not_held_cause, reason, hint, detail })
     }
 
     throw new ApiError('unknown_error', `${response.status} ${response.statusText}`, { status: response.status })

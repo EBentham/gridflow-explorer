@@ -3,9 +3,11 @@
  * times sort as numbers, gaps last), tabular numbers, and windowed rendering
  * (only the rows in view, plus a margin, are in the DOM), so an events window
  * of tens of thousands of rows scrolls as lightly as a day of half-hours.
- * Every row is one line of fixed height; cells don't wrap.
+ * Every row is one line of fixed height; cells don't wrap. When the box cuts
+ * rows or columns off, a line under it says so.
  */
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type ReactNode } from 'react'
+import { overflowCue, useOverflow } from '../../design/overflow'
 
 export interface TableCol<R> {
   key: string
@@ -67,17 +69,7 @@ export function WindowedTable<R>({
   const [sort, setSort] = useState<SortState | null>(initialSort ?? null)
   const [scrollTop, setScrollTop] = useState(0)
   const box = useRef<HTMLDivElement>(null)
-  // Wider than its panel: the columns past the edge are named in a hint, as scrollbars can be hidden.
-  const [sideways, setSideways] = useState(false)
-  useEffect(() => {
-    const el = box.current
-    if (!el || typeof ResizeObserver === 'undefined') return undefined
-    const observer = new ResizeObserver(() => setSideways(el.scrollWidth > el.clientWidth + 1))
-    observer.observe(el)
-    const table = el.querySelector('table')
-    if (table) observer.observe(table)
-    return () => observer.disconnect()
-  }, [])
+  const cue = overflowCue(useOverflow(box))
 
   const sorted = useMemo(() => {
     const col = sort && columns.find((c) => c.key === sort.key)
@@ -148,7 +140,7 @@ export function WindowedTable<R>({
           </tbody>
         </table>
       </div>
-      {sideways && <p className="gf-hint">The table is wider than the panel: scroll it sideways for the rest of its columns.</p>}
+      {cue && <p className="gf-hint">{cue}</p>}
     </>
   )
 }

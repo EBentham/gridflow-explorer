@@ -1,16 +1,19 @@
 /**
  * The dev fixture adapter: a `DataSource` that answers from the synthetic
  * "Template demo" source (`fixtureData.ts`) with exactly the shapes of
- * `/api/sources` and the rows endpoint, including the backend's rules:
- * null rows for missing half-hours (never zeros), the default filter and
- * what it left out, and time-bucket means past the row cap, all reported in
- * `truncation`. Its `origin` is `fixture`, so every panel reading it carries
- * the dashed-ochre Fixture tag.
+ * `/api/sources` and the rows endpoint, including the backend's rules (P3-2
+ * PLAN §7): the group asked for, else the first series dim, else the first
+ * dim; null rows for missing half-hours (never zeros); the dataset's default
+ * filter unless a request names its own or clears it, reported in `filters`
+ * and, when it leaves records out, in `truncation`; and time-bucket means
+ * past the row cap, with `grain_ms` the bucket's width. Its `origin` is
+ * `fixture`, so every panel reading it carries the dashed-ochre Fixture tag.
  *
  * For screenshots of the states a page must handle, `?fixture=` on the page
- * URL makes the rows request fail as the backend would: `error` (a 500),
- * `refreshing` (gridflow holds the store), `toomany` (a 413 with a hint), or
- * `empty` (a window with no rows).
+ * URL makes the rows request fail as the backend would: `error` (a 500 with
+ * no envelope), `refreshing` (gridflow holds the store), `toomany` (a 413
+ * `result_too_large` with its reason and hint), or `empty` (a window with no
+ * rows).
  */
 import { ApiError } from '../../api/client'
 import { DAY_MS, HALF_HOUR, dayStart, nextLondonMidnight, shiftDate, todayUk } from '../../design/time'
@@ -18,14 +21,16 @@ import type {
   DataSource,
   EventsRowsResponse,
   Manifest,
+  ManifestDataset,
   ReferenceRowsResponse,
   RowsRequest,
   RowsResponse,
   SeriesRow,
   SeriesRowsResponse,
   Truncation,
+  TruncationReason,
 } from '../contract'
-import { FIXTURE_READ_AT, NOTICES, PLANT_TYPES, UNITS, fixtureSource, isHeld, outputMw, priceGbpMwh } from './fixtureData'
+import { FIXTURE_READ_AT, MARKETS, NOTICES, PLANT_TYPES, UNITS, fixtureSource, isHeld, outputMw, priceGbpMwh } from './fixtureData'
 
 /** Deliberately small, so a 30-day window of three half-hourly series comes back as hourly means. */
 const FIXTURE_ROW_CAP = 3000
@@ -72,6 +77,21 @@ function resolveWindow(req: RowsRequest, latest: string) {
 
 const daysIn = (start: string, end: string) => Math.round((dayStart(end) - dayStart(start)) / DAY_MS) + 1
 
+/** The filters a request applies: its own, none when it clears them, else the dataset's default. */
+function effectiveFilters(ds: ManifestDataset, req: RowsRequest): { filters: Record<string, string>; byDefault: boolean } {
+  if (req.filters === null) return { filters: {}, byDefault: false }
+  if (req.filters && Object.keys(req.filters).length) {
+    for (const k of Object.keys(req.filters)) {
+      if (!ds.dims.some((d) => d.column === k)) throw new ApiError('bad_filter', `${k} isn't a column this dataset can be filtered by.`, { status: 422 })
+    }
+    return { filters: req.filters, byDefault: false }
+  }
+  const d = ds.default_filter
+  return d ? { filters: { [d.column]: String(d.equals) }, byDefault: true } : { filters: {}, byDefault: false }
+}
+
+const matches = (row: Record<string, unknown>, filters: Record<string, string>) => Object.entries(filters).every(([k, v]) => String(row[k]) === v)
+
 /** Mean of each value per group per UTC-aligned bucket; a bucket with no value stays null. */
 function downsample(rows: SeriesRow[], group: string | null, column: string, bucketMs: number, floor: number): SeriesRow[] {
   const buckets = new Map<string, { ts: number; g: string | null; sum: number; n: number }>()
@@ -92,19 +112,23 @@ function downsample(rows: SeriesRow[], group: string | null, column: string, buc
     .map((b) => ({ ts: b.ts, ...(group === null ? {} : { [group]: b.g }), [column]: b.n ? Math.round((b.sum / b.n) * 100) / 100 : null }))
 }
 
-function seriesRows(id: 'demo_output' | 'demo_price', window: { start: string; end: string }): { rows: SeriesRow[]; group: string | null; column: string } {
+/**
+ * Long rows for the window, one per half-hour and dim value, null where the
+ * step isn't held. With no held step in the window there are none.
+ */
+function seriesRows(id: 'demo_output' | 'demo_price', window: { start: string; end: string }): SeriesRow[] {
   const lo = dayStart(window.start)
   const hi = nextLondonMidnight(dayStart(window.end))
   const grid: number[] = []
   for (let t = lo; t < hi; t += HALF_HOUR) grid.push(t)
-  // Groups with no held row in the window are left out; the rest carry every step, null where not held.
-  if (!grid.some((t) => isHeld(id, t))) return { rows: [], group: id === 'demo_output' ? 'plant_type' : null, column: id === 'demo_output' ? 'output_mw' : 'price_gbp_mwh' }
-  if (id === 'demo_price') {
-    return { rows: grid.map((t) => ({ ts: t, price_gbp_mwh: isHeld(id, t) ? priceGbpMwh(t) : null })), group: null, column: 'price_gbp_mwh' }
-  }
+  if (!grid.some((t) => isHeld(id, t))) return []
   const rows: SeriesRow[] = []
+  if (id === 'demo_price') {
+    for (const t of grid) for (const m of MARKETS) rows.push({ ts: t, market: m, price_gbp_mwh: isHeld(id, t) ? priceGbpMwh(t, m) : null })
+    return rows
+  }
   for (const t of grid) for (const p of PLANT_TYPES) rows.push({ ts: t, plant_type: p, output_mw: isHeld(id, t) ? outputMw(p, t) : null })
-  return { rows, group: 'plant_type', column: 'output_mw' }
+  return rows
 }
 
 function seriesResponse(id: 'demo_output' | 'demo_price', req: RowsRequest): SeriesRowsResponse {
@@ -114,36 +138,50 @@ function seriesResponse(id: 'demo_output' | 'demo_price', req: RowsRequest): Ser
   if (req.group && !ds.dims.some((d) => d.column === req.group)) {
     throw new ApiError('bad_group', `${req.group} isn't a column this dataset can be split by.`, { status: 422 })
   }
-  const native = scenario() === 'empty' ? { rows: [], group: null, column: '' } : seriesRows(id, window)
-  let rows = native.rows
-  let truncation: Truncation | null = null
+  const group = req.group ?? ds.dims.find((d) => d.role === 'series')?.column ?? ds.dims[0]?.column ?? null
+  const { filters, byDefault } = effectiveFilters(ds, req)
+  const column = ds.values[0].column
+  const all = scenario() === 'empty' ? [] : seriesRows(id, window)
+  const selected = all.filter((r) => matches(r, filters))
+  // Records are held rows; the null rows standing for missing steps aren't records.
+  const records = (rows: SeriesRow[]) => rows.filter((r) => r[column] !== null).length
+  const beforeDefaults = records(byDefault ? all : selected)
+  const afterFilters = records(selected)
+  const reasons: TruncationReason[] = []
+  if (byDefault && beforeDefaults > afterFilters) reasons.push({ type: 'default_filter', omitted_rows: beforeDefaults - afterFilters })
+  let rows = selected
+  let bucketMs: number | null = null
   if (rows.length > FIXTURE_ROW_CAP) {
     for (const bucket of BUCKETS_MS) {
-      rows = downsample(native.rows, native.group, native.column, bucket, dayStart(window.start))
+      rows = downsample(selected, group, column, bucket, dayStart(window.start))
       if (rows.length <= FIXTURE_ROW_CAP) {
-        truncation = {
-          row_cap: FIXTURE_ROW_CAP,
-          reasons: [{ type: 'downsample', bucket_ms: bucket, aggregation: 'mean' }],
-          rows_before_defaults: native.rows.length,
-          rows_after_filters: native.rows.length,
-          returned_rows: rows.length,
-          bucket_ms: bucket,
-          aggregation: 'mean',
-        }
+        bucketMs = bucket
+        reasons.push({ type: 'downsample', bucket_ms: bucket })
         break
       }
     }
   }
+  const truncation: Truncation | null = reasons.length
+    ? {
+        row_cap: FIXTURE_ROW_CAP,
+        reasons,
+        rows_before_defaults: beforeDefaults,
+        rows_after_filters: afterFilters,
+        returned_rows: rows.length,
+        bucket_ms: bucketMs,
+        aggregation: bucketMs === null ? null : 'mean',
+      }
+    : null
   return {
     dataset: id,
     source: 'demo',
     kind: 'series',
     relation: ds.relation ?? '',
     window,
-    grain_ms: HALF_HOUR,
+    grain_ms: bucketMs ?? HALF_HOUR,
     columns: ds.values,
-    group: rows.length ? native.group : ds.dims[0]?.column ?? null,
-    filters: {},
+    group,
+    filters,
     rows,
     row_count: rows.length,
     truncated: truncation !== null,
@@ -160,11 +198,10 @@ function eventsResponse(req: RowsRequest): EventsRowsResponse {
   const lo = dayStart(window.start)
   const hi = nextLondonMidnight(dayStart(window.end))
   const inWindow = scenario() === 'empty' ? [] : NOTICES.filter((n) => n.ts >= lo && n.ts < hi)
-  // Omitted: the default filter (GB only). Null: cleared. Otherwise the caller's equality filters.
-  const filters: Record<string, string> = req.filters === undefined ? { area: 'GB' } : (req.filters ?? {})
-  const rows = inWindow.filter((n) => Object.entries(filters).every(([k, v]) => String(n[k]) === v))
+  const { filters, byDefault } = effectiveFilters(ds, req)
+  const rows = inWindow.filter((n) => matches(n, filters))
   const omitted = inWindow.length - rows.length
-  const byDefault = req.filters === undefined && omitted > 0
+  const cut = byDefault && omitted > 0
   return {
     dataset: 'demo_notices',
     source: 'demo',
@@ -177,11 +214,11 @@ function eventsResponse(req: RowsRequest): EventsRowsResponse {
     filters,
     rows,
     row_count: rows.length,
-    truncated: byDefault,
-    truncation: byDefault
+    truncated: cut,
+    truncation: cut
       ? {
           row_cap: FIXTURE_ROW_CAP,
-          reasons: [{ type: 'default_filter', column: 'area', equals: 'GB', omitted_rows: omitted }],
+          reasons: [{ type: 'default_filter', omitted_rows: omitted }],
           rows_before_defaults: inWindow.length,
           rows_after_filters: rows.length,
           returned_rows: rows.length,
@@ -198,8 +235,8 @@ function referenceResponse(req: RowsRequest): ReferenceRowsResponse {
   const ds = dataset('demo_units')
   if (!ds) throw new ApiError('unknown_dataset', 'No dataset demo_units.', { status: 404 })
   if (req.start || req.end) throw new ApiError('bad_range', 'A reference table has no window.', { status: 422 })
-  const filters = req.filters ?? {}
-  const rows = scenario() === 'empty' ? [] : UNITS.filter((u) => Object.entries(filters).every(([k, v]) => String(u[k]) === v))
+  const { filters } = effectiveFilters(ds, req)
+  const rows = scenario() === 'empty' ? [] : UNITS.filter((u) => matches(u, filters))
   return {
     dataset: 'demo_units',
     source: 'demo',
@@ -221,15 +258,16 @@ function referenceResponse(req: RowsRequest): ReferenceRowsResponse {
 
 function rows(req: RowsRequest): RowsResponse {
   const s = scenario()
-  if (s === 'error') throw new ApiError('fixture_error', 'the fixture was asked to fail (?fixture=error).', { status: 500 })
+  // A genuine 500 has no envelope; the client names it `unknown_error`.
+  if (s === 'error') throw new ApiError('unknown_error', 'the fixture was asked to fail (?fixture=error).', { status: 500 })
   if (s === 'refreshing') throw new ApiError('refresh_in_progress', 'A dataset refresh is in progress. Try again shortly.', { status: 503 })
   if (s === 'toomany') {
-    throw new ApiError('too_many_rows', 'This window holds more rows than one read returns.', { status: 413, hint: 'Choose a shorter window, or filter to fewer groups.' })
+    throw new ApiError('result_too_large', 'Result exceeds the safe row limit.', { status: 413, reason: 'row_cap', hint: 'Narrow the date window or filter a dimension.' })
   }
   if (req.source !== 'demo') throw new ApiError('unknown_dataset', `The fixture has no source ${req.source}.`, { status: 404 })
   const ds = dataset(req.dataset)
   if (!ds) throw new ApiError('unknown_dataset', `The fixture has no dataset ${req.dataset}.`, { status: 404 })
-  if (!ds.held) throw new ApiError('not_held', `${ds.id} isn't held locally.`, { status: 404, notHeldCause: ds.not_held_cause })
+  if (!ds.held) throw new ApiError('unknown_dataset', 'Dataset is not held.', { status: 404, notHeldCause: ds.not_held_cause })
   if (req.dataset === 'demo_output' || req.dataset === 'demo_price') return seriesResponse(req.dataset, req)
   if (req.dataset === 'demo_notices') return eventsResponse(req)
   return referenceResponse(req)

@@ -8,8 +8,9 @@
  * every honesty state a real page meets: a local depth shorter than a
  * 30-day window, a day with no rows, a day held in part, a stub latest day
  * (2 of 48 half-hours, as fuelhh's is), a short gap inside a day, values
- * below zero, a default filter that leaves rows out, and a window too big
- * to return at full detail.
+ * below zero, a default filter that leaves rows out (on the page's own
+ * dataset, and on the price read beside the output, as `mid`'s default
+ * provider is), and a window too big to return at full detail.
  */
 import { DAY_MS, HALF_HOUR, HOUR_MS, dayStart, londonMidnight, nextLondonMidnight } from '../../design/time'
 import type { EventRow, ManifestDataset, ManifestSource, ReferenceRow } from '../contract'
@@ -89,10 +90,15 @@ export function outputMw(plant: PlantType, t: number): number {
   return Math.round(v)
 }
 
-export function priceGbpMwh(t: number): number {
+/** The price's markets: its default filter keeps the day-ahead one. */
+export const MARKETS = ['day-ahead', 'within-day'] as const
+export type Market = (typeof MARKETS)[number]
+
+export function priceGbpMwh(t: number, market: Market = 'day-ahead'): number {
   const h = ukHour(t)
-  if (wind(t) > 10500 && (h < 6 || (h > 12 && h < 15))) return Math.round((-8 - 18 * Math.abs(wobble('price-neg', t))) * 100) / 100
-  return Math.round((55 + 5.5 * (gas(t) / 1000 - 6) + 6 * wobble('price', t)) * 100) / 100
+  const drift = market === 'within-day' ? 4.5 * wobble('price-within-day', t) : 0
+  if (wind(t) > 10500 && (h < 6 || (h > 12 && h < 15))) return Math.round((-8 - 18 * Math.abs(wobble('price-neg', t)) + drift) * 100) / 100
+  return Math.round((55 + 5.5 * (gas(t) / 1000 - 6) + 6 * wobble('price', t) + drift) * 100) / 100
 }
 
 const inDepth = (t: number) => t >= dayStart(FIXTURE_FIRST_DAY) && t < nextLondonMidnight(dayStart(FIXTURE_LATEST_DAY))
@@ -220,12 +226,13 @@ function datasets(): ManifestDataset[] {
       verdict: 'chart',
       clock: halfHourly,
       latest_day_rule: { mode: 'max', column: 'timestamp_utc' },
-      values: [{ column: 'price_gbp_mwh', unit: 'GBP/MWh', label: 'synthetic price per half-hour' }],
-      dims: [],
+      values: [{ column: 'price_gbp_mwh', unit: 'GBP/MWh', label: 'synthetic price per half-hour and market' }],
+      dims: [{ column: 'market', role: 'series', cardinality: MARKETS.length }],
+      default_filter: { column: 'market', equals: 'day-ahead' },
       held: true,
       relation: 'fixture_demo_price',
       not_held_cause: null,
-      coverage: seriesCoverage('demo_price', 1),
+      coverage: seriesCoverage('demo_price', MARKETS.length),
     },
     {
       ...noteless,

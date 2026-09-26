@@ -28,7 +28,7 @@ import { adapterFor } from '../_data/adapters'
 import { useManifest, useRowsList, type Load } from '../_data/hooks'
 import { hasSourcePage, type RegisteredView } from '../registry'
 import { panelTitle, slotsFor } from './defaults'
-import { PageNotes, SourceLine } from './panels'
+import { About, PageNotes, SourceLine } from './panels'
 import { buildSeriesModel } from './seriesModel'
 import { emptyWindowText, isoDayText, notHeldText, sourceName } from './text'
 import './template.css'
@@ -130,10 +130,12 @@ function MainStatus({ state, error, dataset, window }: { state: ViewState; error
     )
   }
   if (state === 'error') {
+    // Only a 413's hint is words for people (narrow the window); a 422's can be a query string.
+    // Mapping each error code to plain words is P4-0's, with the HTTP adapter.
     return (
       <p className="gf-state is-error" role="alert">
         Couldn't read this dataset: {error?.message ?? 'unknown error'}
-        {error?.hint ? ` ${error.hint}` : ''}
+        {error?.status === 413 && error.hint ? ` ${error.hint}` : ''}
       </p>
     )
   }
@@ -337,6 +339,8 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
       )
     }
     if (!ctx) return <PendingNote state={state} />
+    // About reads the source list alone, so it shows in every state: most of all when the rows fail.
+    if (area === 'side' && Body === About) return <Body ctx={ctx} />
     if (!dataset?.held) return area === 'side' ? <Body ctx={ctx} /> : <p className="gf-hint">Nothing to show: this dataset isn't held locally.</p>
     if (!settled) return <PendingNote state={state} />
     return <Body ctx={ctx} />

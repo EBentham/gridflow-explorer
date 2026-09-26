@@ -4,8 +4,8 @@
  */
 import { listText } from '../../design/format'
 import { datesBetween, dayStart, londonMidnight } from '../../design/time'
-import type { ManifestDataset, ManifestSource } from '../contract'
-import type { PageContext, ValueSpec } from '../define'
+import type { ManifestDataset, ManifestSource, Scalar } from '../contract'
+import type { PageContext, QuerySpec, RelatedData, ValueSpec } from '../define'
 import { displayUnit } from './units'
 import { daySummaries, seriesId, type SeriesDef } from './seriesModel'
 import { planPanels } from './seriesPanels'
@@ -42,15 +42,33 @@ export function daySeries(ctx: PageContext): SeriesDef | undefined {
   return model.drawn.find((d) => seriesId(d) === ctx.focus) ?? planPanels(ctx).panels[0]?.series.find((d) => d.from === 'self') ?? model.drawn[0]
 }
 
-/** One dataset in a source line: who publishes it, its id, the columns shown, the split and the unit. */
+/** One dataset in a source line: who publishes it, its id, the columns shown, the split, the filters and the unit. */
 export interface SourcePart {
   source?: Pick<ManifestSource, 'name'> | null
   dataset: string
   columns?: string[]
   /** The column the series are split by. */
   by?: string | null
+  /** Equality filters the rows carry (`market` day-ahead only). */
+  filters?: Record<string, Scalar> | null
   /** As printed (`GW`, `£/MWh`); null prints "unit unconfirmed". Omit for no unit. */
   unit?: string | null
+}
+
+/**
+ * The equality filters a request will carry: the query's own, none when it
+ * clears them (`filters: null`), else the dataset's default filter.
+ */
+export function plannedFilters(query: QuerySpec | undefined, dataset: Pick<ManifestDataset, 'default_filter'> | null): Record<string, Scalar> {
+  if (query?.filters === null) return {}
+  if (query?.filters && Object.keys(query.filters).length) return query.filters
+  const d = dataset?.default_filter
+  return d ? { [d.column]: d.equals } : {}
+}
+
+/** A related dataset's filters: as applied once its rows are read, as planned before. */
+export function relatedFilters(rel: RelatedData): Record<string, Scalar> {
+  return rel.response ? rel.response.filters : plannedFilters(rel.spec.query, rel.dataset)
 }
 
 /** Source-line parts for the related datasets among `series`, each named in full, in the order they appear. */
@@ -64,6 +82,7 @@ export function relatedParts(ctx: PageContext, series: SeriesDef[], withColumns 
       dataset: rel?.spec.dataset ?? from,
       columns: withColumns ? [...new Set(defs.map((d) => d.column))] : undefined,
       by: withColumns ? (rel?.series?.group ?? null) : null,
+      filters: withColumns && rel ? relatedFilters(rel) : null,
       unit: unitsOf(defs),
     }
   })
@@ -82,18 +101,27 @@ function plannedUnit(dataset: ManifestDataset | null, columns: string[], specs: 
 
 /**
  * A series page's source line before its rows are read, or when they failed:
- * the columns it asks for, their unit and split, and each related dataset,
- * from the config and the manifest rather than from rows.
+ * the columns it asks for, their unit, split and filters, and each related
+ * dataset, from the config and the manifest rather than from rows.
  */
-export function plannedParts(ctx: PageContext): { columns: string[]; by: string | null; unit: string | null; also: SourcePart[] } {
+export function plannedParts(ctx: PageContext): { columns: string[]; by: string | null; filters: Record<string, Scalar> | null; unit: string | null; also: SourcePart[] } {
   const view = ctx.view
   const specs = view.body === 'series' ? view.values : undefined
   const columns = specs?.map((v) => v.column) ?? ctx.dataset.values.map((v) => v.column)
+  // A query read from the URL isn't known here; its filters show once the rows are read.
   const query = typeof view.query === 'object' ? view.query : undefined
+  const filters = ctx.response?.filters ?? (typeof view.query === 'function' ? null : plannedFilters(query, ctx.dataset))
   const also = (view.related ?? []).map((spec) => {
     const rel = ctx.related[spec.key]
     const cols = spec.values?.map((v) => v.column) ?? rel?.dataset?.values.map((v) => v.column) ?? []
-    return { source: rel?.source ?? null, dataset: spec.dataset, columns: cols, by: spec.query?.group ?? null, unit: plannedUnit(rel?.dataset ?? null, cols, spec.values) }
+    return {
+      source: rel?.source ?? null,
+      dataset: spec.dataset,
+      columns: cols,
+      by: spec.query?.group ?? null,
+      filters: rel ? relatedFilters(rel) : plannedFilters(spec.query, null),
+      unit: plannedUnit(rel?.dataset ?? null, cols, spec.values),
+    }
   })
-  return { columns, by: query?.group ?? null, unit: plannedUnit(ctx.dataset, columns, specs), also }
+  return { columns, by: query?.group ?? null, filters, unit: plannedUnit(ctx.dataset, columns, specs), also }
 }

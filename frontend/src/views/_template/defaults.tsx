@@ -15,26 +15,27 @@ import { planPanels } from './seriesPanels'
 import { meansText } from './text'
 
 /**
- * The main panel's source line: each dataset drawn with its columns, split
- * and unit, then the window. Before the rows are read, or when they fail, it
- * names what the page asks for instead.
+ * The main panel's source line: each dataset drawn with its columns, split,
+ * filters and unit, then the window. Before the rows are read, or when they
+ * fail, it names what the page asks for instead.
  */
 export function mainSrc(ctx: PageContext) {
+  const filters = ctx.response?.filters
   if (ctx.view.body === 'series') {
     const drawn = ctx.series ? planPanels(ctx).panels.flatMap((p) => p.series) : []
     if (!ctx.series || !drawn.length) {
       const planned = plannedParts(ctx)
-      return <SourceLine ctx={ctx} columns={planned.columns} by={planned.by} unit={planned.unit} also={planned.also} />
+      return <SourceLine ctx={ctx} columns={planned.columns} by={planned.by} filters={planned.filters} unit={planned.unit} also={planned.also} />
     }
     const own = drawn.filter((d) => d.from === 'self')
     const shown = own.length ? own : ctx.series.drawn
-    return <SourceLine ctx={ctx} columns={[...new Set(shown.map((d) => d.column))]} by={ctx.series.group} unit={unitsOf(shown)} also={relatedParts(ctx, drawn)} />
+    return <SourceLine ctx={ctx} columns={[...new Set(shown.map((d) => d.column))]} by={ctx.series.group} filters={filters} unit={unitsOf(shown)} also={relatedParts(ctx, drawn)} />
   }
   if (ctx.view.body === 'events') {
     const clock = ctx.dataset.clock?.column
-    return <SourceLine ctx={ctx} what={clock ? <>one row per event, at its <code>{clock}</code></> : 'one row per event, by its time'} />
+    return <SourceLine ctx={ctx} filters={filters} what={clock ? <>one row per event, at its <code>{clock}</code></> : 'one row per event, by its time'} />
   }
-  return <SourceLine ctx={ctx} what="every row as held" window={false} />
+  return <SourceLine ctx={ctx} filters={filters} what="every row as held" window={false} />
 }
 
 const main = (Body: SlotSpec['Body']): SlotSpec => ({ title: (ctx) => ctx.view.title ?? ctx.view.label, src: mainSrc, Body })
@@ -57,7 +58,7 @@ const SERIES: Required<PanelSlots> = {
       const drawn = model ? planPanels(ctx).panels.flatMap((p) => p.series) : []
       if (!drawn.length) {
         const planned = plannedParts(ctx)
-        return <SourceLine ctx={ctx} unit={planned.unit} also={planned.also.map((p) => ({ ...p, columns: undefined, by: null }))} what="latest held values" window={false} />
+        return <SourceLine ctx={ctx} unit={planned.unit} also={planned.also.map((p) => ({ ...p, columns: undefined, by: null, filters: null }))} what="latest held values" window={false} />
       }
       const own = drawn.filter((d) => d.from === 'self')
       const latest = model && own[0] ? latestValue(model, own[0]) : null

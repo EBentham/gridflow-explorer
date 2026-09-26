@@ -58,6 +58,7 @@ export interface SeriesModel {
   stepMs: number | null
   /** Rows are time-bucket means (the backend downsampled). */
   bucketed: boolean
+  /** The column the series are split by; null when the rows aren't split, or a filter pins the split to one value. */
   group: string | null
   numericColumns: ValueColumn[]
   /** Categories, flags and text: shown in the table, never drawn. */
@@ -94,7 +95,10 @@ export function buildSeriesModel(response: SeriesRowsResponse, opts: SeriesOptio
     ? opts.values.map((v) => numericColumns.find((c) => c.column === v.column)).filter((c): c is ValueColumn => c !== undefined)
     : numericColumns
 
-  const group = response.group
+  // A split that a filter pins to one value (live `mid`'s default, `data_provider_id` APXMIDP)
+  // tells nothing apart: the columns are the series, named and coloured by `values`.
+  const oneValue = response.group !== null && (response.filters ?? {})[response.group] !== undefined
+  const group = oneValue ? null : response.group
   const present = group === null ? [] : [...new Set(response.rows.map((r) => groupKey(r[group])))]
   const pinned = (opts.groups ?? []).map((g) => g.value).filter((v) => present.includes(v))
   const groupOrder = [...pinned, ...present.filter((v) => !pinned.includes(v)).sort(collator.compare)]

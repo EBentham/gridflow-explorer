@@ -1,16 +1,17 @@
 /**
  * What the template puts in panels: the source line every panel carries,
- * the main panel's notes (thin coverage, truncation, the page's caveats),
- * and the default key, working and side contents of each body. A page
- * replaces any of them through `panels` in its config and can reuse these.
+ * the main panel's notes (thin coverage and truncation, the page's own
+ * dataset's and each related one's, and the page's caveats), and the default
+ * key, working and side contents of each body. A page replaces any of them
+ * through `panels` in its config and can reuse these.
  */
 import { Fragment, type ReactNode } from 'react'
 import { KeyList, type KeyItem } from '../../design/charts'
 import { listText, plural } from '../../design/format'
 import { dayLabel, instantLabel, stepNoun } from '../../design/time'
-import type { EventsRowsResponse, ManifestDataset, ManifestSource, ReferenceRowsResponse } from '../contract'
-import type { EventsView, PageContext, ReferenceView, SeriesView } from '../define'
-import { daySeries, heldDays, type SourcePart } from './panelHelpers'
+import type { EventsRowsResponse, ManifestDataset, ManifestSource, ReferenceRowsResponse, Scalar } from '../contract'
+import type { EventsView, PageContext, ReferenceView, RelatedData, SeriesView } from '../define'
+import { daySeries, heldDays, relatedFilters, type SourcePart } from './panelHelpers'
 import { daySummaries, latestValue, seriesId, type SeriesDef } from './seriesModel'
 import { planPanels } from './seriesPanels'
 import { cadenceOf, coverageSentences, depthText, isoDayText, meansText, notHeldText, sourceName, truncationSentences } from './text'
@@ -18,8 +19,21 @@ import { displayUnit } from './units'
 
 // ---------------------------------------------------------------- source line
 
+/** `market day-ahead`, or `area GB and status Active`: equality filters, the columns as identifiers. */
+function FilterList({ filters }: { filters: [string, Scalar][] }) {
+  return filters.map(([k, v], i) => (
+    <Fragment key={k}>
+      {i > 0 && (i === filters.length - 1 ? ' and ' : ', ')}
+      <code>{k}</code> {String(v)}
+    </Fragment>
+  ))
+}
+
 function Part({ part, fixture }: { part: SourcePart; fixture: boolean }) {
   const cols = part.columns ?? []
+  const filters = Object.entries(part.filters ?? {})
+  // A split a filter pins to one value is named by the filter, not the split.
+  const by = part.by && !filters.some(([k]) => k === part.by) ? part.by : null
   return (
     <>
       {fixture ? 'Synthetic' : part.source ? sourceName(part.source) : 'gridflow'} <code>{part.dataset}</code>
@@ -34,10 +48,15 @@ function Part({ part, fixture }: { part: SourcePart; fixture: boolean }) {
           ))}
         </>
       )}
-      {part.by && (
+      {by && (
         <>
           {' '}
-          by <code>{part.by}</code>
+          by <code>{by}</code>
+        </>
+      )}
+      {filters.length > 0 && (
+        <>
+          , <FilterList filters={filters} /> only
         </>
       )}
       {part.unit !== undefined && <>, {part.unit ?? 'unit unconfirmed'}</>}
@@ -47,9 +66,10 @@ function Part({ part, fixture }: { part: SourcePart; fixture: boolean }) {
 
 /**
  * A panel's source line (DESIGN §5): who publishes each dataset shown, its
- * id and columns as identifiers, the split and the unit; then what the panel
- * shows and the window. `Elexon BMRS mid, market_index_price, £/MWh, 16 Sep –
- * 22 Sep 2026`. A panel drawing a related dataset too names it in `also`.
+ * id and columns as identifiers, the split, the filters and the unit; then
+ * what the panel shows and the window. `Elexon BMRS mid, market_index_price,
+ * data_provider_id APXMIDP only, £/MWh, 16 Sep – 22 Sep 2026`. A panel drawing
+ * a related dataset too names it in `also`.
  */
 export function SourceLine({
   ctx,
@@ -57,6 +77,7 @@ export function SourceLine({
   source,
   columns,
   by,
+  filters,
   what,
   unit,
   also = [],
@@ -68,6 +89,8 @@ export function SourceLine({
   source?: Pick<ManifestSource, 'name'>
   columns?: string[]
   by?: string | null
+  /** The equality filters the rows carry, e.g. `ctx.response?.filters`; a default filter is named here. */
+  filters?: Record<string, Scalar> | null
   /** What the panel shows, in words: `mean per UK day`. */
   what?: ReactNode
   unit?: string | null
@@ -75,7 +98,7 @@ export function SourceLine({
   also?: SourcePart[]
   window?: boolean
 }) {
-  const parts: SourcePart[] = [{ source: source ?? ctx.source, dataset: dataset?.id ?? ctx.dataset.id, columns, by, unit }, ...also]
+  const parts: SourcePart[] = [{ source: source ?? ctx.source, dataset: dataset?.id ?? ctx.dataset.id, columns, by, filters, unit }, ...also]
   return (
     <>
       {parts.map((p, i) => (
@@ -92,10 +115,28 @@ export function SourceLine({
 
 // ---------------------------------------------------------------- the main panel's notes
 
+const lowerFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1)
+
+/**
+ * What a related dataset's response says of itself: a local depth shorter
+ * than the window (when it differs from the page's own), and anything cut
+ * down or changed.
+ */
+function relatedFacts(ctx: PageContext, rel: RelatedData): string[] {
+  const response = rel.response
+  if (!response) return []
+  const own = ctx.dataset.coverage
+  const theirs = response.coverage
+  const sameDepth = own?.first_day === theirs.first_day && own?.last_day === theirs.last_day
+  const depth = ctx.window && !sameDepth ? coverageSentences({ coverage: theirs, window: ctx.window, days: [], stepMs: null }) : []
+  return [...depth, ...truncationSentences(response, rel.dataset)]
+}
+
 /**
  * The main panel's plain words under its source line: how thin the local
- * coverage is, what a truncated response left out, and the page's caveats.
- * Nothing when there is nothing to say.
+ * coverage is and what a truncated response left out, for the page's own
+ * dataset and then, a line each, every related one; then the page's caveats.
+ * A cut-down dataset is never silent. Nothing when there is nothing to say.
  */
 export function PageNotes({ ctx }: { ctx: PageContext }) {
   const facts: string[] = []
@@ -104,12 +145,24 @@ export function PageNotes({ ctx }: { ctx: PageContext }) {
     const coverage = ctx.dataset.coverage
     facts.push(...coverageSentences({ coverage, window: ctx.window, days, stepMs: ctx.series?.stepMs ?? null }).filter((s) => ctx.response?.kind !== 'events' || !s.includes(' holds ')))
   }
-  if (ctx.response) facts.push(...truncationSentences(ctx.response.truncation, ctx.response.truncated))
+  if (ctx.response) facts.push(...truncationSentences(ctx.response, ctx.dataset))
+  const beside: { rel: RelatedData; said: string[] }[] = []
+  if (ctx.state === 'data') {
+    for (const rel of Object.values(ctx.related)) {
+      const said = relatedFacts(ctx, rel)
+      if (said.length) beside.push({ rel, said })
+    }
+  }
   const caveats = [...(ctx.config.caveats ?? []), ...(ctx.view.caveats ?? [])]
-  if (!facts.length && !caveats.length) return null
+  if (!facts.length && !beside.length && !caveats.length) return null
   return (
     <div className="gf-notes">
       {facts.length > 0 && <p>{facts.join(' ')}</p>}
+      {beside.map(({ rel, said }) => (
+        <p key={rel.spec.key}>
+          {rel.spec.label} from <code>{rel.spec.dataset}</code>: {lowerFirst(said.join(' '))}
+        </p>
+      ))}
       {caveats.length > 0 && <p className="is-caveat">{caveats.join(' ')}</p>}
     </div>
   )
@@ -407,6 +460,9 @@ export function About({ ctx }: { ctx: PageContext }) {
     return { column: v.column, note }
   })
   const filters = Object.entries(ctx.response?.filters ?? {})
+  // A split a filter pins to one value draws as the columns themselves (seriesModel.ts).
+  const split = series ? ctx.series?.group : ctx.response?.group
+  const beside = Object.values(ctx.related)
   const depth = depthText(d.coverage)
   return (
     <dl className="gf-facts">
@@ -427,11 +483,11 @@ export function About({ ctx }: { ctx: PageContext }) {
           ))}
         </dd>
       </div>
-      {ctx.response?.group && (
+      {split && (
         <div>
           <dt>Split by</dt>
           <dd>
-            <code>{ctx.response.group}</code>
+            <code>{split}</code>
           </dd>
         </div>
       )}
@@ -439,18 +495,35 @@ export function About({ ctx }: { ctx: PageContext }) {
         <div>
           <dt>Filtered to</dt>
           <dd>
-            {filters.map(([k, v], i) => (
-              <Fragment key={k}>
-                {i > 0 && '; '}
-                <code>{k}</code> {String(v)}
-              </Fragment>
-            ))}
+            <FilterList filters={filters} />
+          </dd>
+        </div>
+      )}
+      {beside.length > 0 && (
+        <div>
+          <dt>Read beside it</dt>
+          <dd>
+            {beside.map((rel, i) => {
+              const f = Object.entries(relatedFilters(rel))
+              return (
+                <Fragment key={rel.spec.key}>
+                  {i > 0 && '; '}
+                  {rel.spec.label} from <code>{rel.spec.dataset}</code>
+                  {f.length > 0 && (
+                    <>
+                      , <FilterList filters={f} /> only
+                    </>
+                  )}
+                </Fragment>
+              )
+            })}
           </dd>
         </div>
       )}
       <div>
         <dt>Cadence</dt>
-        <dd>{d.held ? cadenceOf(ctx.response?.grain_ms ?? null, d) : 'Not known: nothing of it is held'}</dd>
+        {/* Rows that are bucket means come at the bucket's step, not the dataset's. */}
+        <dd>{d.held ? cadenceOf(ctx.response?.truncation?.bucket_ms ? null : (ctx.response?.grain_ms ?? null), d) : 'Not known: nothing of it is held'}</dd>
       </div>
       <div>
         <dt>Held locally</dt>

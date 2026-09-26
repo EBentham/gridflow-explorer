@@ -6,8 +6,9 @@
  * deletes it with the fixture once the HTTP adapter lands.
  *
  * Routes for screenshots: `/sources/demo/dataset-page` (a stacked series
- * with a related price under it), `?dataset=demo_price` (one line with its
- * extremes, and a working panel of the page's own), `?dataset=demo_notices`
+ * with a related price under it, which its default filter cuts to one
+ * market, as `mid`'s cuts to one provider), `?dataset=demo_price` (one line
+ * with its extremes, and a working panel of the page's own), `?dataset=demo_notices`
  * (events), `?dataset=demo_units` (reference), `?dataset=demo_forecast` (not
  * held), each with `&view=table`,
  * `&days=30` (a window past the local depth, drawn as hourly means) and
@@ -61,7 +62,7 @@ const view = defineView({
       panels: {
         working: {
           title: 'Lowest and highest in the window',
-          src: (ctx) => <SourceLine ctx={ctx} columns={['price_gbp_mwh']} unit="£/MWh" what="the held values ranked" />,
+          src: (ctx) => <SourceLine ctx={ctx} columns={['price_gbp_mwh']} filters={ctx.response?.filters} unit="£/MWh" what="the held values ranked" />,
           Body: PriceExtremes,
         },
       },

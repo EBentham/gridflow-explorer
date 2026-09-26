@@ -219,25 +219,30 @@ export interface RowsCoverage {
   days_in_window: number | null
 }
 
-export type TruncationType = 'default_filter' | 'default_top_n' | 'group_aggregation' | 'downsample' | 'deep_range'
+/** Why a response came back cut down or changed (P3-2 PLAN §7); every reason that applies is reported. */
+export type TruncationType = 'default_filter' | 'default_top_n' | 'exact_duplicate_rows' | 'downsample' | 'deep_range' | 'ancillary_null'
 
-/** One reason fewer rows came back than the window holds. Pages show it through `truncationText()`. */
+/** One reason fewer rows came back than the window holds, or came back changed. Pages show it through `truncationSentences()`. */
 export interface TruncationReason {
   type: TruncationType | (string & {})
-  /** The dim a filter, a top-N or a grouping acted on. */
-  column?: string
-  /** A default filter's value. */
-  equals?: Scalar
-  /** Top-N: how many groups were kept, how they were ranked, which ones. */
-  limit?: number
-  ranking?: string
-  label?: string
-  selected?: string[]
-  omitted_groups?: number
+  /**
+   * `default_filter` and `default_top_n`: records the default left out. A
+   * default filter's column and value are the dataset's `default_filter`.
+   */
   omitted_rows?: number
-  /** Downsampling: the bucket width and how values were combined (`mean`). */
+  /** `default_top_n`: what was kept, in words (`top 20 units by mean notified end level`). */
+  label?: string
+  /** `default_top_n`: the group values kept, and how many were left out. */
+  selected_ids?: string[]
+  omitted_groups?: number
+  /** `default_top_n`: rows naming no unit, left out of the ranking. */
+  excluded_null_unit_rows?: number
+  /** `exact_duplicate_rows`: records that repeated another exactly, shown once. */
+  removed_rows?: number
+  /** `downsample`: the bucket width. */
   bucket_ms?: number
-  aggregation?: string
+  /** `ancillary_null`: text or flag columns that vary within a bucket, left blank in the means (the shape is inferred from P3-2 PLAN §7). */
+  columns?: string[]
   [detail: string]: unknown
 }
 
@@ -296,18 +301,27 @@ export interface ReferenceRowsResponse extends RowsResponseBase {
 export type RowsResponse = SeriesRowsResponse | EventsRowsResponse | ReferenceRowsResponse
 
 /**
- * The error envelope. Besides the codes every route shares
+ * The error envelope (P3-2 PLAN §7). Besides the codes every route shares
  * (`refresh_in_progress` 503, `catalogue_missing` 503), the rows endpoint
- * answers 404 for an unknown or not-held dataset (with `not_held_cause`), 422
- * for a bad date, group or filter, and 413 with a `hint` when the window holds
- * more than it can return.
+ * answers:
+ *
+ * - 404 `unknown_dataset`: an unknown dataset, or one that isn't held (with
+ *   `not_held_cause`);
+ * - 422 `bad_range`, `bad_filter`, `bad_group`, `bad_identifier`,
+ *   `window_unavailable`, and `ambiguous_series` (with `group`,
+ *   `varying_dimensions`, `varying_keys` and `varying_columns`, and a `hint`
+ *   that is a query string, never shown as it stands);
+ * - 413 `result_too_large` with a `reason` (`row_cap`, `unsafe_downsample`,
+ *   `unsupported_cadence`, …) and a plain-words `hint` on narrowing the request.
  */
 export interface RowsErrorBody {
   error: {
     code: string
     message: string
     not_held_cause?: string | null
+    reason?: string | null
     hint?: string | null
+    [extra: string]: unknown
   }
 }
 
@@ -320,8 +334,8 @@ export interface RowsRequest extends RowsQuery {
 
 /**
  * Where a page's data comes from. Both methods reject with `ApiError`
- * (`src/api/client.ts`), carrying the envelope's code, the HTTP status and
- * any `not_held_cause` or `hint`.
+ * (`src/api/client.ts`), carrying the envelope's code, the HTTP status, any
+ * `not_held_cause`, `reason` or `hint`, and the envelope's other fields.
  */
 export interface DataSource {
   /**

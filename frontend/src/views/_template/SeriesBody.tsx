@@ -2,17 +2,20 @@
  * The series body: the chart (Chart) or the rows (Table) of a series
  * dataset. The chart comes from `planPanels`; the table holds every column,
  * text ones too, one row per time (or, past a dozen series, one per time and
- * group), oldest first, and the related series the chart draws, read at the
- * same times (a dash where the related dataset has no row at that time).
- * Settlement date and period appear only when the rows carry them.
+ * group), oldest first, and the related series the chart draws on the same
+ * clock, read at the same times (a dash where the related dataset has no row
+ * at that time). Settlement date and period appear only when the rows carry
+ * them.
  */
 import type { ReactNode } from 'react'
-import { windowDomain, periodLabel } from '../../design/time'
+import { listText } from '../../design/format'
+import { windowDomain, periodLabel, stepNoun } from '../../design/time'
 import type { SeriesRow, SeriesRowsResponse } from '../contract'
 import type { PageContext } from '../define'
 import { SeriesChart } from './SeriesChart'
-import type { WideRow } from './seriesModel'
+import type { SeriesDef, WideRow } from './seriesModel'
 import { planPanels } from './seriesPanels'
+import { meansText } from './text'
 import { displayUnit } from './units'
 import { WindowedTable, type TableCol } from './WindowedTable'
 
@@ -20,6 +23,14 @@ const dash = <span className="gf-cell-missing">–</span>
 
 /** Past this many series the table goes long: one row per time and group. */
 const WIDE_MAX = 12
+
+/** ` Price is in the chart only.`: the drawn series a table leaves out, and why (as one and as many). */
+function chartOnly(series: SeriesDef[], why: [string, string] = ['', '']): string {
+  const labels = [...new Set(series.map((d) => d.label))]
+  if (!labels.length) return ''
+  const many = labels.length > 1
+  return ` ${listText(labels)} ${many ? 'are' : 'is'} in the chart only${many ? why[1] : why[0]}.`
+}
 
 function SeriesTable({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
@@ -35,12 +46,25 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
         { key: 'sp', label: 'SP', num: true, render: (r) => settlement.get(r.t)?.settlement_period ?? dash, sortValue: (r) => settlement.get(r.t)?.settlement_period ?? null },
       ]
     : []
-  const related = planPanels(ctx)
+  const drawnRelated = planPanels(ctx)
     .panels.flatMap((p) => p.series)
     .filter((d) => d.from !== 'self')
-  const caption = `${ctx.view.title ?? ctx.view.label}, ${ctx.windowText}${model.bucketed ? ', as period means' : ''}. Select a column heading to sort.`
+  // A related series joins the rows only on the same clock: read at another step, a half-hour would pass for a mean.
+  const sameClock = (d: SeriesDef) => {
+    const m = ctx.related[d.from]?.series
+    return Boolean(m) && m?.stepMs === model.stepMs && m?.bucketed === model.bucketed
+  }
+  const related = drawnRelated.filter(sameClock)
+  const steps = model.bucketed && model.stepMs ? meansText(model.stepMs) : stepNoun(model.stepMs)
+  const title = `${ctx.view.title ?? ctx.view.label}, ${ctx.windowText}`
+  const sortHint = 'Select a column heading to sort.'
 
   if (model.all.length <= WIDE_MAX) {
+    const apart = chartOnly(
+      drawnRelated.filter((d) => !sameClock(d)),
+      [', as its rows come at another step', ', as their rows come at another step'],
+    )
+    const caption = `${title}: ${model.rows.length.toLocaleString('en-GB')} ${model.rows.length === 1 ? 'row' : steps}.${apart} ${sortHint}`
     const relatedAt = new Map<string, Map<number, WideRow>>()
     for (const d of related) if (!relatedAt.has(d.from)) relatedAt.set(d.from, new Map((ctx.related[d.from]?.series?.rows ?? []).map((r) => [r.t, r])))
     const relatedValue = (from: string, field: string, t: number) => {
@@ -128,8 +152,9 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
       sortValue: (r: SeriesRow) => (r[c.column] === null || r[c.column] === undefined ? null : String(r[c.column])),
     })),
   ]
-  const chartOnly = related.length ? ` ${[...new Set(related.map((d) => d.label))].join(', ')} ${related.length > 1 ? 'are' : 'is'} in the chart only.` : ''
-  return <WindowedTable columns={columns} rows={response.rows} caption={`${caption}${chartOnly}`} initialSort={{ key: 't', dir: 'asc' }} />
+  const perStep = model.bucketed ? 'period' : model.stepMs === null ? 'time' : stepNoun(model.stepMs).replace(/s$/, '')
+  const caption = `${title}: ${response.rows.length.toLocaleString('en-GB')} rows, one per ${perStep} and ${group}.${chartOnly(drawnRelated)} ${sortHint}`
+  return <WindowedTable columns={columns} rows={response.rows} caption={caption} initialSort={{ key: 't', dir: 'asc' }} />
 }
 
 export function SeriesBody({ ctx }: { ctx: PageContext }) {

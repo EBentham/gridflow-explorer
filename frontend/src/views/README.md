@@ -99,7 +99,7 @@ Folders starting with `_` belong to the template. The registry skips them.
 | Field | What it is |
 |---|---|
 | `values` | The columns to draw, in order: `{ column, label, unit, display, color }`. Default: every numeric value column. `unit` is only for a null or sentence unit that the P1 card settles; never a guess. `display: 'MW'` keeps MW where GW would hide the detail, e.g. one unit's output. `color` is a token, used when the series are the columns themselves. |
-| `groups` | Labels and colours for the values of the `group` column: `{ value, label, color }`. Their order is the stack order, bottom first. Fuels use `var(--fuel-*)`; other entities use the `SERIES_COLORS` tokens. A colour follows its entity, never its index. |
+| `groups` | Labels and colours for the values of the `group` column: `{ value, label, color }`. Their order is the stack order, bottom first. Fuels use `var(--fuel-*)`; other entities use the `SERIES_COLORS` tokens. A colour follows its entity, never its index. A split that a filter pins to one value isn't split at all (see "One-value splits" below), so `groups` doesn't apply to it. |
 | `chart.mark` | `'line'` (default), `'stacked'` (negatives stack below zero in their own stack) or `'bars'`. |
 | `chart.values` | The columns in the main chart panel. Default: every drawn column that isn't in the lower panel. |
 | `chart.lower` | A second panel on the same clock: `{ from, values, mark, height, extremes }`. Without `from` it takes this dataset's other columns (volume under a price). With `from: '<related key>'` it draws that related dataset. A column whose unit fits neither panel goes to the table only, and the page says so. |
@@ -136,6 +136,17 @@ readiness (see `data-view-ready`). Panels find it at `ctx.related[key]`, with it
 its response, its series model, and its manifest source and dataset. It can come from
 another source. That is how a page shows the relationship to price or demand.
 
+The backend applies a related dataset's default filter as it does the page's own: `mid`
+comes back as `data_provider_id` APXMIDP only. The template says so. The main panel's notes
+give each related dataset that came back cut down, or held for less of the window, a line
+of its own ("Price from `mid`: shows data_provider_id APXMIDP only, this dataset's default.
+It leaves out 336 rows."). Its source-line part names the filter, and About lists it under
+"Read beside it".
+
+A related dataset that fails to load is reported where the lower panel would draw it. A
+page that reads one for a panel of its own checks `ctx.related[key].state` and says what
+went wrong in that panel.
+
 ### What the template checks
 
 If the config names a dataset that isn't in the family, a column the dataset doesn't have,
@@ -151,10 +162,23 @@ config; don't work around the check.
   48 half-hours") rather than moving the window. There is no "complete day" rule.
 - **Coverage in plain words.** "Held locally for 8 Sep – 22 Sep 2026 only.", "6 of 7 days
   in this window hold rows.", partial days by name, and an empty window with where the local
-  rows end.
-- **Truncation in plain words.** A default filter ("Shows area GB only, this dataset's
-  default. It leaves out 10 rows."), a top-N cut, group averaging, and a downsample
-  ("Drawn as hourly means: …") each get a sentence. The `truncated` flag is never silent.
+  rows run ("Its local rows run from 8 Sep to 22 Sep 2026, with none in 16 Sep – 22 Sep
+  2026.").
+- **Truncation in plain words.** Each reason the backend gives gets a sentence:
+  - a default filter ("Shows area GB only, this dataset's default. It leaves out 10 rows.");
+  - a top-N cut;
+  - exact duplicates left out;
+  - a downsample ("Shown as hourly means, as the window holds more rows than one read
+    returns (3,000).");
+  - a window too long to read at full detail;
+  - text blanked in the means.
+
+  The `truncated` flag is never silent, on the page's dataset or on a related one. The main
+  panel's source line names the filters the rows carry.
+- **One-value splits.** A series split by a column that a filter pins to one value comes
+  back as one group. Live `mid` is the case: its default filter keeps `data_provider_id`
+  APXMIDP. The template draws it as the columns themselves, named and coloured by `values`,
+  so the key reads "Market index price", not "APXMIDP". The source line names the filter.
 - **Datasets that aren't held.** The toolbar line names them with the reason in words, and
   a not-held dataset opens to a plain state, never an empty chart.
 - **Gaps stay gaps.** Null values break lines and stacks, and tables show a dash. Nothing is
@@ -236,6 +260,11 @@ panels: {
   window. Before that they show a quiet pending line. Handle an empty window
   (`ctx.state === 'empty'`, `ctx.series` with no series): say so in a sentence, never
   leave a blank panel.
+- The default side body, About, reads the source list alone, so it renders in every state:
+  loading, error and refreshing included. A replacement side body follows the rule above.
+- On an error the main panel prints the backend's message, and a 413's hint on narrowing
+  the window. A 422's hint can be a query string, so it isn't shown. P4-0 maps each error
+  code to plain words when the HTTP adapter lands.
 - `src` runs in every state. Until the rows are read, `ctx.response` and `ctx.series` are
   null.
 
@@ -243,25 +272,29 @@ panels: {
 (mono), the columns (mono), the split, the unit and the window. Use `SourceLine`:
 
 ```tsx
-<SourceLine ctx={ctx} columns={['market_index_price']} unit="£/MWh" what="mean per UK day" />
+<SourceLine ctx={ctx} columns={['market_index_price']} filters={ctx.response?.filters} unit="£/MWh" what="mean per UK day" />
 <SourceLine ctx={ctx} columns={cols} by={ctx.series?.group} unit={unitsOf(drawn)} also={relatedParts(ctx, drawn)} />
 ```
 
-A panel that shows a related dataset names it too, with `also` (`relatedParts` builds it from
-the series drawn). `window={false}` drops the window where it doesn't apply.
+Pass `filters` wherever the panel shows filtered rows: a default filter is named there
+("`data_provider_id` APXMIDP only"). A panel that shows a related dataset names it too, with
+`also` (`relatedParts` builds it from the series drawn, filters included). `window={false}`
+drops the window where it doesn't apply.
 
 **Pieces to reuse** (import them from `_template/`; don't copy them):
 
 - `panels.tsx`: `SourceLine`, `PageNotes`, `SeriesKey`, `SeriesDays`, `EventsSummary`,
   `EventsDays`, `ReferenceSummary`, `ReferenceCounts`, `About`.
-- `WindowedTable.tsx`: the sortable, windowed table with sticky headers.
+- `WindowedTable.tsx`: the sortable, windowed table with sticky headers. A line under it
+  says when its box cuts rows or columns off.
 - `CountStrip.tsx`: events per hour or day as bars.
 - `SeriesChart.tsx` and `seriesPanels.ts` (`planPanels`): the series chart.
-- `panelHelpers.ts`: `unitsOf`, `heldDays`, `daySeries`, `relatedParts`, `plannedParts`.
+- `panelHelpers.ts`: `unitsOf`, `heldDays`, `daySeries`, `relatedParts`, `plannedParts`,
+  `relatedFilters`, `plannedFilters`.
 - `seriesModel.ts`: the model on `ctx.series` (`all`, `drawn`, `undrawn`, `rows`,
   `stepMs`, `bucketed`), and `daySummaries`, `latestValue`, `extremesOf`.
 - `units.ts` (`displayUnit`) and `text.ts` (`coverageSentences`, `truncationSentences`,
-  `notHeldText`, `meansText`).
+  `emptyWindowText`, `notHeldText`, `meansText`, `cadenceOf`).
 - From `src/design/`: `format.ts` for numbers and money, `time.ts` for the UK clock,
   `chartTheme.ts` and `charts.tsx` for chart parts, and `frame.tsx` for `Segmented`.
 
@@ -312,9 +345,10 @@ EXPLORER_API=http://127.0.0.1:8001 npm run shoot -- "/sources/<source>/<family>"
 Shoot every dataset (`?dataset=<id>`), and a long window (`?days=30`) where volume matters.
 Read every PNG, light and dark: `.shots/<route-slug>/{light,dark}-1440.png`.
 
-The demo shows each state on the fixture: `/sources/demo/dataset-page` with `?dataset=`
-`demo_price`, `demo_notices`, `demo_units` or `demo_forecast` (not held), `&days=30`
-(downsampled), and `&fixture=error`, `refreshing`, `empty` or `toomany`.
+The demo shows each state on the fixture: `/sources/demo/dataset-page` (its related price
+cut to one market by a default filter), with `?dataset=` `demo_price`, `demo_notices`,
+`demo_units` or `demo_forecast` (not held), `&days=30` (downsampled), and
+`&fixture=error`, `refreshing`, `empty` or `toomany`.
 
 ## `NEEDS.md`
 
