@@ -25,10 +25,48 @@ from datetime import date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
+import duckdb
 import polars as pl
 import pytest
 
 LONDON = ZoneInfo("Europe/London")
+
+
+class SourcesDuckDBClient:
+    """Execute manifest SQL against synthetic in-memory DuckDB relations."""
+
+    def __init__(self) -> None:
+        self.con = duckdb.connect()
+        self.calls: list[str] = []
+        self.table_calls = 0
+        self.closed = False
+
+    def get_tables(self) -> list[str]:
+        self.table_calls += 1
+        return (
+            self.con.sql(
+                "SELECT table_name FROM information_schema.tables WHERE table_schema='main'"
+            )
+            .pl()["table_name"]
+            .to_list()
+        )
+
+    def query(self, sql: str) -> pl.DataFrame:
+        self.calls.append(sql)
+        return self.con.sql(sql).pl()
+
+    def close(self) -> None:
+        self.closed = True
+        self.con.close()
+
+
+@pytest.fixture
+def sources_db() -> SourcesDuckDBClient:
+    """Provide one real SQL engine behind the GridflowClient query interface."""
+    client = SourcesDuckDBClient()
+    yield client
+    if not client.closed:
+        client.close()
 
 
 def _london(year: int, month: int, day: int, hour: int, minute: int = 0) -> datetime:
