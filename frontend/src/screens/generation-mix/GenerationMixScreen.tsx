@@ -7,7 +7,7 @@
 import { useMemo, useState } from 'react'
 import { FetchBanner } from '../../components/FetchBanner'
 import { DataTable, FuelKey } from '../../design/charts'
-import { daysInWindow, partialDays } from '../../design/days'
+import { daysInWindow, daysScrollCue, partialDays } from '../../design/days'
 import { fmt1, pct } from '../../design/format'
 import { Head, Panel, PendingNote, RangeControl, Screen, StatusNote, Toolbar, ViewSwitch, type ChartOrTable } from '../../design/frame'
 import { FUEL_BANDS, toMixRows } from '../../design/fuels'
@@ -35,7 +35,9 @@ export function GenerationMixScreen() {
   const [picked, setPicked] = useState<number | undefined>()
 
   const held = days.filter((d) => d.rows.length > 0)
-  const day = held.find((d) => d.start === picked) ?? held.at(-1)
+  // Unpicked, show the latest complete day: the latest held day can be a stub of a few half-hours.
+  const complete = held.filter((d) => d.rows.length >= d.expected)
+  const day = held.find((d) => d.start === picked) ?? complete.at(-1) ?? held.at(-1)
   const means = useMemo(() => meanMix(day?.rows ?? []), [day])
   const latest = rows.at(-1)
   const focusBand = FUEL_BANDS.find((b) => b.key === focus)
@@ -181,6 +183,7 @@ export function GenerationMixScreen() {
               </table>
             </div>
           )}
+          {read && daysScrollCue(days.length) && <p className="gf-hint">{daysScrollCue(days.length)}</p>}
           {ready && partial.length > 0 && (
             <p className="gf-hint">
               {partial.map((d) => `${dayLabel(d.start)} holds ${d.rows.length} of ${d.expected} half-hours.`).join(' ')}

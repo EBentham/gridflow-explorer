@@ -35,3 +35,11 @@ export function daysInWindow<T extends { t: number }>(rows: T[], range: DateRang
 export function partialDays<T>(days: DayGroup<T>[]): DayGroup<T>[] {
   return days.filter((d) => d.rows.length > 0 && d.rows.length < d.expected)
 }
+
+/** About as many rows as a `.gf-days` table (max-height 268px) shows before it scrolls. */
+const DAYS_IN_VIEW = 8
+
+/** A line under a days table that scrolls, so a cut-off last row reads as more to come. */
+export function daysScrollCue(count: number): string | null {
+  return count > DAYS_IN_VIEW ? `${count} days, oldest first. Scroll the table for the rest.` : null
+}

@@ -7,8 +7,8 @@
 import { useMemo, useState } from 'react'
 import { FetchBanner } from '../../components/FetchBanner'
 import { DataTable, KeyList, type KeyItem } from '../../design/charts'
-import { daysInWindow } from '../../design/days'
-import { fmt0, money, pct } from '../../design/format'
+import { daysInWindow, daysScrollCue } from '../../design/days'
+import { fmt0, money, pct, plural } from '../../design/format'
 import { Head, Panel, PendingNote, RangeControl, Screen, StatusNote, Toolbar, ViewSwitch, type ChartOrTable } from '../../design/frame'
 import { emptyRangeText } from '../../design/range'
 import { HALF_HOUR, clock, dayLabel, halfHourWindow, rangeText, windowDomain } from '../../design/time'
@@ -21,6 +21,9 @@ const DATASET = (
     Elexon <code>system_prices</code>
   </>
 )
+
+/** About as many runs as the list's 268px shows before it scrolls. */
+const RUNS_IN_VIEW = 5
 
 const mean = (v: number[]) => v.reduce((a, b) => a + b, 0) / v.length
 const prices = (rows: PriceRow[]) => rows.map((r) => r.price).filter((v): v is number => v !== null)
@@ -216,6 +219,7 @@ export function SystemPricesScreen() {
               </table>
             </div>
           )}
+          {read && daysScrollCue(days.length) && <p className="gf-hint">{daysScrollCue(days.length)}</p>}
         </Panel>
 
         <Panel
@@ -233,18 +237,24 @@ export function SystemPricesScreen() {
             (runs.length === 0 ? (
               <p className="gf-hint">No half-hour held for this window settled below zero.</p>
             ) : (
-              <ol className="gf-runs">
-                {runs.map((r) => (
-                  <li key={r.start}>
-                    <span className="gf-runs-when">
-                      {dayLabel(r.start)}, {clock(r.start)}–{clock(r.last + HALF_HOUR)}
-                    </span>
-                    <span className="gf-runs-what">
-                      {r.n} half-hour{r.n === 1 ? '' : 's'}, low {money(r.min, 2)}
-                    </span>
-                  </li>
-                ))}
-              </ol>
+              <>
+                <ol className="gf-runs">
+                  {runs.map((r) => (
+                    <li key={r.start}>
+                      <span className="gf-runs-when">
+                        {dayLabel(r.start)}, {clock(r.start)}–{clock(r.last + HALF_HOUR)}
+                      </span>
+                      <span className="gf-runs-what">
+                        {r.n} half-hour{r.n === 1 ? '' : 's'}, low {money(r.min, 2)}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+                <p className="gf-hint">
+                  {plural(runs.length, 'run', 'runs')} in this window, oldest first.
+                  {runs.length > RUNS_IN_VIEW && ' Scroll the list for the rest.'}
+                </p>
+              </>
             ))}
         </Panel>
       </div>
