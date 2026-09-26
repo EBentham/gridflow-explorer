@@ -1,7 +1,7 @@
 /**
- * FIXTURE: the synthetic "Template demo" source that proves the dataset
- * page template before the rows endpoint is wired (v0.4 P0-2; P4-0 deletes
- * it with the demo page). Nothing here is read from gridflow.
+ * FIXTURE: the synthetic "Template demo" source that exercises the dataset
+ * page template (v0.4 P0-2), read only by the demo page. Nothing here is
+ * read from gridflow.
  *
  * The numbers are made in the browser from fixed formulas and a seeded
  * generator, so every screenshot is the same. They are shaped to exercise

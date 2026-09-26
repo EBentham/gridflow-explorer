@@ -4,13 +4,12 @@
  * the figures every dataset of that kind supports without page code.
  */
 import { DAY_MS, instantLabel, periodLabel, stepNoun } from '../../design/time'
-import type { DatasetView, PageContext, PanelSlots, SlotSpec } from '../define'
+import type { DatasetView, PageContext, PanelSlots, SeriesView, SlotSpec } from '../define'
 import { EventsBody } from './EventsBody'
-import { daySeries, plannedParts, relatedParts, unitsOf } from './panelHelpers'
+import { daySeries, keyStamp, plannedParts, relatedParts, unitsOf } from './panelHelpers'
 import { About, EventsDays, EventsSummary, ReferenceCounts, ReferenceSummary, SeriesDays, SeriesKey, SourceLine } from './panels'
 import { ReferenceBody } from './ReferenceBody'
 import { SeriesBody } from './SeriesBody'
-import { latestValue } from './seriesModel'
 import { planPanels } from './seriesPanels'
 import { meansText } from './text'
 
@@ -49,40 +48,50 @@ const about: SlotSpec = {
   Body: About,
 }
 
+/** Rows that hold text only: nothing to key or summarise but the rows themselves. */
+const textOnly = (ctx: PageContext) => Boolean(ctx.series && !ctx.series.all.length && ctx.series.textColumns.length)
+
+/** The key's H2: a series shown as a table lists latest values rather than keying a chart. */
+function seriesKeyTitle(view: DatasetView): string {
+  return view.body === 'series' && view.chart === false ? 'Latest values' : 'Key'
+}
+
 const SERIES: Required<PanelSlots> = {
   main: main(SeriesBody),
   key: {
-    title: 'Key',
+    title: (ctx) => (textOnly(ctx) ? 'Rows' : seriesKeyTitle(ctx.view)),
     src: (ctx) => {
       const model = ctx.series
-      const drawn = model ? planPanels(ctx).panels.flatMap((p) => p.series) : []
+      if (model && textOnly(ctx)) return <SourceLine ctx={ctx} columns={model.textColumns.map((c) => c.column)} what="text values" />
+      const tableOnly = (ctx.view as SeriesView).chart === false
+      const drawn = model ? (tableOnly ? model.drawn : planPanels(ctx).panels.flatMap((p) => p.series)) : []
       if (!drawn.length) {
         const planned = plannedParts(ctx)
         return <SourceLine ctx={ctx} unit={planned.unit} also={planned.also.map((p) => ({ ...p, columns: undefined, by: null, filters: null }))} what="latest held values" window={false} />
       }
       const own = drawn.filter((d) => d.from === 'self')
-      const latest = model && own[0] ? latestValue(model, own[0]) : null
-      return (
-        <SourceLine
-          ctx={ctx}
-          unit={unitsOf(own)}
-          also={relatedParts(ctx, drawn, false)}
-          what={latest ? `latest held values, ${periodLabel(latest.t, model?.stepMs ?? null)}` : 'latest held values'}
-          window={false}
-        />
-      )
+      const stamp = keyStamp(ctx)
+      const held = model?.bucketed && model.stepMs ? `latest ${meansText(model.stepMs)}` : 'latest held values'
+      return <SourceLine ctx={ctx} unit={unitsOf(own)} also={relatedParts(ctx, drawn, false)} what={stamp ? `${held}, ${periodLabel(stamp.t, stamp.stepMs)}` : held} window={false} />
     },
     Body: SeriesKey,
   },
   working: {
-    title: (ctx) => (ctx.series?.stepMs !== null && (ctx.series?.stepMs ?? 0) >= DAY_MS ? 'Values in range' : 'Days in range'),
+    title: (ctx) => {
+      if (textOnly(ctx)) return 'Rows by day'
+      const step = ctx.series?.stepMs ?? null
+      if (step !== null && step > DAY_MS) return 'Periods in range'
+      return step !== null && step >= DAY_MS ? 'Values in range' : 'Days in range'
+    },
     src: (ctx) => {
       const def = daySeries(ctx)
       const model = ctx.series
+      if (model && textOnly(ctx)) return <SourceLine ctx={ctx} columns={model.textColumns.map((c) => c.column)} what="rows holding a value per UK day" />
       if (!def || !model) {
         const planned = plannedParts(ctx)
         return <SourceLine ctx={ctx} columns={planned.columns} unit={planned.unit} what="per UK day" />
       }
+      if (model.stepMs !== null && model.stepMs > DAY_MS) return <SourceLine ctx={ctx} columns={[def.column]} unit={def.unit.label} what={`${def.label}, each period as held`} />
       const daily = model.stepMs !== null && model.stepMs >= DAY_MS
       const held = model.bucketed && model.stepMs ? meansText(model.stepMs) : stepNoun(model.stepMs)
       return <SourceLine ctx={ctx} columns={[def.column]} unit={def.unit.label} what={`${def.label} per UK day: ${daily ? 'the value' : `${held} held, mean, lowest and highest`}`} />
@@ -135,5 +144,7 @@ export function panelTitle(view: DatasetView, area: keyof PanelSlots, ctx: PageC
   const { title } = slotsFor(view)[area]
   if (typeof title === 'string') return title
   if (ctx) return title(ctx)
-  return area === 'main' ? (view.title ?? view.label) : PENDING_TITLES[view.body][area]
+  if (area === 'main') return view.title ?? view.label
+  if (area === 'key' && view.body === 'series') return seriesKeyTitle(view)
+  return PENDING_TITLES[view.body][area]
 }

@@ -11,7 +11,7 @@ import type { ReactNode } from 'react'
 import { listText } from '../../design/format'
 import { windowDomain, periodLabel, stepNoun } from '../../design/time'
 import type { SeriesRow, SeriesRowsResponse } from '../contract'
-import type { PageContext } from '../define'
+import type { PageContext, SeriesView } from '../define'
 import { SeriesChart } from './SeriesChart'
 import type { SeriesDef, WideRow } from './seriesModel'
 import { planPanels } from './seriesPanels'
@@ -38,7 +38,13 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
   if (!model || !response) return null
   const hasSettlement = response.rows.some((r) => 'settlement_period' in r)
   const settlement = new Map<number, SeriesRow>()
-  if (hasSettlement) for (const r of response.rows) if (!settlement.has(r.ts)) settlement.set(r.ts, r)
+  // A held row's settlement columns, not those of another group's missing step at the same time.
+  if (hasSettlement) for (const r of response.rows) if (!settlement.get(r.ts)?.settlement_period) settlement.set(r.ts, r)
+  // A column's header, and a group value's name: the page's labels for them, else the ids.
+  const view = ctx.view as SeriesView
+  const labels = new Map((view.values ?? []).map((v) => [v.column, v.label]))
+  const textHeader = (column: string): ReactNode => labels.get(column) ?? <code>{column}</code>
+  const groupLabels = new Map((view.groups ?? []).flatMap((g) => (g.label ? [[g.value, g.label] as const] : [])))
   const period: TableCol<{ t: number }> = { key: 't', label: model.bucketed ? 'Period (means)' : 'Period', render: (r) => periodLabel(r.t, model.stepMs), sortValue: (r) => r.t }
   const settlementCols: TableCol<{ t: number }>[] = hasSettlement
     ? [
@@ -59,7 +65,8 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
   const title = `${ctx.view.title ?? ctx.view.label}, ${ctx.windowText}`
   const sortHint = 'Select a column heading to sort.'
 
-  if (model.all.length <= WIDE_MAX) {
+  // Rows holding text only (no number to pivot on) go long, as do more series than fit across.
+  if (model.all.length > 0 && model.all.length <= WIDE_MAX) {
     const apart = chartOnly(
       drawnRelated.filter((d) => !sameClock(d)),
       [', as its rows come at another step', ', as their rows come at another step'],
@@ -102,7 +109,7 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
       })),
       ...textCols.map((c) => ({
         key: `text:${c.column}`,
-        label: (<code>{c.column}</code>) as ReactNode,
+        label: textHeader(c.column),
         render: (r: (typeof model.rows)[number]) => {
           const v = texts.get(r.t)?.[c.column]
           return v === null || v === undefined ? dash : String(v)
@@ -116,7 +123,8 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
     return <WindowedTable columns={columns} rows={model.rows} caption={caption} initialSort={{ key: 't', dir: 'asc' }} rowKey={(r) => r.t} />
   }
 
-  const group = model.group ?? ''
+  // The split the rows carry: the model's, or the response's when a filter pins it to one value.
+  const group = model.group ?? response.group
   const numeric = model.numericColumns.map((c) => ({ c, unit: model.all.find((d) => d.column === c.column)?.unit ?? displayUnit(c.unit) }))
   const columns: TableCol<SeriesRow>[] = [
     { ...period, render: (r) => periodLabel(r.ts, model.stepMs), sortValue: (r) => r.ts } as TableCol<SeriesRow>,
@@ -126,12 +134,25 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
           { key: 'sp', label: 'SP', num: true, render: (r: SeriesRow) => r.settlement_period ?? dash, sortValue: (r: SeriesRow) => r.settlement_period ?? null },
         ]
       : []),
-    { key: 'group', label: <code>{group}</code>, render: (r) => (r[group] === null || r[group] === undefined ? dash : <code>{String(r[group])}</code>), sortValue: (r) => (r[group] === null || r[group] === undefined ? null : String(r[group])) },
+    ...(group
+      ? [
+          {
+            key: 'group',
+            label: <code>{group}</code>,
+            render: (r: SeriesRow) => {
+              const v = r[group]
+              if (v === null || v === undefined) return dash
+              return groupLabels.get(String(v)) ?? <code>{String(v)}</code>
+            },
+            sortValue: (r: SeriesRow) => (r[group] === null || r[group] === undefined ? null : String(r[group])),
+          },
+        ]
+      : []),
     ...numeric.map(({ c, unit }) => ({
       key: c.column,
       label: (
         <>
-          <code>{c.column}</code>
+          {textHeader(c.column)}
           {unit.label ? `, ${unit.label}` : ''}
         </>
       ) as ReactNode,
@@ -147,13 +168,14 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
     })),
     ...model.textColumns.map((c) => ({
       key: c.column,
-      label: (<code>{c.column}</code>) as ReactNode,
+      label: textHeader(c.column),
       render: (r: SeriesRow) => (r[c.column] === null || r[c.column] === undefined ? dash : String(r[c.column])),
       sortValue: (r: SeriesRow) => (r[c.column] === null || r[c.column] === undefined ? null : String(r[c.column])),
     })),
   ]
   const perStep = model.bucketed ? 'period' : model.stepMs === null ? 'time' : stepNoun(model.stepMs).replace(/s$/, '')
-  const caption = `${title}: ${response.rows.length.toLocaleString('en-GB')} rows, one per ${perStep} and ${group}.${chartOnly(drawnRelated)} ${sortHint}`
+  const missing = model.all.length === 0 ? ' A dash is a step with no row held.' : ''
+  const caption = `${title}: ${response.rows.length.toLocaleString('en-GB')} rows, one per ${perStep}${group ? ` and ${group}` : ''}.${missing}${chartOnly(drawnRelated)} ${sortHint}`
   return <WindowedTable columns={columns} rows={response.rows} caption={caption} initialSort={{ key: 't', dir: 'asc' }} />
 }
 
@@ -169,7 +191,7 @@ export function SeriesBody({ ctx }: { ctx: PageContext }) {
       <SeriesChart panels={plan.panels} domain={windowDomain(ctx.window.start, ctx.window.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
       {plan.missingLower && (
         <p className="gf-hint">
-          {plan.missingLower.label} isn't drawn under the chart: {plan.missingLower.reason}.
+          {plan.missingLower.label} isn't drawn under the chart. {plan.missingLower.reason}
         </p>
       )}
       {plan.tableOnly.length > 0 && <p className="gf-hint">In the table only, as their unit fits neither panel: {plan.tableOnly.map((d) => d.label).join(', ')}.</p>}

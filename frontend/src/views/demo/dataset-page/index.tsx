@@ -2,8 +2,9 @@
  * FIXTURE: the template's demo family (v0.4 P0-2). Every dataset here is
  * synthetic, made in the browser by `_data/fixtureData.ts`, and the page
  * reads it through the fixture adapter, so every panel carries the Fixture
- * tag. It shows the three bodies and the states a real page meets; P4-0
- * deletes it with the fixture once the HTTP adapter lands.
+ * tag. It shows the three bodies and the states a real page meets, which
+ * live data can't be made to show on demand, so it stays beside the live
+ * pages (P4-0 kept it; every other page reads the HTTP adapter).
  *
  * Routes for screenshots: `/sources/demo/dataset-page` (a stacked series
  * with a related price under it, which its default filter cuts to one

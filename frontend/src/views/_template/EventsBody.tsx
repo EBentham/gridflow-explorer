@@ -10,7 +10,7 @@ import { plural } from '../../design/format'
 import { DAY_MS, HOUR_MS, instantLabel, windowDomain } from '../../design/time'
 import type { EventRow, EventsRowsResponse } from '../contract'
 import type { ColumnSpec, EventsView, PageContext } from '../define'
-import { headerOf, inferColumns, toTableCol } from './cells'
+import { headerOf, inferColumns, toTableCol, wordsOf } from './cells'
 import { CountStrip } from './CountStrip'
 import { WindowedTable, type TableCol } from './WindowedTable'
 
@@ -76,16 +76,18 @@ export function EventsBody({ ctx }: { ctx: PageContext }) {
         <div className="gf-filters" role="group" aria-label="Filter the events">
           {selects.map(({ f, counts, current }) => {
             const spec = columns.find((c) => c.field === f) ?? { field: f }
+            // A coded value is listed by its words; the filter still matches the value as held.
+            const said = (v: string) => wordsOf(spec, v) ?? v
             return (
               <label key={f} className="gf-filter">
                 <span>{headerOf({ ...spec, unit: undefined })}</span>
                 <select className="gf-select" value={current} onChange={(e) => ctx.setParam(filterParam(f), e.target.value || null)}>
                   <option value="">All</option>
                   {[...counts.entries()]
-                    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+                    .sort((a, b) => b[1] - a[1] || said(a[0]).localeCompare(said(b[0])))
                     .map(([v, n]) => (
                       <option key={v} value={v}>
-                        {v} ({n})
+                        {said(v)} ({n})
                       </option>
                     ))}
                 </select>

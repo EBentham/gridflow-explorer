@@ -2,23 +2,22 @@
  * The catalogue, the landing page the brand opens (DESIGN §7): a petrol band
  * with the intro and every source standing on the land, one column per
  * domain under its own coloured band, then a quiet key for the three kinds
- * of dataset and plain notes on where the list comes from and what gridflow
- * builds itself. Reads the source-list fixture until /api/sources lands.
+ * of dataset and a plain note on where the list comes from. Reads gridflow's
+ * source list (`GET /api/sources`), gridflow's own tables included.
  */
+import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { plural } from '../../design/format'
-import { Screen } from '../../design/frame'
+import { Screen, type ViewState } from '../../design/frame'
 import { SourceSymbol } from '../../design/symbols'
+import { instantLabel } from '../../design/time'
 import { useDocumentTitle } from '../../design/title'
-import { CATALOGUE_SNAPSHOT, DOMAINS, GOLD, SOURCES, datasetCount, kindCounts, type Domain, type Kind, type Source } from '../../fixtures/catalogue'
+import { DEFAULT_ADAPTER } from '../../views/_data/adapters'
+import { useManifest } from '../../views/_data/hooks'
+import type { Domain, Kind, ManifestSource } from '../../views/contract'
+import { SourceListStatus } from './SourceListStatus'
+import { countWord, datasetsOf, DOMAINS, inSceneOrder, KINDS, kindCounts, shortName } from './sourceList'
 
-const inDomain = (d: Domain) => SOURCES.filter((s) => s.domain === d)
-const shortName = (s: Source) => s.name.replace(' Transparency', '')
-
-const INTRO =
-  'gridflow collects GB and European energy-market data from eight public sources into one local store. Pick a source to see its datasets; the charts you use most stay in the rail.'
-
-const KINDS: Kind[] = ['series', 'events', 'reference']
 const KIND_LABEL: Record<Kind, [string, string]> = {
   series: ['time series', 'time series'],
   events: ['event feed', 'event feeds'],
@@ -37,12 +36,20 @@ const DOMAIN_LINE: Record<Domain, string> = {
 }
 const DOMAIN_SYMBOL: Record<Domain, string> = { Electricity: 'entsoe', Gas: 'entsog', Weather: 'open_meteo' }
 
+function intro(sources: ManifestSource[] | null): string {
+  const published = sources?.filter((s) => s.layer !== 'gold').length
+  const from = published ? `from ${countWord(published)} public sources` : 'from public sources'
+  const own = sources?.some((s) => s.layer === 'gold') ? ', and builds tables of its own from them' : ''
+  return `gridflow collects GB and European energy-market data ${from} into one local store${own}. Pick a source to see its datasets; the charts you use most stay in the rail.`
+}
+
 /** Dataset count with its split into kinds, drawn as a short proportional bar. */
-function Composition({ s }: { s: Source }) {
-  const c = kindCounts(s)
+function Composition({ s }: { s: ManifestSource }) {
+  const datasets = datasetsOf(s.families)
+  const c = kindCounts(s.families)
   return (
     <div className="gf-comp">
-      <strong>{plural(datasetCount(s), 'dataset', 'datasets')}</strong>
+      <strong>{plural(datasets.length, 'dataset', 'datasets')}</strong>
       <span className="gf-comp-bar" aria-hidden="true">
         {KINDS.map((k) => (c[k] ? <span key={k} className={`is-${k}`} style={{ flexGrow: c[k] }} /> : null))}
       </span>
@@ -66,63 +73,68 @@ function Hills() {
   )
 }
 
-function Scene() {
+function Scene({ sources }: { sources: ManifestSource[] | null }) {
   return (
     <header className="gf-scene">
       <div className="gf-scene-text">
         <h1>gridflow data</h1>
-        <p>{INTRO}</p>
+        <p>{intro(sources)}</p>
       </div>
       <div className="gf-scene-land">
         <Hills />
-        <ul className="gf-scene-row">
-          {SOURCES.map((s) => (
-            <li key={s.key}>
-              <Link to={`/sources/${s.key}`} className="gf-scene-site">
-                <SourceSymbol source={s.key} domain={s.domain} size={54} />
-                <span>{shortName(s)}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {sources && (
+          <ul className="gf-scene-row" style={{ '--scene-sites': sources.length } as CSSProperties}>
+            {sources.map((s) => (
+              <li key={s.key}>
+                <Link to={`/sources/${s.key}`} className="gf-scene-site">
+                  <SourceSymbol source={s.key} domain={s.domain} size={54} />
+                  <span>{shortName(s)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </header>
   )
 }
 
-function DomainColumns() {
+function DomainColumns({ sources }: { sources: ManifestSource[] }) {
   return (
     <div className="gf-dcols">
-      {DOMAINS.map((d) => (
-        <section key={d} className={`gf-dcol is-${d.toLowerCase()}`} aria-labelledby={`gf-dc-${d}`}>
-          <header className="gf-dcol-head">
-            <div>
-              <h2 id={`gf-dc-${d}`}>{d}</h2>
-              <p>{DOMAIN_LINE[d]}</p>
-              <p className="gf-dcol-count">
-                {plural(inDomain(d).length, 'source', 'sources')}, {plural(inDomain(d).reduce((n, s) => n + datasetCount(s), 0), 'dataset', 'datasets')}
-              </p>
-            </div>
-            <SourceSymbol source={DOMAIN_SYMBOL[d]} domain={d} size={64} />
-          </header>
-          <ul>
-            {inDomain(d).map((s) => (
-              <li key={s.key} className="gf-dsrc">
-                <SourceSymbol source={s.key} domain={s.domain} size={44} />
-                <div>
-                  <h3>
-                    <Link to={`/sources/${s.key}`} className="gf-dsrc-link">
-                      {s.name}
-                    </Link>
-                  </h3>
-                  <p>{s.blurb}</p>
-                  <Composition s={s} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      {DOMAINS.map((d) => {
+        const here = sources.filter((s) => s.domain === d)
+        return (
+          <section key={d} className={`gf-dcol is-${d.toLowerCase()}`} aria-labelledby={`gf-dc-${d}`}>
+            <header className="gf-dcol-head">
+              <div>
+                <h2 id={`gf-dc-${d}`}>{d}</h2>
+                <p>{DOMAIN_LINE[d]}</p>
+                <p className="gf-dcol-count">
+                  {plural(here.length, 'source', 'sources')}, {plural(here.reduce((n, s) => n + datasetsOf(s.families).length, 0), 'dataset', 'datasets')}
+                </p>
+              </div>
+              <SourceSymbol source={DOMAIN_SYMBOL[d]} domain={d} size={64} />
+            </header>
+            <ul>
+              {here.map((s) => (
+                <li key={s.key} className="gf-dsrc">
+                  <SourceSymbol source={s.key} domain={s.domain} size={44} />
+                  <div>
+                    <h3>
+                      <Link to={`/sources/${s.key}`} className="gf-dsrc-link">
+                        {s.name}
+                      </Link>
+                    </h3>
+                    <p>{s.blurb}</p>
+                    <Composition s={s} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      })}
     </div>
   )
 }
@@ -140,38 +152,27 @@ function KindKey() {
   )
 }
 
-/** gridflow's own tables in one sentence; the group an Explorer screen reads links to it. */
-function GoldNote() {
-  const parts = GOLD.map((g, i) => {
-    const sep = i === 0 ? '' : i === GOLD.length - 1 ? ', and ' : ', '
-    return (
-      <span key={g.label}>
-        {sep}
-        {g.label}
-        {g.view && (
-          <>
-            , which open in{' '}
-            <Link to={g.view.to} title={g.relations.join(', ')}>
-              {g.view.label}
-            </Link>
-          </>
-        )}
-      </span>
-    )
-  })
-  return <p className="gf-footnote">gridflow also keeps tables of its own, built from these sources: {parts}.</p>
-}
-
 export function CatalogueScreen() {
   useDocumentTitle(null)
+  const manifest = useManifest(DEFAULT_ADAPTER)
+  const sources = manifest.value ? inSceneOrder(manifest.value.sources) : null
+  const read = manifest.value ? Date.parse(manifest.value.generated_at) : NaN
+  const state: ViewState = manifest.state === 'data' ? (sources?.length ? 'data' : 'empty') : manifest.state
   return (
-    <Screen className="gf-home">
-      <Scene />
-      <DomainColumns />
+    <Screen className="gf-home" state={state}>
+      <Scene sources={sources} />
+      {sources ? (
+        sources.length ? (
+          <DomainColumns sources={sources} />
+        ) : (
+          <p className="gf-state">gridflow's source list is empty.</p>
+        )
+      ) : (
+        <SourceListStatus state={manifest.state} error={manifest.error} />
+      )}
       <footer className="gf-home-foot">
         <KindKey />
-        <GoldNote />
-        <p className="gf-footnote">Source list copied from gridflow's settings on {CATALOGUE_SNAPSHOT}; it doesn't update itself yet.</p>
+        {Number.isFinite(read) && <p className="gf-footnote">Source list as gridflow's settings stood at {instantLabel(read)}. Each source's page says which of its datasets are held locally.</p>}
       </footer>
     </Screen>
   )

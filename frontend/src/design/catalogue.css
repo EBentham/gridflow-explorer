@@ -79,7 +79,8 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  /* one site per source: CatalogueScreen sets the count */
+  grid-template-columns: repeat(var(--scene-sites, 8), minmax(0, 1fr));
 }
 .gf-scene-site {
   display: grid;
@@ -431,6 +432,18 @@
   font-size: 12px;
   color: var(--muted);
 }
+/* a family's datasets that aren't held locally, and why, under its ids */
+.gf-fam-gone {
+  display: block;
+  margin-top: 4px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+  white-space: normal;
+}
+.gf-fam-gone code {
+  font-size: 12px;
+}
 
 /* ================================================================ narrow */
 
@@ -439,7 +452,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
   .gf-scene-row {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
   .gf-scene-land {
     height: 300px;

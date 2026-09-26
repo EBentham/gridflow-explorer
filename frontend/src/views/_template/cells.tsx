@@ -52,6 +52,12 @@ export function inferColumns(rows: Row[], skip: string[] = []): ColumnSpec[] {
   return fieldsOf(rows, skip).map((field) => ({ field, format: inferFormat(rows, field) }))
 }
 
+/** A value as its column reads it in words (`ColumnSpec.text`); null to show it as held. */
+export function wordsOf(spec: Pick<ColumnSpec, 'text'>, v: Scalar | undefined): string | null {
+  if (!spec.text || v === null || v === undefined || v === '') return null
+  return spec.text(v)
+}
+
 /** A column's header: its label, or the field id as an identifier, then the unit. */
 export function headerOf(spec: ColumnSpec): ReactNode {
   const unit = spec.format === 'number' && spec.unit ? displayUnit(spec.unit, spec.display ?? 'MW').label : null
@@ -71,6 +77,8 @@ export function toTableCol(spec: ColumnSpec): TableCol<Row> {
   const unit = spec.unit ? displayUnit(spec.unit, spec.display ?? 'MW') : null
   const cell = (v: Scalar | undefined): ReactNode => {
     if (v === null || v === undefined || v === '') return MISSING
+    const words = wordsOf(spec, v)
+    if (words !== null) return words
     switch (format) {
       case 'id':
         return <code>{String(v)}</code>
@@ -94,6 +102,8 @@ export function toTableCol(spec: ColumnSpec): TableCol<Row> {
   const sortValue = (r: Row): string | number | null => {
     const v = r[spec.field]
     if (v === null || v === undefined || v === '') return null
+    const words = wordsOf(spec, v)
+    if (words !== null) return words
     if (format === 'time') return toInstant(v)
     if (typeof v === 'number') return v
     if (typeof v === 'boolean') return v ? 1 : 0

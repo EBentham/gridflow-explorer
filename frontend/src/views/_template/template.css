@@ -98,6 +98,23 @@
 .gf-series-key li.is-muted button {
   opacity: 0.55;
 }
+/* a value held at another time than the key's stamp names its own period */
+.gf-series-when {
+  display: block;
+  padding: 0 6px 3px 24px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.gf-series-key li.is-muted .gf-series-when {
+  opacity: 0.55;
+}
+/* the key's band item, under the series list */
+.gf-series-key + .gf-key {
+  margin-top: 6px;
+  padding: 0 6px;
+  font-size: 13px;
+}
 
 /* ================================================================ filters and search */
 

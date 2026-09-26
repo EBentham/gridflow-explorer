@@ -9,7 +9,7 @@ import type { ApiError } from '../api/client'
 import type { ViewState } from '../design/frame'
 import type { ChartOrTable, RangeState } from '../design/range'
 import type { DateRange } from '../lib/range'
-import type { ManifestDataset, ManifestFamily, ManifestSource, RowsResponse } from './contract'
+import type { ManifestDataset, ManifestFamily, ManifestSource, RowsResponse, Scalar } from './contract'
 import type { SeriesModel } from './_template/seriesModel'
 
 // ---------------------------------------------------------------- series
@@ -64,8 +64,19 @@ export interface ChartSpec {
   zero?: boolean
   /** Label the highest and lowest value of the focused, or first, series. Default: on for one line, off otherwise. */
   extremes?: boolean
-  /** A second panel under the first on the same clock: volume under a price, or a related dataset. */
-  lower?: LowerPanel
+  /**
+   * A second panel under the first on the same clock: volume under a price,
+   * or a related dataset. `false`: no second panel. The drawn columns left
+   * out of the main panel are the page's own to draw (a working panel of
+   * its own), and the table still lists them.
+   */
+  lower?: LowerPanel | false
+  /**
+   * Mark each run of the main panel's first series below zero with the
+   * highlight band (DESIGN §6: negative-price runs). The key says what the
+   * band means.
+   */
+  belowZero?: boolean
   /**
    * The most series drawn at once (default 10). The rest, ranked by their
    * mean size in the window, are named in the key as not drawn; never merged.
@@ -89,6 +100,13 @@ export interface ColumnSpec {
   format?: CellFormat
   unit?: string
   display?: 'GW' | 'MW'
+  /**
+   * How a coded or packed value reads in words, e.g. the name inside a JSON
+   * text (`{"code": "FR", "name": "France"}` reads `France`). The cell, the
+   * sort, the filter's list and the search read the words; the filter still
+   * matches the value as held. Return null to show the value as held.
+   */
+  text?: (value: Scalar) => string | null
 }
 
 export interface SortSpec {
@@ -157,7 +175,13 @@ export interface SeriesView extends DatasetViewBase {
   values?: ValueSpec[]
   /** Group values' labels and colours; their order is the stack order, bottom first. */
   groups?: GroupSpec[]
-  chart?: ChartSpec
+  /**
+   * How the chart draws the series. `false`: no chart. The rows show as a
+   * table, the toolbar has no Chart | Table switch, and the key lists each
+   * series' latest value (a table-only family: unitless columns that one
+   * axis would mislead with, a handful of weekly points, or text only).
+   */
+  chart?: ChartSpec | false
 }
 
 export interface EventsView extends DatasetViewBase {
