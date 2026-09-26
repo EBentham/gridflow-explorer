@@ -11,7 +11,7 @@
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { DateRange } from '../lib/range'
-import { shiftDate, todayUk } from './time'
+import { rangeText, shiftDate, todayUk } from './time'
 
 export type Preset = 1 | 7 | 30
 
@@ -32,6 +32,13 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export function rangeEnding(end: string, days: number): DateRange {
   return { start: shiftDate(end, -(days - 1)), end }
+}
+
+/** The empty state in plain words: the window, and where local rows end when that is known. */
+export function emptyRangeText({ range, latest }: Pick<RangeState, 'range' | 'latest'>): string {
+  const window = range ? rangeText(range.start, range.end) : 'this range'
+  // The latest day carries its year: the window may be in another one.
+  return `Nothing is held locally for ${window}.${latest ? ` The latest local day is ${rangeText(latest, latest)}.` : ''}`
 }
 
 export function useAnchoredRange(latest: string | null | undefined): RangeState {

@@ -10,6 +10,7 @@ import { DataTable, KeyList, type KeyItem } from '../../design/charts'
 import { daysInWindow } from '../../design/days'
 import { fmt0, money, pct } from '../../design/format'
 import { Head, Panel, PendingNote, RangeControl, Screen, StatusNote, Toolbar, ViewSwitch, type ChartOrTable } from '../../design/frame'
+import { emptyRangeText } from '../../design/range'
 import { HALF_HOUR, clock, dayLabel, halfHourWindow, rangeText, windowDomain } from '../../design/time'
 import { useLiveDataset } from '../../hooks/useLiveDataset'
 import { PriceChart } from './PriceChart'
@@ -107,7 +108,7 @@ export function SystemPricesScreen() {
           <StatusNote
             state={live.state}
             error={live.error}
-            empty={`Nothing is held locally for ${windowText}. Pick a range that ends on or before the latest local day.`}
+            empty={emptyRangeText(live.range)}
           />
           {ready &&
             (view === 'chart' ? (

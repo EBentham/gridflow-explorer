@@ -11,6 +11,7 @@ import { daysInWindow, partialDays } from '../../design/days'
 import { fmt1, pct } from '../../design/format'
 import { Head, Panel, PendingNote, RangeControl, Screen, StatusNote, Toolbar, ViewSwitch, type ChartOrTable } from '../../design/frame'
 import { FUEL_BANDS, toMixRows } from '../../design/fuels'
+import { emptyRangeText } from '../../design/range'
 import { clock, dayLabel, halfHourWindow, rangeText, windowDomain } from '../../design/time'
 import { useLiveDataset } from '../../hooks/useLiveDataset'
 import { GenerationChart } from './GenerationChart'
@@ -76,7 +77,7 @@ export function GenerationMixScreen() {
           <StatusNote
             state={live.state}
             error={live.error}
-            empty={`Nothing is held locally for ${windowText}. Pick a range that ends on or before the latest local day.`}
+            empty={emptyRangeText(live.range)}
           />
           {ready &&
             (view === 'chart' ? (
