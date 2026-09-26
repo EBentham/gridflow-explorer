@@ -6,7 +6,7 @@
 import { createContext, useContext, type ComponentType, type ReactNode } from 'react'
 import type { ChartLanguage } from '../design/charts'
 
-export type VariantKey = 'a' | 'b' | 'c' | 'd' | 'e'
+export type VariantKey = 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j'
 export type ThemePref = 'system' | 'light' | 'dark'
 
 export interface NavItem {
@@ -33,6 +33,9 @@ export interface VariantDef {
   sidePanel?: boolean
   penHead?: boolean
   lineForm?: boolean
+  /** Round 2: a variant may replace any shared screen with its own component. */
+  screens?: Partial<Record<'generation' | 'prices' | 'wind', ComponentType>>
+  round?: 1 | 2
 }
 
 export interface ProtoState {

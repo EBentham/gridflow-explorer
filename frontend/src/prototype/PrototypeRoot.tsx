@@ -4,7 +4,7 @@ import { ChartLanguageProvider } from '../design/charts'
 import { ProtoContext, type NavItem, type ThemePref, type VariantKey } from './context'
 import { RangeContext, useRangeState } from './data'
 import { GenerationScreen, PricesScreen, WindScreen } from './screens'
-import { VARIANTS, VARIANT_ORDER } from './variants'
+import { ROUND_ORDER, VARIANTS, roundOf } from './variants'
 import './proto.css'
 import './variants.css'
 
@@ -12,7 +12,9 @@ const FONTS =
   'https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@400;500;600;700' +
   '&family=Overpass:wght@400;500;600;700;800&family=Overpass+Mono:wght@400;600' +
   '&family=Archivo:wdth,wght@62..125,400..800&family=Source+Serif+4:opsz,wght@8..60,400..700' +
-  '&family=Host+Grotesk:wght@400;500;700&display=swap'
+  '&family=Host+Grotesk:wght@400;500;700' +
+  '&family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Hanken+Grotesk:ital,wght@0,400..700;1,400..700' +
+  '&family=Red+Hat+Mono:wght@400;500&display=swap'
 
 function useFonts() {
   useEffect(() => {
@@ -36,8 +38,9 @@ function Switcher({ current, theme }: { current: VariantKey; theme: ThemePref })
   const location = useLocation()
   const go = (v: VariantKey, t: ThemePref) =>
     navigate(`${location.pathname}?variant=${v}${t === 'system' ? '' : `&theme=${t}`}`, { replace: true })
-  const idx = VARIANT_ORDER.indexOf(current)
-  const step = (d: number) => go(VARIANT_ORDER[(idx + d + VARIANT_ORDER.length) % VARIANT_ORDER.length], theme)
+  const order = ROUND_ORDER[roundOf(current)]
+  const idx = order.indexOf(current)
+  const step = (d: number) => go(order[(idx + d + order.length) % order.length], theme)
   const stepRef = useRef(step)
   stepRef.current = step
   useEffect(() => {
@@ -67,7 +70,7 @@ function Switcher({ current, theme }: { current: VariantKey; theme: ThemePref })
           {t}
         </button>
       ))}
-      <Link to={`/prototype?screen=${encodeURIComponent(location.pathname)}`}>compare</Link>
+      <Link to={`/prototype?round=${roundOf(current)}&screen=${encodeURIComponent(location.pathname)}`}>compare</Link>
     </div>
   )
 }
@@ -101,6 +104,9 @@ export function PrototypeRoot() {
 
   const search = `?variant=${key}${theme === 'system' ? '' : `&theme=${theme}`}${embed ? '&embed=1' : ''}`
   const Shell = variant.Shell
+  const Gen = variant.screens?.generation ?? GenerationScreen
+  const Prices = variant.screens?.prices ?? PricesScreen
+  const Wind = variant.screens?.wind ?? WindScreen
   if (!ready) return null
   return (
     <ProtoContext.Provider value={{ variant, theme, search }}>
@@ -108,9 +114,9 @@ export function PrototypeRoot() {
         <ChartLanguageProvider value={variant.language}>
           <Shell key={key} nav={NAV}>
             <Routes>
-              <Route path="/datasets/generation-mix" element={<GenerationScreen />} />
-              <Route path="/datasets/system-prices" element={<PricesScreen />} />
-              <Route path="/forecasts/wind" element={<WindScreen />} />
+              <Route path="/datasets/generation-mix" element={<Gen />} />
+              <Route path="/datasets/system-prices" element={<Prices />} />
+              <Route path="/forecasts/wind" element={<Wind />} />
               <Route path="*" element={<Navigate to={`/datasets/generation-mix${search}`} replace />} />
             </Routes>
           </Shell>

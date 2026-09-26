@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { VARIANTS, VARIANT_ORDER } from './variants'
+import { ROUND_ORDER, VARIANTS } from './variants'
 
 const SCREENS = [
   { path: '/datasets/generation-mix', label: 'Generation mix' },
@@ -38,6 +38,7 @@ export function ComparePage() {
   const screen = params.get('screen') ?? SCREENS[0].path
   const theme = params.get('theme') ?? 'light'
   const cols = Number(params.get('cols') ?? 2)
+  const round = (params.get('round') === '1' ? 1 : 2) as 1 | 2
   const set = (k: string, v: string) => {
     const next = new URLSearchParams(params)
     next.set(k, v)
@@ -60,7 +61,13 @@ export function ComparePage() {
   return (
     <div style={{ background: '#1c1c1c', color: '#eee', minHeight: '100svh', padding: 16, font: '13px/1.4 system-ui, sans-serif' }}>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
-        <strong style={{ marginRight: 8 }}>Round 1, five directions</strong>
+        <strong style={{ marginRight: 8 }}>Round {round}</strong>
+        {([1, 2] as const).map((r) => (
+          <button key={r} type="button" style={btn(round === r)} onClick={() => set('round', String(r))}>
+            round {r}
+          </button>
+        ))}
+        <span style={{ width: 16 }} />
         {SCREENS.map((s) => (
           <button key={s.path} type="button" style={btn(screen === s.path)} onClick={() => set('screen', s.path)}>
             {s.label}
@@ -80,7 +87,7 @@ export function ComparePage() {
         ))}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gap: 16 }}>
-        {VARIANT_ORDER.map((k) => (
+        {ROUND_ORDER[round].map((k) => (
           <figure key={k} style={{ margin: 0, display: 'grid', gap: 6 }}>
             <figcaption style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
               <span>

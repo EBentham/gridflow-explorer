@@ -5,6 +5,7 @@ import { halfHourWindow } from '../design/time'
 import type { ShellProps, VariantDef, VariantKey } from './context'
 import { ProtoLink, fmtDate } from './controls'
 import { useMix, usePrices, useRange } from './data'
+import { ROUND2 } from './r2'
 
 const daysBehind = (latest: string | null) => {
   if (!latest) return null
@@ -196,7 +197,7 @@ function ShellE({ nav, children }: ShellProps) {
 
 // ---------------------------------------------------------------- registry
 
-export const VARIANTS: Record<VariantKey, VariantDef> = {
+const ROUND1: Record<'a' | 'b' | 'c' | 'd' | 'e', VariantDef> = {
   a: {
     key: 'a',
     name: 'Synoptic',
@@ -254,4 +255,11 @@ export const VARIANTS: Record<VariantKey, VariantDef> = {
   },
 }
 
-export const VARIANT_ORDER: VariantKey[] = ['a', 'b', 'c', 'd', 'e']
+export const VARIANTS: Record<VariantKey, VariantDef> = { ...ROUND1, ...ROUND2 }
+
+export const ROUND_ORDER: Record<1 | 2, VariantKey[]> = {
+  1: ['a', 'b', 'c', 'd', 'e'],
+  2: ['f', 'g', 'h', 'i', 'j'],
+}
+export const VARIANT_ORDER: VariantKey[] = [...ROUND_ORDER[1], ...ROUND_ORDER[2]]
+export const roundOf = (k: VariantKey): 1 | 2 => (ROUND_ORDER[2].includes(k) ? 2 : 1)
