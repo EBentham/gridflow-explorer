@@ -804,3 +804,43 @@
   stroke-opacity: 0.55;
   stroke-width: 1;
 }
+
+/* ================================================================ colour mode switch */
+
+:root[data-variant='i'] .i-theme {
+  justify-self: center;
+  display: inline-flex;
+  gap: 2px;
+  margin-bottom: 12px;
+  padding: 2px;
+  border: 1px solid var(--rail-rule);
+  border-radius: var(--radius-sm);
+}
+:root[data-variant='i'] .i-theme button {
+  all: unset;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 26px;
+  border-radius: 2px;
+  color: var(--rail-muted);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+:root[data-variant='i'] .i-theme button:hover {
+  background: var(--rail-hover);
+  color: var(--rail-ink);
+}
+:root[data-variant='i'] .i-theme button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+:root[data-variant='i'] .i-theme button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+:root[data-variant='i'] .i-theme .i-stroke {
+  stroke-width: 1.4;
+}
