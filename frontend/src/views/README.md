@@ -113,7 +113,7 @@ Folders starting with `_` belong to the template. The registry skips them.
 |---|---|
 | `timeLabel` | The event time's column header, e.g. `Published`. Default `Time`. |
 | `columns` | `{ field, label, format, unit, display }` after the time. `format` is `'text'`, `'id'` (mono, for identifiers only), `'number'`, `'time'`, `'date'` or `'bool'`. Tables keep MW unless `display: 'GW'`. Default: every field, with formats read from the values. |
-| `filters` | Fields that get a column filter. Default: text and id fields holding 2 to 40 distinct values in the window. |
+| `filters` | Fields that get a column filter, in the URL as `?f.<field>=`. Default: text and id fields holding 2 to 40 distinct values in the window. A field with one value in the window gets no filter unless one is set. |
 | `sort` | `{ field, dir }`. Default: newest first. |
 | `strip` | A count of events per period above the table, in the Chart view. `true` picks hours for a day or two and days beyond; `{ per: 'hour' \| 'day' }` fixes it. Without a strip there is no Chart view. |
 

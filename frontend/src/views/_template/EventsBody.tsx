@@ -45,6 +45,21 @@ export function EventsBody({ ctx }: { ctx: PageContext }) {
 
   if (!response || !ctx.window) return null
 
+  // A select per filter field, with each value's count in the window. One value leaves nothing
+  // to choose, unless a filter on it is already set; a value linked from another window that
+  // holds no event in this one is still offered, with its zero.
+  const selects = fields.flatMap((f) => {
+    const counts = new Map<string, number>()
+    for (const r of rows) {
+      const v = r[f]
+      if (v !== null && v !== undefined) counts.set(String(v), (counts.get(String(v)) ?? 0) + 1)
+    }
+    const current = ctx.param(filterParam(f)) ?? ''
+    if (counts.size < 2 && !current) return []
+    if (current && !counts.has(current)) counts.set(current, 0)
+    return [{ f, counts, current }]
+  })
+
   const tableCols: TableCol<EventRow>[] = [
     { key: 'ts', label: view.timeLabel ?? 'Time', render: (r) => instantLabel(r.ts), sortValue: (r) => r.ts },
     ...columns.map((c) => toTableCol(c) as TableCol<EventRow>),
@@ -57,18 +72,10 @@ export function EventsBody({ ctx }: { ctx: PageContext }) {
   return (
     <>
       {ctx.mode === 'chart' && view.strip && <CountStrip times={shown.map((r) => r.ts)} window={ctx.window} per={per} />}
-      {fields.length > 0 && (
+      {selects.length > 0 && (
         <div className="gf-filters" role="group" aria-label="Filter the events">
-          {fields.map((f) => {
+          {selects.map(({ f, counts, current }) => {
             const spec = columns.find((c) => c.field === f) ?? { field: f }
-            const counts = new Map<string, number>()
-            for (const r of rows) {
-              const v = r[f]
-              if (v !== null && v !== undefined) counts.set(String(v), (counts.get(String(v)) ?? 0) + 1)
-            }
-            const current = ctx.param(filterParam(f)) ?? ''
-            // A value linked from another window may hold no event in this one: offer it, with its zero.
-            if (current && !counts.has(current)) counts.set(current, 0)
             return (
               <label key={f} className="gf-filter">
                 <span>{headerOf({ ...spec, unit: undefined })}</span>
