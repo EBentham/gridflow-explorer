@@ -1,0 +1,435 @@
+/* Slot i, source catalogue and source pages. Colours come only from
+   tokens.css; everything is scoped to :root[data-variant='i']. */
+
+/* ================================================================ brand as the way home */
+
+:root[data-variant='i'] .i-brand {
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  transition: background-color 150ms ease-out;
+}
+:root[data-variant='i'] a.i-brand {
+  margin: 0 6px 8px;
+  padding: 8px 2px 14px;
+}
+:root[data-variant='i'] a.i-brand:hover {
+  background: var(--rail-hover);
+}
+:root[data-variant='i'] a.i-brand.is-active .i-brand-sub {
+  color: var(--rail-ink);
+  box-shadow: inset 0 -2px 0 var(--accent);
+  padding-bottom: 2px;
+}
+
+/* ================================================================ shared bits */
+
+:root[data-variant='i'] .is-none {
+  color: var(--muted);
+  font-size: 13px;
+}
+:root[data-variant='i'] .i-srow-view {
+  position: relative;
+  z-index: 1;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+:root[data-variant='i'] .i-srow-view:hover {
+  text-decoration-color: var(--accent-hover);
+  color: var(--ink);
+}
+:root[data-variant='i'] .i-srow-view.is-sample {
+  font-size: 13px;
+}
+
+/* ================================================================ view tiles */
+
+:root[data-variant='i'] .i-views {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+:root[data-variant='i'] .i-view {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  padding: 4px 18px 6px;
+  border-left: 1px solid var(--rule);
+}
+:root[data-variant='i'] .i-view:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+:root[data-variant='i'] .i-view:last-child {
+  padding-right: 0;
+}
+:root[data-variant='i'] .i-view-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+:root[data-variant='i'] .i-view-head > div {
+  flex: 1 1 auto;
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+:root[data-variant='i'] .i-view-head .i-glyph {
+  color: var(--glyph);
+  flex: none;
+}
+:root[data-variant='i'] .i-view-head code {
+  font-size: 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+:root[data-variant='i'] .i-view h3 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  font-stretch: 88%;
+  font-variation-settings: 'wdth' 88;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+:root[data-variant='i'] .i-view-link {
+  color: var(--ink);
+  text-decoration: none;
+}
+/* the whole tile opens the screen */
+:root[data-variant='i'] .i-view-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-sm);
+}
+:root[data-variant='i'] .i-view:hover .i-view-link {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+:root[data-variant='i'] .i-view-link:focus-visible {
+  outline: none;
+}
+:root[data-variant='i'] .i-view-link:focus-visible::after {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+:root[data-variant='i'] .i-spark {
+  display: block;
+  width: 100%;
+  height: 46px;
+  margin-top: 4px;
+}
+:root[data-variant='i'] .i-spark.is-empty {
+  border-bottom: 1px dashed var(--rule);
+}
+:root[data-variant='i'] .i-spark-line {
+  fill: none;
+  stroke: var(--chart-price);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+:root[data-variant='i'] .i-spark-line.is-dashed {
+  stroke: var(--chart-fan);
+  stroke-dasharray: 5 4;
+}
+:root[data-variant='i'] .i-spark-zero {
+  stroke: var(--chart-axis);
+  stroke-width: 1;
+}
+:root[data-variant='i'] .i-view-reading {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 650;
+  color: var(--ink);
+}
+:root[data-variant='i'] .i-view-caption {
+  margin: -4px 0 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* ================================================================ catalogue grid */
+
+:root[data-variant='i'] .i-cat-grid,
+:root[data-variant='i'] .i-src-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 12px;
+  align-items: start;
+}
+:root[data-variant='i'] .i-src-grid.is-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+:root[data-variant='i'] .i-cat-side,
+:root[data-variant='i'] .i-src-side {
+  display: grid;
+  gap: 12px;
+}
+
+:root[data-variant='i'] .i-domain + .i-domain {
+  margin-top: 10px;
+}
+:root[data-variant='i'] .i-domain h3 {
+  margin: 6px 0 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rule-strong);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+:root[data-variant='i'] .i-domain ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+:root[data-variant='i'] .i-srow {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(150px, 0.9fr) minmax(0, 2fr) minmax(150px, 1fr) minmax(150px, 0.9fr);
+  gap: 4px 22px;
+  align-items: baseline;
+  padding: 14px 8px 14px 6px;
+  margin: 0 -8px 0 -6px;
+  border-bottom: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  transition: background-color 150ms ease-out;
+}
+:root[data-variant='i'] .i-srow:last-child {
+  border-bottom: 0;
+}
+:root[data-variant='i'] .i-srow:hover {
+  background: var(--hover);
+}
+:root[data-variant='i'] .i-srow p {
+  margin: 0;
+}
+:root[data-variant='i'] .i-srow-name {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+}
+:root[data-variant='i'] .i-cat .i-head-sub {
+  text-wrap: pretty;
+}
+:root[data-variant='i'] .i-srow h4,
+:root[data-variant='i'] .i-view h3 {
+  margin: 0;
+}
+:root[data-variant='i'] .i-srow h4 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  font-stretch: 88%;
+  font-variation-settings: 'wdth' 88;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+:root[data-variant='i'] .i-srow-link {
+  color: var(--ink);
+  text-decoration: none;
+}
+:root[data-variant='i'] .i-srow-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-sm);
+}
+:root[data-variant='i'] .i-srow:hover .i-srow-link {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+:root[data-variant='i'] .i-srow-link:focus-visible {
+  outline: none;
+}
+:root[data-variant='i'] .i-srow-link:focus-visible::after {
+  outline: 2px solid var(--focus);
+  outline-offset: 0;
+}
+:root[data-variant='i'] .i-srow-name code {
+  font-size: 12px;
+  color: var(--muted);
+}
+:root[data-variant='i'] .i-srow-blurb {
+  color: var(--ink-2);
+  line-height: 1.45;
+  max-width: 62ch;
+}
+:root[data-variant='i'] .i-srow-count {
+  display: grid;
+  gap: 1px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+:root[data-variant='i'] .i-srow-count strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+:root[data-variant='i'] .i-srow-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 12px;
+}
+:root[data-variant='i'] .i-srow-status-label {
+  width: 100%;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* legend and gold list */
+:root[data-variant='i'] .i-legend {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+:root[data-variant='i'] .i-legend div {
+  display: grid;
+  gap: 3px;
+}
+:root[data-variant='i'] .i-legend dt {
+  display: flex;
+}
+:root[data-variant='i'] .i-legend dd {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+:root[data-variant='i'] .i-gold,
+:root[data-variant='i'] .i-famlist,
+:root[data-variant='i'] .i-src-views {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+:root[data-variant='i'] .i-gold li,
+:root[data-variant='i'] .i-famlist li {
+  display: grid;
+  gap: 2px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+:root[data-variant='i'] .i-gold code {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* ================================================================ source page */
+
+:root[data-variant='i'] .i-crumb {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+:root[data-variant='i'] .i-crumb-link {
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-color: var(--link-line);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+:root[data-variant='i'] .i-crumb-link:hover {
+  color: var(--ink);
+}
+
+:root[data-variant='i'] .i-fam {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+:root[data-variant='i'] .i-fam th,
+:root[data-variant='i'] .i-fam td {
+  padding: 10px 12px 10px 0;
+  text-align: left;
+  vertical-align: baseline;
+  border-bottom: 1px solid var(--rule);
+}
+:root[data-variant='i'] .i-fam thead th {
+  padding-top: 2px;
+  padding-bottom: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--muted);
+  border-bottom-color: var(--rule-strong);
+}
+:root[data-variant='i'] .i-fam tbody tr:last-child > * {
+  border-bottom: 0;
+}
+:root[data-variant='i'] .i-fam tbody th {
+  font-weight: 400;
+  width: 64%;
+}
+:root[data-variant='i'] .i-fam td {
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+:root[data-variant='i'] .i-fam tr.is-charted {
+  background: var(--selected);
+}
+:root[data-variant='i'] .i-fam tr.is-charted > :first-child {
+  padding-left: 8px;
+}
+:root[data-variant='i'] .i-fam-label {
+  display: block;
+  font-weight: 600;
+  color: var(--ink);
+}
+:root[data-variant='i'] .i-fam-ids {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  margin-top: 3px;
+}
+:root[data-variant='i'] .i-fam-ids code {
+  font-size: 12px;
+  color: var(--muted);
+}
+:root[data-variant='i'] .i-famlist-sched {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* ================================================================ narrow */
+
+@media (max-width: 1180px) {
+  :root[data-variant='i'] .i-srow {
+    grid-template-columns: minmax(140px, 1fr) minmax(0, 2fr);
+  }
+}
+@media (max-width: 980px) {
+  :root[data-variant='i'] .i-cat-grid,
+  :root[data-variant='i'] .i-src-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  :root[data-variant='i'] .i-views {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  :root[data-variant='i'] .i-view {
+    padding: 0;
+    border-left: 0;
+  }
+}
+
+:root[data-variant='i'] .i-src-grid.is-single {
+  max-width: 960px;
+}

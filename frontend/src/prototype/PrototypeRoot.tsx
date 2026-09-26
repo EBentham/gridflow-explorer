@@ -107,6 +107,9 @@ export function PrototypeRoot() {
   const Gen = variant.screens?.generation ?? GenerationScreen
   const Prices = variant.screens?.prices ?? PricesScreen
   const Wind = variant.screens?.wind ?? WindScreen
+  const Catalogue = variant.screens?.catalogue
+  const Source = variant.screens?.source
+  const home = Catalogue ? '/sources' : '/datasets/generation-mix'
   if (!ready) return null
   return (
     <ProtoContext.Provider value={{ variant, theme, search }}>
@@ -117,7 +120,9 @@ export function PrototypeRoot() {
               <Route path="/datasets/generation-mix" element={<Gen />} />
               <Route path="/datasets/system-prices" element={<Prices />} />
               <Route path="/forecasts/wind" element={<Wind />} />
-              <Route path="*" element={<Navigate to={`/datasets/generation-mix${search}`} replace />} />
+              {Catalogue && <Route path="/sources" element={<Catalogue />} />}
+              {Source && <Route path="/sources/:source" element={<Source />} />}
+              <Route path="*" element={<Navigate to={`${home}${search}`} replace />} />
             </Routes>
           </Shell>
           {!embed && <Switcher current={key} theme={theme} />}

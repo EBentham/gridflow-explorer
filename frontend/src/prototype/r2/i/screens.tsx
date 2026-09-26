@@ -19,7 +19,7 @@ type View = 'chart' | 'table'
 
 // ---------------------------------------------------------------- frame pieces
 
-function Head({ kind, title, sub, stamp, badge }: { kind: GlyphKind; title: string; sub: string; stamp?: string; badge?: ReactNode }) {
+export function Head({ kind, title, sub, stamp, badge }: { kind: GlyphKind; title: string; sub: string; stamp?: string; badge?: ReactNode }) {
   return (
     <header className="i-head">
       <Emblem kind={kind} />
@@ -35,7 +35,7 @@ function Head({ kind, title, sub, stamp, badge }: { kind: GlyphKind; title: stri
   )
 }
 
-function Panel({ title, src, tag, className, children }: { title: string; src?: ReactNode; tag?: ReactNode; className?: string; children: ReactNode }) {
+export function Panel({ title, src, tag, className, children }: { title: string; src?: ReactNode; tag?: ReactNode; className?: string; children: ReactNode }) {
   return (
     <section className={`i-panel${className ? ` ${className}` : ''}`}>
       <header className="i-panel-head">
@@ -55,7 +55,7 @@ function Status({ loading, error, empty }: { loading: boolean; error: Error | nu
   return null
 }
 
-function FixtureTag({ children }: { children?: ReactNode }) {
+export function FixtureTag({ children }: { children?: ReactNode }) {
   return (
     <span className="i-fixture" title="Synthetic data generated in the frontend. No wind model writes to the forecast store yet.">
       {children ?? 'Fixture data: no wind model yet'}

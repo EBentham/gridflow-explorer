@@ -116,3 +116,40 @@ Built by five parallel Opus 5.5 agents (Bobbo's call), one folder each (`src/pro
   summary per chart.
 - **I, Petrol night.** Dark-first petrol ground, a line-art glyph rail, chartreuse as the one accent.
 - **J, Cable network.** Nav drawn as the site's cable routes; the fixture shows as a dashed node.
+
+### Round 2 verdict (Bobbo, 2026-09-26)
+
+Picked **I, Petrol night**: "looks very good, don't lose that". Keep the rail, the low density
+and the panel frame. G was finished after the crash (its agent resumed); F, H and J are parked.
+
+## I, refinement 1: source catalogue (2026-09-26)
+
+Bobbo wants the Explorer to scale to everything worth viewing in gridflow, for power-stack
+modelling, trading research and understanding the system. The rail can't hold that, so:
+- **The brand opens `/sources`**, a catalogue of every source gridflow ingests, grouped by
+  domain (Electricity, Gas, Weather). It opens with the Explorer's own screens as three tiles
+  with real 7-day sparklines, then one row per source. Each row shows the dataset count split
+  into time series, event feeds and reference tables, and which screens read it. A side
+  column holds the status legend and gridflow's own gold views.
+- **`/sources/:key` is one template for every source:** time-series groups in a table with
+  their dataset ids, fetch schedule and Explorer status, plus event feeds and reference
+  tables in side panels.
+- **The rail stays at three items.** It holds shortcuts to working screens, not a list of
+  every dataset.
+- **Honesty:** the source list is a fixture copied from gridflow's `config/sources.yaml`,
+  covering 8 sources and 163 datasets with the ids and schedules as configured. A configured
+  dataset is not necessarily held locally, so coverage appears only for charted datasets.
+  Uncharted datasets say "not read by the Explorer yet".
+
+## Plumbing handoff, running list
+
+- Real wind forecast endpoint when the wind model lands (`fixtures/windForecast.ts` still in use).
+- `/api/sources` manifest to replace `r2/i/catalogue.ts`. Derive it from gridflow's
+  `sources.yaml` plus `GridflowClient.get_tables()`, with per-dataset local coverage.
+- `settlement_date` / `settlement_period` on dataset rows (gridflow owns SP semantics).
+- Gap rows are currently filled with 0.0, which draws false cliffs; they should be nulls.
+- The default range ending "today" is empty because the catalogue ends 2026-09-16; anchor it
+  on the latest local day.
+- The prototype's disabled fetch-missing-days button.
+- Coverage disagrees with rows for 6 Sep: generation-mix coverage reports 6 Sep present, but
+  the API returns nothing after 01:00. Found by G; check upstream.

@@ -13,6 +13,7 @@ import { ProtoLink, fmtDate } from '../../controls'
 import { useRange } from '../../data'
 import { Glyph, type GlyphKind } from './glyphs'
 import { GenerationScreen, PricesScreen, WindScreen } from './screens'
+import { CatalogueScreen, SourceScreen } from './sources'
 import './tokens.css'
 import './shell.css'
 
@@ -38,10 +39,10 @@ function Shell({ nav, children }: ShellProps) {
   return (
     <div className={`i-shell${pathname.startsWith('/forecasts/wind') ? ' is-wind' : ''}`}>
       <aside className="i-rail">
-        <div className="i-brand">
+        <ProtoLink to="/sources" className="i-brand">
           <span className="i-brand-name">gridflow</span>
           <span className="i-brand-sub">Explorer</span>
-        </div>
+        </ProtoLink>
         <nav className="i-nav" aria-label="Screens">
           {nav.map((n) => (
             <ProtoLink key={n.to} to={n.to} className={`i-nav-item is-${KIND[n.to] ?? 'pylon'}`}>
@@ -76,7 +77,7 @@ function Shell({ nav, children }: ShellProps) {
 export const variant: VariantDef = {
   key: 'i',
   name: 'Petrol night',
-  line: "The site's petrol sky as the working ground: a line-art glyph rail, dense panels, and chartreuse only where you are.",
+  line: "The site's petrol sky as the working ground: a line-art glyph rail, dense panels, and chartreuse only where you are. The brand opens the source catalogue.",
   language: {
     ...DEFAULT_LANGUAGE,
     curve: 'linear',
@@ -93,6 +94,6 @@ export const variant: VariantDef = {
   },
   Shell,
   keyPlacement: 'aside',
-  screens: { generation: GenerationScreen, prices: PricesScreen, wind: WindScreen },
+  screens: { generation: GenerationScreen, prices: PricesScreen, wind: WindScreen, catalogue: CatalogueScreen, source: SourceScreen },
   round: 2,
 }

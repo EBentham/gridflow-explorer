@@ -3,10 +3,10 @@
  * gridflow site's illustration grammar: ink strokes with round caps and
  * non-scaling widths, towers standing on a short ground line. One glyph per
  * screen: a pylon (generation mix), a meter (system prices), a turbine
- * (wind forecast). All art lives in a 32-unit box with the ground at y=30.
+ * (wind forecast), and a data centre for the source catalogue. All art lives in a 32-unit box with the ground at y=30.
  */
 
-export type GlyphKind = 'pylon' | 'meter' | 'turbine'
+export type GlyphKind = 'pylon' | 'meter' | 'turbine' | 'datacentre'
 
 const NS = { vectorEffect: 'non-scaling-stroke' } as const
 
@@ -41,6 +41,17 @@ function MeterArt() {
   )
 }
 
+function DataCentreArt() {
+  return (
+    <g className="i-stroke">
+      <rect {...NS} x="5" y="12" width="22" height="18" rx=".5" />
+      <path {...NS} d="M8.5 12 V8.5 H13.5 V12 M18.5 12 V8.5 H23.5 V12 M9.5 10.2 H12.5 M19.5 10.2 H22.5" />
+      <path {...NS} d="M8.5 16 H23.5 M8.5 19 H23.5 M8.5 22 H12 M20 22 H23.5" />
+      <rect {...NS} x="14" y="23" width="4" height="7" />
+    </g>
+  )
+}
+
 const BLADE = 'M-0.75 0 C-1.4 -3 -0.55 -7.4 0 -9.6 C0.4 -7 1.5 -3 0.75 0 Z'
 
 function TurbineArt() {
@@ -64,6 +75,7 @@ function TurbineArt() {
 function Art({ kind }: { kind: GlyphKind }) {
   if (kind === 'pylon') return <PylonArt />
   if (kind === 'meter') return <MeterArt />
+  if (kind === 'datacentre') return <DataCentreArt />
   return <TurbineArt />
 }
 
@@ -131,6 +143,17 @@ export function Emblem({ kind }: { kind: GlyphKind }) {
           <g transform="translate(84 33) scale(.64)">
             <TurbineArt />
           </g>
+        </>
+      )}
+      {kind === 'datacentre' && (
+        <>
+          <g transform="translate(4 7) scale(1.55)">
+            <DataCentreArt />
+          </g>
+          <g transform="translate(82 31) scale(.72)">
+            <PylonArt />
+          </g>
+          <path className="i-stroke i-wire" {...NS} d="M45.9 38 Q70 46 91.4 42.7 M45.9 44 Q72 50 94.4 47" />
         </>
       )}
       <path className="i-stroke i-ground" {...NS} d="M0 53.5 H112" />

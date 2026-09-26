@@ -34,7 +34,7 @@ export interface VariantDef {
   penHead?: boolean
   lineForm?: boolean
   /** Round 2: a variant may replace any shared screen with its own component. */
-  screens?: Partial<Record<'generation' | 'prices' | 'wind', ComponentType>>
+  screens?: Partial<Record<'generation' | 'prices' | 'wind' | 'catalogue' | 'source', ComponentType>>
   round?: 1 | 2
 }
 
