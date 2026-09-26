@@ -7,14 +7,17 @@
  *
  * Routes for screenshots: `/sources/demo/dataset-page` (a stacked series
  * with a related price under it), `?dataset=demo_price` (one line with its
- * extremes), `?dataset=demo_notices` (events), `?dataset=demo_units`
- * (reference), `?dataset=demo_forecast` (not held), each with `&view=table`,
+ * extremes, and a working panel of the page's own), `?dataset=demo_notices`
+ * (events), `?dataset=demo_units` (reference), `?dataset=demo_forecast` (not
+ * held), each with `&view=table`,
  * `&days=30` (a window past the local depth, drawn as hourly means) and
  * `&fixture=error|refreshing|empty|toomany`; the notices take `&area=all`
  * (the page's own control, clearing the default filter).
  */
+import { SourceLine } from '../../_template/panels'
 import { defineView } from '../../define'
 import { AreaControl } from './AreaControl'
+import { PriceExtremes } from './PriceExtremes'
 
 const view = defineView({
   title: 'Dataset page demo',
@@ -54,6 +57,14 @@ const view = defineView({
       sub: 'A synthetic half-hourly price, with its highest and lowest values in the window labelled. It goes below zero when the wind is high.',
       values: [{ column: 'price_gbp_mwh', label: 'Price', color: 'var(--chart-price)' }],
       chart: { mark: 'line', zero: true },
+      // A page's own working panel, in place of the days table.
+      panels: {
+        working: {
+          title: 'Lowest and highest in the window',
+          src: (ctx) => <SourceLine ctx={ctx} columns={['price_gbp_mwh']} unit="£/MWh" what="the held values ranked" />,
+          Body: PriceExtremes,
+        },
+      },
     },
     {
       id: 'demo_notices',
