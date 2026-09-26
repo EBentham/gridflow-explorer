@@ -148,7 +148,8 @@ export function ForecastFanChart({ records, variants }: ForecastFanChartProps) {
         itemStyle={tooltipItemStyle}
         labelFormatter={(value: ReactNode) => `Delivery ${String(value)}`}
       />
-      <Legend />
+      {/* The padding keeps the x-axis caption clear of a legend that wraps onto several lines. */}
+      <Legend wrapperStyle={{ paddingTop: 18 }} />
       {keys.flatMap((key, index) => renderVariantLayers(key, titleFor(key), colorFor(index)))}
     </ComposedChart>
   )
