@@ -33,6 +33,25 @@ GRAINS = {
     "1d": 86_400_000,
     "7d": 604_800_000,
 }
+NUMERIC_KINDS = frozenset(
+    {
+        "TINYINT",
+        "SMALLINT",
+        "INTEGER",
+        "BIGINT",
+        "HUGEINT",
+        "UTINYINT",
+        "USMALLINT",
+        "UINTEGER",
+        "UBIGINT",
+        "UHUGEINT",
+        "DOUBLE",
+        "FLOAT",
+        "REAL",
+        "BIGNUM",
+        "DECIMAL",
+    }
+)
 FILTER_VALUE = re.compile(r"[A-Za-z0-9 _.\-/:]{1,64}\Z")
 DATE_VALUE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}\Z")
 
@@ -445,7 +464,8 @@ def _check_entity(client: Any, request: Request, sql: str, clock: str) -> None:
         f"(SELECT DISTINCT {_quote(clock)} AS __native_clock, "
         f"{group} AS __native_group, {cols} FROM selected) "
         "SELECT __native_clock, __native_group FROM identities "
-        "GROUP BY 1, 2 HAVING count(*) > 1 LIMIT 1"
+        "GROUP BY 1, 2 HAVING count(*) > 1 "
+        "ORDER BY __native_clock, __native_group LIMIT 1"
     ).to_dicts()
     if conflict:
         raise _ambiguity(
@@ -580,10 +600,20 @@ def _grain(dataset: dict[str, Any]) -> int | None:
     return GRAINS.get(clock["grain"]) if clock else None
 
 
+def _numeric_kind(kind: str) -> bool:
+    normalized = kind.upper()
+    return (
+        normalized in NUMERIC_KINDS
+        or re.fullmatch(r"DECIMAL\(\d+,\s*\d+\)", normalized) is not None
+    )
+
+
 def _limit(reason: str, hint: str) -> RowsError:
     return _error(
         RowsErrorCode.RESULT_TOO_LARGE,
-        "Result exceeds the safe row limit.",
+        "Selected records have conflicting cadence or identity."
+        if reason == "unsupported_cadence"
+        else "Result exceeds the safe row limit.",
         reason=reason,
         hint=hint,
     )
@@ -634,8 +664,7 @@ def _bucket_sql(sql: str, request: Request, meta: Metadata, clock: str, width: i
     by = f"bucket_ms{groups}"
     for value in request.dataset["values"]:
         column = value["column"]
-        kind = meta.types[column].upper()
-        if any(part in kind for part in ("INT", "DECIMAL", "DOUBLE", "FLOAT", "REAL")):
+        if _numeric_kind(meta.types[column]):
             select.append(f"avg({_quote(column)}) AS {_quote(column)}")
         else:
             select.append(
@@ -659,7 +688,8 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
             "Dataset schema is unavailable.",
             not_held_cause=meta.cause,
         )
-    assert meta.relation
+    if not meta.relation:
+        raise RuntimeError("Rows metadata has no relation")
     window = _window(request, meta)
     clock = _clock_column(dataset)
     projection = _projection(dataset)
@@ -676,9 +706,9 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
         selected = f"SELECT * FROM ({selected}) AS windowed WHERE {predicate}"
     before_defaults = None
     reasons: list[dict[str, Any]] = []
-    if request.use_defaults and dataset["default_filter"] and window and clock:
+    if request.use_defaults and dataset["default_filter"]:
         unfiltered = _selected_sql(meta.relation, dataset)
-        predicate = _window_predicate(window, clock, meta.types)
+        predicate = _window_predicate(window, clock, meta.types) if window and clock else "TRUE"
         before_defaults = client.query(
             f"SELECT count(*) AS n FROM ({unfiltered}) AS before_defaults WHERE {predicate}"
         ).to_dicts()[0]["n"]
@@ -733,6 +763,7 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
             "DATE labels plot at UTC midnight; this is not a gas-day boundary or event instant."
         )
     grain = _grain(dataset) if dataset["kind"] == "series" else None
+    native_grain = grain
     width = None
     frame: pl.DataFrame
     if dataset["kind"] == "series" and window and clock:
@@ -748,7 +779,11 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
         native_size = count
         if grain and groups:
             span_ms = int((upper - lower).total_seconds() * 1000)
-            native_size = groups * math.ceil(span_ms / grain)
+            if grain >= GRAINS["1d"] and _clock_kind(clock, meta.types) == "aware":
+                days = (end - start).days + 1
+                native_size = groups * (math.ceil(days / 7) if grain == GRAINS["7d"] else days)
+            else:
+                native_size = groups * math.ceil(span_ms / grain)
         deep = (end - start).days > 400
         if native_size > MAX_RESPONSE_ROWS or deep:
             if not dataset["values"]:
@@ -794,8 +829,9 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
             frame = client.query(
                 f"SELECT * FROM ({selected}) AS buckets ORDER BY bucket_ms LIMIT 50001"
             )
-            if grain:
-                grain = width
+            if any(not _numeric_kind(meta.types[value["column"]]) for value in dataset["values"]):
+                notes.append("Varying nonnumeric values become null within downsampled buckets.")
+            grain = width
         else:
             frame = _record_rows(client, selected, projection, clock, "series")
     else:
@@ -814,26 +850,69 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
         if dataset["kind"] == "series":
             item["group"] = item.get(request.group) if request.group else None
         rows.append({key: _serialize(value, notes) for key, value in item.items()})
-    if dataset["kind"] == "series" and window and grain and rows:
+    if dataset["kind"] == "series" and window and native_grain and grain and rows:
         lower_ms = _ts_ms(window[2])
         upper_ms = _ts_ms(window[3])
-        phases_by_group: dict[Any, set[int]] = {}
+        calendar_cadence = (
+            not width
+            and dataset["clock"]["grain"] in {"1d", "24h", "7d"}
+            and _clock_kind(clock, meta.types) == "aware"
+        )
+        phases_by_group: dict[Any, set[Any]] = {}
         for row in rows:
-            phases_by_group.setdefault(row["group"], set()).add(row["ts"] % grain)
+            if calendar_cadence:
+                local = datetime.fromtimestamp(row["ts"] / 1000, UTC).astimezone(LONDON)
+                phase = (
+                    local.timetz().replace(tzinfo=None),
+                    local.date().weekday() if grain == GRAINS["7d"] else None,
+                )
+            else:
+                phase = row["ts"] % grain
+            phases_by_group.setdefault(row["group"], set()).add(phase)
         groups_seen = sorted(phases_by_group, key=lambda value: (value is None, str(value)))
         observed = {(row["ts"], row["group"]): row for row in rows}
         expanded_rows = []
         for group_value in groups_seen:
-            if width:
+            if calendar_cadence:
+                phases = phases_by_group[group_value]
+                if len(phases) != 1:
+                    raise _limit(
+                        "unsupported_cadence", "Filter the mixed identities or cadence phases."
+                    )
+                local_time, weekday = next(iter(phases))
+                grid = []
+                for offset in range((window[1] - window[0]).days + 1):
+                    day = window[0] + timedelta(days=offset)
+                    if weekday is not None and day.weekday() != weekday:
+                        continue
+                    local_point = datetime.combine(day, local_time, LONDON)
+                    utc_point = local_point.astimezone(UTC)
+                    if utc_point.astimezone(LONDON).replace(tzinfo=None) != datetime.combine(
+                        day, local_time
+                    ):
+                        raise _limit(
+                            "unsupported_cadence",
+                            "Choose a window with an unambiguous local phase.",
+                        )
+                    grid.append(_ts_ms(utc_point))
+                grid_points = set(grid)
+                if any(ts not in grid_points for ts, group in observed if group == group_value):
+                    raise _limit(
+                        "unsupported_cadence", "Filter the mixed identities or cadence phases."
+                    )
+            elif width:
                 first = lower_ms // grain * grain
+                grid = (max(raw_ts, lower_ms) for raw_ts in range(first, upper_ms, grain))
             else:
                 phases = phases_by_group[group_value]
                 if len(phases) != 1:
-                    raise _limit("unsupported_cadence", "Use a shorter date window.")
+                    raise _limit(
+                        "unsupported_cadence", "Filter the mixed identities or cadence phases."
+                    )
                 phase = next(iter(phases))
                 first = lower_ms + (phase - lower_ms) % grain
-            for raw_ts in range(first, upper_ms, grain):
-                ts = max(raw_ts, lower_ms) if width else raw_ts
+                grid = range(first, upper_ms, grain)
+            for ts in grid:
                 record = observed.get((ts, group_value))
                 if record is None:
                     record = {"ts": ts, "group": group_value}
