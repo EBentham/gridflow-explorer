@@ -19,10 +19,10 @@ type View = 'chart' | 'table'
 
 // ---------------------------------------------------------------- frame pieces
 
-export function Head({ kind, title, sub, stamp, badge }: { kind: GlyphKind; title: string; sub: string; stamp?: string; badge?: ReactNode }) {
+export function Head({ kind, title, sub, stamp, badge, emblem }: { kind: GlyphKind; title: string; sub: string; stamp?: string; badge?: ReactNode; emblem?: ReactNode }) {
   return (
     <header className="i-head">
-      <Emblem kind={kind} />
+      {emblem ?? <Emblem kind={kind} />}
       <div className="i-head-text">
         <div className="i-head-title">
           <h1>{title}</h1>

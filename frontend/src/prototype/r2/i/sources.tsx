@@ -1,211 +1,16 @@
 /**
- * Slot i, source catalogue. The brand opens it: every source gridflow ingests,
- * grouped by domain, with the Explorer's own screens on top. A source page
- * lists that source's datasets in groups, split into time series, event feeds
- * and reference tables, and says which ones the Explorer draws.
+ * Slot i, one source's page: its datasets in groups, split into time series,
+ * event feeds and reference tables, and which ones the Explorer draws. The
+ * landing page that lists every source lives in home.tsx.
  */
-import { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import { fmt1, money } from '../../../design/charts'
-import { totalGeneration } from '../../../design/fuels'
-import { clock, dayLabel } from '../../../design/time'
-import { ProtoLink, fmtDate } from '../../controls'
-import { rangeEnding, useMix, usePrices, useRange } from '../../data'
-import { WIND_FIXTURE_DAY, WIND_FIXTURE_MODEL } from '../../fixtures/windForecast'
-import {
-  CATALOGUE_SNAPSHOT,
-  DOMAINS,
-  SOURCES,
-  datasetCount,
-  kindCounts,
-  sourceByKey,
-  views,
-  type Family,
-  type Kind,
-  type Source,
-} from './catalogue'
-import { Glyph, type GlyphKind } from './glyphs'
-import { FixtureTag, Head, Panel } from './screens'
+import { ProtoLink } from '../../controls'
+import { datasetCount, kindCounts, sourceByKey, views, type Family, type Kind } from './catalogue'
+import { Head, Panel } from './screens'
+import { SourceSymbol } from './symbols'
 import './sources.css'
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
-
-const TOTAL = SOURCES.reduce((n, s) => n + datasetCount(s), 0)
-const CHARTED = SOURCES.reduce((n, s) => n + views(s).length, 0)
-
-function kindText(s: Source): string {
-  const c = kindCounts(s)
-  const parts = [
-    c.series ? plural(c.series, 'time series', 'time series') : '',
-    c.events ? plural(c.events, 'event feed', 'event feeds') : '',
-    c.reference ? plural(c.reference, 'reference table', 'reference tables') : '',
-  ].filter(Boolean)
-  return parts.join(', ')
-}
-
-// ---------------------------------------------------------------- sparkline
-
-/** Axis-free trace for a view tile; the caption beside it carries unit and window. */
-function Spark({ values, dashed, zero }: { values: (number | null)[]; dashed?: boolean; zero?: boolean }) {
-  const finite = values.filter((v): v is number => v != null && Number.isFinite(v))
-  if (finite.length < 2) return <div className="i-spark is-empty" />
-  let lo = Math.min(...finite)
-  let hi = Math.max(...finite)
-  if (zero) lo = Math.min(lo, 0)
-  if (hi === lo) hi = lo + 1
-  const y = (v: number) => 94 - ((v - lo) / (hi - lo)) * 88
-  let d = ''
-  values.forEach((v, i) => {
-    if (v == null || !Number.isFinite(v)) return
-    d += `${d && values[i - 1] != null ? 'L' : 'M'}${i} ${y(v).toFixed(2)}`
-  })
-  return (
-    <svg className="i-spark" viewBox={`0 0 ${values.length - 1} 100`} preserveAspectRatio="none" aria-hidden="true">
-      {zero && lo < 0 && <path className="i-spark-zero" vectorEffect="non-scaling-stroke" d={`M0 ${y(0)} H${values.length - 1}`} />}
-      <path className={`i-spark-line${dashed ? ' is-dashed' : ''}`} vectorEffect="non-scaling-stroke" d={d} />
-    </svg>
-  )
-}
-
-interface TileProps {
-  to: string
-  glyph: GlyphKind
-  title: string
-  id: string
-  values: (number | null)[]
-  reading: string
-  caption: string
-  fixture?: boolean
-  zero?: boolean
-}
-
-function ViewTile({ to, glyph, title, id, values, reading, caption, fixture, zero }: TileProps) {
-  return (
-    <li className="i-view">
-      <div className="i-view-head">
-        <Glyph kind={glyph} size={30} />
-        <div>
-          <h3>
-            <ProtoLink to={to} className="i-view-link">
-              {title}
-            </ProtoLink>
-          </h3>
-          <code>{id}</code>
-        </div>
-        {fixture && <FixtureTag>Fixture</FixtureTag>}
-      </div>
-      <Spark values={values} dashed={fixture} zero={zero} />
-      <p className="i-view-reading">{reading}</p>
-      <p className="i-view-caption">{caption}</p>
-    </li>
-  )
-}
-
-// ---------------------------------------------------------------- catalogue
-
-function SourceRow({ s }: { s: Source }) {
-  const charted = views(s)
-  return (
-    <li className="i-srow">
-      <div className="i-srow-name">
-        <h4>
-          <ProtoLink to={`/sources/${s.key}`} className="i-srow-link">
-            {s.name}
-          </ProtoLink>
-        </h4>
-        <code>{s.key}</code>
-      </div>
-      <p className="i-srow-blurb">{s.blurb}</p>
-      <p className="i-srow-count">
-        <strong>{plural(datasetCount(s), 'dataset', 'datasets')}</strong>
-        <span>{kindText(s)}</span>
-      </p>
-      <p className="i-srow-status">
-        {charted.length ? (
-          <>
-            <span className="i-srow-status-label">Charted</span>
-            {charted.map((v) => (
-              <ProtoLink key={v.to} to={v.to} className="i-srow-view">
-                {v.label}
-              </ProtoLink>
-            ))}
-          </>
-        ) : (
-          <span className="is-none">Not read by the Explorer yet</span>
-        )}
-      </p>
-    </li>
-  )
-}
-
-export function CatalogueScreen() {
-  const { latest } = useRange()
-  const week = useMemo(() => (latest ? rangeEnding(latest, 7) : null), [latest])
-  const mix = useMix(week)
-  const prices = usePrices(week)
-  const lastMix = mix.rows.at(-1)
-  const lastPrice = prices.rows.findLast((r) => r.price != null)
-  const windowText = week ? `${fmtDate(week.start)} to ${fmtDate(week.end)}` : 'the last 7 local days'
-  const peak = WIND_FIXTURE_DAY.reduce((m, r) => Math.max(m, r['q_0.5']), 0)
-
-  return (
-    <section className="gf-screen i-screen i-cat">
-      <Head
-        kind="datacentre"
-        title="gridflow data"
-        sub="Every source gridflow ingests, and which of its datasets the Explorer draws. Select a source to see what it holds."
-        stamp={`${SOURCES.length} sources and ${TOTAL} datasets, ${CHARTED} of them charted here. This list was copied from gridflow's settings on ${CATALOGUE_SNAPSHOT} and doesn't update itself yet.`}
-      />
-
-      <Panel title="In the Explorer" src={`The screens that read gridflow now, each drawn over ${windowText}, UK time.`}>
-        <ul className="i-views">
-          <ViewTile
-            to="/datasets/generation-mix"
-            glyph="pylon"
-            title="Generation mix"
-            id="elexon/fuelhh"
-            values={mix.rows.map((r) => totalGeneration(r))}
-            reading={lastMix ? `${fmt1(totalGeneration(lastMix))} GW` : '–'}
-            caption={lastMix ? `Total generation, half-hour from ${clock(lastMix.t)} ${dayLabel(lastMix.t)}` : 'Total generation, GW'}
-          />
-          <ViewTile
-            to="/datasets/system-prices"
-            glyph="meter"
-            title="System prices"
-            id="elexon/system_prices"
-            values={prices.rows.map((r) => r.price)}
-            reading={lastPrice?.price != null ? `${money(lastPrice.price, 2)}/MWh` : '–'}
-            caption={lastPrice ? `Imbalance price, half-hour from ${clock(lastPrice.t)} ${dayLabel(lastPrice.t)}` : 'Imbalance price, £/MWh'}
-            zero
-          />
-          <ViewTile
-            to="/forecasts/wind"
-            glyph="turbine"
-            title="Wind forecast"
-            id={WIND_FIXTURE_MODEL}
-            values={WIND_FIXTURE_DAY.map((r) => r['q_0.5'])}
-            reading={`${Math.round(peak).toLocaleString('en-GB')} MW`}
-            caption="Median day-ahead forecast, peak of one synthetic day. No wind model writes to the forecast store yet."
-            fixture
-          />
-        </ul>
-      </Panel>
-
-      <Panel className="i-cat-sources" title="Sources" src="Grouped by what they measure. Counts are datasets gridflow is set up to fetch, not rows held locally.">
-        {DOMAINS.map((d) => (
-          <section key={d} className="i-domain" aria-labelledby={`i-domain-${d}`}>
-            <h3 id={`i-domain-${d}`}>{d}</h3>
-            <ul>
-              {SOURCES.filter((s) => s.domain === d).map((s) => (
-                <SourceRow key={s.key} s={s} />
-              ))}
-            </ul>
-          </section>
-        ))}
-      </Panel>
-    </section>
-  )
-}
 
 // ---------------------------------------------------------------- one source
 
@@ -300,6 +105,7 @@ export function SourceScreen() {
       </nav>
       <Head
         kind="datacentre"
+        emblem={<SourceSymbol source={s.key} domain={s.domain} size={64} />}
         title={s.name}
         sub={s.blurb}
         stamp={`${plural(datasetCount(s), 'dataset', 'datasets')} configured in gridflow as ${s.key}, fetched from ${s.host}.`}
