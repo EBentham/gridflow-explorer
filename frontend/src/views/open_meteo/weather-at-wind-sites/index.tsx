@@ -31,7 +31,7 @@ const reanalysisParts = (ctx: PageContext) => {
 
 const speedOf = (ctx: PageContext) => {
   const site = focusedSite(ctx, ctx.series)
-  return site ? `${site.label}'s speed` : 'the mean of the sites'
+  return site ? `${site.label}’s speed` : 'the mean of the sites'
 }
 
 const view = defineView({
