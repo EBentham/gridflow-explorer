@@ -13,7 +13,10 @@ const LOOKALIKE = 'Rows that look alike differ in direction (entry or exit) or c
 const view = defineView({
   title: 'Tariffs',
   sub: 'The tariffs gas network operators charge for capacity at each point, and what a capacity product would cost them, by country.',
-  caveats: ['ENTSO-G sends every country’s rows even when gridflow asks for the UK’s, so the page shows the UK’s by default.'],
+  caveats: [
+    'ENTSO-G sends every country’s rows even when gridflow asks for the UK’s, so the page shows the UK’s by default.',
+    'Almost every product begins at 06:00 Central European time, when the gas day starts: 05:00 on the UK clock.',
+  ],
   datasets: [
     {
       id: 'tariffs',
