@@ -13,7 +13,7 @@
  * `?theme=light|dark`, and the page emulates `prefers-color-scheme` to match.
  * Motion is emulated as reduced, so the turbine rotor stands still.
  *
- * Env: EXPLORER_API (backend), SHOOT_BROWSER (browser executable; exit 2
+ * Env: EXPLORER_API (backend), SHOOT_TIMEOUT_MS (wait per page, default 20 s), SHOOT_BROWSER (browser executable; exit 2
  * when it names a missing file), SHOOT_WIDTH (viewport width, default 1440).
  *
  * Exit code 1 when a route never became ready or threw; console errors and
@@ -28,7 +28,7 @@ import { createServer } from 'vite'
 
 const FRONTEND = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = join(FRONTEND, '.shots')
-const READY_TIMEOUT_MS = 20_000
+const READY_TIMEOUT_MS = Number(process.env.SHOOT_TIMEOUT_MS ?? 20_000)
 const WIDTH = Number(process.env.SHOOT_WIDTH ?? 1440)
 const HEIGHT = 900
 const THEMES = ['light', 'dark']

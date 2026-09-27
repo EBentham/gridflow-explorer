@@ -144,7 +144,7 @@ function valueAt(points: { t: number; v: number | null }[], t: number, step: num
   return points[found].v
 }
 
-function scaleOf(rows: WideRow[], series: SeriesDef[], mark: Mark, zero: boolean) {
+function scaleOf(rows: WideRow[], series: SeriesDef[], mark: Mark, zero: boolean, target: number) {
   let lo = Infinity
   let hi = -Infinity
   for (const r of rows) {
@@ -168,12 +168,12 @@ function scaleOf(rows: WideRow[], series: SeriesDef[], mark: Mark, zero: boolean
       }
     }
   }
-  if (!Number.isFinite(lo)) return niceTicks(0, 1)
+  if (!Number.isFinite(lo)) return niceTicks(0, 1, target)
   if (zero || mark !== 'line') {
     lo = Math.min(lo, 0)
     hi = Math.max(hi, 0)
   }
-  return niceTicks(lo, hi)
+  return niceTicks(lo, hi, target)
 }
 
 function whenText(t: number, stepMs: number | null): string {
@@ -220,7 +220,10 @@ function PanelChart({
   )
   const rowAt = useMemo(() => new Map(panel.rows.map((r) => [r.t, r])), [panel.rows])
   const ticks = useMemo(() => ukTimeTicks(domain[0], domain[1]), [domain])
-  const scale = useMemo(() => scaleOf(panel.rows, shown, stacked ? 'stacked' : mark, Boolean(panel.zero)), [panel.rows, shown, stacked, mark, panel.zero])
+  // A panel under 200px asks for 3 ticks, not 5, and shows every one: left to itself, Recharts thins crowded ticks from the bottom, and zero went first.
+  const short = (panel.height ?? CHART.height) < 200
+  const target = short ? 3 : 5
+  const scale = useMemo(() => scaleOf(panel.rows, shown, stacked ? 'stacked' : mark, Boolean(panel.zero), target), [panel.rows, shown, stacked, mark, panel.zero, target])
   const digits = stepDigits(scale.ticks[1] - scale.ticks[0])
   const tickText = (v: number) => fmtN(v, digits)
   const width = panel.axisWidth ?? Math.max(40, 10 + 7 * Math.max(...scale.ticks.map((v) => tickText(v).length)))
@@ -272,7 +275,7 @@ function PanelChart({
         {band && <HighlightBand x1={band[0]} x2={band[1]} />}
         <DayRules midnights={ticks.midnights} />
         <XAxis {...timeAxis(domain, ticks, { labels })} />
-        <YAxis {...valueAxis(unit.caption, scale, { width, format: tickText })} />
+        <YAxis {...valueAxis(unit.caption, scale, { width, format: tickText })} {...(short ? { interval: 0 } : {})} />
         <Tooltip content={renderTip} cursor={CURSOR} isAnimationActive={false} />
         {hasNegative && <ZeroLine />}
         {shown.map((d) => {
