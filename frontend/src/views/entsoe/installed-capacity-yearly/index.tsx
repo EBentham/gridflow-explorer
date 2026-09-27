@@ -1,9 +1,10 @@
 /**
  * ENTSO-E's installed capacity for the year (v0.4 P4-0 reference batch):
  * capacity by production type per area, capacity per generating unit, and
- * the forecast margin, each a table. Every row is one yearly figure, so the
- * tables leave its date out and the page names the year instead. The unit
- * list opens on GB's units, whose area code the rows carry.
+ * the forecast margin, each a table. Every row is one yearly figure, so each
+ * table ends on a Year column read from the row's date, rather than the page
+ * naming a year that the next fetch could change. The unit list opens on GB's
+ * units, whose area code the rows carry.
  */
 import type { Scalar } from '../../contract'
 import { productionType } from '../../_template/codes'
