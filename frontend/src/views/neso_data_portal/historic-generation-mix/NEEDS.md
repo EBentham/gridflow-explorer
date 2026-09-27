@@ -10,10 +10,12 @@ why this page needs it, and what the page does meanwhile.
    one request as 38,868 4-hour means of all 33 value columns: about 27 MB, about 6.5 s on an
    idle backend. The page needs 12 of those columns as 213 monthly means. Five years come back
    as 43,824 hourly means, about 28 MB.
-   - Live on the shared backend on 27 Sep, one request per window: one year was ready in
-     13 s, two years in 14 s and five years in 51 s. The full history timed out: nothing came
-     back within 120 s, and once within 212 s. Even the week has taken 46 s, and twice more
-     than 120 s, while the health check answered in milliseconds.
+   - Live on 27 Sep, one request per window:
+     - On :8003, the fixed instance: one year was ready in 13 s, two years in 14 s and five
+       years in 51 s. The full history was not ready within 120 s. The week missed 120 s
+       twice, while the health check answered in milliseconds.
+     - On :8002, earlier: the week took 46 s on its own, one day about 55 s, and the full
+       history was not back within 212 s.
    - `scripts/shoot.mjs` waits 20 s, so these shots time out there on the loading state. Past
      a year, the page's toolbar says the read can take a minute or more.
    - The endpoint accepted every span this page asks for. It never refused: past 400 days it
