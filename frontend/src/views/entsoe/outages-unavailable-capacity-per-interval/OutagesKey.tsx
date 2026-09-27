@@ -7,6 +7,7 @@
  */
 import { KeyList } from '../../../design/charts'
 import { instantLabel, windowDomain } from '../../../design/time'
+import { isoDayText } from '../../_template/text'
 import type { PageContext } from '../../define'
 import { MW, START, activeFilters, applyFilters, rowsOf, shapeOf, startMs, withYear } from './shape'
 
@@ -16,7 +17,18 @@ export function OutagesKey({ ctx }: { ctx: PageContext }) {
   const shape = shapeOf(ctx)
   const all = rowsOf(ctx)
   if (!shape || !ctx.window) return null
-  if (ctx.state === 'empty' || !all.length) return <p className="gf-hint">No outage block was published in {ctx.windowText}, so there is nothing to count.</p>
+  if (ctx.state === 'empty' || !all.length) {
+    // The main panel's empty line dates the local rows by their block starts; say when the notices were published.
+    const cov = ctx.response?.coverage
+    const first = cov?.first_day ? isoDayText(`${cov.first_day}T12:00:00Z`) : null
+    const last = cov?.last_day ? isoDayText(`${cov.last_day}T12:00:00Z`) : null
+    return (
+      <p className="gf-hint">
+        No outage block was published in {ctx.windowText}, so there is nothing to count.
+        {first && last ? ` The dates beside, where the local rows run, are block starts; the notices held were published from ${first} to ${last}.` : ''}
+      </p>
+    )
+  }
 
   const active = activeFilters(ctx, shape)
   const rows = applyFilters(all, active)
