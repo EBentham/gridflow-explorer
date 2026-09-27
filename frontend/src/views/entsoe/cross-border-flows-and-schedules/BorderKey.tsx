@@ -24,6 +24,8 @@ export function BorderKey({ ctx }: { ctx: PageContext }) {
   const tallies = new Map(borders.map((b) => [b.id, b.own ? windowTally(b.own.points, b.own.step, w) : null]))
   const stamp = Math.max(...[...tallies.values()].map((t) => t?.latest?.t ?? -Infinity))
   const pickable = borders.length > 1
+  // Focus outlives a change of in area; one naming no border here selects nothing.
+  const focused = borders.some((b) => b.id === ctx.focus)
   const sel = focusedBorder(ctx, borders)
   const selTally = sel ? tallies.get(sel.id) : null
   const besideTally = sel?.beside ? windowTally(sel.beside.points, sel.beside.step, w) : null
@@ -39,7 +41,7 @@ export function BorderKey({ ctx }: { ctx: PageContext }) {
           const on = ctx.focus === b.id
           const step = b.own?.step ?? null
           return (
-            <li key={b.id} className={on ? 'is-focus' : ctx.focus ? 'is-muted' : undefined}>
+            <li key={b.id} className={on ? 'is-focus' : focused ? 'is-muted' : undefined}>
               <button type="button" aria-pressed={on} disabled={!pickable} onClick={() => ctx.setFocus(on ? undefined : b.id)}>
                 <KeyList items={[{ key: b.id, mark: { kind: 'line', color: b.color, dashed: ctx.fixture }, label: <span className="gf-series-name">{b.name}</span> }]} />
                 <span className="gf-series-value">{t?.latest && b.own ? b.own.def.unit.format(t.latest.v) : '–'}</span>
@@ -52,7 +54,7 @@ export function BorderKey({ ctx }: { ctx: PageContext }) {
           )
         })}
       </ul>
-      {pickable && <p className="gf-hint">{ctx.focus ? 'Select it again to draw every border.' : 'Select a border to draw it alone, with its highest and lowest labelled.'}</p>}
+      {pickable && <p className="gf-hint">{focused ? 'Select it again to draw every border.' : 'Select a border to draw it alone, with its highest and lowest labelled.'}</p>}
       {beside === 'drawn' && ctx.mode === 'chart' && (
         <KeyList items={[{ key: 'beside', mark: { kind: 'line', color: BESIDE_COLOR, dashed: ctx.fixture }, label: `${cap(role.beside)}, on the same border` }]} />
       )}

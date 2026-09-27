@@ -38,6 +38,8 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
   })
   const stamp = Math.max(...rows.map((r) => r.latest?.t ?? -Infinity))
   const pickable = zones.length > 1
+  // A focus naming no zone in this window selects nothing.
+  const focused = zones.some((z) => z.id === ctx.focus)
   const sel = focusedZone(ctx, zones)
   const selRow = rows.find((r) => r.z.id === sel?.id)
 
@@ -53,7 +55,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
         {rows.map(({ z, tallies, step, held, expected, latest }) => {
           const on = ctx.focus === z.id
           return (
-            <li key={z.id} className={on ? 'is-focus' : ctx.focus ? 'is-muted' : undefined}>
+            <li key={z.id} className={on ? 'is-focus' : focused ? 'is-muted' : undefined}>
               <button type="button" aria-pressed={on} disabled={!pickable} onClick={() => ctx.setFocus(on ? undefined : z.id)}>
                 <span className="gf-series-name">{z.name}</span>
                 <span className="gf-series-value">{latest ? latest.line.def.unit.format(latest.v) : '–'}</span>
@@ -71,7 +73,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
           )
         })}
       </ul>
-      {pickable && <p className="gf-hint">{ctx.focus ? 'Select it again to draw every zone.' : 'Select a zone to draw it alone.'}</p>}
+      {pickable && <p className="gf-hint">{focused ? 'Select it again to draw every zone.' : 'Select a zone to draw it alone.'}</p>}
       {sel && selRow && (
         <>
           <p className="gf-hint">In this window, {sel.name}, each side apart:</p>

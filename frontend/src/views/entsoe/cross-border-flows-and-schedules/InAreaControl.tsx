@@ -13,9 +13,9 @@ const OPTIONS = IN_AREAS.map((a) => ({ value: a.param, label: a.label }))
 export function InAreaControl({ ctx }: { ctx: PageContext }) {
   const value = IN_AREAS.find((a) => a.param === ctx.param(IN_PARAM))?.param ?? 'gb'
   return (
-    <span className="gf-range">
+    <div className="gf-range">
       <span className="gf-toolbar-note">In area</span>
       <Segmented label="In area" options={OPTIONS} value={value} onChange={(v) => ctx.setParam(IN_PARAM, v === 'gb' ? null : v)} />
-    </span>
+    </div>
   )
 }
