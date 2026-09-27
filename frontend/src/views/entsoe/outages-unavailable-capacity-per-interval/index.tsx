@@ -95,7 +95,7 @@ const view = defineView({
       sub: 'ENTSO-E’s notices of planned outages on cross-border transmission assets, mostly on the GB–France border, dated by when the notice was published.',
       caveats: [
         'Assets show as ENTSO-E’s codes: the rows carry no names. In and out areas are as ENTSO-E gives them.',
-        'A few blocks are cancelled (status Cancelled); filter Status to leave them out. A blank status is a notice that states none.',
+        'A few of the blocks held are cancelled; when a window holds any, filter Status to leave them out. A blank status is a notice that states none.',
         'No capacity is published beside these figures, so whether they are the capacity out or left can’t be checked against the asset.',
       ],
       panels: PANELS,

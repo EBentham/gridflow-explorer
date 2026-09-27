@@ -123,10 +123,11 @@ export function mwText(v: number): string {
   return Number.isInteger(v) ? fmt0(v) : fmtN(v, autoDigits(v))
 }
 
-/** A value in its field's words, or as held. */
+/** A value in its field's words, or as held; `Blank` for an empty one with no words. */
 export function said(f: Field | undefined, v: Scalar | undefined): string {
-  if (v === null || v === undefined) return f?.words?.(null) ?? '–'
-  return f?.words?.(v) ?? String(v)
+  const words = f?.words?.(v ?? null)
+  if (words) return words
+  return v === null || v === undefined || v === '' ? 'Blank' : String(v)
 }
 
 // ---------------------------------------------------------------- filters
