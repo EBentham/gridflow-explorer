@@ -85,7 +85,7 @@ export function DemandKey({ ctx }: { ctx: PageContext }) {
             <dd>
               {unit.format(gap.sum / gap.count)}
               <span className="gf-stat-when">
-                transmission above national, {unit.plain(gap.min)} to {unit.format(gap.max)}
+                {unit.plain(gap.min)} to {unit.format(gap.max)}
               </span>
             </dd>
           </div>
@@ -93,7 +93,7 @@ export function DemandKey({ ctx }: { ctx: PageContext }) {
       </dl>
       <p className="gf-hint">
         Peak, trough and mean are of the {national.count.toLocaleString('en-GB')} {noun} of national demand held in the window.
-        {gap && gap.count > 0 ? ` The gap is read at the ${gap.count.toLocaleString('en-GB')} ${noun} where both are held.` : ''}
+        {gap && gap.count > 0 ? ` The gap is transmission demand less national demand, read at the ${gap.count.toLocaleString('en-GB')} ${noun} where both are held.` : ''}
       </p>
       {rel && (rel.state === 'error' || rel.state === 'refreshing') && (
         <p className="gf-hint">

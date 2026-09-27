@@ -128,8 +128,8 @@ const view = defineView({
                 ctx={ctx}
                 columns={[INDOD]}
                 unit={null}
-                also={n ? [{ ...relatedParts(ctx, [n])[0], unit: 'MWh' }] : []}
-                what="the daily figure as published, and national demand's half-hours summed as energy per UK day"
+                also={n ? [{ ...relatedParts(ctx, [n])[0], unit: 'MW' }] : []}
+                what="the daily figure as published, and each half-hour's MW of national demand summed as MWh per UK day"
               />
             )
           },
