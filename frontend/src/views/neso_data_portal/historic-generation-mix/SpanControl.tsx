@@ -5,11 +5,15 @@
  * the same `from` and `to` its date inputs write), so the page makes one
  * rows request for the span and the backend reads it as means where it is
  * long (NEEDS.md). A shortcut is on while the window is exactly its span.
+ * While a window of more than a year is read, a note says it can take a
+ * while: on the shared backend five years took about 50 s and the whole
+ * history over two minutes, with nothing else on the page to say so.
  */
 import { Segmented } from '../../../design/frame'
 import { shiftDate } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { PageContext } from '../../define'
+import { daysIn } from './periods'
 
 interface Span {
   value: string
@@ -68,6 +72,11 @@ export function SpanControl({ ctx }: { ctx: PageContext }) {
           ))}
         </select>
       </label>
+      {ctx.state === 'loading' && w && daysIn(w) > 366 && (
+        <span className="gf-toolbar-note" role="status">
+          Reading years of rows: this can take a minute or more.
+        </span>
+      )}
     </>
   )
 }
