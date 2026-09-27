@@ -6,7 +6,7 @@
  * Counts only: the MW figure's meaning is unsettled, so nothing adds it up.
  */
 import { KeyList } from '../../../design/charts'
-import { instantLabel, windowDomain } from '../../../design/time'
+import { DAY_MS, HOUR_MS, instantLabel, windowDomain } from '../../../design/time'
 import { isoDayText } from '../../_template/text'
 import type { PageContext } from '../../define'
 import { MW, START, activeFilters, applyFilters, rowsOf, shapeOf, startMs, withYear } from './shape'
@@ -25,7 +25,7 @@ export function OutagesKey({ ctx }: { ctx: PageContext }) {
     return (
       <p className="gf-hint">
         No outage block was published in {ctx.windowText}, so there is nothing to count.
-        {first && last ? ` The dates beside, where the local rows run, are block starts; the notices held were published from ${first} to ${last}.` : ''}
+        {first && last ? ` The dates in the main panel are when the outage blocks start. The notices held were published from ${first} to ${last}.` : ''}
       </p>
     )
   }
@@ -34,7 +34,9 @@ export function OutagesKey({ ctx }: { ctx: PageContext }) {
   const rows = applyFilters(all, active)
   if (!rows.length) return <p className="gf-hint">No outage block in this window matches the table’s filters.</p>
 
-  const [, end] = windowDomain(ctx.window.start, ctx.window.end)
+  const [lo, end] = windowDomain(ctx.window.start, ctx.window.end)
+  // The same period as the strip's bars (OutagesTable).
+  const per = end - lo <= 2 * DAY_MS + HOUR_MS ? 'hour' : 'day'
   const who = new Set(rows.map((r) => r[shape.who.field]))
   const zero = rows.filter((r) => r[MW] === 0).length
   const cancelled = shape.status ? rows.filter((r) => r[shape.status!.field] === 'A09').length : null
@@ -50,7 +52,7 @@ export function OutagesKey({ ctx }: { ctx: PageContext }) {
 
   return (
     <>
-      {ctx.mode === 'chart' && <KeyList items={[{ key: 'strip', mark: { kind: 'swatch', color: 'var(--kind-events)' }, label: 'Outage blocks published per period' }]} />}
+      {ctx.mode === 'chart' && <KeyList items={[{ key: 'strip', mark: { kind: 'swatch', color: 'var(--kind-events)' }, label: `Outage blocks published per ${per}` }]} />}
       <dl className="gf-stats">
         <div>
           <dt>Outage blocks</dt>

@@ -70,7 +70,7 @@ const view = defineView({
   caveats: [
     'Planned outages only: gridflow never asks ENTSO-E for unplanned ones.',
     'Each row is one block of a notice, with its start and MW figure. Its end isn’t held, so how long a block lasts, and what is out now, can’t be read.',
-    'The MW figure may be the capacity left, not the capacity out: full outages mostly show 0 MW. Until that is settled it is shown as published and never added up.',
+    'The MW figure’s meaning is unconfirmed: it may be the capacity out or the capacity left. It is shown as published and never added up.',
     'A notice is fetched again every day it stays open. Each block shows once here, in its latest published version.',
   ],
   datasets: [
@@ -81,10 +81,12 @@ const view = defineView({
       title: 'Outage blocks at generation units',
       sub: 'ENTSO-E’s notices of planned outages at generation units, each as blocks with a start and a MW figure, dated by when the notice was published.',
       caveats: [
+        'The MW figure here may be the capacity left, not the capacity out: measured against each unit’s rated capacity, full outages mostly show 0 MW.',
         'About 40% of the generation notices gridflow fetched were cancelled, and these rows have no status column to tell which: any row may be a withdrawn plan.',
         'Where two notices give one unit a block at the same start, only the newer shows.',
         'GB’s units (area 10YGB----------A) appear only in notices published 2 to 6 October 2025: set the window there to read them.',
       ],
+      strip: true,
       panels: PANELS,
     },
     {
@@ -98,6 +100,7 @@ const view = defineView({
         'A few of the blocks held are cancelled; when a window holds any, filter Status to leave them out. A blank status is a notice that states none.',
         'No capacity is published beside these figures, so whether they are the capacity out or left can’t be checked against the asset.',
       ],
+      strip: true,
       panels: PANELS,
     },
     {
@@ -107,9 +110,11 @@ const view = defineView({
       title: 'Outage blocks at production units',
       sub: 'ENTSO-E’s notices of planned outages at production units in the Netherlands, Germany-Luxembourg and France, dated by when the notice was published.',
       caveats: [
+        'The same doubt as for generation units: measured against each unit’s rated capacity, the MW figure reads more like the capacity left than the capacity out.',
         'About two thirds of the blocks held are cancelled (status Cancelled); filter Status to leave them out. A blank status is a notice that states none.',
         'No GB units: these rows cover the Netherlands, Germany-Luxembourg and France. For many areas ENTSO-E’s production units overlap its generation units.',
       ],
+      strip: true,
       panels: PANELS,
     },
     {
@@ -121,6 +126,7 @@ const view = defineView({
       caveats: [
         'This one comes on a regular 15-minute clock, almost all Germany-Luxembourg and near flat. It is dated here by publication, so a fortnight of quarter-hours lands on the day ENTSO-E sent it; sort by Block starts to read it in order.',
       ],
+      strip: true,
       panels: PANELS,
     },
     {

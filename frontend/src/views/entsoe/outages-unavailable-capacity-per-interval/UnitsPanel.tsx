@@ -105,6 +105,10 @@ export function UnitsPanel({ ctx }: { ctx: PageContext }) {
 
   const list = [...units.values()]
   const [one, many] = shape.noun
+  // A border asset gets a row per direction, so the rows can outnumber the assets the key counts.
+  const distinct = new Set(list.map((u) => String(u.who ?? ''))).size
+  const count = `${distinct.toLocaleString('en-GB')} ${distinct === 1 ? one : many}`
+  const rowsSaid = list.length === distinct ? count : `${count} in ${list.length.toLocaleString('en-GB')} ${one} and direction pairs`
   return (
     <>
       <WindowedTable
@@ -113,7 +117,7 @@ export function UnitsPanel({ ctx }: { ctx: PageContext }) {
         rowKey={(u) => u.key}
         initialSort={{ key: 'blocks', dir: 'desc' }}
         maxHeight={360}
-        caption={`${list.length.toLocaleString('en-GB')} ${list.length === 1 ? one : many} with blocks published in ${ctx.windowText}${active.length ? ', matching the table’s filters' : ''}, most blocks first.`}
+        caption={`${rowsSaid}, with blocks published in ${ctx.windowText}${active.length ? ', matching the table’s filters' : ''}, most blocks first.`}
         empty={`No ${one} in this window matches the table’s filters.`}
       />
       <p className="gf-hint">

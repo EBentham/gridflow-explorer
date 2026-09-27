@@ -42,7 +42,8 @@ export interface OutageShape {
 }
 
 /**
- * ENTSO-E's area codes (EIC) that the research card names for these rows.
+ * ENTSO-E's area codes (EIC) that the research card names for these rows, and
+ * Ireland's (SEM), as gridflow's own ENTSO-E area list names it.
  * A code not listed shows as held.
  */
 const AREAS: Readonly<Record<string, string>> = {
@@ -51,6 +52,7 @@ const AREAS: Readonly<Record<string, string>> = {
   '10YBE----------2': 'Belgium',
   '10YNL----------L': 'Netherlands',
   '10Y1001A1001A82H': 'Germany-Luxembourg',
+  '10Y1001A1001A59C': 'Ireland (SEM)',
 }
 
 export function areaWords(v: Scalar): string | null {
