@@ -51,3 +51,11 @@ why this page needs it, and what the page does meanwhile.
    - Wanted: count coverage from the response without walking each day, or lift the cap.
 6. **The default series cap (10) is below this dataset's 11 fuels.** The page sets
    `maxSeries: 12`. It's noted here in case another NESO or ENTSO-E mix meets the same limit.
+7. **The template chart's lowest label can land on the time ticks.** `SeriesChart` always
+   sets a lowest label under its dot, and its scale leaves no room under a lowest value near
+   the axis floor.
+   - On 30 days, "30 gCO₂/kWh, lowest, Sat 12 at 14:00" runs over the "Tue 15" and "Fri 18"
+     ticks. The week's label sits just clear of them.
+   - The page's own long chart avoids this: `withRoom` in `LongChart.tsx` adds a step under
+     a low near the bottom, or half a step with no tick where zero is the floor.
+   - Wanted: the same room in `SeriesChart`'s scale, or a `lower` option that asks for it.
