@@ -52,7 +52,7 @@ const view = defineView({
         },
         key: {
           title: 'Key',
-          src: (ctx) => <SourceLine ctx={ctx} columns={[SSP, SBP, NIV, CI_FORECAST]} unit="£/MWh, MWh and gCO₂/kWh" what="the latest half-hour held, and the window’s price range, extremes and mean" />,
+          src: (ctx) => <SourceLine ctx={ctx} columns={[SSP, SBP, NIV, CI_FORECAST, CI_ACTUAL]} unit="£/MWh, MWh and gCO₂/kWh" what="the latest half-hour held, and the window’s price range, extremes and mean" />,
           Body: ContextKey,
         },
         working: {
