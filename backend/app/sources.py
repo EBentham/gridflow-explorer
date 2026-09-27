@@ -10,6 +10,7 @@ from datetime import UTC, date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
+import anyio
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
@@ -21,13 +22,18 @@ router = APIRouter()
 LOG = logging.getLogger(__name__)
 LONDON = ZoneInfo("Europe/London")
 TTL_SECONDS = 600
+# Leave AnyIO worker capacity for other sync endpoints during slow rows queries.
+ROWS_CONCURRENCY = 4
+_ROWS_LIMITER = anyio.CapacityLimiter(ROWS_CONCURRENCY)
 _lock = threading.Lock()
 _snapshot: dict[str, Any] | None = None
 _refreshed_at = 0.0
 
 
 @router.get("/api/sources/{source_key}/{dataset_id}/rows", response_model=None)
-def get_rows(source_key: str, dataset_id: str, request: Request) -> dict[str, Any] | JSONResponse:
+async def get_rows(
+    source_key: str, dataset_id: str, request: Request
+) -> dict[str, Any] | JSONResponse:
     """Validate the registry contract before guarded catalogue acquisition."""
     from app import rows
     from app.settings import get_settings
@@ -51,8 +57,12 @@ def get_rows(source_key: str, dataset_id: str, request: Request) -> dict[str, An
                 "Dataset schema is unavailable.",
                 details={"not_held_cause": status.cause},
             )
-        with client_ctx() as client:
-            return rows.execute(client, parsed, config)
+
+        def execute_rows() -> dict[str, Any]:
+            with client_ctx() as client:
+                return rows.execute(client, parsed, config)
+
+        return await anyio.to_thread.run_sync(execute_rows, limiter=_ROWS_LIMITER)
     except rows.RowsError as exc:
         return JSONResponse(status_code=exc.http_status, content=exc.envelope())
 
