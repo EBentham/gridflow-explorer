@@ -30,7 +30,7 @@ const view = defineView({
       caveats: [
         'Prices reach back to 2021, but the national carbon intensity is held locally for far fewer days, so many windows carry little or none. A half-hour without it shows as a gap, never as zero.',
         'The actual intensity is estimated and published after the half-hour it describes. A model of a half-hour can’t use it as an input for that half-hour; the forecast is the one known in time.',
-        'Each half-hour carries a code for how its price was derived: N and P are the ones seen, K rarely. This page shows them as published and reads nothing into them.',
+        'Each half-hour carries a code for how its price was derived: N and P are the ones seen, K rarely. This page shows them as published and reads nothing into them. The rows arrive split by that code; the page joins them back into one row per half-hour, and would show a half-hour held under two codes as a gap, with a note.',
       ],
       values: VALUES,
       related: [{ key: CI_SOURCE, source: 'neso', dataset: 'carbon_intensity', label: 'National carbon intensity' }],

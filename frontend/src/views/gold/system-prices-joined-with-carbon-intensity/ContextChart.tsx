@@ -9,6 +9,7 @@
  * template's series table over the folded rows, one per half-hour, the price
  * derivation code as its last column.
  */
+import './page.css'
 import { plural } from '../../../design/format'
 import { windowDomain } from '../../../design/time'
 import { SeriesBody } from '../../_template/SeriesBody'
@@ -51,7 +52,9 @@ export function ContextChart({ ctx }: { ctx: PageContext }) {
   const forecast = seriesOf(model, CI_FORECAST)
   const actual = seriesOf(model, CI_ACTUAL)
   const sides = priceSides(model)
-  const prices = [ssp, sides.differ > 0 ? sbp : undefined].filter((d) => d !== undefined && d.count > 0) as NonNullable<typeof ssp>[]
+  // With the two prices equal throughout, one line is both: it is named the system price.
+  const sell = ssp && sides.differ === 0 ? { ...ssp, label: 'System price' } : ssp
+  const prices = [sell, sides.differ > 0 ? sbp : undefined].filter((d) => d !== undefined && d.count > 0) as NonNullable<typeof ssp>[]
   const intensities = [forecast, actual].filter((d) => d !== undefined && d.count > 0) as NonNullable<typeof ssp>[]
   const common = { rows: model.rows, stepMs: model.stepMs, bucketed: model.bucketed, settlement: model.settlement, axisWidth: AXIS_WIDTH }
   const panels: ChartPanel[] = []
@@ -59,13 +62,16 @@ export function ContextChart({ ctx }: { ctx: PageContext }) {
     panels.push({ ...common, series: prices, mark: 'line', unit: prices[0].unit, height: 250, extremes: prices[0], belowZero: prices[0].min !== null && prices[0].min < 0 ? prices[0] : null })
   }
   if (niv && niv.count > 0) panels.push({ ...common, series: [niv], mark: 'bars', unit: niv.unit, height: 130, zero: true })
-  if (intensities.length) panels.push({ ...common, series: intensities, mark: 'line', unit: intensities[0].unit, height: 170, extremes: forecast && forecast.count > 0 ? forecast : null })
+  // Intensity is never below zero, so its axis starts there; a handful of points gets no extremes, whose labels would crowd its caption.
+  if (intensities.length) panels.push({ ...common, series: intensities, mark: 'line', unit: intensities[0].unit, height: 170, zero: true, extremes: forecast && forecast.count >= 12 ? forecast : null })
 
   const cover = intensityCover(model)
   return (
     <>
       {panels.length > 0 ? (
-        <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+        <div className="gf-imbctx-chart">
+          <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+        </div>
       ) : (
         <p className="gf-state">Rows are held for this window, but none of their values can be drawn. The table lists them.</p>
       )}

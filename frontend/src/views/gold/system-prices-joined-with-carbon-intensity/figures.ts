@@ -34,9 +34,9 @@ export const CI_SOURCE = 'ci'
 export const AXIS_WIDTH = 52
 
 export const VALUES: ValueSpec[] = [
-  { column: SSP, label: 'System sell price', color: 'var(--chart-price)' },
-  { column: SBP, label: 'System buy price', color: 'var(--chart-price-2)' },
-  { column: NIV, label: 'Net imbalance volume', color: 'var(--chart-fan-soft)' },
+  { column: SSP, label: 'Sell price', color: 'var(--chart-price)' },
+  { column: SBP, label: 'Buy price', color: 'var(--chart-price-2)' },
+  { column: NIV, label: 'Imbalance volume', color: 'var(--chart-fan-soft)' },
   { column: CI_FORECAST, label: 'Intensity, forecast', color: 'var(--chart-price-2)' },
   { column: CI_ACTUAL, label: 'Intensity, actual', color: 'var(--chart-actual)' },
 ]

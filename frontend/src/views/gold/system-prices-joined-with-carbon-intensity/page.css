@@ -9,3 +9,10 @@
   letter-spacing: -0.005em;
   line-height: 1.2;
 }
+
+/* A low extreme in the price panel is labelled below its dot, over the next
+   panel's top margin: the price panel sits above the panels after it so the
+   next panel's surface doesn't cover the label. */
+.gf-imbctx-chart .gf-chart-stack > .gf-chart:first-child {
+  z-index: 1;
+}
