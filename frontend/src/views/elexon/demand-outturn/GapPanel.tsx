@@ -99,13 +99,13 @@ export function GapPanel({ ctx }: { ctx: PageContext }) {
                 Mean, {unit.label}
               </th>
               <th scope="col" className="is-num">
-                Trough
+                Trough, {unit.label}
               </th>
               <th scope="col" className="is-num">
-                Peak
+                Peak, {unit.label}
               </th>
               <th scope="col" className="is-num">
-                Gap, mean
+                Mean gap, {unit.label}
               </th>
             </tr>
           </thead>

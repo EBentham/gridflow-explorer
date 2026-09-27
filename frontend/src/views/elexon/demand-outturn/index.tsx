@@ -9,7 +9,8 @@
  * beside it.
  */
 import { SourceLine } from '../../_template/panels'
-import { relatedParts } from '../../_template/panelHelpers'
+import { periodLabel } from '../../../design/time'
+import { keyStamp, relatedParts } from '../../_template/panelHelpers'
 import { defineView } from '../../define'
 import { AXIS_WIDTH, ATL, COLORS, INDO, INDOD, ITSDO, NATIONAL_KEY, TSD_KEY, seriesOf } from './figures'
 import { DailyPanel } from './DailyPanel'
@@ -93,7 +94,11 @@ const view = defineView({
       panels: {
         key: {
           title: 'Key',
-          src: (ctx) => <SourceLine ctx={ctx} columns={[ATL]} unit="GW" what="the latest half-hour held, and the half-hours held in the window" />,
+          src: (ctx) => {
+            // A custom key line drops the template's stamp, so name the latest half-hour here: the rows have gaps.
+            const stamp = keyStamp(ctx)
+            return <SourceLine ctx={ctx} columns={[ATL]} unit="GW" what={`the latest half-hour held${stamp ? `, ${periodLabel(stamp.t, stamp.stepMs)}` : ''}, and the half-hours held in the window`} />
+          },
           Body: LoadKey,
         },
       },

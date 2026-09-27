@@ -38,8 +38,8 @@ export function LoadKey({ ctx }: { ctx: PageContext }) {
             <div>
               <dt>Complete days</dt>
               <dd>
-                {fullDays} of {heldAny}
-                <span className="gf-stat-when">of the days holding any</span>
+                {fullDays}
+                <span className="gf-stat-when">of the {heldAny} days holding any</span>
               </dd>
             </div>
           </dl>
