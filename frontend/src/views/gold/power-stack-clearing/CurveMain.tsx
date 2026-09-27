@@ -150,9 +150,6 @@ function CurveChart({ units, clearing, market }: { units: CurveUnit[]; clearing:
           />
         ))}
         {ys.domain[0] < 0 && <ZeroLine />}
-        {market !== null && (
-          <ReferenceLine y={market} stroke={MARKET_COLOR} strokeWidth={CHART.line} ifOverflow="hidden" label={<LineLabel text={`Market index ${money(market, 2)}/MWh`} />} />
-        )}
         {demandGw !== null && (
           <ReferenceLine
             segment={[
@@ -174,6 +171,10 @@ function CurveChart({ units, clearing, market }: { units: CurveUnit[]; clearing:
             strokeWidth={1}
             ifOverflow="hidden"
           />
+        )}
+        {/* After the clearing demand's lines: below zero that line runs the chart's full height, through this label, and the label's halo must paint over it. */}
+        {market !== null && (
+          <ReferenceLine y={market} stroke={MARKET_COLOR} strokeWidth={CHART.line} ifOverflow="hidden" label={<LineLabel text={`Market index ${money(market, 2)}/MWh`} />} />
         )}
         {demandGw !== null && price !== null && (
           <Extreme x={demandGw} y={price} anchor={extremeAnchor(demandGw, xs.domain)} color={MODEL_COLOR} text={`Clears at ${fmt1(demandGw)} GW and ${money(price, 2)}/MWh`} />
