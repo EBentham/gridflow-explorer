@@ -11,6 +11,11 @@ does meanwhile.
      `CountStrip` and the same filter markup, with a block-start column that names the year
      and sorts as a time. It repeats about 60 lines of `EventsBody`'s filters.
    - Wanted: a `years` flag on `ColumnSpec` (or `EventsView`) passed through to `toTableCol`.
+   - A deliberate deviation: the page's own filters keep the template's `?f.<field>=`
+     parameters, which the README reserves for the events body. They are the same filters
+     the events body would set, and the template clears every `f.` parameter when the
+     dataset changes; a page-prefixed name would leave one dataset's filters standing on the
+     next. With a `years` flag the page could go back to `EventsBody` and this goes away.
 
 2. **Event filters can't pick a blank value.** `EventsBody` sets `?f.<field>=` to the value,
    and an empty string clears it, so `document_status` '' (a notice that states no status)
