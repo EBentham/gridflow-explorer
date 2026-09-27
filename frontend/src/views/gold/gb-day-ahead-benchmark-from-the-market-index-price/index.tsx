@@ -22,7 +22,7 @@ const view = defineView({
   sub: 'The half-hourly price the power stack model is checked against. It is derived from Elexon’s market index price, not traded in a day-ahead auction.',
   caveats: [
     'Derived, not traded: gridflow takes each half-hour’s price and volume from Elexon’s market index price, as reported by one provider, APXMIDP. No day-ahead auction sets it, and it reflects trading in the short-term market.',
-    'Where the index was never published for a half-hour, or isn’t held locally, the half-hour shows as a gap, never as a zero.',
+    'Where the index was never published for a half-hour, or isn’t held locally, the half-hour shows as a gap, never as a zero. gridflow’s notes record 15 such half-hours, over 11 days, that the market index skipped.',
     'The index carries no time of publication. Where gridflow has read a half-hour more than once, the benchmark keeps the copy read last.',
   ],
   datasets: [
