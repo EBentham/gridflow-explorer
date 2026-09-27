@@ -1,20 +1,25 @@
 /**
  * The main panel. Up to 31 days it is the template's series body: every
  * half-hour, the fuels stacked with the carbon intensity below (Chart), or
- * every half-hour as a row (Table). Past that, the long view: each UK day's
- * or month's mean (`periods.ts`), drawn by `LongChart` or listed a row per
- * point with its year, as the template's table names no year.
+ * every half-hour as a row (Table). The carbon intensity's highest and lowest
+ * half-hours are then given in words under the chart, not labelled on it: the
+ * template's lowest label can run over the date ticks (NEEDS.md). Past 31
+ * days, the long view: each UK day's or month's mean (`periods.ts`), drawn by
+ * `LongChart` or listed a row per point with its year, as the template's
+ * table names no year. Either way the embedded-wind hatch is drawn here, by
+ * the chart that uses it.
  */
 import { useMemo } from 'react'
-import { windowDomain } from '../../../design/time'
+import { periodLabel, windowDomain } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import { SeriesBody } from '../../_template/SeriesBody'
-import type { SeriesModel } from '../../_template/seriesModel'
+import type { SeriesModel, WideRow } from '../../_template/seriesModel'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
 import { CI, CI_LABEL, FUELS, seriesOf } from './fuels'
 import { LongChart } from './LongChart'
 import { clockOf, heldText, periodName, periodsOf, periodText, pointKindOf, rowKindOf, stepsText, type Clock, type Period } from './periods'
+import { WindHatch } from './WindHatch'
 
 const dash = <span className="gf-cell-missing">–</span>
 
@@ -87,8 +92,39 @@ function LongBody({ ctx, window, clock }: { ctx: PageContext; window: DateRange;
   )
 }
 
+/** The carbon intensity's highest and lowest half-hour held in the window, as a sentence; empty when there's no range to give. */
+function ciExtremesText(model: SeriesModel): string {
+  const d = seriesOf(model, CI)
+  if (!d) return ''
+  let high: WideRow | undefined
+  let low: WideRow | undefined
+  for (const row of model.rows) {
+    const v = row[d.field]
+    if (typeof v !== 'number') continue
+    if (!high || v > (high[d.field] as number)) high = row
+    if (!low || v < (low[d.field] as number)) low = row
+  }
+  if (!high || !low || high === low) return ''
+  const at = (row: WideRow) => `${d.unit.format(row[d.field] as number)} (${periodLabel(row.t, model.stepMs)})`
+  return `In this window, carbon intensity was highest at ${at(high)} and lowest at ${at(low)}.`
+}
+
 export function MixBody({ ctx }: { ctx: PageContext }) {
   const clock = clockOf(ctx.window)
-  if (clock === 'native' || !ctx.series || !ctx.window) return <SeriesBody ctx={ctx} />
-  return <LongBody ctx={ctx} window={ctx.window} clock={clock} />
+  if (clock === 'native' || !ctx.series || !ctx.window) {
+    const extremes = ctx.series && ctx.state === 'data' && ctx.mode !== 'table' ? ciExtremesText(ctx.series) : ''
+    return (
+      <>
+        <WindHatch />
+        <SeriesBody ctx={ctx} />
+        {extremes && <p className="gf-hint">{extremes}</p>}
+      </>
+    )
+  }
+  return (
+    <>
+      <WindHatch />
+      <LongBody ctx={ctx} window={ctx.window} clock={clock} />
+    </>
+  )
 }

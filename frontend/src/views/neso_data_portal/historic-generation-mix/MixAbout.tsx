@@ -46,8 +46,8 @@ export function MixAbout({ ctx }: { ctx: PageContext }) {
       <div>
         <dt>Left out</dt>
         <dd>
-          <code>generation</code>, NESO’s total, which the fuels add up to. NESO’s groupings, <Ids ids={groupings} />: in the rows held, <code>renewable</code> counts storage, which NESO’s own
-          description of it doesn’t. And the {pct.length} per-cent columns, such as <code>{pct[0] ?? 'gas_pct'}</code>: the zero-carbon share doesn’t match the zero-carbon MW over the total, so shares here are
+          <code>generation</code>, NESO’s total, which the fuels add up to. NESO’s groupings, <Ids ids={groupings} />, as the page draws the fuels themselves; in the rows held,{' '}
+          <code>renewable</code> counts storage. And the {pct.length} per-cent columns, such as <code>{pct[0] ?? 'gas_pct'}</code>: the zero-carbon share doesn’t match the zero-carbon MW over the total, so shares here are
           worked out from the MW.
         </dd>
       </div>

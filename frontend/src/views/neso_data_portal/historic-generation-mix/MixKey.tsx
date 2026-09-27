@@ -59,7 +59,7 @@ export function MixKey({ ctx }: { ctx: PageContext }) {
           return (
             <li key={f.column} className={on ? 'is-focus' : focus ? 'is-muted' : undefined}>
               <button type="button" aria-pressed={on} onClick={() => ctx.setFocus(on ? undefined : id)}>
-                <span className="gf-swatch" style={{ background: f.color }} />
+                <span className="gf-swatch" style={{ background: f.swatch }} />
                 <span className="gf-fuel-name">{f.label}</span>
                 <span className="gf-fuel-value">{v === null ? '–' : amountText(gw, v)}</span>
               </button>
@@ -86,7 +86,7 @@ export function MixKey({ ctx }: { ctx: PageContext }) {
       </p>
       {zeros && <p className="gf-hint">{zeros}</p>}
       <p className="gf-hint">
-        {focus ? 'Select it again to draw them all.' : 'Select a fuel to draw it on its own.'} The two wind bands share wind’s colour: transmission-connected below, embedded above.
+        {focus ? 'Select it again to draw them all.' : 'Select a fuel to draw it on its own.'} Both wind bands are wind’s colour: transmission-connected wind below, embedded wind hatched above it.
       </p>
     </>
   )

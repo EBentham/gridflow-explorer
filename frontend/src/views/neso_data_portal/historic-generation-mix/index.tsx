@@ -41,11 +41,14 @@ const view = defineView({
       body: 'series',
       label: 'Generation mix',
       title: 'Generation by fuel',
-      values: [...FUELS.map(({ column, label, color }) => ({ column, label, color })), { column: CI, label: CI_LABEL, color: CI_COLOR }],
+      // The template paints each series in SVG, so embedded wind passes its hatch (`fill`), not its bare colour.
+      values: [...FUELS.map(({ column, label, fill }) => ({ column, label, color: fill })), { column: CI, label: CI_LABEL, color: CI_COLOR }],
       chart: {
         mark: 'stacked',
         values: FUEL_COLUMNS,
-        lower: { values: [CI], mark: 'line', extremes: true },
+        // No labelled extremes: the template's lowest label can run over the date ticks (30 days did; NEEDS.md).
+        // The main panel gives the window's highest and lowest half-hour in words instead.
+        lower: { values: [CI], mark: 'line', extremes: false },
         // Eleven fuels and the carbon intensity: all drawn, none left to the table.
         maxSeries: 12,
         axisWidth: AXIS_WIDTH,

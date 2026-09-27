@@ -6,8 +6,11 @@
  * defines it, so the stack's top is its total.
  *
  * Colour follows the entity. Coal takes `--fuel-peaking`, the band the design
- * folds coal into. Embedded wind is wind, so it keeps wind's colour. Solar has
- * no fuel token in the locked palette (NEEDS.md): it borrows
+ * folds coal into. Embedded wind is wind, so it keeps wind's colour, hatched
+ * with the chart surface so it can't be read as part of the
+ * transmission-connected band under it: the pattern `WindHatch.tsx` draws in
+ * the charts, and a matching stripe for the swatches, which are CSS. Solar
+ * has no fuel token in the locked palette (NEEDS.md): it borrows
  * `--chart-tick`, the token furthest from all nine fuel colours, in both
  * themes, that still reads as a line on the chart surface.
  */
@@ -19,21 +22,34 @@ export interface Fuel {
   label: string
   /** The name in running text: `embedded wind`. */
   prose: string
+  /** The fuel's colour token: text, strokes and the focused band's line. */
   color: string
+  /** Its paint in the charts' SVG: the colour, or a pattern. */
+  fill: string
+  /** Its CSS background, for the key's swatch and the mix bar: the colour, or a stripe. */
+  swatch: string
 }
 
+/** The embedded-wind hatch's id: `WindHatch.tsx` draws the pattern on the page. */
+export const WIND_HATCH_ID = 'hgm-wind-emb-hatch'
+
+/** The same hatch in CSS, 45° like the pattern: 1.5px of chart surface every 5px. */
+const WIND_STRIPE = 'repeating-linear-gradient(45deg, var(--fuel-wind) 0 3.5px, var(--chart-surface) 3.5px 5px)'
+
+const solid = (column: string, label: string, prose: string, color: string): Fuel => ({ column, label, prose, color, fill: color, swatch: color })
+
 export const FUELS: Fuel[] = [
-  { column: 'nuclear', label: 'Nuclear', prose: 'nuclear', color: 'var(--fuel-nuclear)' },
-  { column: 'hydro', label: 'Hydro', prose: 'hydro', color: 'var(--fuel-hydro)' },
-  { column: 'biomass', label: 'Biomass', prose: 'biomass', color: 'var(--fuel-biomass)' },
-  { column: 'wind', label: 'Wind, transmission', prose: 'transmission-connected wind', color: 'var(--fuel-wind)' },
-  { column: 'wind_emb', label: 'Wind, embedded', prose: 'embedded wind', color: 'var(--fuel-wind)' },
-  { column: 'solar', label: 'Solar', prose: 'solar', color: 'var(--chart-tick)' },
-  { column: 'gas', label: 'Gas', prose: 'gas', color: 'var(--fuel-gas)' },
-  { column: 'coal', label: 'Coal', prose: 'coal', color: 'var(--fuel-peaking)' },
-  { column: 'other', label: 'Other', prose: '“other”', color: 'var(--fuel-other)' },
-  { column: 'storage', label: 'Storage', prose: 'storage', color: 'var(--fuel-pumped_storage)' },
-  { column: 'imports', label: 'Imports', prose: 'imports', color: 'var(--fuel-imports)' },
+  solid('nuclear', 'Nuclear', 'nuclear', 'var(--fuel-nuclear)'),
+  solid('hydro', 'Hydro', 'hydro', 'var(--fuel-hydro)'),
+  solid('biomass', 'Biomass', 'biomass', 'var(--fuel-biomass)'),
+  solid('wind', 'Wind, transmission', 'transmission-connected wind', 'var(--fuel-wind)'),
+  { column: 'wind_emb', label: 'Wind, embedded', prose: 'embedded wind', color: 'var(--fuel-wind)', fill: `url(#${WIND_HATCH_ID})`, swatch: WIND_STRIPE },
+  solid('solar', 'Solar', 'solar', 'var(--chart-tick)'),
+  solid('gas', 'Gas', 'gas', 'var(--fuel-gas)'),
+  solid('coal', 'Coal', 'coal', 'var(--fuel-peaking)'),
+  solid('other', 'Other', '“other”', 'var(--fuel-other)'),
+  solid('storage', 'Storage', 'storage', 'var(--fuel-pumped_storage)'),
+  solid('imports', 'Imports', 'imports', 'var(--fuel-imports)'),
 ]
 
 export const FUEL_COLUMNS = FUELS.map((f) => f.column)

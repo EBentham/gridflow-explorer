@@ -86,7 +86,7 @@ export function ShareBar({ period, unit }: { period: Period; unit: DisplayUnit }
       </div>
       <div className="gf-mixbar-bar" role="img" aria-label={segs.map((s) => `${s.label} ${s.figures}`).join('; ')}>
         {segs.map((s) => (
-          <span key={s.column} title={`${s.label}: ${s.figures}`} style={{ left: at(s.start), width: at(s.value), background: s.color }} />
+          <span key={s.column} title={`${s.label}: ${s.figures}`} style={{ left: at(s.start), width: at(s.value), background: s.swatch }} />
         ))}
       </div>
       <div className="gf-mixbar-axis" aria-hidden="true">

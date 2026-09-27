@@ -16,8 +16,9 @@ why this page needs it, and what the page does meanwhile.
        twice, while the health check answered in milliseconds.
      - On :8002, earlier: the week took 46 s on its own, one day about 55 s, and the full
        history was not back within 212 s.
-   - `scripts/shoot.mjs` waits 20 s, so these shots time out there on the loading state. Past
-     a year, the page's toolbar says the read can take a minute or more.
+   - `scripts/shoot.mjs` waits 20 s unless `SHOOT_TIMEOUT_MS` says otherwise, so these shots
+     can time out on the loading state. While a long window is read, the page's toolbar says
+     so: past a year it can take a minute or more, past five years several minutes.
    - The endpoint accepted every span this page asks for. It never refused: past 400 days it
      downsampled and set `truncated`, which the page states above the chart and in its hints.
    - Meanwhile the page makes one request per window and averages the rows into days, months
@@ -31,10 +32,12 @@ why this page needs it, and what the page does meanwhile.
    - The page borrows `--chart-tick` for solar. Measured against the nine fuel colours in both
      themes, its minimum ΔE is 17.8 (18.9 under simulated colour-blindness), and its contrast
      on the chart surface is 5.2 in light and 8.3 in dark.
-   - Embedded wind shares `--fuel-wind` with transmission-connected wind. It sits directly above
-     it, parted by the 1 px surface gap, and the key says so.
-   - Wanted: a CVD-checked `--fuel-solar` for both themes, and a ruling on whether embedded
-     wind gets its own tint.
+   - Embedded wind has no colour of its own. It sits directly above transmission-connected
+     wind, and a 1 px surface gap alone didn't part them (review, pass 1). Meanwhile it is
+     `--fuel-wind` hatched with `--chart-surface`: an SVG pattern in the charts
+     (`WindHatch.tsx`) and a matching CSS stripe in the key and the mix bar.
+   - Wanted: a CVD-checked `--fuel-solar` for both themes, and a ruling on embedded wind: its
+     own tint, or the hatch as a design pattern for a fuel's sub-band.
 3. **The chart clock stops at months, and dates name no year.**
    - `ukTimeTicks` ticks every 14 days past 120 days, labelled like `15 Sep`, with no year.
    - `periodLabel` and `dayLabel` also name no year, so the template's chart and table can't
@@ -62,6 +65,10 @@ why this page needs it, and what the page does meanwhile.
    the axis floor.
    - On 30 days, "30 gCO₂/kWh, lowest, Sat 12 at 14:00" runs over the "Tue 15" and "Fri 18"
      ticks. The week's label sits just clear of them.
+   - Meanwhile the page sets `extremes: false` on the lower panel, so the template labels no
+     carbon intensity extremes. The main panel gives the window's highest and lowest half-hours
+     in words under the chart instead.
    - The page's own long chart avoids this: `withRoom` in `LongChart.tsx` adds a step under
      a low near the bottom, or half a step with no tick where zero is the floor.
    - Wanted: the same room in `SeriesChart`'s scale, or a `lower` option that asks for it.
+     Then the page can label them on the chart again.

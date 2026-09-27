@@ -158,7 +158,7 @@ export function LongChart({
     if (!active || !p) return null
     const rows: TipRow[] = [...shown].reverse().map((f) => {
       const v = p.mean[f.column]
-      return { key: f.column, color: f.color, label: f.label, value: v === null ? 'no value' : amountText(gw, v) }
+      return { key: f.column, color: f.fill, label: f.label, value: v === null ? 'no value' : amountText(gw, v) }
     })
     if (!one && p.total !== null) rows.push({ key: '__total', color: 'transparent', label: 'Total', value: gw.format(p.total), strong: true })
     return <TooltipBox title={title(p)} rows={p.held ? rows : []} note={noteOf(p)} />
@@ -192,7 +192,8 @@ export function LongChart({
           <YAxis {...valueAxis(gw.caption, scale, { width: AXIS_WIDTH, format: axisOf(scale) })} />
           <Tooltip content={fuelTip} cursor={CURSOR} isAnimationActive={false} />
           {shown.map((f) => (
-            <Area key={f.column} dataKey={f.column} stackId={one ? undefined : 'fuels'} {...bandProps(f.color, { focused: Boolean(one) })} />
+            // Embedded wind's hatch is its fill only: a focused band's line stays the solid colour.
+            <Area key={f.column} dataKey={f.column} stackId={one ? undefined : 'fuels'} {...bandProps(f.color, { focused: Boolean(one) })} fill={f.fill} />
           ))}
           {band && <SelectionEdges x1={band[0]} x2={band[1]} />}
           {one && fuelEx && (

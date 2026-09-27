@@ -70,6 +70,8 @@ export function MixPeriods({ ctx }: { ctx: PageContext }) {
                 {gw?.label ?? 'unit unconfirmed'}
               </th>
               <th scope="col" className="is-num">
+                Carbon intensity,
+                <br />
                 {ci?.label ?? 'unit unconfirmed'}
               </th>
               {FUELS.map((f) => (
