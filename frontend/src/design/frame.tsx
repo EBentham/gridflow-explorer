@@ -220,6 +220,6 @@ export function StatusNote({ state, error, empty }: { state: ViewState; error?: 
 export function PendingNote({ state }: { state: ViewState }) {
   if (state === 'loading') return <p className="gf-hint">Reading the range…</p>
   if (state === 'refreshing') return <p className="gf-hint">Waiting for the local store.</p>
-  if (state === 'error') return <p className="gf-hint">Nothing to show: this range didn't load.</p>
+  if (state === 'error') return <p className="gf-hint">Nothing to show: the rows didn't load (the main panel says why).</p>
   return null
 }

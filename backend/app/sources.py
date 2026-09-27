@@ -10,6 +10,7 @@ from datetime import UTC, date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
+import anyio
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
@@ -21,13 +22,18 @@ router = APIRouter()
 LOG = logging.getLogger(__name__)
 LONDON = ZoneInfo("Europe/London")
 TTL_SECONDS = 600
+# Bound rows queries and skip queued requests after clients disconnect.
+ROWS_CONCURRENCY = 4
+_ROWS_LIMITER = anyio.CapacityLimiter(ROWS_CONCURRENCY)
 _lock = threading.Lock()
 _snapshot: dict[str, Any] | None = None
 _refreshed_at = 0.0
 
 
 @router.get("/api/sources/{source_key}/{dataset_id}/rows", response_model=None)
-def get_rows(source_key: str, dataset_id: str, request: Request) -> dict[str, Any] | JSONResponse:
+async def get_rows(
+    source_key: str, dataset_id: str, request: Request
+) -> dict[str, Any] | JSONResponse:
     """Validate the registry contract before guarded catalogue acquisition."""
     from app import rows
     from app.settings import get_settings
@@ -51,8 +57,25 @@ def get_rows(source_key: str, dataset_id: str, request: Request) -> dict[str, An
                 "Dataset schema is unavailable.",
                 details={"not_held_cause": status.cause},
             )
-        with client_ctx() as client:
-            return rows.execute(client, parsed, config)
+
+        def execute_rows() -> dict[str, Any]:
+            with client_ctx() as client:
+                return rows.execute(client, parsed, config)
+
+        async with _ROWS_LIMITER:
+            if await request.is_disconnected():
+                # uvicorn drops the response of a gone client before its access log line.
+                LOG.info("rows skipped, client gone: %s/%s", source_key, dataset_id)
+                return JSONResponse(
+                    status_code=499,
+                    content={
+                        "error": {
+                            "code": "client_closed",
+                            "message": "Client closed the request.",
+                        }
+                    },
+                )
+            return await anyio.to_thread.run_sync(execute_rows)
     except rows.RowsError as exc:
         return JSONResponse(status_code=exc.http_status, content=exc.envelope())
 
