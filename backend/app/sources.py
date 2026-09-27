@@ -22,7 +22,7 @@ router = APIRouter()
 LOG = logging.getLogger(__name__)
 LONDON = ZoneInfo("Europe/London")
 TTL_SECONDS = 600
-# Leave AnyIO worker capacity for other sync endpoints during slow rows queries.
+# Bound rows queries and skip queued requests after clients disconnect.
 ROWS_CONCURRENCY = 4
 _ROWS_LIMITER = anyio.CapacityLimiter(ROWS_CONCURRENCY)
 _lock = threading.Lock()
@@ -62,7 +62,20 @@ async def get_rows(
             with client_ctx() as client:
                 return rows.execute(client, parsed, config)
 
-        return await anyio.to_thread.run_sync(execute_rows, limiter=_ROWS_LIMITER)
+        async with _ROWS_LIMITER:
+            if await request.is_disconnected():
+                # uvicorn drops the response of a gone client before its access log line.
+                LOG.info("rows skipped, client gone: %s/%s", source_key, dataset_id)
+                return JSONResponse(
+                    status_code=499,
+                    content={
+                        "error": {
+                            "code": "client_closed",
+                            "message": "Client closed the request.",
+                        }
+                    },
+                )
+            return await anyio.to_thread.run_sync(execute_rows)
     except rows.RowsError as exc:
         return JSONResponse(status_code=exc.http_status, content=exc.envelope())
 

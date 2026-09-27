@@ -22,13 +22,18 @@ class _BlockedRows:
         self.lock = threading.Lock()
         self.active = 0
         self.peak = 0
+        self.client_calls = 0
+        self.execute_calls = 0
 
         @contextmanager
         def client_ctx():
+            with self.lock:
+                self.client_calls += 1
             yield object()
 
         def execute(_client, _parsed, _config):
             with self.lock:
+                self.execute_calls += 1
                 self.active += 1
                 self.peak = max(self.peak, self.active)
             try:
@@ -72,6 +77,56 @@ def test_rows_requests_use_at_most_four_workers(monkeypatch: pytest.MonkeyPatch)
                 blocked.release.set()
                 responses = await asyncio.wait_for(asyncio.gather(*requests), timeout=5)
             assert [response.status_code for response in responses] == [200] * 6
+            with blocked.lock:
+                assert blocked.peak <= 4
+            assert sources._ROWS_LIMITER.borrowed_tokens == 0
+
+    asyncio.run(run())
+
+
+def test_disconnected_queued_rows_request_skips_client_and_execute(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A disconnected request queued behind four workers does no DuckDB work."""
+    blocked = _BlockedRows(monkeypatch)
+
+    async def disconnected_app(scope, receive, send):
+        if scope["type"] == "http" and scope["query_string"] == b"abandoned=1":
+
+            async def disconnected_receive():
+                return {"type": "http.disconnect"}
+
+            receive = disconnected_receive
+        await app(scope, receive, send)
+
+    async def run() -> None:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=disconnected_app), base_url="http://test"
+        ) as client:
+            active = [asyncio.create_task(client.get(ROWS_URL)) for _ in range(4)]
+            queued = None
+            try:
+                await blocked.wait_for_active(4)
+                queued = asyncio.create_task(client.get(ROWS_URL, params={"abandoned": "1"}))
+                deadline = asyncio.get_running_loop().time() + 3
+                while sources._ROWS_LIMITER.statistics().tasks_waiting < 1:
+                    assert asyncio.get_running_loop().time() < deadline, (
+                        "fifth request did not queue"
+                    )
+                    await asyncio.sleep(0.01)
+            finally:
+                blocked.release.set()
+                responses = await asyncio.wait_for(
+                    asyncio.gather(*active, *([queued] if queued else [])), timeout=5
+                )
+            assert [response.status_code for response in responses[:4]] == [200] * 4
+            assert responses[4].status_code == 499
+            assert responses[4].json() == {
+                "error": {"code": "client_closed", "message": "Client closed the request."}
+            }
+            with blocked.lock:
+                assert blocked.client_calls == 4
+                assert blocked.execute_calls == 4
 
     asyncio.run(run())
 
@@ -101,7 +156,7 @@ def test_health_answers_while_rows_workers_are_blocked(monkeypatch: pytest.Monke
 def test_bad_filter_never_constructs_client(
     monkeypatch: pytest.MonkeyPatch, counting_fake_client: type[CountingFakeClient]
 ) -> None:
-    """Invalid filter literals return 422 before acquiring a client."""
+    """Validation precedes client construction."""
     monkeypatch.setattr(deps, "GridflowClient", counting_fake_client)
     monkeypatch.setattr(sources, "client_ctx", deps.client_ctx)
 
