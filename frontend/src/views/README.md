@@ -197,7 +197,10 @@ config; don't work around the check.
 - **Units and time.** MW columns show as GW (display only); money reads `−£67.40` with a
   true minus sign; an unknown unit says "unit unconfirmed". Axes and tooltips use the UK
   clock, and tooltips name the period (`Tue 15 Sep, 14:30–15:00 BST`). Settlement date and
-  period appear only when the rows carry them.
+  period appear only when the rows carry them. A reference table has no window to date its
+  times, so it names each one's year (`Wed 1 Oct 2025, 05:00 BST`).
+- **Blanks are counted, not hidden.** Counts by a column (the events key, a reference
+  table's working panel) give null and empty values one line, `Blank`.
 - **Errors in plain words.** A 413 says why the window is too much to read, a 422 what
   varies (`ambiguous_series`) or what the request got wrong, a 404 why the dataset isn't
   held, and a 503 gives the refreshing state (`text.ts` `errorParts`, drawn by `ErrorWords`).

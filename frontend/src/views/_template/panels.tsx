@@ -11,7 +11,7 @@ import { KeyList, type KeyItem } from '../../design/charts'
 import { listText, plural } from '../../design/format'
 import { DAY_MS, dayLabel, instantLabel, periodLabel, stepNoun } from '../../design/time'
 import type { EventsRowsResponse, ManifestDataset, ManifestSource, ReferenceRowsResponse, Scalar } from '../contract'
-import type { EventsView, PageContext, ReferenceView, RelatedData, SeriesView } from '../define'
+import type { ColumnSpec, EventsView, PageContext, ReferenceView, RelatedData, SeriesView } from '../define'
 import { wordsOf } from './cells'
 import { daySeries, heldDays, keyStamp, relatedFilters, type SourcePart } from './panelHelpers'
 import { daySummaries, latestValue, periodName, seriesId, type SeriesDef, type SeriesModel } from './seriesModel'
@@ -274,7 +274,7 @@ export function SeriesKey({ ctx }: { ctx: PageContext }) {
           )
         })}
       </ul>
-      {plan.belowZero && <KeyList items={[{ key: 'below-zero', mark: { kind: 'band' }, label: `${plan.belowZero.label} below zero` }]} />}
+      {plan.belowZero && ctx.mode === 'chart' && <KeyList items={[{ key: 'below-zero', mark: { kind: 'band' }, label: `${plan.belowZero.label} below zero` }]} />}
       {pickable && <p className="gf-hint">{ctx.focus ? 'Select it again to draw them all.' : 'Select a series to draw it on its own.'}</p>}
       {model.undrawn.length > 0 && (
         <p className="gf-hint">
@@ -310,7 +310,7 @@ function RowsPerDay({ ctx }: { ctx: PageContext }) {
               return (
                 <tr key={d.day} className={d.held === 0 ? 'is-missing' : undefined}>
                   <th scope="row">{dayLabel(d.start)}</th>
-                  <td className="is-num">{d.held ? d.held : outside ? 'not held locally' : 'none held'}</td>
+                  <td className="is-num">{d.held ? d.held.toLocaleString('en-GB') : outside ? 'not held locally' : 'none held'}</td>
                 </tr>
               )
             })}
@@ -447,6 +447,24 @@ export function SeriesDays({ ctx }: { ctx: PageContext }) {
   )
 }
 
+// ---------------------------------------------------------------- counts (events and reference)
+
+/** One key for every blank (null or empty text), which no held value can take. */
+const BLANK = '\u0000blank'
+const countKey = (v: Scalar | undefined) => (v === null || v === undefined || v === '' ? BLANK : String(v))
+
+/** A count's label: `Blank` for the blanks, else the value in its column's words. */
+function countLabel(spec: Pick<ColumnSpec, 'text'> | undefined, k: string): string {
+  if (k === BLANK) return 'Blank'
+  return spec ? (wordsOf(spec, k) ?? k) : k
+}
+
+/** A count's label as drawn: an identifier the column has no words for is set in mono, as in the table. */
+function CountLabel({ spec, k }: { spec: Pick<ColumnSpec, 'text' | 'format'> | undefined; k: string }) {
+  const said = countLabel(spec, k)
+  return spec?.format === 'id' && k !== BLANK && said === k ? <code>{k}</code> : <>{said}</>
+}
+
 // ---------------------------------------------------------------- events defaults
 
 /** The events key: how many, newest and oldest, and counts by the first categorical column. */
@@ -456,9 +474,8 @@ export function EventsSummary({ ctx }: { ctx: PageContext }) {
   const rows = response.rows
   const by = (ctx.view.body === 'events' && ctx.view.filters?.[0]) || Object.keys(rows[0] ?? {}).find((k) => k !== 'ts' && typeof rows[0][k] === 'string' && new Set(rows.map((r) => r[k])).size <= 12)
   const counts = new Map<string, number>()
-  if (by) for (const r of rows) counts.set(String(r[by] ?? 'none'), (counts.get(String(r[by] ?? 'none')) ?? 0) + 1)
+  if (by) for (const r of rows) counts.set(countKey(r[by]), (counts.get(countKey(r[by])) ?? 0) + 1)
   const spec = by && ctx.view.body === 'events' ? ctx.view.columns?.find((c) => c.field === by) : undefined
-  const said = (k: string) => (spec ? (wordsOf(spec, k) ?? k) : k)
   const times = rows.map((r) => r.ts)
   return (
     <>
@@ -487,8 +504,10 @@ export function EventsSummary({ ctx }: { ctx: PageContext }) {
             .slice(0, 6)
             .map(([k, n]) => (
               <div key={k}>
-                <dt>{said(k)}</dt>
-                <dd>{n}</dd>
+                <dt>
+                  <CountLabel spec={spec} k={k} />
+                </dt>
+                <dd>{n.toLocaleString('en-GB')}</dd>
               </div>
             ))}
         </dl>
@@ -521,7 +540,7 @@ export function EventsDays({ ctx }: { ctx: PageContext }) {
               return (
                 <tr key={d.day} className={d.held === 0 ? 'is-missing' : undefined}>
                   <th scope="row">{dayLabel(d.start)}</th>
-                  <td className="is-num">{d.held ? d.held : outside ? 'not held locally' : 'none held'}</td>
+                  <td className="is-num">{d.held ? d.held.toLocaleString('en-GB') : outside ? 'not held locally' : 'none held'}</td>
                 </tr>
               )
             })}
@@ -581,24 +600,29 @@ export function ReferenceCounts({ ctx }: { ctx: PageContext }) {
     )
   }
   const counts = new Map<string, number>()
-  for (const r of response.rows) counts.set(String(r[field] ?? 'none'), (counts.get(String(r[field] ?? 'none')) ?? 0) + 1)
+  for (const r of response.rows) counts.set(countKey(r[field]), (counts.get(countKey(r[field])) ?? 0) + 1)
   const max = Math.max(1, ...counts.values())
   const spec = view.columns?.find((c) => c.field === field)
-  const said = (k: string) => (spec ? (wordsOf(spec, k) ?? k) : k)
+  const said = (k: string) => countLabel(spec, k)
   return (
-    <ul className="gf-counts">
-      {[...counts.entries()]
-        .sort((a, b) => b[1] - a[1] || said(a[0]).localeCompare(said(b[0])))
-        .map(([k, n]) => (
-          <li key={k}>
-            <span className="gf-counts-label">{said(k)}</span>
-            <span className="gf-counts-bar" aria-hidden="true">
-              <span style={{ width: `${(n / max) * 100}%` }} />
-            </span>
-            <span className="gf-counts-value">{n}</span>
-          </li>
-        ))}
-    </ul>
+    <>
+      <ul className="gf-counts">
+        {[...counts.entries()]
+          .sort((a, b) => b[1] - a[1] || said(a[0]).localeCompare(said(b[0])))
+          .map(([k, n]) => (
+            <li key={k}>
+              <span className="gf-counts-label" title={said(k)}>
+                <CountLabel spec={spec} k={k} />
+              </span>
+              <span className="gf-counts-bar" aria-hidden="true">
+                <span style={{ width: `${(n / max) * 100}%` }} />
+              </span>
+              <span className="gf-counts-value">{n.toLocaleString('en-GB')}</span>
+            </li>
+          ))}
+      </ul>
+      {counts.size > 11 && <p className="gf-hint">{plural(counts.size, 'value', 'values')}, most rows first. Scroll the list for the rest.</p>}
+    </>
   )
 }
 
@@ -635,6 +659,8 @@ export function About({ ctx }: { ctx: PageContext }) {
     const note = !unit.numeric ? 'text' : unit.label === null ? 'unit unconfirmed' : unit.source === 'MW' && unit.label === 'GW' ? 'MW, shown as GW' : unit.label
     return { column: v.column, note }
   })
+  // Several columns in one unit name it once, after the list.
+  const shared = columns.length > 2 && columns.every((c) => c.note === columns[0].note) ? columns[0].note : null
   const filters = Object.entries(ctx.response?.filters ?? {})
   // A split a filter pins to one value draws as the columns themselves (seriesModel.ts).
   const split = series ? ctx.series?.group : ctx.response?.group
@@ -651,14 +677,26 @@ export function About({ ctx }: { ctx: PageContext }) {
       <div>
         <dt>Columns</dt>
         <dd>
-          {columns.length
-            ? columns.map((c, i) => (
+          {!columns.length && 'No values: it holds identifiers and categories.'}
+          {shared !== null && (
+            <>
+              {columns.map((c, i) => (
                 <Fragment key={c.column}>
-                  {i > 0 && '; '}
-                  <Id id={c.column} /> {c.note}
+                  {i > 0 && ', '}
+                  <Id id={c.column} />
                 </Fragment>
-              ))
-            : 'No values: it holds identifiers and categories.'}
+              ))}
+              : all {shared}
+            </>
+          )}
+          {columns.length > 0 &&
+            shared === null &&
+            columns.map((c, i) => (
+              <Fragment key={c.column}>
+                {i > 0 && '; '}
+                <Id id={c.column} /> {c.note}
+              </Fragment>
+            ))}
         </dd>
       </div>
       {split && (

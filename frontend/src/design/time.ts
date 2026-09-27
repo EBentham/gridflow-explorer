@@ -160,9 +160,14 @@ function clockSeconds(ms: number): string {
   return `${clock(ms)}:${pad(Math.floor(ms / 1000) % 60)}`
 }
 
-/** `Tue 15 Sep, 14:37 BST`: one instant on the UK clock (`seconds` for sub-minute readings). */
-export function instantLabel(ms: number, { seconds = false }: { seconds?: boolean } = {}): string {
-  return `${dayLabel(ms)}, ${seconds ? clockSeconds(ms) : clock(ms)} ${zoneAbbrev(ms)}`
+/**
+ * `Tue 15 Sep, 14:37 BST`: one instant on the UK clock (`seconds` for
+ * sub-minute readings; `year` for `Wed 1 Oct 2025, 05:00 BST`, where no
+ * window says which year it is).
+ */
+export function instantLabel(ms: number, { seconds = false, year = false }: { seconds?: boolean; year?: boolean } = {}): string {
+  const day = year ? `${dayLabel(ms)} ${londonParts(ms).year}` : dayLabel(ms)
+  return `${day}, ${seconds ? clockSeconds(ms) : clock(ms)} ${zoneAbbrev(ms)}`
 }
 
 /**

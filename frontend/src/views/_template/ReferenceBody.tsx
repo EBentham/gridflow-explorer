@@ -26,7 +26,7 @@ export function ReferenceBody({ ctx }: { ctx: PageContext }) {
   }, [rows, searched, columns, q])
 
   if (!response) return null
-  const tableCols = columns.map((c) => toTableCol(c) as TableCol<ReferenceRow>)
+  const tableCols = columns.map((c) => toTableCol(c, { years: true }) as TableCol<ReferenceRow>)
   const sort = view.sort ? { key: view.sort.field, dir: view.sort.dir } : columns[0] ? { key: columns[0].field, dir: 'asc' as const } : null
   const total = rows.length.toLocaleString('en-GB')
 

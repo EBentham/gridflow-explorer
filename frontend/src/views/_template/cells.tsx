@@ -71,8 +71,11 @@ export function headerOf(spec: ColumnSpec): ReactNode {
   )
 }
 
-/** A spec as a table column over plain rows. */
-export function toTableCol(spec: ColumnSpec): TableCol<Row> {
+/**
+ * A spec as a table column over plain rows. `years` names each time's year:
+ * a reference table has no window to date its times.
+ */
+export function toTableCol(spec: ColumnSpec, { years = false }: { years?: boolean } = {}): TableCol<Row> {
   const format = spec.format ?? 'text'
   const unit = spec.unit ? displayUnit(spec.unit, spec.display ?? 'MW') : null
   const cell = (v: Scalar | undefined): ReactNode => {
@@ -89,7 +92,7 @@ export function toTableCol(spec: ColumnSpec): TableCol<Row> {
       }
       case 'time': {
         const ms = toInstant(v)
-        return ms === null ? String(v) : instantLabel(ms)
+        return ms === null ? String(v) : instantLabel(ms, { year: years })
       }
       case 'date':
         return typeof v === 'string' && ISO_DATE.test(v) ? rangeText(v, v) : String(v)
