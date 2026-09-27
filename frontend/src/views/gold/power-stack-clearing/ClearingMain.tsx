@@ -73,7 +73,8 @@ function ClearingChart({ ctx, points }: { ctx: PageContext; points: ClearingPoin
   const { scale, clipped } = useMemo(() => priceScale(points, full), [points, full])
   const demandScale = useMemo(() => {
     const values = points.map((p) => p.demand).filter((v): v is number => v !== null)
-    return niceTicks(Math.min(0, ...values) / 1000, Math.max(0, ...values) / 1000)
+    // A short panel: about 3 ticks, every one shown, as the template's short panels do, so zero is never thinned away.
+    return niceTicks(Math.min(0, ...values) / 1000, Math.max(0, ...values) / 1000, 3)
   }, [points])
   const runs = useMemo(() => floorRuns(points, stepMs), [points, stepMs])
   const rows = useMemo<ChartRow[]>(
@@ -156,7 +157,7 @@ function ClearingChart({ ctx, points }: { ctx: PageContext; points: ClearingPoin
           {band && <HighlightBand x1={band[0]} x2={band[1]} />}
           <DayRules midnights={ticks.midnights} />
           <XAxis {...timeAxis(domain, ticks)} />
-          <YAxis {...valueAxis('Clearing demand, GW', demandScale, { width: AXIS_WIDTH, format: (v) => fmtN(v, demandDigits) })} />
+          <YAxis {...valueAxis('Clearing demand, GW', demandScale, { width: AXIS_WIDTH, format: (v) => fmtN(v, demandDigits) })} interval={0} />
           <Tooltip content={renderTip} cursor={CURSOR} isAnimationActive={false} />
           {demandScale.domain[0] < 0 && <ZeroLine />}
           <Bar dataKey="demand" isAnimationActive={false} maxBarSize={14}>
