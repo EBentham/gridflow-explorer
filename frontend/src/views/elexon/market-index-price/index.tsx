@@ -20,7 +20,7 @@ const view = defineView({
   sub: 'The price of GB power traded in the short-term market for each half-hour, as the market index reports it, with the volume traded behind it.',
   caveats: [
     'Two providers publish the index. This page reads APXMIDP, the dataset’s default: N2EXMIDP’s rows are almost all a zero price with zero volume, which means it published no index, not that power traded at £0.',
-    'gridflow’s notes record 15 of APXMIDP’s half-hours, over 11 days, that the market index skipped. Those, and any days gridflow hasn’t fetched, show as gaps, never as zeros; the line above counts the days held.',
+    'gridflow’s notes record 15 of APXMIDP’s half-hours, over 11 days, that the market index skipped. Those, and any days gridflow hasn’t fetched, show as gaps, never as zeros; the line above counts what this window holds.',
   ],
   datasets: [
     {

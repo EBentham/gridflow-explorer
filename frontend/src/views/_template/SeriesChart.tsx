@@ -220,8 +220,9 @@ function PanelChart({
   )
   const rowAt = useMemo(() => new Map(panel.rows.map((r) => [r.t, r])), [panel.rows])
   const ticks = useMemo(() => ukTimeTicks(domain[0], domain[1]), [domain])
-  // A panel under 200px asks for 3 ticks, not 5: Recharts thins crowded ticks from the bottom, and zero went first.
-  const target = (panel.height ?? CHART.height) < 200 ? 3 : 5
+  // A panel under 200px asks for 3 ticks, not 5, and shows every one: left to itself, Recharts thins crowded ticks from the bottom, and zero went first.
+  const short = (panel.height ?? CHART.height) < 200
+  const target = short ? 3 : 5
   const scale = useMemo(() => scaleOf(panel.rows, shown, stacked ? 'stacked' : mark, Boolean(panel.zero), target), [panel.rows, shown, stacked, mark, panel.zero, target])
   const digits = stepDigits(scale.ticks[1] - scale.ticks[0])
   const tickText = (v: number) => fmtN(v, digits)
@@ -274,7 +275,7 @@ function PanelChart({
         {band && <HighlightBand x1={band[0]} x2={band[1]} />}
         <DayRules midnights={ticks.midnights} />
         <XAxis {...timeAxis(domain, ticks, { labels })} />
-        <YAxis {...valueAxis(unit.caption, scale, { width, format: tickText })} />
+        <YAxis {...valueAxis(unit.caption, scale, { width, format: tickText })} {...(short ? { interval: 0 } : {})} />
         <Tooltip content={renderTip} cursor={CURSOR} isAnimationActive={false} />
         {hasNegative && <ZeroLine />}
         {shown.map((d) => {

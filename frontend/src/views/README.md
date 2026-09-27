@@ -109,13 +109,13 @@ Folders starting with `_` belong to the template. The registry skips them.
 | `chart.mark` | `'line'` (default), `'stacked'` (negatives stack below zero in their own stack) or `'bars'`. |
 | `chart.values` | The columns in the main chart panel. Default: every drawn column that isn't in the lower panel. |
 | `chart.lower` | A second panel on the same clock: `{ from, values, mark, height, extremes }`. Without `from` it takes this dataset's other columns (volume under a price). With `from: '<related key>'` it draws that related dataset. A column whose unit fits neither panel goes to the table only, and the page says so. |
-| `chart.zero`, `chart.height` | Put zero on the value axis; the panel height. A panel under 200px gets about 3 value ticks rather than 5, so none is thinned away. |
+| `chart.zero`, `chart.height` | Put zero on the value axis; the panel height. A panel under 200px gets about 3 value ticks rather than 5, and shows every one, so zero is never thinned away. |
 | `chart.extremes` | Label the highest and lowest value. Default: on for a single line. |
 | `chart.maxSeries` | At most this many series are drawn (default 10). The rest are named in the key as not drawn, and listed in the table. They are never merged into "other". |
 | `chart.belowZero` | Band the main panel's runs below zero with the highlight band, e.g. negative prices. The key names the band. |
 | `chart.axisWidth` | A fixed value-axis width in px, so that a chart the page draws in a panel of its own lines its clock up under this one (the pilot's volume). |
 | `chart.lower: false` | No second panel. The columns left out of the main panel are the page's to draw in a panel of its own. |
-| `chart: false` | A series shown as a table: no chart and no Chart view. The key, "Latest values", lists each series' latest value; select one to read it in the days table. Rows holding text only get a table of the rows and a count of rows per day. Rows a day or more apart get "Lowest and highest" in the working panel (each column's values held, lowest and highest, and when) rather than the table again. |
+| `chart: false` | A series shown as a table: no chart and no Chart view. The key, "Latest values", lists each series' latest value; select one to read it in the days table. Rows holding text only get a table of the rows and a count of rows per day. Rows a day or more apart get "Lowest and highest" in the working panel (each column's values held, lowest and highest, and when) rather than the table again, and their key has nothing to select. |
 
 ### Events (`body: 'events'`)
 

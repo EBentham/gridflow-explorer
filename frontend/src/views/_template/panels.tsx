@@ -209,12 +209,22 @@ function TextOnly({ ctx }: { ctx: PageContext }) {
   )
 }
 
-/** A series shown as a table: each series' latest held value. Select one to read it in the days table. */
+/**
+ * A series shown as a table whose rows are a day or more apart: its working
+ * panel gives each column's range (`ColumnRanges`), not the days table, so
+ * the key has no series to pick for it.
+ */
+function showsRanges(ctx: PageContext): boolean {
+  const step = ctx.series?.stepMs ?? null
+  return ctx.view.body === 'series' && ctx.view.chart === false && step !== null && step >= DAY_MS
+}
+
+/** A series shown as a table: each series' latest held value. Where the working panel is the days table, select one to read it there. */
 function LatestValues({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
   if (!model || !model.drawn.length) return <p className="gf-hint">Nothing is held in this window, so there is no latest value.</p>
   const stamp = keyStamp(ctx)
-  const pickable = model.drawn.length > 1
+  const pickable = model.drawn.length > 1 && !showsRanges(ctx)
   return (
     <>
       <ul className="gf-series-key">
@@ -429,7 +439,7 @@ function ColumnRanges({ ctx }: { ctx: PageContext }) {
 export function SeriesDays({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
   if (model && !model.all.length && model.textColumns.length) return <RowsPerDay ctx={ctx} />
-  if (model && ctx.view.body === 'series' && ctx.view.chart === false && model.stepMs !== null && model.stepMs >= DAY_MS) return <ColumnRanges ctx={ctx} />
+  if (showsRanges(ctx)) return <ColumnRanges ctx={ctx} />
   const def = daySeries(ctx)
   if (!model || !ctx.window || !def) return <p className="gf-hint">Nothing is held in this window, so there are no days to summarise.</p>
   if (model.stepMs !== null && model.stepMs > DAY_MS) return <PointList ctx={ctx} def={def} />
