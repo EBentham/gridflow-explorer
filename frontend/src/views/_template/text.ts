@@ -301,6 +301,12 @@ const GRAIN_MS = new Map<string, number>([
   ['7d', 7 * DAY_MS],
 ])
 
+/** A dataset's step from its researched grain (`30min`, `24h`, `7d`), or null when the grain names no fixed step. */
+export function grainStepMs(dataset: Pick<ManifestDataset, 'clock'>): number | null {
+  const token = (dataset.clock?.grain ?? '').trim().toLowerCase().split(/[\s(]/)[0]
+  return GRAIN_MS.get(token) ?? null
+}
+
 /**
  * A dataset's own cadence in words: from the rows' step when they come at
  * it, else from its researched grain. Pass a null step for rows that are

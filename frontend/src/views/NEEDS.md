@@ -32,23 +32,11 @@ why a page needs it, and what the page does meanwhile.
 
 ## Shared code outside this unit's boundary
 
-5. **DESIGN.md §9** still says the template demo is deleted by P4-0. P4-0 keeps it, as its
-   brief asked: it is the only way to shoot the error, refreshing, toomany and empty states
-   on demand. The line needs updating.
-6. **Pages hang on "Reading gridflow's source list…" (shots time out).** Vite's `/api`
-   proxy reuses keep-alive sockets to the backend, and uvicorn drops them after its 5 s
-   keep-alive. Measured on 27 Sep:
-   - Direct to :8001 with a keep-alive agent, 2 of 40 requests were reset, each on a
-     reused socket after a 5 s gap.
-   - Through the proxy, 4 of 40 requests stalled: headers and about 195 KB of the 197 KB
-     manifest arrived, then nothing. Vite logs `http proxy error … ECONNRESET`. Once the
-     headers are out it can't send its 502, so the browser waits forever.
-   - The shoot harness timed out on 4 of 24 page loads, and on 5 of 20 in one run.
-
-   The fix is one line in `vite.config.ts`, which is outside P4-0's boundary: give the
-   proxy `agent: new http.Agent({ keepAlive: false })` (import `http` from `node:http`).
-   With that agent, the same probes gave 0 of 80 requests and 0 of 24 page loads failing.
-   It fixes Bobbo's own `:5173` as well.
+5. ~~**DESIGN.md §9** still said the template demo is deleted by P4-0.~~ Done: the line now
+   says the demo was kept, and why.
+6. ~~**Pages hung on "Reading gridflow's source list…"**, as Vite's `/api` proxy reused
+   keep-alive sockets the backend had closed.~~ Done in dfceb34: the proxy no longer keeps
+   connections alive.
 
 ## Domain questions for research (labelled on the pages, not guessed)
 
@@ -58,3 +46,10 @@ why a page needs it, and what the page does meanwhile.
    fleet. It needs confirming before any stack work uses these capacities.
 8. **EIC area names.** There is no shared EIC→name list, so pages show area codes. A
    research-confirmed map would let `ColumnSpec.text` name them.
+
+## Source list text (backend)
+
+9. **The source list capitalises the brand in gold's text:** the name "Gridflow gold" and the
+   blurb's "the local Gridflow catalogue". The brand is lowercase everywhere else. The HTTP
+   adapter lowercases it for display (`_data/http.ts`); once the text is fixed at source,
+   that line can go.
