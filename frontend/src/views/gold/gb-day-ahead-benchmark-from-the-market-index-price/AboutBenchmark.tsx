@@ -15,7 +15,7 @@ export function AboutBenchmark({ ctx }: { ctx: PageContext }) {
     <>
       <About ctx={ctx} />
       <p className="gf-hint">
-        Gridflow builds this benchmark from Elexon’s market index price, one provider’s (APXMIDP) figure per half-hour. It isn’t a price set in a day-ahead auction. The index it is taken from is on the{' '}
+        gridflow builds this benchmark from Elexon’s market index price, one provider’s (APXMIDP) figure per half-hour. It isn’t a price set in a day-ahead auction. The index it is taken from is on the{' '}
         <Link to={to}>market index price page</Link>
         {w ? `, opened on ${ctx.windowText}` : ''}.
       </p>

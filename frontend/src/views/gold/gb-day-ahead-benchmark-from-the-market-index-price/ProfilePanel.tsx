@@ -149,7 +149,7 @@ export function ProfilePanel({ ctx }: { ctx: PageContext }) {
       <p className="gf-hint">
         Held counts the {noun} with a price.{' '}
         {summed ? `Volume sums the ${noun} held, so a day held in part sums in part.` : 'The window is read as means, so volume per day is not summed.'} The mean price counts each {noun.replace(/s$/, '')} once.
-        {ctx.mode === 'chart' ? ' Select a day to mark it on the main chart and draw it on the clock-time chart.' : ' Select a day to mark it.'}
+        {ctx.mode !== 'chart' ? ' Select a day to mark it.' : profile && heldDays > 1 ? ' Select a day to mark it on the main chart and draw it on the clock-time chart.' : ' Select a day to mark it on the main chart.'}
       </p>
     </>
   )
