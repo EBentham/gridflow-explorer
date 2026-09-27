@@ -64,6 +64,8 @@ async def get_rows(
 
         async with _ROWS_LIMITER:
             if await request.is_disconnected():
+                # uvicorn drops the response of a gone client before its access log line.
+                LOG.info("rows skipped, client gone: %s/%s", source_key, dataset_id)
                 return JSONResponse(
                     status_code=499,
                     content={
