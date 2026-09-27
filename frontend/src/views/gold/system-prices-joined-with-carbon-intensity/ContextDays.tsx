@@ -13,10 +13,17 @@ import { plural } from '../../../design/format'
 import { dayLabel } from '../../../design/time'
 import { daySummaries } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { CI_FORECAST, MIN_PAIRS, NIV, SSP, folded, isBucketed, priceByIntensity, seriesOf } from './figures'
+import { CI_FORECAST, MIN_PAIRS, NIV, SSP, folded, isMeans, priceByIntensity, seriesOf, unjoinable } from './figures'
 
 export function ContextDays({ ctx }: { ctx: PageContext }) {
-  if (isBucketed(ctx)) return <p className="gf-hint">This window comes as means kept apart by price derivation code, so its days aren't summarised. Choose a shorter window.</p>
+  if (unjoinable(ctx)) return <p className="gf-hint">This window comes as means over two hours or more, kept apart by price derivation code, so its days aren't summarised. Choose a shorter window.</p>
+  if (isMeans(ctx)) {
+    return (
+      <p className="gf-hint">
+        This window is read as hourly means. The days and the thirds count and sum half-hours, and an hour's mean doesn't say how many half-hours it holds, so they are left out. Choose a shorter window to read them.
+      </p>
+    )
+  }
   const f = folded(ctx)
   const model = f?.model ?? null
   const price = seriesOf(model, SSP)

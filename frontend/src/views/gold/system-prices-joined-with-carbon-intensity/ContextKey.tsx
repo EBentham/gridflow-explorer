@@ -11,10 +11,10 @@ import { KeyList, type KeyItem } from '../../../design/charts'
 import { listText, money } from '../../../design/format'
 import { extremesOf, latestValue, periodName } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { CI_ACTUAL, CI_FORECAST, NIV, SBP, SSP, folded, intensityCover, isBucketed, priceSides, seriesOf } from './figures'
+import { CI_ACTUAL, CI_FORECAST, NIV, SBP, SSP, folded, intensityCover, priceSides, seriesOf, unjoinable } from './figures'
 
 export function ContextKey({ ctx }: { ctx: PageContext }) {
-  if (isBucketed(ctx)) return <p className="gf-hint">This window comes as means kept apart by price derivation code, so there is no single series to key. Choose a shorter window.</p>
+  if (unjoinable(ctx)) return <p className="gf-hint">This window comes as means over two hours or more, kept apart by price derivation code, so there is no single series to key. Choose a shorter window.</p>
   const f = folded(ctx)
   const model = f?.model ?? null
   const price = seriesOf(model, SSP)
@@ -44,6 +44,15 @@ export function ContextKey({ ctx }: { ctx: PageContext }) {
     return typeof v === 'number' && v < 0
   }).length
   if (below > 0 && ctx.mode === 'chart') items.push({ key: 'below', mark: { kind: 'band' }, label: 'System price below zero' })
+
+  if (f.means) {
+    return (
+      <>
+        <KeyList items={items} />
+        <p className="gf-hint">This window is read as hourly means, so the latest half-hour, the extremes and the counts of half-hours are left out: an hour's mean hides its half-hours. Choose a shorter window to read them.</p>
+      </>
+    )
+  }
 
   const latest = latestValue(model, price)
   const ex = extremesOf(model.rows, price)
@@ -117,9 +126,11 @@ export function ContextKey({ ctx }: { ctx: PageContext }) {
       </dl>
       <p className="gf-hint">
         Over the {n(price.count)} half-hours with a price in the window; the mean is not weighted by volume.{' '}
-        {sides.differ === 0
-          ? `The buy price equals the sell price in all ${n(sides.both)} of them, so one line draws both.`
-          : `The buy price differs from the sell price in ${n(sides.differ)} of ${n(sides.both)}, so both are drawn.`}
+        {sides.both === 0
+          ? 'No buy price is held in this window.'
+          : sides.differ === 0
+            ? `The buy price equals the sell price in all ${n(sides.both)} of them, so one line draws both.`
+            : `The buy price differs from the sell price in ${n(sides.differ)} of ${n(sides.both)}, so both are drawn.`}
       </p>
       {codes.length > 0 && <p className="gf-hint">Price derivation code {listText(codes)} half-hours.</p>}
     </>

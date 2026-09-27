@@ -1,9 +1,9 @@
-/* The working panel's second part: a heading in the panel headings' face, one step down. */
+/* The working panel's second part: a heading in the panel headings' face, a step down from the H2 in size and weight. */
 .gf-imbctx-sub {
   margin: 14px 0 2px;
   font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 680;
+  font-size: var(--text-size);
+  font-weight: 650;
   font-stretch: 92%;
   font-variation-settings: 'wdth' 92;
   letter-spacing: -0.005em;

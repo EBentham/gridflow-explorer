@@ -19,9 +19,27 @@
    - Fix wanted: only a `series`-role dim becomes the default split, or `QuerySpec` gets an
      explicit "no split" (`group: null`) that the adapter sends and the backend honours.
 
-2. **Bucket means come apart by that same code.** For a window of a year (measured), the rows are read as
-   hourly means per `price_derivation_code`. An hour whose two half-hours carry different
-   codes comes back as two means, and the endpoint doesn't send how many half-hours each
-   covers, so they can't be joined honestly. The page says so in words, draws no chart for
-   such a window, and its Table shows the means as sent, one row per code. Fixing item 1
-   fixes this too.
+2. **Bucket means come apart by that same code.** A long window is read as means per
+   `price_derivation_code`.
+   - Hourly means (a year, measured) join exactly: an hour spans two half-hours, and each
+     half-hour carries one code. So two codes' means in one hour are each of one half-hour,
+     and one code's mean is already the hour's. The page joins them and draws the chart. It
+     leaves out the key's and the days' half-hour figures, because an hour's mean doesn't
+     say how many half-hours it holds.
+   - From two-hour buckets up, how many half-hours each code's mean covers isn't sent, so
+     the means can't be joined. The page says so, draws no chart for such a window, and its
+     Table shows the means as sent, one row per code.
+   - Fixing item 1 fixes this too.
+
+3. **The related coverage line reads as continuous coverage.** For a related dataset whose
+   local depth differs from the page's own, `relatedFacts` (`panels.tsx`) calls
+   `coverageSentences` (`text.ts`), which says "held locally for 1 Aug – 22 Sep 2026 only".
+   NESO's `carbon_intensity` is held on 16 days in that span, with a five-week hole
+   (7 Aug – 12 Sep).
+   - Wanted: when `day_count` is smaller than the span, say "on N days between X and Y".
+   - Meanwhile the page adds its own sentence under the chart, from the related rows: the
+     days of the window that hold intensity, the runs without it, and the local day count.
+
+4. **The one-day value axis can skip zero.** On `?days=1` the imbalance panel's ticks read
+   250 / −250 / −750, so its zero line has no label. That comes from the template's tick
+   generator, not from the page.
