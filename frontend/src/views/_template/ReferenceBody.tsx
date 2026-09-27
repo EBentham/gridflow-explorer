@@ -6,7 +6,7 @@
 import { useMemo } from 'react'
 import type { ReferenceRow, ReferenceRowsResponse } from '../contract'
 import type { PageContext, ReferenceView } from '../define'
-import { inferColumns, toTableCol } from './cells'
+import { inferColumns, toTableCol, wordsOf } from './cells'
 import { WindowedTable, type TableCol } from './WindowedTable'
 
 export function ReferenceBody({ ctx }: { ctx: PageContext }) {
@@ -14,16 +14,19 @@ export function ReferenceBody({ ctx }: { ctx: PageContext }) {
   const response = ctx.response as ReferenceRowsResponse | null
   const rows = useMemo(() => response?.rows ?? [], [response])
   const columns = useMemo(() => view.columns ?? inferColumns(rows), [view.columns, rows])
-  const searched = useMemo(() => view.search ?? columns.filter((c) => !c.format || c.format === 'text' || c.format === 'id').map((c) => c.field), [view.search, columns])
+  const searched = useMemo(() => view.search ?? columns.filter((c) => !c.format || c.format === 'text' || c.format === 'id' || c.text).map((c) => c.field), [view.search, columns])
   const q = (ctx.param('q') ?? '').trim()
   const shown = useMemo(() => {
     const needle = q.toLocaleLowerCase('en-GB')
     if (!needle) return rows
-    return rows.filter((r) => searched.some((f) => String(r[f] ?? '').toLocaleLowerCase('en-GB').includes(needle)))
-  }, [rows, searched, q])
+    const specs = new Map(columns.map((c) => [c.field, c]))
+    // A coded value is found by its words as well as by the value as held.
+    const hay = (r: ReferenceRow, f: string) => `${String(r[f] ?? '')} ${wordsOf(specs.get(f) ?? {}, r[f]) ?? ''}`.toLocaleLowerCase('en-GB')
+    return rows.filter((r) => searched.some((f) => hay(r, f).includes(needle)))
+  }, [rows, searched, columns, q])
 
   if (!response) return null
-  const tableCols = columns.map((c) => toTableCol(c) as TableCol<ReferenceRow>)
+  const tableCols = columns.map((c) => toTableCol(c, { years: true }) as TableCol<ReferenceRow>)
   const sort = view.sort ? { key: view.sort.field, dir: view.sort.dir } : columns[0] ? { key: columns[0].field, dir: 'asc' as const } : null
   const total = rows.length.toLocaleString('en-GB')
 

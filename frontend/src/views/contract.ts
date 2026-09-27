@@ -6,9 +6,10 @@
  *   dataset gridflow knows, with what is held locally.
  * - `RowsResponse` is `GET /api/sources/{source}/{dataset}/rows` (v0.4 P3-2):
  *   one held dataset's rows for a window of UK days.
- * - `DataSource` is what a page reads through. The dev fixture adapter
- *   (`_data/fixture.ts`) returns exactly these shapes, so P4-0 swaps in an
- *   HTTP adapter without touching a page.
+ * - `DataSource` is what a page reads through: `_data/http.ts` reads the
+ *   two endpoints (every page's default), and the fixture adapter
+ *   (`_data/fixture.ts`), kept for the template's demo page, returns
+ *   exactly the same shapes.
  *
  * P3 returns shapes that map onto these types; change one only with the
  * other. Free-text fields (grain, unit, notes, causes) are typed as strings
@@ -116,9 +117,10 @@ export interface DatasetCoverage {
   /** Distinct UK days holding at least one row. A covered day is not necessarily complete. */
   day_count: number | null
   /**
-   * The UK day a page's default window ends on: the dataset's latest-day rule
-   * (never a planned or delivery clock), capped at today. Can be a stub day
-   * holding a few rows. Null for reference tables and when unknown.
+   * The UK day a page's default window ends on: the last UK day of the
+   * dataset's window column (the column the rows endpoint windows on, never
+   * a planned or delivery clock), capped at today (RULINGS #17). Can be a
+   * stub day holding a few rows. Null for reference tables and when unknown.
    */
   latest_local_day: string | null
   /** Reference tables only: when gridflow last wrote the table, ISO 8601 UTC. */
@@ -185,6 +187,11 @@ export type Scalar = string | number | boolean | null
  * UTC; a DATE clock (gas day, measurement date) arrives as that date at UTC
  * midnight, a date coordinate rather than an instant. Missing grid steps come
  * as rows with null values, never zeros.
+ *
+ * Besides `ts` and the value columns a row carries more keys than `columns`
+ * names: the table's clock column as it is held (an ISO string, e.g.
+ * `timestamp_utc`), its `dims` and its dedup keys. They are typed by the
+ * index signature and read only where a page names them.
  */
 export interface SeriesRow {
   ts: number
@@ -194,13 +201,20 @@ export interface SeriesRow {
   [column: string]: Scalar | undefined
 }
 
-/** An event: its time (epoch ms UTC, the dataset's event clock, e.g. `published_at`) plus its fields. */
+/**
+ * An event: its time (epoch ms UTC, the dataset's window column, e.g.
+ * `published_at`) plus its fields, the clock column as held among them.
+ */
 export interface EventRow {
   ts: number
   [field: string]: Scalar | undefined
 }
 
-/** A reference row: a plain record, no clock. */
+/**
+ * A reference row: a plain record, no clock. The backend adds a `ts` from
+ * the table's time column when it has one (an ingest time, say); the HTTP
+ * adapter drops that `ts`, and the column itself stays.
+ */
 export type ReferenceRow = Record<string, Scalar>
 
 export interface RowsWindow {
@@ -214,6 +228,7 @@ export interface RowsCoverage {
   /** The dataset's local depth on this endpoint's clock. */
   first_day: string | null
   last_day: string | null
+  /** As the manifest's: the window column's last UK day, capped at today. The default window ends on it. */
   latest_local_day: string | null
   /** Inclusive days in the requested window; null for reference tables. */
   days_in_window: number | null

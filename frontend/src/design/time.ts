@@ -45,10 +45,11 @@ function londonParts(ms: number): LondonParts {
   return { year: out.year, month: out.month, day: out.day, hour: out.hour, minute: out.minute }
 }
 
-/** `BST` or `GMT` for the instant (en-GB renders BST as `GMT+1` in some runtimes). */
+/** `BST` or `GMT` for the instant (some runtimes render them `GMT+1` and `GMT+0`). */
 export function zoneAbbrev(ms: number): string {
   const name = zoneFmt.formatToParts(ms).find((p) => p.type === 'timeZoneName')?.value ?? ''
-  return name === 'GMT+1' ? 'BST' : name
+  if (name === 'GMT+1') return 'BST'
+  return name === 'GMT+0' ? 'GMT' : name
 }
 
 /** London UTC offset in ms at an instant. */
@@ -159,9 +160,14 @@ function clockSeconds(ms: number): string {
   return `${clock(ms)}:${pad(Math.floor(ms / 1000) % 60)}`
 }
 
-/** `Tue 15 Sep, 14:37 BST`: one instant on the UK clock (`seconds` for sub-minute readings). */
-export function instantLabel(ms: number, { seconds = false }: { seconds?: boolean } = {}): string {
-  return `${dayLabel(ms)}, ${seconds ? clockSeconds(ms) : clock(ms)} ${zoneAbbrev(ms)}`
+/**
+ * `Tue 15 Sep, 14:37 BST`: one instant on the UK clock (`seconds` for
+ * sub-minute readings; `year` for `Wed 1 Oct 2025, 05:00 BST`, where no
+ * window says which year it is).
+ */
+export function instantLabel(ms: number, { seconds = false, year = false }: { seconds?: boolean; year?: boolean } = {}): string {
+  const day = year ? `${dayLabel(ms)} ${londonParts(ms).year}` : dayLabel(ms)
+  return `${day}, ${seconds ? clockSeconds(ms) : clock(ms)} ${zoneAbbrev(ms)}`
 }
 
 /**

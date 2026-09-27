@@ -22,13 +22,13 @@ import { useAnchoredRange, useViewParam } from '../../design/range'
 import { SourceEmblem } from '../../design/symbols'
 import { rangeText } from '../../design/time'
 import type { DateRange } from '../../lib/range'
-import type { Manifest, ManifestDataset, ManifestFamily, RowsRequest, RowsResponse } from '../contract'
+import type { Manifest, ManifestDataset, ManifestFamily, ManifestSource, RowsRequest, RowsResponse } from '../contract'
 import type { DatasetView, PageContext, PanelSlots, QuerySpec, RelatedData, SlotSpec, ViewConfig } from '../define'
 import { adapterFor } from '../_data/adapters'
 import { useManifest, useRowsList, type Load } from '../_data/hooks'
-import { hasSourcePage, type RegisteredView } from '../registry'
+import type { RegisteredView } from '../registry'
 import { panelTitle, slotsFor } from './defaults'
-import { About, PageNotes, SourceLine } from './panels'
+import { About, ErrorWords, PageNotes, SourceLine } from './panels'
 import { buildSeriesModel } from './seriesModel'
 import { emptyWindowText, isoDayText, notHeldText, sourceName } from './text'
 import './template.css'
@@ -88,10 +88,11 @@ function Ids({ ds }: { ds: ManifestDataset[] }) {
 }
 
 /** The family's datasets that aren't held, grouped by why, and the held ones this page leaves out. */
-function FamilyNote({ family, config }: { family: ManifestFamily; config: ViewConfig }) {
+function FamilyNote({ family, config, layer }: { family: ManifestFamily; config: ViewConfig; layer: ManifestSource['layer'] }) {
   const notHeld = family.datasets.filter((d) => !d.held)
   const leftOut = family.datasets.filter((d) => d.held && !config.datasets.some((v) => v.id === d.id))
   if (!notHeld.length && !leftOut.length) return null
+  // Grouped by the cause as said of one dataset, then said of as many as share it.
   const byCause = new Map<string, ManifestDataset[]>()
   for (const d of notHeld) {
     const why = notHeldText(d.not_held_cause)
@@ -105,7 +106,7 @@ function FamilyNote({ family, config }: { family: ManifestFamily; config: ViewCo
           {[...byCause.entries()].map(([why, ds], i) => (
             <span key={why}>
               {i > 0 && '; '}
-              <Ids ds={ds} /> ({why})
+              <Ids ds={ds} /> ({notHeldText(ds[0].not_held_cause, { many: ds.length > 1, layer })})
             </span>
           ))}
           .{' '}
@@ -120,7 +121,7 @@ function FamilyNote({ family, config }: { family: ManifestFamily; config: ViewCo
   )
 }
 
-function MainStatus({ state, error, dataset, window }: { state: ViewState; error: Load<unknown>['error']; dataset?: ManifestDataset; window: DateRange | null }) {
+function MainStatus({ state, error, dataset, window, layer }: { state: ViewState; error: Load<unknown>['error']; dataset?: ManifestDataset; window: DateRange | null; layer?: ManifestSource['layer'] }) {
   if (state === 'loading') return <p className="gf-state">Reading the local store…</p>
   if (state === 'refreshing') {
     return (
@@ -130,19 +131,24 @@ function MainStatus({ state, error, dataset, window }: { state: ViewState; error
     )
   }
   if (state === 'error') {
-    // Only a 413's hint is words for people (narrow the window); a 422's can be a query string.
-    // Mapping each error code to plain words is P4-0's, with the HTTP adapter.
+    // Every code in plain words (text.ts, errorParts): never the backend's message or a 422's query-string hint.
     return (
       <p className="gf-state is-error" role="alert">
-        Couldn't read this dataset: {error?.message ?? 'unknown error'}
-        {error?.status === 413 && error.hint ? ` ${error.hint}` : ''}
+        {dataset ? (
+          <>
+            Couldn't read <code>{dataset.id}</code>.{' '}
+          </>
+        ) : (
+          "Couldn't read gridflow's source list. "
+        )}
+        <ErrorWords error={error} />
       </p>
     )
   }
   if (state === 'empty' && dataset && !dataset.held) {
     return (
       <p className="gf-state">
-        <code>{dataset.id}</code> isn't held locally: {notHeldText(dataset.not_held_cause)}. The Explorer only shows what gridflow holds.
+        <code>{dataset.id}</code> isn't held locally: {notHeldText(dataset.not_held_cause, { layer })}. The Explorer only shows what gridflow holds.
       </p>
     )
   }
@@ -206,7 +212,10 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
   const response = main?.state === 'data' ? main.value : null
 
   const series = useMemo(
-    () => (view.body === 'series' && response?.kind === 'series' ? buildSeriesModel(response, { values: view.values, groups: view.groups, maxSeries: view.chart?.maxSeries }) : null),
+    () =>
+      view.body === 'series' && response?.kind === 'series'
+        ? buildSeriesModel(response, { values: view.values, groups: view.groups, maxSeries: view.chart ? view.chart.maxSeries : undefined })
+        : null,
     [view, response],
   )
   const related = useMemo(() => {
@@ -280,7 +289,7 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
         ? `The whole table, as last fetched on ${lastFetched}, UK time`
         : 'The whole table: it has no clock'
       : undefined
-  const hasChart = view.body === 'series' || (view.body === 'events' && Boolean(view.strip))
+  const hasChart = (view.body === 'series' && view.chart !== false) || (view.body === 'events' && Boolean(view.strip))
   const tag = fixture ? <FixtureTag title={FIXTURE_NOTE} /> : undefined
 
   const ctx: PageContext | null =
@@ -296,7 +305,8 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
           range: reference ? null : range,
           window,
           windowText,
-          mode,
+          // A series shown as a table has no chart, whatever `?view=` says.
+          mode: view.body === 'series' && view.chart === false ? 'table' : mode,
           state,
           error: main?.error ?? null,
           response,
@@ -334,7 +344,7 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
       return (
         <>
           {ctx && <PageNotes ctx={ctx} />}
-          {state === 'data' && ctx ? <Body ctx={ctx} /> : <MainStatus state={state} error={main?.error ?? manifest.error} dataset={dataset} window={window} />}
+          {state === 'data' && ctx ? <Body ctx={ctx} /> : <MainStatus state={state} error={main?.error ?? manifest.error} dataset={dataset} window={window} layer={source?.layer} />}
         </>
       )
     }
@@ -355,12 +365,13 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
         {source && (
           <>
             <span aria-hidden="true">/</span>
-            {hasSourcePage(source.key) ? (
+            {/* A live source has its page; the fixture's made-up source has none. */}
+            {fixture ? (
+              <span>{source.name}</span>
+            ) : (
               <Link to={`/sources/${source.key}`} className="gf-crumb-link">
                 {source.name}
               </Link>
-            ) : (
-              <span>{source.name}</span>
             )}
           </>
         )}
@@ -378,7 +389,7 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
         {hasChart && dataset?.held !== false && <ViewSwitch value={mode} onChange={setMode} />}
         {ctx && dataset?.held && view.controls && <view.controls ctx={ctx} />}
         {reference && <span className="gf-toolbar-note">A table with no clock: no range and no chart.</span>}
-        {family && <FamilyNote family={family} config={config} />}
+        {family && source && <FamilyNote family={family} config={config} layer={source.layer} />}
       </Toolbar>
       <div className="gf-grid">
         {AREAS.map(([area, gridArea]) => {

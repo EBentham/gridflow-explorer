@@ -8,7 +8,7 @@
  * there at all (it is on another clock).
  */
 import { SERIES_COLORS } from '../../design/chartTheme'
-import { datesBetween, dayStart, HOUR_MS, londonMidnight, stepsInDay } from '../../design/time'
+import { datesBetween, dayStart, fmtDay, HOUR_MS, londonMidnight, periodLabel, stepsInDay, ukDate } from '../../design/time'
 import type { DateRange } from '../../lib/range'
 import type { SeriesRowsResponse, ValueColumn } from '../contract'
 import type { GroupSpec, ValueSpec } from '../define'
@@ -43,6 +43,12 @@ export interface WideRow {
   [field: string]: number | null | undefined
 }
 
+/** A row's settlement day and period, as the backend supplies them (gridflow owns their meaning). */
+export interface Settlement {
+  date: string | null
+  period: number | null
+}
+
 export interface SeriesModel {
   from: string
   /** Every series in the response. */
@@ -63,6 +69,12 @@ export interface SeriesModel {
   numericColumns: ValueColumn[]
   /** Categories, flags and text: shown in the table, never drawn. */
   textColumns: ValueColumn[]
+  /**
+   * Each time's settlement day and period, where the rows carry them (a
+   * held row's; the backend's rows for missing steps carry nulls); null when
+   * the table has no settlement columns. Tooltips name the period from it.
+   */
+  settlement: Map<number, Settlement> | null
 }
 
 export interface SeriesOptions {
@@ -167,6 +179,17 @@ export function buildSeriesModel(response: SeriesRowsResponse, opts: SeriesOptio
   const kept = new Set(bySize.slice(0, cap))
   const bucket = response.truncation?.bucket_ms ?? null
 
+  let settlement: Map<number, Settlement> | null = null
+  // A bucket mean spans several periods: it names none.
+  if (bucket === null && response.rows.some((r) => 'settlement_period' in r)) {
+    settlement = new Map()
+    for (const r of response.rows) {
+      const period = typeof r.settlement_period === 'number' ? r.settlement_period : null
+      const date = typeof r.settlement_date === 'string' ? r.settlement_date : null
+      if (period !== null && !settlement.get(r.ts)?.period) settlement.set(r.ts, { date, period })
+    }
+  }
+
   return {
     from,
     all,
@@ -179,7 +202,44 @@ export function buildSeriesModel(response: SeriesRowsResponse, opts: SeriesOptio
     group,
     numericColumns,
     textColumns,
+    settlement,
   }
+}
+
+/**
+ * A period's name with its settlement period where the rows carry one:
+ * `Tue 15 Sep, 14:30–15:00 BST, SP 30`. The number is the backend's, never
+ * worked out here; a settlement day that isn't the period's UK day is named.
+ */
+export function periodName(t: number, stepMs: number | null, settlement: Map<number, Settlement> | null | undefined): string {
+  const base = periodLabel(t, stepMs)
+  const s = settlement?.get(t)
+  if (!s?.period) return base
+  const day = s.date && s.date !== ukDate(t) ? ` of settlement day ${fmtDay(s.date)}` : ''
+  // A no-break space keeps `SP 37` on one line where the name wraps.
+  return `${base}, SP ${s.period}${day}`
+}
+
+/** Runs of consecutive held values below zero, as [first, last] times; a gap ends a run. Only on a regular clock. */
+export function runsBelowZero(rows: WideRow[], def: SeriesDef, stepMs: number | null): { start: number; last: number; n: number; min: number }[] {
+  if (stepMs === null) return []
+  const out: { start: number; last: number; n: number; min: number }[] = []
+  let run: (typeof out)[number] | null = null
+  for (const row of rows) {
+    if (!(def.field in row)) continue
+    const v = row[def.field]
+    if (typeof v === 'number' && v < 0) {
+      if (run && row.t - run.last <= stepMs) {
+        run.last = row.t
+        run.n += 1
+        run.min = Math.min(run.min, v)
+      } else {
+        run = { start: row.t, last: row.t, n: 1, min: v }
+        out.push(run)
+      }
+    } else run = null
+  }
+  return out
 }
 
 /** The last held value of a series, or null. */

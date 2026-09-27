@@ -21,9 +21,9 @@ import { Area, Bar, CartesianGrid, ComposedChart, Line, Tooltip, XAxis, YAxis } 
 import { ChartFrame, DayRules, Extreme, HighlightBand, SelectionEdges, TooltipBox, ZeroLine, type TipRow } from '../../design/charts'
 import { CHART, CURSOR, GRID, bandProps, extremeAnchor, lineProps, timeAxis, valueAxis } from '../../design/chartTheme'
 import { fmtN, niceTicks, stepDigits } from '../../design/format'
-import { DAY_MS, axisClockCaption, clock, dayTick, londonMidnight, nextLondonMidnight, periodLabel, ukTimeTicks } from '../../design/time'
+import { DAY_MS, axisClockCaption, clock, dayTick, londonMidnight, nextLondonMidnight, ukTimeTicks } from '../../design/time'
 import type { Mark } from '../define'
-import { extremesOf, seriesId, type SeriesDef, type WideRow } from './seriesModel'
+import { extremesOf, periodName, runsBelowZero, seriesId, type SeriesDef, type Settlement, type WideRow } from './seriesModel'
 import type { DisplayUnit } from './units'
 
 export interface ChartPanel {
@@ -40,6 +40,12 @@ export interface ChartPanel {
   extremes?: SeriesDef | null
   /** The rows are time-bucket means: the tooltip says so. */
   bucketed?: boolean
+  /** Settlement periods by time, where the rows carry them: the tooltip names the period with its number. */
+  settlement?: Map<number, Settlement> | null
+  /** Band this series' runs below zero with the highlight band. */
+  belowZero?: SeriesDef | null
+  /** A fixed width for the value axis, so stacked charts in different panels line up. */
+  axisWidth?: number
 }
 
 type PanelRow = WideRow
@@ -217,12 +223,14 @@ function PanelChart({
   const scale = useMemo(() => scaleOf(panel.rows, shown, stacked ? 'stacked' : mark, Boolean(panel.zero)), [panel.rows, shown, stacked, mark, panel.zero])
   const digits = stepDigits(scale.ticks[1] - scale.ticks[0])
   const tickText = (v: number) => fmtN(v, digits)
-  const width = Math.max(40, 10 + 7 * Math.max(...scale.ticks.map((v) => tickText(v).length)))
+  const width = panel.axisWidth ?? Math.max(40, 10 + 7 * Math.max(...scale.ticks.map((v) => tickText(v).length)))
   const multiDay = domain[1] - domain[0] > 30 * 3600e3
   const pickable = Boolean(onPick && multiDay)
   const extremesFor = panel.extremes && shown.includes(panel.extremes) ? panel.extremes : null
   const ex = useMemo(() => (extremesFor ? extremesOf(panel.rows, extremesFor) : null), [panel.rows, extremesFor])
   const band = multiDay && picked !== undefined ? ([Math.max(picked, domain[0]), Math.min(nextLondonMidnight(picked), domain[1])] as const) : null
+  const belowFor = panel.belowZero && shown.includes(panel.belowZero) ? panel.belowZero : null
+  const runs = useMemo(() => (belowFor ? runsBelowZero(panel.rows, belowFor, stepMs) : []), [panel.rows, belowFor, stepMs])
   const dots = stepMs !== null && stepMs >= DAY_MS
 
   const renderTip = ({ active, label, payload }: TipProps) => {
@@ -243,7 +251,7 @@ function PanelChart({
       tipRows.push({ key: '__total', color: 'transparent', label: held.some((x) => (x.v ?? 0) < 0) ? 'Net total' : 'Total', value: unit.format(total), strong: true })
     }
     const note = !held.length ? 'Not held locally' : panel.bucketed ? 'Mean over the period' : pickable ? 'Click to select this day' : undefined
-    return <TooltipBox title={periodLabel(t, stepMs)} rows={held.length ? tipRows : []} note={note} />
+    return <TooltipBox title={periodName(t, stepMs, panel.settlement)} rows={held.length ? tipRows : []} note={note} />
   }
 
   const pick = (s: ClickState | null | undefined) => {
@@ -258,6 +266,9 @@ function PanelChart({
     <ChartFrame height={panel.height ?? CHART.height} caption={labels ? axisClockCaption(domain[0], domain[1]) : undefined} pickable={pickable}>
       <ComposedChart data={rows} margin={labels ? CHART.margin : { ...CHART.margin, bottom: 2 }} onClick={pick} syncId={syncId} syncMethod="value" barCategoryGap={0}>
         <CartesianGrid {...GRID} />
+        {runs.map((r) => (
+          <HighlightBand key={r.start} x1={r.start} x2={Math.min(r.last + (stepMs ?? 0), domain[1])} />
+        ))}
         {band && <HighlightBand x1={band[0]} x2={band[1]} />}
         <DayRules midnights={ticks.midnights} />
         <XAxis {...timeAxis(domain, ticks, { labels })} />

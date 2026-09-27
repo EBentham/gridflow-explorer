@@ -1,3 +1,4 @@
+import http from 'node:http'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -13,7 +14,9 @@ export default defineConfig({
   server: {
     port,
     proxy: {
-      '/api': { target: apiTarget, changeOrigin: true },
+      // keepAlive off: the proxy otherwise reuses sockets the backend already closed,
+      // and about one page load in five hangs.
+      '/api': { target: apiTarget, changeOrigin: true, agent: new http.Agent({ keepAlive: false }) },
     },
   },
 })

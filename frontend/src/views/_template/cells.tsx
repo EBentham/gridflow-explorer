@@ -52,6 +52,12 @@ export function inferColumns(rows: Row[], skip: string[] = []): ColumnSpec[] {
   return fieldsOf(rows, skip).map((field) => ({ field, format: inferFormat(rows, field) }))
 }
 
+/** A value as its column reads it in words (`ColumnSpec.text`); null to show it as held. */
+export function wordsOf(spec: Pick<ColumnSpec, 'text'>, v: Scalar | undefined): string | null {
+  if (!spec.text || v === null || v === undefined || v === '') return null
+  return spec.text(v)
+}
+
 /** A column's header: its label, or the field id as an identifier, then the unit. */
 export function headerOf(spec: ColumnSpec): ReactNode {
   const unit = spec.format === 'number' && spec.unit ? displayUnit(spec.unit, spec.display ?? 'MW').label : null
@@ -65,12 +71,17 @@ export function headerOf(spec: ColumnSpec): ReactNode {
   )
 }
 
-/** A spec as a table column over plain rows. */
-export function toTableCol(spec: ColumnSpec): TableCol<Row> {
+/**
+ * A spec as a table column over plain rows. `years` names each time's year:
+ * a reference table has no window to date its times.
+ */
+export function toTableCol(spec: ColumnSpec, { years = false }: { years?: boolean } = {}): TableCol<Row> {
   const format = spec.format ?? 'text'
   const unit = spec.unit ? displayUnit(spec.unit, spec.display ?? 'MW') : null
   const cell = (v: Scalar | undefined): ReactNode => {
     if (v === null || v === undefined || v === '') return MISSING
+    const words = wordsOf(spec, v)
+    if (words !== null) return words
     switch (format) {
       case 'id':
         return <code>{String(v)}</code>
@@ -81,7 +92,7 @@ export function toTableCol(spec: ColumnSpec): TableCol<Row> {
       }
       case 'time': {
         const ms = toInstant(v)
-        return ms === null ? String(v) : instantLabel(ms)
+        return ms === null ? String(v) : instantLabel(ms, { year: years })
       }
       case 'date':
         return typeof v === 'string' && ISO_DATE.test(v) ? rangeText(v, v) : String(v)
@@ -94,8 +105,12 @@ export function toTableCol(spec: ColumnSpec): TableCol<Row> {
   const sortValue = (r: Row): string | number | null => {
     const v = r[spec.field]
     if (v === null || v === undefined || v === '') return null
+    const words = wordsOf(spec, v)
+    if (words !== null) return words
     if (format === 'time') return toInstant(v)
     if (typeof v === 'number') return v
+    // A number the table holds as text ("22.3") sorts as the number; the cell shows it as published.
+    if (format === 'number' && typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v))) return Number(v)
     if (typeof v === 'boolean') return v ? 1 : 0
     return String(v)
   }

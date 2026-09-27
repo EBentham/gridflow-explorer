@@ -6,16 +6,25 @@
  * through `panels` in its config and can reuse these.
  */
 import { Fragment, type ReactNode } from 'react'
+import type { ApiError } from '../../api/client'
 import { KeyList, type KeyItem } from '../../design/charts'
 import { listText, plural } from '../../design/format'
-import { dayLabel, instantLabel, stepNoun } from '../../design/time'
+import { DAY_MS, dayLabel, instantLabel, periodLabel, stepNoun } from '../../design/time'
 import type { EventsRowsResponse, ManifestDataset, ManifestSource, ReferenceRowsResponse, Scalar } from '../contract'
-import type { EventsView, PageContext, ReferenceView, RelatedData, SeriesView } from '../define'
-import { daySeries, heldDays, relatedFilters, type SourcePart } from './panelHelpers'
-import { daySummaries, latestValue, seriesId, type SeriesDef } from './seriesModel'
+import type { ColumnSpec, EventsView, PageContext, ReferenceView, RelatedData, SeriesView } from '../define'
+import { wordsOf } from './cells'
+import { daySeries, heldDays, keyStamp, relatedFilters, type SourcePart } from './panelHelpers'
+import { daySummaries, latestValue, periodName, seriesId, type SeriesDef, type SeriesModel } from './seriesModel'
 import { planPanels } from './seriesPanels'
-import { cadenceOf, coverageSentences, depthText, isoDayText, meansText, notHeldText, sourceName, truncationSentences } from './text'
+import { cadenceOf, coverageSentences, depthText, errorParts, isoDayText, meansText, notHeldText, sourceName, truncationSentences } from './text'
 import { displayUnit } from './units'
+
+// ---------------------------------------------------------------- errors
+
+/** What went wrong, in plain words (`errorParts`), with column ids in mono. */
+export function ErrorWords({ error }: { error: ApiError | null }) {
+  return errorParts(error).map((p, i) => (typeof p === 'string' ? <Fragment key={i}>{p}</Fragment> : <code key={i}>{p.id}</code>))
+}
 
 // ---------------------------------------------------------------- source line
 
@@ -141,9 +150,11 @@ function relatedFacts(ctx: PageContext, rel: RelatedData): string[] {
 export function PageNotes({ ctx }: { ctx: PageContext }) {
   const facts: string[] = []
   if (ctx.window && ctx.state === 'data') {
-    const days = heldDays(ctx)
+    // A series stepping more than a day (weekly) holds no row on most days by design: its days aren't counted.
+    const step = ctx.series?.stepMs ?? null
+    const days = step !== null && step > DAY_MS ? [] : heldDays(ctx)
     const coverage = ctx.dataset.coverage
-    facts.push(...coverageSentences({ coverage, window: ctx.window, days, stepMs: ctx.series?.stepMs ?? null }).filter((s) => ctx.response?.kind !== 'events' || !s.includes(' holds ')))
+    facts.push(...coverageSentences({ coverage, window: ctx.window, days, stepMs: step }).filter((s) => ctx.response?.kind !== 'events' || !s.includes(' holds ')))
   }
   if (ctx.response) facts.push(...truncationSentences(ctx.response, ctx.dataset))
   const beside: { rel: RelatedData; said: string[] }[] = []
@@ -174,23 +185,83 @@ function markOf(kind: string | undefined, color: string): KeyItem['mark'] {
   return kind === 'line' ? { kind: 'line', color } : { kind: 'swatch', color }
 }
 
-/** The series key: every drawn series with its mark and latest value; select one to draw it alone. */
+/** A key row's own period, under it, when its latest value isn't at the key's stamp. */
+function KeyWhen({ latest, stepMs, stamp, settlement }: { latest: { t: number } | null; stepMs: number | null; stamp: ReturnType<typeof keyStamp>; settlement: SeriesModel['settlement'] }) {
+  if (!latest || (stamp && stamp.t === latest.t && stamp.stepMs === stepMs)) return null
+  return <span className="gf-series-when">{periodName(latest.t, stepMs, settlement)}</span>
+}
+
+/** Text-only rows: what the key says instead of a list. */
+function TextOnly({ ctx }: { ctx: PageContext }) {
+  const cols = ctx.series?.textColumns ?? []
+  const labels = new Map(((ctx.view as SeriesView).values ?? []).map((v) => [v.column, v.label]))
+  return (
+    <p className="gf-hint">
+      These rows hold text, not numbers (
+      {cols.map((c, i) => (
+        <Fragment key={c.column}>
+          {i > 0 && (i === cols.length - 1 ? ' and ' : ', ')}
+          {labels.get(c.column) ?? <code>{c.column}</code>}
+        </Fragment>
+      ))}
+      ), so there is no value to key. The table shows each row.
+    </p>
+  )
+}
+
+/** A series shown as a table: each series' latest held value. Select one to read it in the days table. */
+function LatestValues({ ctx }: { ctx: PageContext }) {
+  const model = ctx.series
+  if (!model || !model.drawn.length) return <p className="gf-hint">Nothing is held in this window, so there is no latest value.</p>
+  const stamp = keyStamp(ctx)
+  const pickable = model.drawn.length > 1
+  return (
+    <>
+      <ul className="gf-series-key">
+        {model.drawn.map((d) => {
+          const id = seriesId(d)
+          const latest = latestValue(model, d)
+          const on = ctx.focus === id
+          return (
+            <li key={id} className={on ? 'is-focus' : ctx.focus ? 'is-muted' : undefined}>
+              <button type="button" aria-pressed={on} disabled={!pickable} onClick={() => ctx.setFocus(on ? undefined : id)}>
+                <span className="gf-series-name">{d.label}</span>
+                <span className="gf-series-value">{latest ? d.unit.format(latest.v) : '–'}</span>
+              </button>
+              <KeyWhen latest={latest} stepMs={model.stepMs} stamp={stamp} settlement={model.settlement} />
+            </li>
+          )
+        })}
+      </ul>
+      {pickable && <p className="gf-hint">{ctx.focus ? 'Select it again to read the first.' : 'Select one to read it in the days table.'}</p>}
+      {model.undrawn.length > 0 && <p className="gf-hint">And {plural(model.undrawn.length, 'more series', 'more series')} in the table.</p>}
+      {model.empty.length > 0 && <p className="gf-hint">No value held in this window: {listText(model.empty.map((d) => d.label))}.</p>}
+    </>
+  )
+}
+
+/**
+ * The series key: every drawn series with its mark and latest value; select
+ * one to draw it alone. A series shown as a table lists its latest values
+ * instead, and text-only rows say they have none.
+ */
 export function SeriesKey({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
+  if (model && !model.all.length && model.textColumns.length) return <TextOnly ctx={ctx} />
+  if ((ctx.view as SeriesView).chart === false) return <LatestValues ctx={ctx} />
   const plan = planPanels(ctx)
   const drawn = plan.panels.flatMap((p) => p.series)
   if (!model || !drawn.length) return <p className="gf-hint">Nothing is held in this window, so there is nothing to key.</p>
-  const latestOf = (d: SeriesDef) => {
-    const m = d.from === 'self' ? model : ctx.related[d.from]?.series
-    return m ? latestValue(m, d) : null
-  }
+  const modelOf = (d: SeriesDef) => (d.from === 'self' ? model : ctx.related[d.from]?.series)
+  const stamp = keyStamp(ctx)
   const pickable = drawn.length > 1
   return (
     <>
       <ul className="gf-series-key">
         {drawn.map((d) => {
           const id = seriesId(d)
-          const latest = latestOf(d)
+          const m = modelOf(d)
+          const latest = m ? latestValue(m, d) : null
           const on = ctx.focus === id
           return (
             <li key={id} className={on ? 'is-focus' : ctx.focus ? 'is-muted' : undefined}>
@@ -198,10 +269,12 @@ export function SeriesKey({ ctx }: { ctx: PageContext }) {
                 <KeyList items={[{ key: id, mark: markOf(plan.marks.get(id), d.color), label: <span className="gf-series-name">{d.label}</span> }]} />
                 <span className="gf-series-value">{latest ? d.unit.format(latest.v) : '–'}</span>
               </button>
+              <KeyWhen latest={latest} stepMs={m?.stepMs ?? null} stamp={stamp} settlement={m?.settlement ?? null} />
             </li>
           )
         })}
       </ul>
+      {plan.belowZero && ctx.mode === 'chart' && <KeyList items={[{ key: 'below-zero', mark: { kind: 'band' }, label: `${plan.belowZero.label} below zero` }]} />}
       {pickable && <p className="gf-hint">{ctx.focus ? 'Select it again to draw them all.' : 'Select a series to draw it on its own.'}</p>}
       {model.undrawn.length > 0 && (
         <p className="gf-hint">
@@ -214,13 +287,93 @@ export function SeriesKey({ ctx }: { ctx: PageContext }) {
   )
 }
 
-/** Every UK day in the window: held half-hours, and one series' mean, lowest and highest. Select a day to mark it. */
+/** Text-only rows per UK day: how many hold something; a day beyond the local depth is not held. */
+function RowsPerDay({ ctx }: { ctx: PageContext }) {
+  const days = heldDays(ctx)
+  const first = ctx.dataset.coverage?.first_day
+  const last = ctx.dataset.coverage?.last_day
+  return (
+    <>
+      <div className="gf-days">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Day</th>
+              <th scope="col" className="is-num">
+                Rows held
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {days.map((d) => {
+              const outside = (first && d.day < first) || (last && d.day > last)
+              return (
+                <tr key={d.day} className={d.held === 0 ? 'is-missing' : undefined}>
+                  <th scope="row">{dayLabel(d.start)}</th>
+                  <td className="is-num">{d.held ? d.held.toLocaleString('en-GB') : outside ? 'not held locally' : 'none held'}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      {days.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
+    </>
+  )
+}
+
+/** A series stepping more than a day (weekly): each step in the window, its value or none held. */
+function PointList({ ctx, def }: { ctx: PageContext; def: SeriesDef }) {
+  const model = ctx.series
+  if (!model) return null
+  const points = model.rows.filter((r) => def.field in r)
+  return (
+    <>
+      <div className="gf-days">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Period</th>
+              <th scope="col" className="is-num">
+                {def.unit.label ?? 'Value'}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {points.map((r) => {
+              const v = r[def.field]
+              return (
+                <tr key={r.t} className={typeof v === 'number' ? undefined : 'is-missing'}>
+                  <th scope="row">{periodLabel(r.t, model.stepMs)}</th>
+                  <td className="is-num">{typeof v === 'number' ? def.unit.plain(v) : 'not held locally'}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="gf-hint">
+        {def.label}: {plural(points.length, 'period', 'periods')} in this window, oldest first.
+        {model.drawn.length > 1 ? ' Select a series in the key to read another.' : ''}
+      </p>
+    </>
+  )
+}
+
+/**
+ * Every UK day in the window: held half-hours, and one series' mean, lowest
+ * and highest. Select a day to mark it. A daily series lists its value per
+ * day; one stepping more than a day lists its steps; text-only rows count
+ * the rows each day holds.
+ */
 export function SeriesDays({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
+  if (model && !model.all.length && model.textColumns.length) return <RowsPerDay ctx={ctx} />
   const def = daySeries(ctx)
   if (!model || !ctx.window || !def) return <p className="gf-hint">Nothing is held in this window, so there are no days to summarise.</p>
+  if (model.stepMs !== null && model.stepMs > DAY_MS) return <PointList ctx={ctx} def={def} />
   const days = daySummaries(model, ctx.window, def)
-  const daily = model.stepMs !== null && model.stepMs >= 86_400_000
+  const daily = model.stepMs !== null && model.stepMs >= DAY_MS
   const fmt = (x: { v: number } | null) => (x ? def.unit.plain(x.v) : '–')
   return (
     <>
@@ -294,6 +447,24 @@ export function SeriesDays({ ctx }: { ctx: PageContext }) {
   )
 }
 
+// ---------------------------------------------------------------- counts (events and reference)
+
+/** One key for every blank (null or empty text), which no held value can take. */
+const BLANK = '\u0000blank'
+const countKey = (v: Scalar | undefined) => (v === null || v === undefined || v === '' ? BLANK : String(v))
+
+/** A count's label: `Blank` for the blanks, else the value in its column's words. */
+function countLabel(spec: Pick<ColumnSpec, 'text'> | undefined, k: string): string {
+  if (k === BLANK) return 'Blank'
+  return spec ? (wordsOf(spec, k) ?? k) : k
+}
+
+/** A count's label as drawn: an identifier the column has no words for is set in mono, as in the table. */
+function CountLabel({ spec, k }: { spec: Pick<ColumnSpec, 'text' | 'format'> | undefined; k: string }) {
+  const said = countLabel(spec, k)
+  return spec?.format === 'id' && k !== BLANK && said === k ? <code>{k}</code> : <>{said}</>
+}
+
 // ---------------------------------------------------------------- events defaults
 
 /** The events key: how many, newest and oldest, and counts by the first categorical column. */
@@ -303,7 +474,8 @@ export function EventsSummary({ ctx }: { ctx: PageContext }) {
   const rows = response.rows
   const by = (ctx.view.body === 'events' && ctx.view.filters?.[0]) || Object.keys(rows[0] ?? {}).find((k) => k !== 'ts' && typeof rows[0][k] === 'string' && new Set(rows.map((r) => r[k])).size <= 12)
   const counts = new Map<string, number>()
-  if (by) for (const r of rows) counts.set(String(r[by] ?? 'none'), (counts.get(String(r[by] ?? 'none')) ?? 0) + 1)
+  if (by) for (const r of rows) counts.set(countKey(r[by]), (counts.get(countKey(r[by])) ?? 0) + 1)
+  const spec = by && ctx.view.body === 'events' ? ctx.view.columns?.find((c) => c.field === by) : undefined
   const times = rows.map((r) => r.ts)
   return (
     <>
@@ -332,13 +504,15 @@ export function EventsSummary({ ctx }: { ctx: PageContext }) {
             .slice(0, 6)
             .map(([k, n]) => (
               <div key={k}>
-                <dt>{k}</dt>
-                <dd>{n}</dd>
+                <dt>
+                  <CountLabel spec={spec} k={k} />
+                </dt>
+                <dd>{n.toLocaleString('en-GB')}</dd>
               </div>
             ))}
         </dl>
       )}
-      {by && <p className="gf-hint">Counts by <code>{by}</code>. Filter the table to read one group.</p>}
+      {by && <p className="gf-hint">Counts by {spec?.label ? spec.label.toLowerCase() : <code>{by}</code>}. Filter the table to read one group.</p>}
     </>
   )
 }
@@ -366,7 +540,7 @@ export function EventsDays({ ctx }: { ctx: PageContext }) {
               return (
                 <tr key={d.day} className={d.held === 0 ? 'is-missing' : undefined}>
                   <th scope="row">{dayLabel(d.start)}</th>
-                  <td className="is-num">{d.held ? d.held : outside ? 'not held locally' : 'none held'}</td>
+                  <td className="is-num">{d.held ? d.held.toLocaleString('en-GB') : outside ? 'not held locally' : 'none held'}</td>
                 </tr>
               )
             })}
@@ -426,26 +600,52 @@ export function ReferenceCounts({ ctx }: { ctx: PageContext }) {
     )
   }
   const counts = new Map<string, number>()
-  for (const r of response.rows) counts.set(String(r[field] ?? 'none'), (counts.get(String(r[field] ?? 'none')) ?? 0) + 1)
+  for (const r of response.rows) counts.set(countKey(r[field]), (counts.get(countKey(r[field])) ?? 0) + 1)
   const max = Math.max(1, ...counts.values())
+  const spec = view.columns?.find((c) => c.field === field)
+  const said = (k: string) => countLabel(spec, k)
   return (
-    <ul className="gf-counts">
-      {[...counts.entries()]
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-        .map(([k, n]) => (
-          <li key={k}>
-            <span className="gf-counts-label">{k}</span>
-            <span className="gf-counts-bar" aria-hidden="true">
-              <span style={{ width: `${(n / max) * 100}%` }} />
-            </span>
-            <span className="gf-counts-value">{n}</span>
-          </li>
-        ))}
-    </ul>
+    <>
+      <ul className="gf-counts">
+        {[...counts.entries()]
+          .sort((a, b) => b[1] - a[1] || said(a[0]).localeCompare(said(b[0])))
+          .map(([k, n]) => (
+            <li key={k}>
+              <span className="gf-counts-label" title={said(k)}>
+                <CountLabel spec={spec} k={k} />
+              </span>
+              <span className="gf-counts-bar" aria-hidden="true">
+                <span style={{ width: `${(n / max) * 100}%` }} />
+              </span>
+              <span className="gf-counts-value">{n.toLocaleString('en-GB')}</span>
+            </li>
+          ))}
+      </ul>
+      {counts.size > 11 && <p className="gf-hint">{plural(counts.size, 'value', 'values')}, most rows first. Scroll the list for the rest.</p>}
+    </>
   )
 }
 
 // ---------------------------------------------------------------- about (every body)
+
+/** An id set in mono that may wrap after its underscores rather than mid-word. */
+function Id({ id }: { id: string }) {
+  const parts = id.split('_')
+  return (
+    <code>
+      {parts.map((p, i) => (
+        <Fragment key={i}>
+          {p}
+          {i < parts.length - 1 && (
+            <>
+              _<wbr />
+            </>
+          )}
+        </Fragment>
+      ))}
+    </code>
+  )
+}
 
 /** The side panel's default: what the dataset is, how it is read, and how far it runs locally. */
 export function About({ ctx }: { ctx: PageContext }) {
@@ -459,6 +659,8 @@ export function About({ ctx }: { ctx: PageContext }) {
     const note = !unit.numeric ? 'text' : unit.label === null ? 'unit unconfirmed' : unit.source === 'MW' && unit.label === 'GW' ? 'MW, shown as GW' : unit.label
     return { column: v.column, note }
   })
+  // Several columns in one unit name it once, after the list.
+  const shared = columns.length > 2 && columns.every((c) => c.note === columns[0].note) ? columns[0].note : null
   const filters = Object.entries(ctx.response?.filters ?? {})
   // A split a filter pins to one value draws as the columns themselves (seriesModel.ts).
   const split = series ? ctx.series?.group : ctx.response?.group
@@ -469,18 +671,32 @@ export function About({ ctx }: { ctx: PageContext }) {
       <div>
         <dt>Dataset</dt>
         <dd>
-          <code>{d.id}</code>, {ctx.fixture ? 'made in the browser' : `from ${sourceName(ctx.source)} (${ctx.source.host})`}
+          <Id id={d.id} />, {ctx.fixture ? 'made in the browser' : `from ${sourceName(ctx.source)} (${ctx.source.host})`}
         </dd>
       </div>
       <div>
         <dt>Columns</dt>
         <dd>
-          {columns.map((c, i) => (
-            <Fragment key={c.column}>
-              {i > 0 && '; '}
-              <code>{c.column}</code> {c.note}
-            </Fragment>
-          ))}
+          {!columns.length && 'No values: it holds identifiers and categories.'}
+          {shared !== null && (
+            <>
+              {columns.map((c, i) => (
+                <Fragment key={c.column}>
+                  {i > 0 && ', '}
+                  <Id id={c.column} />
+                </Fragment>
+              ))}
+              : all {shared}
+            </>
+          )}
+          {columns.length > 0 &&
+            shared === null &&
+            columns.map((c, i) => (
+              <Fragment key={c.column}>
+                {i > 0 && '; '}
+                <Id id={c.column} /> {c.note}
+              </Fragment>
+            ))}
         </dd>
       </div>
       {split && (
@@ -527,7 +743,8 @@ export function About({ ctx }: { ctx: PageContext }) {
       </div>
       <div>
         <dt>Held locally</dt>
-        <dd>{!d.held ? `Nothing: ${notHeldText(d.not_held_cause)}` : (depth ?? (d.kind === 'reference' ? plural(d.coverage?.rows ?? 0, 'row', 'rows') : 'nothing yet'))}</dd>
+        {/* Rows with no known day range (a table whose clock isn't read) still count as held. */}
+        <dd>{!d.held ? `Nothing: ${notHeldText(d.not_held_cause, { layer: ctx.source.layer })}` : (depth ?? (d.coverage?.rows ? plural(d.coverage.rows, 'row', 'rows') : 'nothing yet'))}</dd>
       </div>
       <div>
         <dt>Fetched</dt>
