@@ -5,7 +5,7 @@
  * long view has no "latest" point to key). Then the carbon intensity's line
  * and value, and the total, which is the fuels added up, as NESO defines its
  * `generation`. A fuel that reads zero from the window's start for weeks, or
- * throughout, is named: those are zeros in NESO's file, not gaps.
+ * throughout, is named: those are zeros in the rows held, not gaps.
  */
 import { useMemo } from 'react'
 import { KeyList } from '../../../design/charts'
@@ -15,14 +15,14 @@ import type { PageContext } from '../../define'
 import { CI, CI_COLOR, CI_LABEL, FUELS, FUEL_COLUMNS, amountText, idOf, seriesOf } from './fuels'
 import { clockOf, latestHeld, stepsText, windowPeriod, zeroRuns, type ZeroRun } from './periods'
 
-/** `NESO's file reads zero for “other” until 1 Feb 2012 and for solar until 1 Jan 2013`, or empty. */
+/** `Every row held reads zero for “other” until 1 Feb 2012 and for solar until 1 Jan 2013…`, or empty. */
 function zeroText(runs: ZeroRun[]): string {
   if (!runs.length) return ''
   const prose = (column: string) => FUELS.find((f) => f.column === column)?.prose ?? column
   // Those zero throughout first, then by the date each starts to read above zero.
   const ordered = [...runs].sort((a, b) => (a.until ?? '').localeCompare(b.until ?? ''))
   const parts = ordered.map((r) => (r.until ? `for ${prose(r.column)} until ${rangeText(r.until, r.until)}` : `for ${prose(r.column)} throughout`))
-  return `In this window NESO’s file reads zero ${listText(parts)}: zeros as published, not gaps.`
+  return `In this window every row held reads zero ${listText(parts)}. Those are zeros in the rows, not gaps.`
 }
 
 export function MixKey({ ctx }: { ctx: PageContext }) {

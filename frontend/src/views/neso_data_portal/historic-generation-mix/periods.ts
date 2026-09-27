@@ -234,9 +234,9 @@ export interface ZeroRun {
 
 /**
  * Fuels that read exactly zero in every row held from the window's start for
- * four weeks or more, or through the whole window: zeros as NESO's file
- * carries them, not gaps. A fuel with no value held at all is a gap, which
- * the coverage names, so it isn't listed here. Rows are sorted by time.
+ * four weeks or more, or through the whole window: zeros in the rows, not
+ * gaps. A fuel with no value held at all is a gap, which the coverage names,
+ * so it isn't listed here. Rows are sorted by time.
  */
 export function zeroRuns(model: SeriesModel): ZeroRun[] {
   const out: ZeroRun[] = []
