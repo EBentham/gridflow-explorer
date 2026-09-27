@@ -84,9 +84,11 @@ export function DemandKey({ ctx }: { ctx: PageContext }) {
             <dt>Mean gap</dt>
             <dd>
               {unit.format(gap.sum / gap.count)}
-              <span className="gf-stat-when">
-                {unit.plain(gap.min)} to {unit.format(gap.max)}
-              </span>
+              {unit.plain(gap.min) !== unit.plain(gap.max) && (
+                <span className="gf-stat-when">
+                  {unit.plain(gap.min)} to {unit.format(gap.max)}
+                </span>
+              )}
             </dd>
           </div>
         )}
