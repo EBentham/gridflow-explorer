@@ -47,7 +47,7 @@ def handle_api_error(request: Request, exc: ApiError) -> JSONResponse:
 
 
 @app.get("/api/health")
-def health() -> dict[str, str]:
+async def health() -> dict[str, str]:
     """Liveness probe.
 
     Returns:

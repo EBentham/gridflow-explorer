@@ -11,7 +11,8 @@ import { About, EventsDays, EventsSummary, ReferenceCounts, ReferenceSummary, Se
 import { ReferenceBody } from './ReferenceBody'
 import { SeriesBody } from './SeriesBody'
 import { planPanels } from './seriesPanels'
-import { meansText } from './text'
+import { grainStepMs, meansText } from './text'
+import { displayUnit } from './units'
 
 /**
  * The main panel's source line: each dataset drawn with its columns, split,
@@ -48,8 +49,30 @@ const about: SlotSpec = {
   Body: About,
 }
 
-/** Rows that hold text only: nothing to key or summarise but the rows themselves. */
-const textOnly = (ctx: PageContext) => Boolean(ctx.series && !ctx.series.all.length && ctx.series.textColumns.length)
+/**
+ * Rows that hold text only: nothing to key or summarise but the rows
+ * themselves. Before the rows are read (or when they fail), the columns'
+ * units say, so a panel keeps its title in every state.
+ */
+function textOnly(ctx: PageContext): boolean {
+  if (ctx.series) return !ctx.series.all.length && ctx.series.textColumns.length > 0
+  if (ctx.view.body !== 'series') return false
+  const specs = ctx.view.values
+  const columns = specs?.map((v) => v.column) ?? ctx.dataset.values.map((v) => v.column)
+  const unitOf = (c: string) => specs?.find((s) => s.column === c)?.unit ?? ctx.dataset.values.find((v) => v.column === c)?.unit
+  return columns.length > 0 && columns.every((c) => !displayUnit(unitOf(c)).numeric)
+}
+
+/**
+ * A series shown as a table whose rows are a day or more apart: the table
+ * already lists every value, so the working panel gives each column's range
+ * instead of repeating it. The step is the rows' own, else the grain's.
+ */
+function rangesOnly(ctx: PageContext): boolean {
+  if (ctx.view.body !== 'series' || ctx.view.chart !== false || textOnly(ctx)) return false
+  const step = ctx.series ? ctx.series.stepMs : grainStepMs(ctx.dataset)
+  return step !== null && step >= DAY_MS
+}
 
 /** The key's H2: a series shown as a table lists latest values rather than keying a chart. */
 function seriesKeyTitle(view: DatasetView): string {
@@ -62,7 +85,7 @@ const SERIES: Required<PanelSlots> = {
     title: (ctx) => (textOnly(ctx) ? 'Rows' : seriesKeyTitle(ctx.view)),
     src: (ctx) => {
       const model = ctx.series
-      if (model && textOnly(ctx)) return <SourceLine ctx={ctx} columns={model.textColumns.map((c) => c.column)} what="text values" />
+      if (textOnly(ctx)) return <SourceLine ctx={ctx} columns={model ? model.textColumns.map((c) => c.column) : plannedParts(ctx).columns} what="text values" />
       const tableOnly = (ctx.view as SeriesView).chart === false
       const drawn = model ? (tableOnly ? model.drawn : planPanels(ctx).panels.flatMap((p) => p.series)) : []
       if (!drawn.length) {
@@ -79,6 +102,7 @@ const SERIES: Required<PanelSlots> = {
   working: {
     title: (ctx) => {
       if (textOnly(ctx)) return 'Rows by day'
+      if (rangesOnly(ctx)) return 'Lowest and highest'
       const step = ctx.series?.stepMs ?? null
       if (step !== null && step > DAY_MS) return 'Periods in range'
       return step !== null && step >= DAY_MS ? 'Values in range' : 'Days in range'
@@ -86,7 +110,11 @@ const SERIES: Required<PanelSlots> = {
     src: (ctx) => {
       const def = daySeries(ctx)
       const model = ctx.series
-      if (model && textOnly(ctx)) return <SourceLine ctx={ctx} columns={model.textColumns.map((c) => c.column)} what="rows holding a value per UK day" />
+      if (textOnly(ctx)) return <SourceLine ctx={ctx} columns={model ? model.textColumns.map((c) => c.column) : plannedParts(ctx).columns} what="rows holding a value per UK day" />
+      if (rangesOnly(ctx)) {
+        const planned = plannedParts(ctx)
+        return <SourceLine ctx={ctx} columns={model ? model.drawn.map((d) => d.column) : planned.columns} unit={model ? unitsOf(model.drawn) : planned.unit} what="each column's values held, lowest and highest" />
+      }
       if (!def || !model) {
         const planned = plannedParts(ctx)
         return <SourceLine ctx={ctx} columns={planned.columns} unit={planned.unit} what="per UK day" />
