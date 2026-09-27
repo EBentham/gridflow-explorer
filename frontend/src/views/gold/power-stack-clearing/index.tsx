@@ -66,6 +66,7 @@ import {
   WIND,
   chosenTime,
   curveTimes,
+  fuelStyle,
   ownRows,
   NET_PIECES,
 } from './figures'
@@ -198,7 +199,7 @@ const view = defineView({
         { column: RESIDUAL, label: 'Residual demand', color: 'var(--chart-fan)', display: 'GW' },
         { column: DEMAND, label: 'Clearing demand', color: 'var(--chart-price-2)', display: 'GW' },
         { column: WIND, label: 'Wind', color: 'var(--fuel-wind)', display: 'GW' },
-        { column: SOLAR, label: 'Solar', color: 'var(--fuel-biomass)', display: 'GW' },
+        { column: SOLAR, label: 'Solar', color: fuelStyle('SOLAR').color, display: 'GW' },
         { column: HYDRO, label: 'Hydro, not pumped', color: 'var(--fuel-hydro)', display: 'GW' },
         { column: OTHER, label: 'Other', color: 'var(--fuel-other)', display: 'GW' },
         { column: PUMPED, label: 'Pumped storage', color: 'var(--fuel-pumped_storage)', display: 'GW' },

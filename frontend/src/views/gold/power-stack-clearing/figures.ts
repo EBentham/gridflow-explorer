@@ -76,13 +76,19 @@ export interface FuelStyle {
   color: string
 }
 
-/** The stack's fuel types, named and coloured as the design's fuel bands (coal and OCGT are its peaking band). */
+/**
+ * Each fuel's name and colour, the page's one legend for all three views:
+ * the design's fuel bands (coal and OCGT are its peaking band), and solar in
+ * its own colour. The stack holds no solar unit today; solar is netted off
+ * demand on the residual view.
+ */
 const FUELS: Record<string, FuelStyle> = {
   BIOMASS: { label: 'Biomass', color: 'var(--fuel-biomass)' },
   NUCLEAR: { label: 'Nuclear', color: 'var(--fuel-nuclear)' },
   CCGT: { label: 'Gas (CCGT)', color: 'var(--fuel-gas)' },
   COAL: { label: 'Coal', color: 'var(--fuel-peaking)' },
   OCGT: { label: 'Gas (OCGT)', color: 'var(--fuel-peaking)' },
+  SOLAR: { label: 'Solar', color: 'var(--fuel-solar)' },
 }
 
 /** A fuel type's name and colour; one the page doesn't know keeps its code. */
@@ -368,14 +374,13 @@ export interface NetPiece {
 
 /**
  * Bottom of the stack first, in the design's fuel order (hydro, wind, other,
- * pumped storage, then imports), with solar beside wind. Solar has no fuel
- * colour of its own (NEEDS.md): it takes biomass's, as no biomass is drawn on
- * this view.
+ * pumped storage, then imports), with solar beside wind, in the page legend's
+ * solar colour.
  */
 export const NET_PIECES: NetPiece[] = [
   { key: 'hydro', label: 'Hydro, not pumped', color: 'var(--fuel-hydro)', columns: [HYDRO] },
   { key: 'wind', label: 'Wind', color: 'var(--fuel-wind)', columns: [WIND] },
-  { key: 'solar', label: 'Solar', color: 'var(--fuel-biomass)', columns: [SOLAR] },
+  { key: 'solar', label: 'Solar', color: fuelStyle('SOLAR').color, columns: [SOLAR] },
   { key: 'other', label: 'Other', color: 'var(--fuel-other)', columns: [OTHER] },
   { key: 'pumped', label: 'Pumped storage', color: 'var(--fuel-pumped_storage)', columns: [PUMPED] },
   { key: 'imports', label: 'Net imports', color: 'var(--fuel-imports)', columns: INTERCONNECTORS },
