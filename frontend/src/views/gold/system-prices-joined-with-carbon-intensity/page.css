@@ -1,0 +1,11 @@
+/* The working panel's second part: a heading in the panel headings' face, one step down. */
+.gf-imbctx-sub {
+  margin: 14px 0 2px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 680;
+  font-stretch: 92%;
+  font-variation-settings: 'wdth' 92;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+}
