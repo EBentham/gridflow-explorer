@@ -41,8 +41,10 @@ works around each gap inside its folder.
    let other model pages reuse them.
 
 5. **No solar colour.** `tokens.css` has no `--fuel-solar`. The residual view
-   draws solar in `--fuel-biomass`, since no biomass shows on that view. A
-   solar token would free it.
+   draws solar in `--fuel-biomass`, since no biomass shows on that view. But
+   the clearing and supply-curve views of the same page draw biomass in that
+   colour, so across the page one colour names two things. Each view's key
+   names its own series. A solar token would fix it.
 
 6. **Coal and OCGT share one colour.** Both fall into the design's peaking
    band, `--fuel-peaking`. On the supply curve the coal blocks sit among the gas
@@ -52,10 +54,15 @@ works around each gap inside its folder.
 
 7. **Domain questions for gridflow_models** (the page shows these as held and
    draws no conclusion from them):
-   - The stack costs six units as coal: `T_WBUPS-1`..`4`, `T_DRAXX-5` and `6`.
-     GB's last coal plant closed in 2024. The key says so.
+   - The stack costs six units as coal: `T_WBUPS-1`..`4` and `T_DRAXX-5`, `6`.
+     GB's last coal plant closed in 2024. The key says so, in the words the
+     ENTSO-E pages already use. The source is DESNZ Energy Trends, as archived
+     in gridflow_models `.planning/phases/v2.1-F-1-fuel-sources/SOURCES.md`
+     and `SEAT-EVIDENCE-1.md`: Ratcliffe-on-Soar closed on 30 Sep 2024, and
+     GB had no coal-fired generation in Q1 2026. That evidence already names
+     these six units as an open question for the model.
    - Units `T_HUNB-7` and `T_HUNB-8` are in the nuclear list. Hunterston B
-     stopped generating in 2022.
+     stopped generating in 2022; no source for that is archived in the repos.
 
 8. **Links write the template's own parameters.** Two links write `from`,
    `to` and `dataset`, as a reader using the toolbar would: "Show the whole

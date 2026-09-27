@@ -45,7 +45,7 @@ export function ClearingDays({ ctx }: { ctx: PageContext }) {
                 Market index, £/MWh
               </th>
               <th scope="col" className="is-num">
-                Modelled minus market
+                Modelled − market, £/MWh
               </th>
               <th scope="col" className="is-num">
                 At the floor

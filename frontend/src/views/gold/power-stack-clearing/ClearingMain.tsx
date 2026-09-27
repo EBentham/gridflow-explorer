@@ -187,7 +187,7 @@ function ClearingTable({ ctx, points }: { ctx: PageContext; points: ClearingPoin
       : []),
     { key: 'model', label: 'Modelled, £/MWh', num: true, render: (p) => money2(p.model), sortValue: (p) => p.model },
     { key: 'market', label: 'Market index, £/MWh', num: true, render: (p) => money2(p.market), sortValue: (p) => p.market },
-    { key: 'gap', label: 'Modelled − market', num: true, render: (p) => money2(gapOf(p)), sortValue: gapOf },
+    { key: 'gap', label: 'Modelled − market, £/MWh', num: true, render: (p) => money2(gapOf(p)), sortValue: gapOf },
     { key: 'set', label: 'Set by', render: (p) => setterOf(p)?.style.label ?? dash, sortValue: (p) => setterOf(p)?.style.label ?? null },
     { key: 'unit', label: 'Marginal unit', render: (p) => (p.unit ? <code>{p.unit}</code> : dash), sortValue: (p) => p.unit },
     { key: 'demand', label: 'Clearing demand, MW', num: true, render: (p) => mw(p.demand), sortValue: (p) => p.demand },

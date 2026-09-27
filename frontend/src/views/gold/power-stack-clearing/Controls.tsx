@@ -42,7 +42,8 @@ export function ClearingControls({ ctx }: { ctx: PageContext }) {
   const full = ctx.param('scale') === 'full'
   return (
     <>
-      {ctx.mode === 'chart' && (
+      {/* No axis to set when the window holds nothing to draw. */}
+      {ctx.mode === 'chart' && ctx.state !== 'empty' && (
         <span className="gf-stack-control">
           <span className="gf-toolbar-note">Price axis</span>
           <Segmented label="Price axis" options={SCALE_OPTIONS} value={full ? 'full' : 'stack'} onChange={(v) => ctx.setParam('scale', v === 'full' ? 'full' : null)} />
