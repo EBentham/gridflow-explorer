@@ -16,6 +16,10 @@ why this page needs it, and what the page does meanwhile.
        twice, while the health check answered in milliseconds.
      - On :8002, earlier: the week took 46 s on its own, one day about 55 s, and the full
        history was not back within 212 s.
+     - On :8003 again, after the rows-disconnect fix merged (review pass 1 shots, midday): the
+       first load of 1 year, 5 years and the full history each missed 120 s, and a second
+       load straight after was ready. On that first full-history load the page was still
+       waiting for the source list itself when the 120 s ran out.
    - `scripts/shoot.mjs` waits 20 s unless `SHOOT_TIMEOUT_MS` says otherwise, so these shots
      can time out on the loading state. While a long window is read, the page's toolbar says
      so: past a year it can take a minute or more, past five years several minutes.
