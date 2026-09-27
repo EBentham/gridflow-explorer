@@ -14,7 +14,7 @@ import type { EventsRowsResponse, ManifestDataset, ManifestSource, ReferenceRows
 import type { ColumnSpec, EventsView, PageContext, ReferenceView, RelatedData, SeriesView } from '../define'
 import { wordsOf } from './cells'
 import { daySeries, heldDays, keyStamp, relatedFilters, type SourcePart } from './panelHelpers'
-import { daySummaries, latestValue, periodName, seriesId, type SeriesDef, type SeriesModel } from './seriesModel'
+import { daySummaries, extremesOf, latestValue, periodName, seriesId, type SeriesDef, type SeriesModel } from './seriesModel'
 import { planPanels } from './seriesPanels'
 import { cadenceOf, coverageSentences, depthText, errorParts, isoDayText, meansText, notHeldText, sourceName, truncationSentences } from './text'
 import { displayUnit } from './units'
@@ -361,6 +361,66 @@ function PointList({ ctx, def }: { ctx: PageContext; def: SeriesDef }) {
 }
 
 /**
+ * A series shown as a table whose rows are a day or more apart (`chart:
+ * false`): the table already lists each value, so this gives each column's
+ * held values, lowest and highest in the window, and when.
+ */
+function ColumnRanges({ ctx }: { ctx: PageContext }) {
+  const model = ctx.series
+  if (!model) return null
+  const own = model.drawn.filter((d) => d.from === 'self')
+  const steps = model.rows.length
+  // `Week from Sun 13 Sep` reads mid-sentence as `week from Sun 13 Sep`.
+  const when = (t: number) => periodLabel(t, model.stepMs).replace(/^Week/, 'week')
+  const single = own.every((d) => d.count <= 1)
+  return (
+    <>
+      <div className="gf-days">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Column</th>
+              <th scope="col" className="is-num">
+                Held
+              </th>
+              <th scope="col" className="is-num">
+                Lowest held
+              </th>
+              <th scope="col" className="is-num">
+                Highest held
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {own.map((d) => {
+              const ex = extremesOf(model.rows, d)
+              return (
+                <tr key={seriesId(d)} className={ex ? undefined : 'is-missing'}>
+                  <th scope="row">{d.label}</th>
+                  <td className="is-num">{`${d.count.toLocaleString('en-GB')} of ${steps.toLocaleString('en-GB')}`}</td>
+                  {ex ? (
+                    <>
+                      <td className="is-num">{`${d.unit.format(ex.low.v)} (${when(ex.low.t)})`}</td>
+                      <td className="is-num">{`${d.unit.format(ex.high.v)} (${when(ex.high.t)})`}</td>
+                    </>
+                  ) : (
+                    <td colSpan={2}>none held in this window</td>
+                  )}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="gf-hint">
+        Held counts the {stepNoun(model.stepMs)} in this window with a value, of {steps.toLocaleString('en-GB')} in all.
+        {single ? ' One value each, so the lowest is the highest; a longer window shows the range.' : ' The table above lists every value.'}
+      </p>
+    </>
+  )
+}
+
+/**
  * Every UK day in the window: held half-hours, and one series' mean, lowest
  * and highest. Select a day to mark it. A daily series lists its value per
  * day; one stepping more than a day lists its steps; text-only rows count
@@ -369,6 +429,7 @@ function PointList({ ctx, def }: { ctx: PageContext; def: SeriesDef }) {
 export function SeriesDays({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
   if (model && !model.all.length && model.textColumns.length) return <RowsPerDay ctx={ctx} />
+  if (model && ctx.view.body === 'series' && ctx.view.chart === false && model.stepMs !== null && model.stepMs >= DAY_MS) return <ColumnRanges ctx={ctx} />
   const def = daySeries(ctx)
   if (!model || !ctx.window || !def) return <p className="gf-hint">Nothing is held in this window, so there are no days to summarise.</p>
   if (model.stepMs !== null && model.stepMs > DAY_MS) return <PointList ctx={ctx} def={def} />
