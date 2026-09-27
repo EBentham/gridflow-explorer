@@ -84,7 +84,7 @@ const view = defineView({
         'The MW figure here may be the capacity left, not the capacity out: measured against each unit’s rated capacity, full outages mostly show 0 MW.',
         'About 40% of the generation notices gridflow fetched were cancelled, and these rows have no status column to tell which: any row may be a withdrawn plan.',
         'Where two notices give one unit a block at the same start, only the newer shows.',
-        'GB’s units (area 10YGB----------A) appear only in notices published 2 to 6 October 2025: set the window there to read them.',
+        'GB’s units appear only in notices published 2 to 6 October 2025: set the window there to read them.',
       ],
       strip: true,
       panels: PANELS,
@@ -110,7 +110,7 @@ const view = defineView({
       title: 'Outage blocks at production units',
       sub: 'ENTSO-E’s notices of planned outages at production units in the Netherlands, Germany-Luxembourg and France, dated by when the notice was published.',
       caveats: [
-        'The same doubt as for generation units: measured against each unit’s rated capacity, the MW figure reads more like the capacity left than the capacity out.',
+        'Measured against each unit’s rated capacity, the MW figure here reads more like the capacity left than the capacity out.',
         'About two thirds of the blocks held are cancelled (status Cancelled); filter Status to leave them out. A blank status is a notice that states none.',
         'No GB units: these rows cover the Netherlands, Germany-Luxembourg and France. For many areas ENTSO-E’s production units overlap its generation units.',
       ],

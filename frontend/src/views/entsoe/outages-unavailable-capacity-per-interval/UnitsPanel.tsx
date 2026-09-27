@@ -105,10 +105,10 @@ export function UnitsPanel({ ctx }: { ctx: PageContext }) {
 
   const list = [...units.values()]
   const [one, many] = shape.noun
-  // A border asset gets a row per direction, so the rows can outnumber the assets the key counts.
+  // An asset on several borders (or a unit in several areas) gets a row for each, so the rows can outnumber what the key counts.
   const distinct = new Set(list.map((u) => String(u.who ?? ''))).size
   const count = `${distinct.toLocaleString('en-GB')} ${distinct === 1 ? one : many}`
-  const rowsSaid = list.length === distinct ? count : `${count} in ${list.length.toLocaleString('en-GB')} ${one} and direction pairs`
+  const rowsSaid = list.length === distinct ? count : `${count} in ${list.length.toLocaleString('en-GB')} ${one} and ${shape.areas.length > 1 ? 'border' : 'area'} pairs`
   return (
     <>
       <WindowedTable
