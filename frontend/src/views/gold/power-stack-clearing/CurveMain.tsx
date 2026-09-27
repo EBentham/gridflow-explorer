@@ -36,6 +36,8 @@ import {
 } from './figures'
 
 const CURVE_H = 400
+/** A block narrower than this share of the axis (about 4 px) is drawn without its surface-coloured edge. */
+const THIN = 0.006
 
 interface Block extends CurveUnit {
   /** GW, display only: where the unit's capacity starts and ends through the merit order, and its middle. */
@@ -61,12 +63,16 @@ function Ids({ ids }: { ids: string[] }) {
   ))
 }
 
-/** A reference line's label at its right-hand end, set like an extreme's (the theme's `gf-extreme`). */
+/**
+ * A reference line's label at its left-hand end, set like an extreme's (the
+ * theme's `gf-extreme`): the cheap end of the stack is low, so the label
+ * clears the blocks at any market price above them.
+ */
 function LineLabel({ viewBox, text }: { viewBox?: { x?: number; y?: number; width?: number }; text: string }) {
-  const x = (viewBox?.x ?? 0) + (viewBox?.width ?? 0) - 6
+  const x = (viewBox?.x ?? 0) + 6
   const y = (viewBox?.y ?? 0) - 7
   return (
-    <text x={x} y={y} textAnchor="end" className="gf-extreme" paintOrder="stroke" stroke="var(--chart-surface)" strokeWidth={4} strokeLinejoin="round">
+    <text x={x} y={y} textAnchor="start" className="gf-extreme" paintOrder="stroke" stroke="var(--chart-surface)" strokeWidth={4} strokeLinejoin="round">
       {text}
     </text>
   )
@@ -85,11 +91,13 @@ function CurveChart({ units, clearing, market }: { units: CurveUnit[]; clearing:
   const demandGw = demand === null ? null : demand / 1000
   // The stack's own price where a unit set it; at the floor the price is the floor's, far below the stack.
   const price = clearing && clearing.atFloor === false ? clearing.model : null
-  const xs = useMemo(() => niceTicks(Math.min(0, demandGw ?? 0, ...blocks.map((b) => b.x0)), Math.max(demandGw ?? 0, ...blocks.map((b) => b.x1))), [blocks, demandGw])
+  // More ticks than a value axis: a clearing demand below zero then costs one step of room, not a fifth of the chart.
+  const xs = useMemo(() => niceTicks(Math.min(0, demandGw ?? 0, ...blocks.map((b) => b.x0)), Math.max(demandGw ?? 0, ...blocks.map((b) => b.x1)), 8), [blocks, demandGw])
   const ys = useMemo(() => {
     const values = [...blocks.map((b) => b.cost), ...(market !== null ? [market] : []), ...(price !== null ? [price] : [])]
     return niceTicks(Math.min(0, ...values), Math.max(0, ...values))
   }, [blocks, market, price])
+  const span = Math.max(xs.domain[1] - xs.domain[0], 1e-9)
   const xDigits = stepDigits(xs.ticks[1] - xs.ticks[0])
   const yDigits = stepDigits(ys.ticks[1] - ys.ticks[0])
 
@@ -135,7 +143,8 @@ function CurveChart({ units, clearing, market }: { units: CurveUnit[]; clearing:
             y2={Math.max(0, b.cost)}
             fill={b.color}
             fillOpacity={CHART.areaOpacity}
-            stroke="var(--chart-surface)"
+            // A unit a few pixels wide would be all gap and no fill: only wider blocks are set apart.
+            stroke={(b.x1 - b.x0) / span < THIN ? 'none' : 'var(--chart-surface)'}
             strokeWidth={CHART.gap}
             ifOverflow="hidden"
           />
@@ -170,7 +179,7 @@ function CurveChart({ units, clearing, market }: { units: CurveUnit[]; clearing:
           <Extreme x={demandGw} y={price} anchor={extremeAnchor(demandGw, xs.domain)} color={MODEL_COLOR} text={`Clears at ${fmt1(demandGw)} GW and ${money(price, 2)}/MWh`} />
         )}
         {demandGw !== null && price === null && (
-          <Extreme x={demandGw} y={Math.max(0, ys.domain[0])} anchor={extremeAnchor(demandGw, xs.domain)} color={MODEL_COLOR} text={`Clearing demand ${fmt1(demandGw)} GW`} />
+          <Extreme x={demandGw} y={ys.domain[1]} below anchor={extremeAnchor(demandGw, xs.domain)} color={MODEL_COLOR} text={`Clearing demand ${fmt1(demandGw)} GW`} />
         )}
         <Line dataKey="cost" stroke="none" dot={false} activeDot={false} legendType="none" isAnimationActive={false} />
       </ComposedChart>

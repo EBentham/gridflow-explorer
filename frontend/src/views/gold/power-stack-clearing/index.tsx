@@ -105,9 +105,9 @@ const view = defineView({
   title: 'Power stack clearing',
   sub: 'gridflow’s model of the GB power price for each half-hour: where a merit order of power stations, costed by the model, meets the demand left for them, set beside the market index price.',
   caveats: [
-    'This is a model, not a market price. It is built with perfect prognosis, from the demand, wind and solar that actually happened, so it tests how the model’s stack works rather than forecasting a price in advance.',
-    'The run shown is the one gridflow published, for 18 Aug – 3 Sep 2026. A run for the week from 14 Sep 2026 was checked before publishing and failed: in none of its half-hours did the actual price fall inside its 50, 80 or 90% ranges, and its average error was £157.7/MWh. It wasn’t published, so that week isn’t shown.',
-    'gridflow also holds an earlier version of this run for the same half-hours, and monthly diagnostic runs from May 2025 to May 2026; this page reads the published run only.',
+    'This is a model, not a market price: built with perfect prognosis, from the demand, wind and solar that actually happened, it tests how the model’s stack works rather than forecasting a price.',
+    'The run shown is the one gridflow published, for 18 Aug – 3 Sep 2026. A run for the week from 14 Sep 2026 failed its check before publishing, so that week isn’t shown: the actual price fell inside none of its 50, 80 or 90% ranges, and its average error was £157.7/MWh.',
+    'gridflow also holds an earlier version of this run, and monthly diagnostic runs from May 2025 to May 2026; the page reads the published run only.',
   ],
   datasets: [
     {
@@ -116,7 +116,7 @@ const view = defineView({
       label: 'Clearing price',
       title: 'Modelled and market index price, and the clearing demand',
       caveats: [
-        'The market index price is Elexon’s, for the APXMIDP provider: the benchmark gridflow scores the model against.',
+        'The market index price is Elexon’s, for APXMIDP: the benchmark gridflow scores the model against.',
       ],
       query: RUN_QUERY,
       values: [
@@ -157,12 +157,11 @@ const view = defineView({
           src: (ctx) => (
             <SourceLine
               ctx={ctx}
-              columns={[PRICE, MARGINAL_UNIT, MARGINAL_FUEL, AT_FLOOR]}
-              by={POLICY}
+              columns={[PRICE, MARGINAL_FUEL, MARGINAL_UNIT]}
               filters={runFilters(ctx)}
               unit="£/MWh"
               also={[relatedPart(ctx, 'market', MARKET_DATASET, [MARKET], '£/MWh')]}
-              what="the latest half-hour held, the window’s means, and what set the price how often"
+              what="the latest half-hour, means, and what set the price"
             />
           ),
           Body: ClearingKey,
@@ -227,13 +226,12 @@ const view = defineView({
           src: (ctx) => (
             <SourceLine
               ctx={ctx}
-              columns={[...LINE_COLUMNS, ...SINGLE_PIECES]}
-              by={POLICY}
+              columns={LINE_COLUMNS}
               filters={runFilters(ctx)}
               unit="GW"
               what={
                 <>
-                  with the ten interconnector columns, <code>netted_INT…_mw</code>, together; the latest half-hour held and the window’s means
+                  and what comes off demand at the latest half-hour, from the <code>netted_…_mw</code>, <code>wind_mw</code> and <code>solar_mw</code> columns; the window’s means
                 </>
               }
             />
@@ -267,7 +265,7 @@ const view = defineView({
       title: 'Supply curve',
       sub: 'The model’s merit order at one half-hour: each power station’s available capacity at its modelled cost, cheapest first, and where the demand left for them clears it.',
       caveats: [
-        'The costs are the model’s own: its units’ cost notes mark the fuel and carbon prices behind them as synthetic, and record no fuel price for biomass and nuclear. The unit list is the model’s too. A day is the lightest read, a row per unit per half-hour; seven days take a while, and longer windows are read as means, which aren’t a merit order.',
+        'The costs are the model’s: the units’ cost notes mark the fuel and carbon prices behind them synthetic, and record no fuel price for biomass and nuclear; the unit list is the model’s too. A day is the lightest read; seven days take a while, and longer windows are read as means, which aren’t a merit order.',
       ],
       query: { group: UNIT, filters: RUN_QUERY.filters },
       values: [
@@ -331,7 +329,7 @@ const view = defineView({
               by={UNIT}
               filters={runFilters(ctx)}
               unit="GW and £/MWh"
-              also={[relatedPart(ctx, 'clearing', CLEARING_DATASET, [DEMAND, PRICE, MARGINAL_UNIT], '£/MWh and GW'), relatedPart(ctx, 'market', MARKET_DATASET, [MARKET], '£/MWh')]}
+              also={[relatedPart(ctx, 'clearing', CLEARING_DATASET, [DEMAND, PRICE], 'GW and £/MWh'), relatedPart(ctx, 'market', MARKET_DATASET, [MARKET], '£/MWh')]}
               {...curveSrc(ctx)}
             />
           ),

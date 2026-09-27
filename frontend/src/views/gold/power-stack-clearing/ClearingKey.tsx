@@ -110,14 +110,14 @@ export function ClearingKey({ ctx }: { ctx: PageContext }) {
       )}
       <dl className="gf-stats">
         <div>
-          <dt>Modelled price, mean</dt>
+          <dt>Modelled, mean</dt>
           <dd>
             {modelMean.mean === null ? '–' : money(modelMean.mean, 2)}
             <span className="gf-stat-when">of {plural(modelMean.n, noun.replace(/s$/, ''), noun)}</span>
           </dd>
         </div>
         <div>
-          <dt>Market index price, mean</dt>
+          <dt>Market index, mean</dt>
           <dd>
             {marketMean.mean === null ? '–' : money(marketMean.mean, 2)}
             <span className="gf-stat-when">of {plural(marketMean.n, noun.replace(/s$/, ''), noun)}</span>
@@ -134,10 +134,10 @@ export function ClearingKey({ ctx }: { ctx: PageContext }) {
         )}
         {gapStack.mean !== null && gapStack.n < gapAll.n && (
           <div>
-            <dt>Where a unit set it</dt>
+            <dt>Where a unit set the price</dt>
             <dd>
               {money(gapStack.mean, 2)}
-              <span className="gf-stat-when">modelled minus market, mean of {plural(gapStack.n, noun.replace(/s$/, ''), noun)}</span>
+              <span className="gf-stat-when">modelled minus market, of {plural(gapStack.n, noun.replace(/s$/, ''), noun)}</span>
             </dd>
           </div>
         )}

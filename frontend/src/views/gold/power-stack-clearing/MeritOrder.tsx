@@ -7,13 +7,15 @@
  */
 import { Fragment, useMemo } from 'react'
 import { fmt0, fmtN, listText, money, plural } from '../../../design/format'
-import { periodName } from '../../_template/seriesModel'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
 import { chosenTime, clearingAt, costTerms, curveAt, curveTimes, fuelStyle, fuelWords, fuelsIn, ownRows, termWords, type CostEntry, type CurveUnit } from './figures'
 
 const SYNTHETIC = /^synthetic\b/
 const ZERO_FUEL = 'zero_fuel'
+
+/** A sentence's first letter capitalised: `biomass and nuclear` opening one. */
+const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
 
 /** The fuels an entry covers, in words; `every fuel` when it is all of them at this half-hour. */
 function fuelsText(entry: CostEntry, all: number): string {
@@ -26,7 +28,7 @@ function CostAssumptions({ units }: { units: CurveUnit[] }) {
   const fuels = useMemo(() => fuelsIn(units), [units])
   if (!terms.length) {
     return (
-      <div>
+      <div className="gf-stack-costs">
         <h3 className="gf-stack-h3">How the costs were set</h3>
         <p className="gf-hint">No unit at this half-hour carries a readable cost note, so how its cost was set isn’t shown.</p>
       </div>
@@ -44,9 +46,10 @@ function CostAssumptions({ units }: { units: CurveUnit[] }) {
     })
   const zero = terms.find((t) => t.term === 'fuel_price')?.entries.find((e) => e.value === ZERO_FUEL)
   const zeroFuels = zero ? fuels.filter((f) => zero.fuels.includes(f.fuel)) : []
+  const zeroText = listText(zeroFuels.map((f) => `${fuelWords(f.fuel)} (${f.low === f.high ? money(f.low, 2) : `${money(f.low, 2)}–${money(f.high, 2)}`}/MWh)`))
 
   return (
-    <div>
+    <div className="gf-stack-costs">
       <h3 className="gf-stack-h3">How the costs were set</h3>
       <p className="gf-hint">
         Each unit’s cost note names where each part of its cost came from{allAssumed ? '; every part of every note is marked an assumption, none a measured source' : ''}. At this half-hour:
@@ -75,8 +78,7 @@ function CostAssumptions({ units }: { units: CurveUnit[] }) {
       )}
       {zeroFuels.length > 0 && (
         <p className="gf-hint">
-          {listText(zeroFuels.map((f) => `${fuelWords(f.fuel)} (${f.low === f.high ? `${money(f.low, 2)}` : `${money(f.low, 2)} to ${money(f.high, 2)}`}/MWh)`))} carry no fuel price at all: the note
-          records zero, as an assumption.
+          {sentence(zeroText)} {zeroFuels.length === 1 ? 'carries' : 'carry'} no fuel price at all: the note records zero, as an assumption.
         </p>
       )}
       {(missing > 0 || unreadable > 0) && (
@@ -118,36 +120,39 @@ export function MeritOrder({ ctx }: { ctx: PageContext }) {
       sortValue: (u) => fuelStyle(u.fuel).label,
     },
     { key: 'available', label: 'Available, MW', num: true, render: (u) => fmt0(u.available), sortValue: (u) => u.available },
-    { key: 'through', label: 'Through the order, MW', num: true, render: (u) => fmt0(u.cumulative), sortValue: (u) => u.cumulative },
-    { key: 'cost', label: 'Marginal cost, £/MWh', num: true, render: (u) => fmtN(u.cost, 2), sortValue: (u) => u.cost },
+    { key: 'through', label: 'Cumulative, MW', num: true, render: (u) => fmt0(u.cumulative), sortValue: (u) => u.cumulative },
+    { key: 'cost', label: 'Cost, £/MWh', num: true, render: (u) => fmtN(u.cost, 2), sortValue: (u) => u.cost },
   ]
   const caption = (
     <>
-      The merit order at {periodName(at, model.stepMs, model.settlement)}: {plural(units.length, 'unit', 'units')}, cheapest first
+      {plural(units.length, 'unit', 'units')}, cheapest first
       {marginal ? (
         <>
-          ; <code>{marginal}</code>, whose cost set the price, is marked
+          ; <code>{marginal}</code>, marked, set the price
         </>
       ) : clearing?.atFloor === true ? (
         '; the price floor, not a unit, set the price'
       ) : (
         ''
       )}
-      . Select a column heading to sort.
+      . Cumulative is the capacity through the merit order, this unit’s included. Select a column heading to sort.
     </>
   )
 
   return (
     <div className="gf-stack-split">
-      <WindowedTable
-        columns={columns}
-        rows={units}
-        caption={caption}
-        initialSort={{ key: 'rank', dir: 'asc' }}
-        rowKey={(u) => u.unit}
-        rowClass={(u) => (u.unit === marginal ? 'is-marginal' : undefined)}
-        maxHeight={360}
-      />
+      {/* One grid cell: the table and the line under it that says when it scrolls. */}
+      <div>
+        <WindowedTable
+          columns={columns}
+          rows={units}
+          caption={caption}
+          initialSort={{ key: 'rank', dir: 'asc' }}
+          rowKey={(u) => u.unit}
+          rowClass={(u) => (u.unit === marginal ? 'is-marginal' : undefined)}
+          maxHeight={360}
+        />
+      </div>
       <CostAssumptions units={units} />
     </div>
   )

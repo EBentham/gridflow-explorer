@@ -65,21 +65,32 @@
 
 /* ---------------------------------------------------------------- tables */
 
-.gf-stack-days {
+.gf-days.gf-stack-days {
   max-height: 320px;
 }
+/* the pieces taken off demand: sixteen rows in the wide panel, all shown */
+.gf-days.gf-stack-pieces {
+  max-height: none;
+}
 /* each interconnector, under net imports */
-.gf-stack-days tr.gf-stack-sub th {
+.gf-stack-pieces tr.gf-stack-sub th {
   padding-left: 25px;
   font-weight: 400;
 }
 
-/* the merit order beside how its costs were set */
+/* the merit order, then how its costs were set, the notes in two columns */
 .gf-stack-split {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  gap: 18px;
-  align-items: start;
+  gap: 16px;
+}
+.gf-stack-costs .gf-facts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 28px;
+  row-gap: 8px;
+}
+/* a note beside a taller one keeps its name and value together at the top */
+.gf-stack-costs .gf-facts div {
+  align-content: start;
 }
 .gf-stack-h3 {
   margin-bottom: 2px;
@@ -97,7 +108,7 @@
 }
 
 @media (max-width: 1180px) {
-  .gf-stack-split {
+  .gf-stack-costs .gf-facts {
     grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -6,12 +6,15 @@
  */
 import { useMemo } from 'react'
 import { KeyList } from '../../../design/charts'
-import { fmt1, money, plural } from '../../../design/format'
+import { fmt1, listText, money, plural } from '../../../design/format'
 import { periodName } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
 import { FLOOR_STYLE, MARKET_COLOR, MODEL_COLOR, chosenTime, clearingAt, curveAt, curveTimes, fuelWords, fuelsIn, gapOf, marketAt, ownRows } from './figures'
 
-const costRange = (low: number, high: number) => (low === high ? `${money(low, 2)}/MWh` : `${money(low, 2)} to ${money(high, 2)}/MWh`)
+/** A sentence's first letter capitalised. */
+const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
+
+const costRange = (low: number, high: number) => (low === high ? `${money(low, 2)}/MWh` : `${money(low, 2)}–${money(high, 2)}/MWh`)
 
 export function CurveKey({ ctx }: { ctx: PageContext }) {
   const rows = ownRows(ctx)
@@ -26,15 +29,20 @@ export function CurveKey({ ctx }: { ctx: PageContext }) {
   const market = marketAt(ctx, at)
   const gap = clearing ? gapOf({ ...clearing, market }) : null
   const coal = fuels.find((f) => f.fuel === 'COAL')
+  const chart = ctx.mode === 'chart'
+  // Fuels the design draws in one colour (coal and OCGT are both its peaking band).
+  const sharing = [...new Set(fuels.map((f) => f.style.color))].map((c) => fuels.filter((f) => f.style.color === c)).filter((g) => g.length > 1)
 
   return (
     <>
-      <KeyList
-        items={[
-          { key: 'market', mark: { kind: 'line', color: MARKET_COLOR }, label: 'Market index price' },
-          { key: 'model', mark: { kind: 'line', color: MODEL_COLOR }, label: 'Clearing demand, and the price the stack clears at' },
-        ]}
-      />
+      {chart && (
+        <KeyList
+          items={[
+            { key: 'market', mark: { kind: 'line', color: MARKET_COLOR }, label: 'Market index price' },
+            { key: 'model', mark: { kind: 'line', color: MODEL_COLOR }, label: 'Clearing demand, and the price the stack clears at' },
+          ]}
+        />
+      )}
       <p className="gf-hint">For {periodName(at, model.stepMs, model.settlement)}. Cheapest fuel first; capacity is what the rows say is available.</p>
       <dl className="gf-stats">
         {fuels.map((f) => (
@@ -59,6 +67,11 @@ export function CurveKey({ ctx }: { ctx: PageContext }) {
           </dd>
         </div>
       </dl>
+      {chart && sharing.length > 0 && (
+        <p className="gf-hint">
+          {sentence(sharing.map((g) => `${listText(g.map((f) => fuelWords(f.fuel)))} share a colour`).join('; '))}: hover a block, or read the merit order below, for each unit’s fuel.
+        </p>
+      )}
       {clearing && (
         <dl className="gf-stats">
           <div>

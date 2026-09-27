@@ -94,7 +94,7 @@ export function NettedPanel({ ctx }: { ctx: PageContext }) {
             : `Demand less wind and solar matches the residual demand in ${identity.residual.toLocaleString('en-GB')} of ${plural(identity.n, noun.replace(/s$/, ''), noun)}, and the residual demand less the rest matches the clearing demand in ${identity.clearing.toLocaleString('en-GB')}; the largest difference is ${fmt1(identity.worst)} MW.`}
         </p>
       )}
-      <div className="gf-days gf-stack-days">
+      <div className="gf-days gf-stack-pieces">
         <table>
           <thead>
             <tr>

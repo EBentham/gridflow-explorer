@@ -19,7 +19,6 @@ import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
 import {
   AXIS_WIDTH,
-  FLOOR_STYLE,
   MARKET_COLOR,
   MODEL_COLOR,
   clearingPoints,
@@ -136,7 +135,7 @@ function ClearingChart({ ctx, points }: { ctx: PageContext; points: ClearingPoin
   return (
     <div className="gf-chart-stack">
       <ChartFrame height={PRICE_H} pickable={multiDay}>
-        <ComposedChart data={rows} margin={{ ...CHART.margin, bottom: 2 }} onClick={pick} syncId={SYNC} syncMethod="value">
+        <ComposedChart data={rows} margin={{ ...CHART.margin, bottom: 8 }} onClick={pick} syncId={SYNC} syncMethod="value">
           <CartesianGrid {...GRID} />
           {floorBands}
           {band && <HighlightBand x1={band[0]} x2={band[1]} />}
@@ -186,18 +185,24 @@ function ClearingTable({ ctx, points }: { ctx: PageContext; points: ClearingPoin
           { key: 'sp', label: 'SP', num: true, render: (p: ClearingPoint) => settlement.get(p.t)?.period ?? dash, sortValue: (p: ClearingPoint) => settlement.get(p.t)?.period ?? null },
         ]
       : []),
-    { key: 'model', label: 'Modelled price, £/MWh', num: true, render: (p) => money2(p.model), sortValue: (p) => p.model },
-    { key: 'market', label: 'Market index price, £/MWh', num: true, render: (p) => money2(p.market), sortValue: (p) => p.market },
-    { key: 'gap', label: 'Modelled minus market, £/MWh', num: true, render: (p) => money2(gapOf(p)), sortValue: gapOf },
+    { key: 'model', label: 'Modelled, £/MWh', num: true, render: (p) => money2(p.model), sortValue: (p) => p.model },
+    { key: 'market', label: 'Market index, £/MWh', num: true, render: (p) => money2(p.market), sortValue: (p) => p.market },
+    { key: 'gap', label: 'Modelled − market', num: true, render: (p) => money2(gapOf(p)), sortValue: gapOf },
     { key: 'set', label: 'Set by', render: (p) => setterOf(p)?.style.label ?? dash, sortValue: (p) => setterOf(p)?.style.label ?? null },
     { key: 'unit', label: 'Marginal unit', render: (p) => (p.unit ? <code>{p.unit}</code> : dash), sortValue: (p) => p.unit },
     { key: 'demand', label: 'Clearing demand, MW', num: true, render: (p) => mw(p.demand), sortValue: (p) => p.demand },
-    { key: 'capacity', label: 'Capacity in the stack, MW', num: true, render: (p) => mw(p.capacity), sortValue: (p) => p.capacity },
-    { key: 'floor', label: 'Price floor, £/MWh', num: true, render: (p) => money2(p.floor), sortValue: (p) => p.floor },
+    { key: 'capacity', label: 'Capacity, MW', num: true, render: (p) => mw(p.capacity), sortValue: (p) => p.capacity },
+    { key: 'floor', label: 'Floor, £/MWh', num: true, render: (p) => money2(p.floor), sortValue: (p) => p.floor },
   ]
   const noun = model.bucketed && model.stepMs ? meansText(model.stepMs) : stepNoun(model.stepMs)
-  const caption = `${ctx.view.title ?? ctx.view.label}, ${ctx.windowText}: ${points.length.toLocaleString('en-GB')} ${noun}, oldest first, with the market index price at the same time. Set by names the fuel of the unit whose cost set the price, or ${FLOOR_STYLE.label.toLowerCase()}. Select a column heading to sort.`
-  return <WindowedTable columns={columns} rows={points} caption={caption} initialSort={{ key: 't', dir: 'asc' }} rowKey={(p) => p.t} />
+  // The caption spans the table, wider than its box: kept short so it shows whole; the rest goes under.
+  const caption = `${points.length.toLocaleString('en-GB')} ${noun}, oldest first, with the market index price at the same time. Select a column heading to sort.`
+  return (
+    <>
+      <WindowedTable columns={columns} rows={points} caption={caption} initialSort={{ key: 't', dir: 'asc' }} rowKey={(p) => p.t} />
+      <p className="gf-hint">Set by names the fuel of the unit whose cost set the price, or the floor where no unit did. Capacity is the priced capacity in the stack.</p>
+    </>
+  )
 }
 
 export function ClearingMain({ ctx }: { ctx: PageContext }) {
