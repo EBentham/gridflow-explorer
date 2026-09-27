@@ -12,6 +12,10 @@ why a page needs it, and what the page does meanwhile.
    - `entsoe/generation_units_master_data` has no unit names. The page shows codes and says so.
    - `entsog/tariffs` lacks the paired unit and currency columns. Both tariff values show as
      published, unit unconfirmed.
+   - `entsog/tariffs` and `tariff_simulations` carry direction (entry or exit) and capacity
+     (firm or interruptible) only inside the composite `id`, and the simulations carry the
+     point only there too. Rows look duplicated without them, so the pages show the `id` as
+     the last column and say why.
    - `gie_agsi/unavailability` lacks the outages' start, end and publication times. Rows are
      dated by `event_time` only, and the page says so.
 2. **One split column only.** `entsog/available_through_oversubscription` exit varies by
@@ -31,9 +35,20 @@ why a page needs it, and what the page does meanwhile.
 5. **DESIGN.md §9** still says the template demo is deleted by P4-0. P4-0 keeps it, as its
    brief asked: it is the only way to shoot the error, refreshing, toomany and empty states
    on demand. The line needs updating.
-6. **Shots time out intermittently.** The Vite proxy logs `ECONNRESET` on `/api/sources`
-   and the page never settles. It looks like a stale keep-alive socket to the backend; a
-   retry passes. The fix would be in `vite.config.ts` (a proxy agent without keep-alive).
+6. **Pages hang on "Reading gridflow's source list…" (shots time out).** Vite's `/api`
+   proxy reuses keep-alive sockets to the backend, and uvicorn drops them after its 5 s
+   keep-alive. Measured on 27 Sep:
+   - Direct to :8001 with a keep-alive agent, 2 of 40 requests were reset, each on a
+     reused socket after a 5 s gap.
+   - Through the proxy, 4 of 40 requests stalled: headers and about 195 KB of the 197 KB
+     manifest arrived, then nothing. Vite logs `http proxy error … ECONNRESET`. Once the
+     headers are out it can't send its 502, so the browser waits forever.
+   - The shoot harness timed out on 4 of 24 page loads, and on 5 of 20 in one run.
+
+   The fix is one line in `vite.config.ts`, which is outside P4-0's boundary: give the
+   proxy `agent: new http.Agent({ keepAlive: false })` (import `http` from `node:http`).
+   With that agent, the same probes gave 0 of 80 requests and 0 of 24 page loads failing.
+   It fixes Bobbo's own `:5173` as well.
 
 ## Domain questions for research (labelled on the pages, not guessed)
 

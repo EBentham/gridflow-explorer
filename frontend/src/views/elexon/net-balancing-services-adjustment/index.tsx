@@ -11,6 +11,7 @@ const view = defineView({
   title: 'Net balancing services adjustment',
   sub: 'The adjustments the system operator’s balancing services make to the buy and sell prices, per half-hour, as a table.',
   caveats: [
+    'Every value Elexon has sent for the days fetched so far is zero, in all eight columns (checked against its raw answers on 27 Sep 2026). The table shows the zeros as published; they aren’t gaps.',
     'Elexon doesn’t state these columns’ units, so every value shows as published, unit unconfirmed.',
     'These are the net adjustments. The disaggregated balancing services adjustments list the actions behind them one by one.',
   ],

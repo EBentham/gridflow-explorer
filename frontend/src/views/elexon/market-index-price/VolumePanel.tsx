@@ -6,6 +6,7 @@
  * half-hours held, the price's mean, lowest and highest, and the volume
  * summed over the half-hours held. Select a day to mark it on both charts.
  */
+import { plural } from '../../../design/format'
 import { dayLabel, stepNoun, windowDomain } from '../../../design/time'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import { daySummaries } from '../../_template/seriesModel'
@@ -101,6 +102,7 @@ export function VolumePanel({ ctx }: { ctx: PageContext }) {
           </tbody>
         </table>
       </div>
+      {days.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
         Held counts the {noun} with a price.{' '}
         {summed ? `Volume sums the ${noun} held, so a day held in part sums in part.` : 'The window is read as means, so volume per day is not summed.'} The mean price is not weighted by volume.
