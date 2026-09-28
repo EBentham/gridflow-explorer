@@ -49,7 +49,7 @@ export interface Zone {
 export const ZONES: Zone[] = [
   { value: '10YFR-RTE------C', label: 'France', prose: 'France', color: 'var(--chart-price-2)', cardStep: QUARTER_MS },
   { value: '10YNL----------L', label: 'Netherlands', prose: 'the Netherlands', color: 'var(--fuel-wind)', cardStep: QUARTER_MS },
-  { value: '10YBE----------2', label: 'Belgium', prose: 'Belgium', color: 'var(--fuel-peaking)', cardStep: QUARTER_MS },
+  { value: '10YBE----------2', label: 'Belgium', prose: 'Belgium', color: 'var(--fuel-imports)', cardStep: QUARTER_MS },
   { value: '10Y1001A1001A82H', label: 'Germany / Luxembourg', prose: 'Germany / Luxembourg', color: 'var(--fuel-pumped_storage)', cardStep: QUARTER_MS },
   { value: '10Y1001A1001A59C', label: 'Ireland (SEM)', prose: 'Ireland (SEM)', color: 'var(--fuel-biomass)', cardStep: HOUR_MS },
 ]

@@ -18,7 +18,7 @@ export function AboutPrices({ ctx }: { ctx: PageContext }) {
         No GB zone: gridflow asks ENTSO-E for GB’s day-ahead price with these five, and ENTSO-E has published none for GB since Brexit.
       </p>
       <p className="gf-hint">
-        The line under the zones is gridflow’s GB day-ahead benchmark, in pounds. It is taken from Elexon’s market index price, a price of short-term trading, not a day-ahead auction. gridflow holds no exchange rate, so this page works out no spread between GB and the zones. The benchmark has{' '}
+        {ctx.mode === 'chart' ? 'The line under the zones is gridflow’s GB day-ahead benchmark, in pounds.' : 'The Chart view draws gridflow’s GB day-ahead benchmark under the zones, in pounds.'} It is taken from Elexon’s market index price, a price of short-term trading, not a day-ahead auction. gridflow holds no exchange rate, so this page works out no spread between GB and the zones. The benchmark has{' '}
         <Link to={to}>its own page</Link>
         {w ? `, opened on ${ctx.windowText}` : ''}.
       </p>

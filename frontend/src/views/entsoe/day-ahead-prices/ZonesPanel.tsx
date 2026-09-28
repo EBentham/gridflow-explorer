@@ -12,10 +12,12 @@ import { plural } from '../../../design/format'
 import { clock, dayLabel, dayTick, londonMidnight } from '../../../design/time'
 import { seriesId } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { RANGE_OPACITY, perStep, slotText, zoneDays, zoneFigures, zoneNoun, zoneProfile, type ZoneFigures } from './figures'
+import { RANGE_OPACITY, perStep, slotText, zoneDays, zoneFigures, zoneNoun, zoneProfile, type ZoneDay, type ZoneFigures } from './figures'
 import { ProfileChart, type ProfileLine } from './ProfileChart'
 
 const DAY_COLOR = 'var(--chart-actual)'
+
+type DayRow = { kind: 'day'; d: ZoneDay; i: number } | { kind: 'gap'; key: string; from: number; to: number; n: number }
 
 const dash = <span className="gf-cell-missing">–</span>
 
@@ -40,6 +42,19 @@ export function ZonesPanel({ ctx }: { ctx: PageContext }) {
   const focus = held.find((z) => z.def && seriesId(z.def) === ctx.focus)
   const perZone = zones.map((z) => ({ z, days: zoneDays(z, window, model.bucketed) }))
   const dayCount = perZone[0]?.days.length ?? 0
+  // A run of days no zone holds is one row, so the table doesn't open on a screenful of empty days.
+  const dayRows: DayRow[] = []
+  perZone[0]?.days.forEach((d, i) => {
+    if (perZone.some(({ days }) => days[i].held > 0)) {
+      dayRows.push({ kind: 'day', d, i })
+      return
+    }
+    const last = dayRows.at(-1)
+    if (last?.kind === 'gap') {
+      last.to = d.start
+      last.n += 1
+    } else dayRows.push({ kind: 'gap', key: d.day, from: d.start, to: d.start, n: 1 })
+  })
 
   return (
     <>
@@ -94,16 +109,17 @@ export function ZonesPanel({ ctx }: { ctx: PageContext }) {
             </tr>
           </thead>
           <tbody>
-            {perZone[0]?.days.map((d, i) => {
-              const cells = perZone.map(({ z, days }) => ({ z, zd: days[i] }))
-              if (cells.every((c) => c.zd.held === 0)) {
+            {dayRows.map((row) => {
+              if (row.kind === 'gap') {
                 return (
-                  <tr key={d.day} className="is-missing">
-                    <th scope="row">{dayLabel(d.start)}</th>
-                    <td colSpan={zones.length}>not held locally</td>
+                  <tr key={row.key} className="is-missing">
+                    <th scope="row">{row.n === 1 ? dayLabel(row.from) : `${dayLabel(row.from)} – ${dayLabel(row.to)}`}</th>
+                    <td colSpan={zones.length}>{row.n === 1 ? 'not held locally' : `not held locally, ${row.n} days`}</td>
                   </tr>
                 )
               }
+              const { d, i } = row
+              const cells = perZone.map(({ z, days }) => ({ z, zd: days[i] }))
               const on = d.start === ctx.picked
               return (
                 <tr key={d.day} className={on ? 'is-on' : undefined}>
@@ -126,7 +142,7 @@ export function ZonesPanel({ ctx }: { ctx: PageContext }) {
       </div>
       <p className="gf-hint">
         Each zone’s mean price over the UK day, in {unit?.label ?? 'the unit as published'}. A zone held for part of a day gives its steps held of those in the day in brackets; a dash is a day it holds nothing of.
-        {dayCount > 8 ? ' Oldest first: scroll the table for the rest.' : ''}
+        {dayRows.length > 8 ? ' Oldest first: scroll the table for the rest.' : ''}
         {ctx.mode === 'chart' ? ' Select a day to mark it on the charts.' : ' Select a day to mark it.'}
       </p>
     </>
@@ -174,7 +190,7 @@ function Profile({ ctx, zones, focus, bucketed }: { ctx: PageContext; zones: Zon
     if (p && z.def) lines.push({ key: z.value, label: z.label, color: z.color, stepMin: p.stepMin, slots: p.slots })
   }
   const unit = zones[0]?.def?.unit
-  const days = new Set(zones.flatMap((z) => z.points.map((p) => londonMidnight(p.t)))).size
+  const days = new Set(shown.flatMap((z) => z.points.map((p) => londonMidnight(p.t)))).size
   if (!lines.length || !unit) {
     return <p className="gf-hint">The window is read as means that don’t fall on single clock times, so there is no shape through the day to draw. Choose a shorter window to see it.</p>
   }

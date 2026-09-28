@@ -6,7 +6,7 @@
  * window's highest and lowest price across the zones. Every figure is read
  * from the rows, on each zone's own clock.
  */
-import { KeyList } from '../../../design/charts'
+import { CHART } from '../../../design/chartTheme'
 import { currency, plural } from '../../../design/format'
 import { clock, dayLabel, periodLabel } from '../../../design/time'
 import { latestValue, periodName, seriesId } from '../../_template/seriesModel'
@@ -14,6 +14,26 @@ import type { PageContext } from '../../define'
 import { GB_KEY, GB_PRICE, seriesOf, zoneFigures, zoneNoun, type Point, type ZoneFigures } from './figures'
 
 const eur = (v: number) => `${currency(v, '€', 2)}/MWh`
+
+/**
+ * A key row: the line's mark, the name, and the value at the right. The name
+ * gives way (with an ellipsis) before the value is pushed out of the 272px
+ * panel; the rows show the price without its `/MWh`, which the line above
+ * the list names once.
+ */
+function Row({ color, label, value, dashed }: { color: string; label: string; value: string; dashed: boolean }) {
+  return (
+    <>
+      <svg width="22" height="10" aria-hidden="true" style={{ flex: 'none' }}>
+        <line x1="0" y1="5" x2="22" y2="5" stroke={color} strokeWidth="2" strokeDasharray={dashed ? CHART.fixtureDash : undefined} />
+      </svg>
+      <span className="gf-series-name" style={{ flex: '1 1 auto', minWidth: 0 }} title={label}>
+        {label}
+      </span>
+      <span className="gf-series-value">{value}</span>
+    </>
+  )
+}
 
 /** A zone's value and its own period: `Sun 20 Sep, 13:00–13:15 BST`. */
 function when(p: Point, z: Pick<ZoneFigures, 'step'>): string {
@@ -43,6 +63,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
 
   return (
     <>
+      <p className="gf-hint">Latest price held: the zones per MWh in euros{gbDef ? ', GB’s benchmark in pounds' : ''}.</p>
       <ul className="gf-series-key">
         {held.map((z) => {
           const def = z.def
@@ -52,8 +73,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
           return (
             <li key={id} className={on ? 'is-focus' : ctx.focus ? 'is-muted' : undefined}>
               <button type="button" aria-pressed={on} disabled={held.length < 2} onClick={() => ctx.setFocus(on ? undefined : id)}>
-                <KeyList items={[{ key: id, mark: { kind: 'line', color: z.color, dashed: ctx.fixture }, label: <span className="gf-series-name">{z.label}</span> }]} />
-                <span className="gf-series-value">{z.latest ? eur(z.latest.v) : '–'}</span>
+                <Row color={z.color} label={z.label} value={z.latest ? currency(z.latest.v, '€', 2) : '–'} dashed={ctx.fixture} />
               </button>
               {z.latest && <span className="gf-series-when">{when(z.latest, z)}</span>}
             </li>
@@ -64,8 +84,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
         <ul className="gf-series-key">
           <li>
             <button type="button" disabled>
-              <KeyList items={[{ key: 'gb', mark: { kind: 'line', color: gbDef.color, dashed: ctx.fixture }, label: <span className="gf-series-name">GB benchmark, beneath</span> }]} />
-              <span className="gf-series-value">{gbLatest ? gbDef.unit.format(gbLatest.v) : '–'}</span>
+              <Row color={gbDef.color} label="GB benchmark" value={gbLatest ? currency(gbLatest.v, '£', 2) : '–'} dashed={ctx.fixture} />
             </button>
             {gbLatest && <span className="gf-series-when">{periodName(gbLatest.t, gb.series.stepMs, gb.series.settlement)}</span>}
           </li>
@@ -73,7 +92,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
       )}
       <p className="gf-hint">
         {held.length > 1 && (focus ? 'Select it again to draw every zone. ' : chart ? 'Select a zone to draw it alone, with its highest and lowest labelled and its runs below zero banded. ' : 'Select a zone to read its figures here. ')}
-        {gbDef ? `GB’s benchmark is in pounds and ${chart ? 'on its own axis' : 'in the Chart view only'}: it isn’t a zone of this data.` : ''}
+        {gbDef ? `GB’s benchmark is ${chart ? 'the lower chart, on its own axis' : 'drawn in the Chart view only'}: it isn’t a zone of this data.` : ''}
       </p>
       {none.length > 0 && <p className="gf-hint">No price held in this window: {none.map((z) => z.label).join(', ')}.</p>}
       {focus ? (
@@ -103,10 +122,10 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
             </div>
           )}
           <div>
-            <dt>Zones below zero</dt>
+            <dt>Below zero</dt>
             <dd>
-              {held.filter((z) => z.below > 0).length} of {held.length}
-              <span className="gf-stat-when">at least once in {ctx.windowText}</span>
+              {held.filter((z) => z.below > 0).length} of {plural(held.length, 'zone', 'zones')}
+              <span className="gf-stat-when">at least once in the window</span>
             </dd>
           </div>
         </dl>

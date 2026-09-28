@@ -48,3 +48,12 @@ does meanwhile.
 7. **Area names.** The page names the five zones from gridflow's `area_codes.py` in its own
    `groups` (P4-0's NEEDS item 8 asked for a shared list). A shared EIC-to-name map would let
    every ENTSO-E page use the same words.
+
+8. **A slow related read holds every panel** (as the power stack page's NEEDS item 9). While
+   any related read is loading, `DatasetPage.tsx` keeps the page's state at loading, so the
+   zones' chart, the key and the working panel all wait on GB's benchmark, which they could be
+   drawn without. On `:8003` under load the benchmark took 139 s for 16 to 22 Sep, against
+   about 55 s for this page's own rows; a page can't draw its rows first from inside its
+   folder. The page keeps the read, and says in the main panel when it fails or holds
+   nothing. Wanted: related reads that don't hold the page's own rows (draw those, then add
+   the related panel with its own loading line), or a faster benchmark read in the backend.
