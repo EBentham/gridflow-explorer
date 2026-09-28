@@ -23,10 +23,11 @@ export function LevelsMain({ ctx }: { ctx: PageContext }) {
   const one = unitShown(ctx)
   const focus = focusedLine(ctx, lines)
   const alone = one ? lines[0] : focus
-  const top = alone ? linePanel(model, alone, 380) : stackPanel(model, lines, 420)
+  // The stack's key lists every unit under its fuel, so the stack takes the height to stand beside it.
+  const top = alone ? linePanel(model, alone, 380) : stackPanel(model, lines, 560)
   const price = priceSeries(ctx)
   const rel = ctx.related[PRICE_KEY]
-  const panels = price ? [top, pricePanel(price, 170)] : [top]
+  const panels = price ? [top, pricePanel(price, alone ? 170 : 200)] : [top]
   const means = model.bucketed && model.stepMs ? ` Each point is a mean of the start levels in its period, as the window is read as ${meansText(model.stepMs)}.` : ''
   const banded = price && price.def.min !== null && price.def.min < 0
   return (

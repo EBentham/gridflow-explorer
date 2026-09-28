@@ -10,7 +10,7 @@ import { periodLabel } from '../../../design/time'
 import type { SeriesRow, SeriesRowsResponse } from '../../contract'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
-import { END, MW, START, UNIT, fuelFor, fuelLookup, num, priceAt, priceSeries, sameClock, unitLines, unitShown } from './figures'
+import { END, MW, START, UNIT, focusedLine, fuelFor, fuelLookup, num, priceAt, priceSeries, sameClock, unitLines, unitShown } from './figures'
 
 const dash = <span className="gf-cell-missing">–</span>
 
@@ -22,11 +22,15 @@ export function LevelsTable({ ctx }: { ctx: PageContext }) {
   if (!model || !response) return null
   const one = unitShown(ctx)
   const lookup = fuelLookup(ctx)
-  const order = new Map(unitLines(ctx).map((l, i) => [l.id, i]))
+  const lines = unitLines(ctx)
+  const order = new Map(lines.map((l, i) => [l.id, i]))
+  // A unit selected in the key lists its rows alone, as the chart draws it alone.
+  const focus = one ? undefined : focusedLine(ctx, lines)
   const price = priceSeries(ctx)
   const prices = one && sameClock(model, price) ? priceAt(price) : null
   const hasSettlement = response.rows.some((r) => 'settlement_period' in r)
   const idOf = (r: SeriesRow) => (typeof r[UNIT] === 'string' ? (r[UNIT] as string) : null)
+  const rows = focus ? response.rows.filter((r) => idOf(r) === focus.id) : response.rows
 
   const columns: TableCol<SeriesRow>[] = [
     { key: 't', label: model.bucketed ? 'Period (means)' : 'Period', render: (r) => periodLabel(r.ts, model.stepMs), sortValue: (r) => r.ts },
@@ -81,14 +85,23 @@ export function LevelsTable({ ctx }: { ctx: PageContext }) {
   ]
 
   const units = one ? null : new Set(response.rows.map(idOf).filter((x) => x !== null)).size
-  const what = one ? `Notified levels of ${one}` : `Notified levels of the top ${units} units`
-  const per = one ? (model.bucketed ? 'period' : 'half-hour') : model.bucketed ? 'period and unit' : 'half-hour and unit'
-  const caption = `${what}, ${ctx.windowText}: ${response.rows.length.toLocaleString('en-GB')} rows, one per ${per}. Select a column heading to sort.`
+  const what = one ? `Notified levels of ${one}` : focus ? `Notified levels of ${focus.id}, one of the top ${units} units` : `Notified levels of the top ${units} units`
+  const per = one || focus ? (model.bucketed ? 'period' : 'half-hour') : model.bucketed ? 'period and unit' : 'half-hour and unit'
+  const caption = `${what}, ${ctx.windowText}: ${rows.length.toLocaleString('en-GB')} rows, one per ${per}. Select a column heading to sort.`
   return (
     <>
-      <WindowedTable columns={columns} rows={response.rows} caption={caption} initialSort={{ key: 't', dir: 'asc' }} rowKey={(r, i) => `${r.ts}:${idOf(r) ?? i}`} />
+      <WindowedTable
+        columns={columns}
+        rows={rows}
+        caption={caption}
+        initialSort={{ key: 't', dir: 'asc' }}
+        rowKey={(r, i) => `${r.ts}:${idOf(r) ?? i}`}
+        // Beside the top units' key, which lists every unit under its fuel, the table takes the height to match.
+        maxHeight={one ? undefined : 760}
+      />
       <p className="gf-hint">
         Both levels in MW, as gridflow holds them. A dash is a half-hour with no value held.
+        {focus ? ` Only ${focus.id}’s rows: select it again in the key to list all ${units} units.` : ''}
         {one && price && !prices ? ' The market index price comes at another step in this window, so it isn’t set beside the levels.' : ''}
         {one && prices ? ' The market index price is the same half-hour’s, where it is held.' : ''}
       </p>

@@ -118,7 +118,13 @@ function TopKey({ ctx, model }: { ctx: PageContext; model: SeriesModel }) {
         {full
           ? `Each unit’s start level ${model.bucketed ? 'in that period' : 'at that half-hour'}, in MW, and each fuel’s part of the sum, in GW. `
           : 'Each unit’s latest start level, in MW. '}
-        {focus ? 'Select it again to draw them all.' : 'Select a unit to draw it alone.'}
+        {ctx.mode === 'chart'
+          ? focus
+            ? 'Select it again to draw them all.'
+            : 'Select a unit to draw it alone.'
+          : focus
+            ? 'Select it again to list them all.'
+            : 'Select a unit to list its rows alone.'}
       </p>
       <PriceItem ctx={ctx} price={price} at={at} />
       <FuelWords ctx={ctx} lines={lines} />
@@ -171,9 +177,15 @@ function UnitKey({ ctx, model, id }: { ctx: PageContext; model: SeriesModel; id:
       />
       <dl className="gf-stats">
         {latest && stat(model.bucketed ? 'Latest mean start level' : 'Latest start level', MW.format(latest.v), latest.t)}
-        {ex && stat('Highest', MW.format(ex.high.v), ex.high.t)}
-        {ex && stat('Lowest', MW.format(ex.low.v), ex.low.t)}
-        {def.mean !== null && stat('Mean', MW.format(def.mean))}
+        {/* A level held flat all window has no highest, lowest or mean apart from it. */}
+        {ex && ex.low.v === ex.high.v && stat(model.bucketed ? 'Every mean held' : 'Every half-hour held', MW.format(ex.low.v))}
+        {ex && ex.low.v !== ex.high.v && (
+          <>
+            {stat('Highest', MW.format(ex.high.v), ex.high.t)}
+            {stat('Lowest', MW.format(ex.low.v), ex.low.t)}
+            {def.mean !== null && stat('Mean', MW.format(def.mean))}
+          </>
+        )}
         {stat('At zero', `${lv.zero.toLocaleString('en-GB')} of ${lv.held.toLocaleString('en-GB')}`)}
         {lv.below > 0 && stat('Below zero', `${lv.below.toLocaleString('en-GB')} of ${lv.held.toLocaleString('en-GB')}`)}
       </dl>

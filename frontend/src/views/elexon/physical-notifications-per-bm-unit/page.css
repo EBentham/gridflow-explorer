@@ -20,10 +20,14 @@
 .gf-pn-unitform {
   margin: 0;
 }
-/* a unit id is an identifier, so the box sets it in the id face */
-.gf-pn-input {
+/* a unit id is an identifier, so the box sets it in the id face (over the template's `font: inherit`) */
+.gf-input.gf-pn-input {
   width: 12.5rem;
   font-family: var(--font-id);
+}
+/* the prompt is words, not an id */
+.gf-input.gf-pn-input::placeholder {
+  font-family: var(--font-ui);
 }
 
 /* ---------------------------------------------------------------- key */

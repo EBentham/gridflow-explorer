@@ -36,15 +36,16 @@ const unitCount = (ctx: PageContext) => unitLines(ctx).filter((l) => l.def.count
 
 function mainTitle(ctx: PageContext): string {
   const one = unitShown(ctx)
-  if (ctx.mode === 'table') return one ? `Each half-hour of ${one}` : 'Each unit, each half-hour'
+  const focus = one ? undefined : focusedLine(ctx, unitLines(ctx))
+  if (ctx.mode === 'table') return one ? `Each half-hour of ${one}` : focus ? `Each half-hour of ${focus.id}, one of the top ${unitCount(ctx)}` : 'Each unit, each half-hour'
   if (one) return `Notified level of ${one}`
-  const focus = focusedLine(ctx, unitLines(ctx))
   return focus ? `${focus.id}, one of the top ${unitCount(ctx)}` : `Top ${unitCount(ctx)} units, stacked by fuel`
 }
 
 function mainSrc(ctx: PageContext) {
   const one = unitShown(ctx)
   const filters = ctx.response?.filters
+  const focus = one ? undefined : focusedLine(ctx, unitLines(ctx))
   if (ctx.mode === 'table') {
     return (
       <SourceLine
@@ -54,11 +55,10 @@ function mainSrc(ctx: PageContext) {
         filters={filters}
         unit="MW"
         also={one ? [pricePart(ctx)] : [fuelPart(ctx)]}
-        what={one ? 'one row per half-hour, with its price' : 'one row per half-hour and unit'}
+        what={one ? 'one row per half-hour, with its price' : focus ? `${focus.id}’s rows, one per half-hour` : 'one row per half-hour and unit'}
       />
     )
   }
-  const focus = one ? undefined : focusedLine(ctx, unitLines(ctx))
   const what = one ? 'the start level of each half-hour' : focus ? `${focus.id}’s start level of each half-hour` : `the top ${unitCount(ctx)} units’ start levels, stacked`
   return <SourceLine ctx={ctx} columns={[START]} by={one ? null : UNIT} filters={filters} unit={one || focus ? 'MW' : 'GW'} also={[fuelPart(ctx), pricePart(ctx)]} what={what} />
 }

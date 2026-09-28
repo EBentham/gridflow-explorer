@@ -245,7 +245,7 @@ export function stackPanel(model: SeriesModel, lines: UnitLine[], height: number
   }
 }
 
-/** One unit's start levels as a line, in MW, with its highest and lowest labelled. */
+/** One unit's start levels as a line, in MW, with its highest and lowest labelled when they differ. */
 export function linePanel(model: SeriesModel, line: UnitLine, height: number): ChartPanel {
   const def = asSeries(line)
   return {
@@ -258,7 +258,8 @@ export function linePanel(model: SeriesModel, line: UnitLine, height: number): C
     settlement: model.settlement,
     height,
     zero: true,
-    extremes: def,
+    // A level held flat all window has no highest or lowest worth a label: the key says it held one level.
+    extremes: def.min !== def.max ? def : null,
     axisWidth: AXIS_WIDTH,
   }
 }

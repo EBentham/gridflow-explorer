@@ -86,20 +86,34 @@ export function UnitPrice({ ctx }: { ctx: PageContext }) {
                 At zero
               </th>
               {paired && (
-                <th scope="col" className="is-num">
-                  Mean price, {price.def.unit.label}
-                </th>
+                <>
+                  <th scope="col" className="is-num">
+                    Prices held
+                  </th>
+                  <th scope="col" className="is-num">
+                    Mean price, {price.def.unit.label}
+                  </th>
+                </>
               )}
             </tr>
           </thead>
           <tbody>
             {days.map((d) => {
+              // The price is on the levels' clock here, so a day expects as many prices as levels.
+              const pricePartial = paired && d.expected !== null && d.priceHeld < d.expected
+              const prices = paired ? (
+                <>
+                  <td className={pricePartial ? 'is-num is-flag' : 'is-num'}>{pricePartial ? `${d.priceHeld} of ${d.expected}` : d.priceHeld}</td>
+                  <td className="is-num">{d.price === null ? '–' : price.def.unit.plain(d.price)}</td>
+                </>
+              ) : null
               if (d.held === 0) {
                 return (
                   <tr key={d.day} className="is-missing">
                     <th scope="row">{dayLabel(d.start)}</th>
                     <td className="is-num">{d.expected === null ? '0' : `0 of ${d.expected}`}</td>
-                    <td colSpan={paired ? 5 : 4}>not held locally</td>
+                    <td colSpan={4}>not held locally</td>
+                    {prices}
                   </tr>
                 )
               }
@@ -117,7 +131,7 @@ export function UnitPrice({ ctx }: { ctx: PageContext }) {
                   <td className="is-num">{fmt(d.low)}</td>
                   <td className="is-num">{fmt(d.high)}</td>
                   <td className="is-num">{d.zero}</td>
-                  {paired && <td className="is-num">{d.price === null ? '–' : price.def.unit.plain(d.price)}</td>}
+                  {prices}
                 </tr>
               )
             })}
@@ -126,8 +140,8 @@ export function UnitPrice({ ctx }: { ctx: PageContext }) {
       </div>
       {days.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
-        Held counts the {noun} with a start level; the mean, lowest and highest are of those, in MW, and a count in bold is a day held in part.
-        {paired ? ' The mean price is of the half-hours of the day holding one, each counted the same.' : ''}
+        Held counts the {noun} with a start level; the mean, lowest and highest are of those, in MW.
+        {paired ? ' The mean price is of the half-hours of the day holding one, each counted the same.' : ''} A count in bold is a day held in part, and its figures cover only what it holds.
         {ctx.mode === 'chart' ? ' Select a day to mark it on the chart.' : ' Select a day to mark it.'}
       </p>
     </>

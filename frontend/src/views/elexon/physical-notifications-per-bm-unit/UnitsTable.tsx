@@ -89,7 +89,7 @@ export function UnitsTable({ ctx }: { ctx: PageContext }) {
       <p className="gf-hint">
         {plural(ranked.length, 'unit', 'units')}, ranked by their mean start level in the window. Held counts the {noun} with a start level
         {expected !== null ? `, of ${expected.toLocaleString('en-GB')} in the window` : ''}; the mean, lowest and highest are of those, in MW, and a count in bold is a unit held for part of the window only. The backend picks the top units by their mean end level as kept, so its order can differ a little from this one.{' '}
-        {ctx.mode === 'chart' ? 'Select a unit to draw it alone on the chart; open one to read it on its own, set against the price.' : 'Open a unit to read it on its own, set against the price.'}
+        {ctx.mode === 'chart' ? 'Select a unit to draw it alone on the chart' : 'Select a unit to list its rows alone in the table'}; open one to read it on its own, set against the price.
       </p>
     </>
   )
