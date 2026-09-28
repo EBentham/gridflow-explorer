@@ -82,14 +82,9 @@ export function SitesKey({ ctx }: { ctx: PageContext }) {
                 </div>
               </>
             )}
-          </dl>
-          <p className="gf-hint">
-            For {when(last.t)}, the latest {model.bucketed ? 'period' : 'hour'} every site holds.{staggered ? ' Some sites hold later hours.' : ''}
-          </p>
-          <dl className="gf-stats">
             {fleet.high && (
               <div>
-                <dt>Highest</dt>
+                <dt>Highest mean</dt>
                 <dd>
                   {unit.format(fleet.high.v)}
                   <span className="gf-stat-when">{when(fleet.high.t)}</span>
@@ -98,7 +93,7 @@ export function SitesKey({ ctx }: { ctx: PageContext }) {
             )}
             {fleet.low && (
               <div>
-                <dt>Lowest</dt>
+                <dt>Lowest mean</dt>
                 <dd>
                   {unit.format(fleet.low.v)}
                   <span className="gf-stat-when">{when(fleet.low.t)}</span>
@@ -107,13 +102,13 @@ export function SitesKey({ ctx }: { ctx: PageContext }) {
             )}
             {fleet.mean !== null && (
               <div>
-                <dt>Mean</dt>
+                <dt>Mean over the window</dt>
                 <dd>{unit.format(fleet.mean)}</dd>
               </div>
             )}
           </dl>
           <p className="gf-hint">
-            The mean of the {sites.length} sites, each counted the same, over the {fleet.count.toLocaleString('en-GB')} {noun} where every one holds a speed.
+            {model.bucketed ? 'Latest mean' : 'Mean'}, calmest and windiest for {when(last.t)}, the latest {model.bucketed ? 'period' : 'hour'} every site holds{staggered ? ' (some hold later ones)' : ''}. Highest, lowest and mean over the {fleet.count.toLocaleString('en-GB')} {noun} where all {sites.length} sites hold a speed, each site counted the same.
           </p>
         </>
       ) : (
@@ -142,7 +137,7 @@ export function SitesKey({ ctx }: { ctx: PageContext }) {
             ))}
         </ul>
       )}
-      <p className="gf-hint">Each site’s latest 100 m speed, in its region’s colour. {ctx.focus ? 'Select it again to draw them all.' : 'Select a site to draw it on its own.'}</p>
+      <p className="gf-hint">Each site’s latest 100 m speed. {ctx.focus ? 'Select it again to draw them all.' : 'Select one to draw it alone.'}</p>
       {others.length > 0 && <p className="gf-hint">No speed held in this window at {others.join(', ')}.</p>}
       {rel && (
         <>

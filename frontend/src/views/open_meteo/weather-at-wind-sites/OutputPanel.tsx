@@ -15,6 +15,8 @@ import type { PageContext } from '../../define'
 import { OUTPUT, OUTPUT_COLOR, OUTPUT_KEY, focusedSite, heldSites, meanByDay, outputPerStep, speedByDay, speedPoints } from './figures'
 import { SpeedScatter, type Pair } from './SpeedScatter'
 
+const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
 export function OutputPanel({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
   const sites = heldSites(model)
@@ -77,7 +79,7 @@ export function OutputPanel({ ctx }: { ctx: PageContext }) {
             stepMs={model.stepMs}
           />
           <p className="gf-hint">
-            Each dot is one {model.bucketed ? `of the ${noun}` : 'hour'}: {site ? `${site.label}’s speed` : 'the mean of the sites’ speeds'} as published for it, against the mean of GB wind output’s {outNoun} inside it. {plural(pairs.length, 'dot', 'dots')}; {model.bucketed ? 'periods' : 'hours'} missing either figure, or any of those {outNoun}, are left out.
+            Each dot is one {model.bucketed ? `of the ${noun}` : 'hour'}: {site ? `${site.label}’s speed` : 'the mean of the sites’ speeds'} as published for it, against the mean of GB wind output’s {outNoun} in the {model.bucketed ? 'period' : 'hour'} from its time stamp. {plural(pairs.length, 'dot', 'dots')}; {model.bucketed ? 'periods' : 'hours'} missing either figure, or any of those {outNoun}, are left out.
           </p>
         </>
       )}
@@ -88,7 +90,7 @@ export function OutputPanel({ ctx }: { ctx: PageContext }) {
             <tr>
               <th scope="col">Day</th>
               <th scope="col" className="is-num">
-                Held
+                {model.bucketed ? 'Means held' : `${capital(noun)} held`}
               </th>
               <th scope="col" className="is-num">
                 {site ? site.label : 'Sites’ mean'}, {unit.label}
@@ -102,7 +104,7 @@ export function OutputPanel({ ctx }: { ctx: PageContext }) {
               {outDays && outDef && (
                 <>
                   <th scope="col" className="is-num">
-                    Output held
+                    {out?.bucketed ? 'Output means held' : `${capital(outNoun)} of output`}
                   </th>
                   <th scope="col" className="is-num">
                     Wind output, mean {outDef.unit.label}
@@ -151,7 +153,7 @@ export function OutputPanel({ ctx }: { ctx: PageContext }) {
       </div>
       {days.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
-        {site ? `Held counts the ${noun} with a speed at ${site.label}.` : `Held counts the ${noun} with a speed at every site; the speed is their plain mean, each site counted the same.`}{' '}
+        {site ? `Speeds are ${site.label}’s.` : 'Speeds are the plain mean of the sites, each counted the same, at the hours every site holds.'}{' '}
         {outDays ? `Wind output is the mean of the ${outNoun} held that day. ` : ''}
         {days.some((d) => (d.expected !== null && d.speed.count > 0 && d.speed.count < d.expected) || (outDays !== null && outPartial(d.start, outDays.get(d.start)?.held ?? 0))) ? 'A count in bold is a day held in part: its figures cover only what it holds. ' : ''}
         {ctx.mode === 'chart' ? 'Select a day to mark it on the chart.' : 'Select a day to mark it.'}

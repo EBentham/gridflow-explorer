@@ -16,6 +16,8 @@ import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
 import { REANALYSIS_KEY, focusedSite, heldSites, madeSeries, speedByDay, speedPoints, statsOf, type Point } from './figures'
 
+const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
 const HIND = 'hind'
 const REAN = 'rean'
 
@@ -41,7 +43,7 @@ export function HindcastPanel({ ctx }: { ctx: PageContext }) {
   const noun = model.bucketed && model.stepMs ? meansText(model.stepMs) : stepNoun(model.stepMs)
 
   const hindDays = speedByDay(model, ctx.window, hind)
-  const pairedHind = hind.filter((p) => reanAt.has(p.t))
+  const pairedHind = sameClock ? hind.filter((p) => reanAt.has(p.t)) : []
   const hindTimes = new Set(hind.map((p) => p.t))
   const pairedRean = sameClock ? reanPoints.filter((p) => hindTimes.has(p.t)) : []
   const hDays = speedByDay(model, ctx.window, pairedHind)
@@ -95,7 +97,7 @@ export function HindcastPanel({ ctx }: { ctx: PageContext }) {
             <tr>
               <th scope="col">Day</th>
               <th scope="col" className="is-num">
-                Both held
+                {model.bucketed ? 'Means both hold' : `${capital(noun)} both hold`}
               </th>
               <th scope="col" className="is-num">
                 Hindcast, {unit.label}
