@@ -1,0 +1,79 @@
+/*
+ * The physical notifications page's own layout. Tokens only, and only the
+ * shapes the design already uses (DESIGN.md): no new looks.
+ */
+
+/* ---------------------------------------------------------------- toolbar */
+
+/* the units switch, then the id box with its button, a label beside each control */
+.gf-pn-control,
+.gf-pn-unitform,
+.gf-pn-unitlabel {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.gf-pn-control {
+  gap: 8px 14px;
+}
+.gf-pn-unitform {
+  margin: 0;
+}
+/* a unit id is an identifier, so the box sets it in the id face */
+.gf-pn-input {
+  width: 12.5rem;
+  font-family: var(--font-id);
+}
+
+/* ---------------------------------------------------------------- key */
+
+/* a fuel's name over its units, as the wind sites key heads its regions */
+.gf-pn-fuel > .gf-hint {
+  margin: 10px 0 2px;
+  padding: 0 6px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+/* ---------------------------------------------------------------- the units table */
+
+/* twenty units: the whole list, not a scroll box */
+.gf-pn-units {
+  max-height: none;
+}
+.gf-pn-fuelcell {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+/* opening a unit on its own: ink with the chartreuse underline of a link into a screen */
+.gf-pn-open {
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+.gf-pn-open:hover {
+  text-decoration-color: var(--accent-hover);
+}
+.gf-pn-open:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+/* a column heading only a screen reader needs */
+.gf-pn-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
