@@ -1,12 +1,15 @@
 # Weather at solar sites: what the template and the data lack
 
-- **Interval-end stamps.** Open-Meteo's radiation columns are the mean of the hour that
-  ends at the stamp (cited and measured in gridflow_models' v2.3 research, `L1-data-holdings.md`
-  P3). `SeriesChart`'s tooltip and the series table name the hour that *starts* at the
-  stamp (`periodLabel`), so every irradiance hour reads one hour late. The page needs a
-  per-dataset (or per-column) stamp convention, `stamp: 'end'`, that names the hour before.
-  What the page does instead: a family caveat says how to read the stamp, and the key names
-  each peak as "hour to <time>".
+- **Interval-end stamps (verified; a data-honesty template fix).** Each Open-Meteo radiation
+  value is the mean of the hour *before* its stamp: the value stamped 13:00 covers 12:00–13:00.
+  The review confirmed it from gridflow_models' v2.3 research (`L1-data-holdings.md`: P3 at
+  line 36, the correlation measurement at line 254, the vendor citation at lines 86 and 295),
+  and gridflow keeps the vendor time as `timestamp_utc` with no shift. `SeriesChart`'s tooltip,
+  the series table's Period, bucket labels and the latest-day rule all read the stamp as the
+  hour's *start* (`periodLabel`), so every irradiance hour reads one hour late, and the one
+  00:00 stamp of Sun 27 Sep (Sat 23:00–24:00) makes Sunday the default window's last day.
+  The template needs a per-dataset or per-column `stamp: 'end'`. What the page does instead:
+  the first caveat says how to read the stamp, and the key names each peak as "hour to <time>".
 - **Units of the secondary columns.** The card and the source list give `mixed` as the unit of
   `cloud_cover_*_pct`, `temperature_2m_c`, `snowfall_cm` and `snow_depth_m`. gridflow's
   `SolarWeather` schema names them %, °C, cm and m, but the card doesn't settle them, so the
