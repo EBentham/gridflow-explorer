@@ -60,7 +60,7 @@ export function ContextChart({ ctx }: { ctx: PageContext }) {
       <>
         <SeriesBody ctx={f.ctx} />
         {notes}
-        <IntensityWords ctx={ctx} cover={cover} steps={steps} />
+        <IntensityWords ctx={ctx} cover={cover} steps={steps} table />
       </>
     )
   }

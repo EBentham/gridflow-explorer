@@ -16,7 +16,7 @@ import { defineView } from '../../define'
 import { ContextChart } from './ContextChart'
 import { ContextDays } from './ContextDays'
 import { ContextKey } from './ContextKey'
-import { AXIS_WIDTH, CI_ACTUAL, CI_FORECAST, CI_SOURCE, NIV, SBP, SSP, VALUES } from './figures'
+import { AXIS_WIDTH, CI_ACTUAL, CI_FORECAST, CI_SOURCE, NIV, SBP, SSP, VALUES, isMeans, unjoinable } from './figures'
 
 const view = defineView({
   title: 'System prices joined with carbon intensity',
@@ -38,21 +38,27 @@ const view = defineView({
       chart: { mark: 'line', values: [SSP], lower: false, belowZero: true, axisWidth: AXIS_WIDTH },
       panels: {
         main: {
-          title: (ctx) => (ctx.view.title ?? ctx.view.label),
+          title: (ctx) => (isMeans(ctx) ? 'System price, imbalance volume and carbon intensity, hourly means' : (ctx.view.title ?? ctx.view.label)),
           src: (ctx) => (
             <SourceLine
               ctx={ctx}
               columns={[SSP, SBP, NIV, CI_FORECAST, CI_ACTUAL]}
               filters={ctx.response?.filters}
               unit="£/MWh, MWh and gCO₂/kWh"
-              what="one row per half-hour, whichever price derivation code it carries"
+              what={
+                unjoinable(ctx)
+                  ? 'means per price derivation code, as sent'
+                  : isMeans(ctx)
+                    ? 'one row per hour: the hourly means joined across price derivation codes'
+                    : 'one row per half-hour, whichever price derivation code it carries'
+              }
             />
           ),
           Body: ContextChart,
         },
         key: {
           title: 'Key',
-          src: (ctx) => <SourceLine ctx={ctx} columns={[SSP, SBP, NIV, CI_FORECAST, CI_ACTUAL]} unit="£/MWh, MWh and gCO₂/kWh" what="the latest half-hour held, and the window’s price range, extremes and mean" />,
+          src: (ctx) => <SourceLine ctx={ctx} columns={[SSP, SBP, NIV, CI_FORECAST, CI_ACTUAL]} unit="£/MWh, MWh and gCO₂/kWh" what={isMeans(ctx) || unjoinable(ctx) ? 'the series drawn' : 'the latest half-hour held, and the window’s price range, extremes and mean'} />,
           Body: ContextKey,
         },
         working: {

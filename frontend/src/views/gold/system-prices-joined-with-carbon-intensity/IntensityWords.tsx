@@ -37,14 +37,14 @@ function heldText(ctx: PageContext): string {
   return out.join(' ')
 }
 
-export function IntensityWords({ ctx, cover, steps = 'half-hours', labelled = false }: { ctx: PageContext; cover: { priced: number; forecast: number; actual: number } | null; steps?: string; labelled?: boolean }) {
+export function IntensityWords({ ctx, cover, steps = 'half-hours', labelled = false, table = false }: { ctx: PageContext; cover: { priced: number; forecast: number; actual: number } | null; steps?: string; labelled?: boolean; table?: boolean }) {
   const held = heldText(ctx)
   if (!cover || !cover.priced) return held ? <p className="gf-hint">{held}</p> : null
   const n = (x: number) => x.toLocaleString('en-GB')
   if (cover.forecast === 0 && cover.actual === 0) {
     return (
       <p className="gf-hint">
-        No {steps.replace(/s$/, '')} in this window carries a carbon intensity, so its panel isn't drawn. That is intensity not held here, never an intensity of zero. {held}
+        No {steps.replace(/s$/, '')} in this window carries a carbon intensity{table ? '' : ", so its panel isn't drawn"}. That is intensity not held here, never an intensity of zero. {held}
       </p>
     )
   }
@@ -60,7 +60,7 @@ export function IntensityWords({ ctx, cover, steps = 'half-hours', labelled = fa
   }
   return (
     <p className="gf-hint">
-      Carbon intensity is joined to {n(cover.forecast)} of the {n(cover.priced)} {steps} with a price in this window; the rest show as gaps in its panel.{actual}
+      Carbon intensity is joined to {n(cover.forecast)} of the {n(cover.priced)} {steps} with a price in this window; the rest show {table ? 'a dash in its columns' : 'as gaps in its panel'}.{actual}
       {which} {held}
     </p>
   )

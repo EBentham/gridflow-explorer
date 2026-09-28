@@ -43,3 +43,9 @@
 4. **The one-day value axis can skip zero.** On `?days=1` the imbalance panel's ticks read
    250 / −250 / −750, so its zero line has no label. That comes from the template's tick
    generator, not from the page.
+
+5. **Labels over a window longer than a year don't name the year.** On the year window
+   (23 Sep 2025 – 22 Sep 2026) the chart's extremes read "Tue 23 at 20:00" and the table's
+   periods read "Tue 23 Sep, 00:00–01:00 BST". Both 23 Sep 2025 and 22 Sep 2026 fall in that
+   window, so the day is ambiguous. `Extreme` labels and `periodLabel` come from the
+   template and `design/time.ts`; they would need the year once a window spans more than one.
