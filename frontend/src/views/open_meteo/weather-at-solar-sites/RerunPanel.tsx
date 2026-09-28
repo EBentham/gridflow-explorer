@@ -35,6 +35,15 @@ export function RerunPanel({ ctx }: { ctx: PageContext }) {
         ? `The re-run’s rows in this window were fetched at ${fetched[0]}.`
         : `The re-run’s rows in this window were fetched at ${plural(fetched.length, 'time', 'different times')}, from ${fetched[0]} to ${fetched[fetched.length - 1]}.`
 
+  // The page calls these rows fetched after their hours: check it against the rows themselves.
+  // A radiation stamp ends its hour, so a row fetched before its stamp was fetched before its hour ended.
+  const early = ctx.response
+    ? ctx.response.rows.filter((r) => typeof r.available_at === 'string' && typeof r.ts === 'number' && toMs(r.available_at) < r.ts).length
+    : 0
+  const earlyText = early
+    ? `${plural(early, 'of these rows was', 'of these rows were')} fetched before its hour had ended, so ${early === 1 ? 'it is a forecast' : 'they are forecasts'} made a short time ahead, not figures for hours already past.`
+    : null
+
   if (!aModel || !(hourly(model) && hourly(aModel))) {
     return (
       <>
@@ -48,6 +57,7 @@ export function RerunPanel({ ctx }: { ctx: PageContext }) {
           </p>
         )}
         {fetchedText && <p className="gf-hint">{fetchedText}</p>}
+        {earlyText && <p className="gf-hint">{earlyText}</p>}
       </>
     )
   }
@@ -168,6 +178,7 @@ export function RerunPanel({ ctx }: { ctx: PageContext }) {
         Each figure is the hourly W/m² stamped in the UK day, each counted for one hour, summed; a day short of any hour gets a dash. Select a site in the key to read it day by day{ctx.mode === 'chart' ? ', and a day to mark it on the chart' : ''}.
       </p>
       {fetchedText && <p className="gf-hint">{fetchedText} Each fetch replaces the last, and no issue time is kept.</p>}
+      {earlyText && <p className="gf-hint">{earlyText}</p>}
     </>
   )
 }

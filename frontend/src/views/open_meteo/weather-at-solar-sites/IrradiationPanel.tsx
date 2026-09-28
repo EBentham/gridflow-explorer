@@ -41,7 +41,7 @@ export function IrradiationPanel({ ctx }: { ctx: PageContext }) {
             <tr>
               <th scope="col">Day</th>
               <th scope="col" className="is-num">
-                {summed ? 'Hours' : 'Means'}
+                {summed ? 'Hours, any site' : 'Means, any site'}
               </th>
               {sites.map((d) => (
                 <th key={d.key} scope="col" className="is-num">
@@ -96,7 +96,12 @@ export function IrradiationPanel({ ctx }: { ctx: PageContext }) {
                       </td>
                     )
                   })}
-                  {oDef && <td className="is-num">{gwh === null ? '–' : gwh.toLocaleString('en-GB', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>}
+                  {oDef &&
+                    (gwh === null && o && o.held > 0 ? (
+                      <td className="is-num is-flag">{o.expected === null ? `${o.held} held` : `${o.held} of ${o.expected}`}</td>
+                    ) : (
+                      <td className="is-num">{gwh === null ? '–' : gwh.toLocaleString('en-GB', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
+                    ))}
                 </tr>
               )
             })}
@@ -111,9 +116,9 @@ export function IrradiationPanel({ ctx }: { ctx: PageContext }) {
       )}
       <p className="gf-hint">
         {summed
-          ? 'Each site’s figure is its tilted irradiance, kWh/m²: every hour stamped in the UK day, its mean W/m² counted for one hour, summed. Hours counts the hours held; a day short of any hour gets a dash, not a total.'
+          ? 'Each site’s figure is its tilted irradiance, kWh/m²: every hour stamped in the UK day, its mean W/m² counted for one hour, summed. Hours, any site counts the hours at least one site holds; a site short of any hour that day gets a dash, not a total.'
           : `The window is read as ${model.stepMs ? meansText(model.stepMs) : 'means'}, which don’t sum to a day’s irradiation, so each site’s figure is its highest mean that day, ${unit.label ?? 'unit unconfirmed'}. A shorter window reads the hours as held, and totals them.`}
-        {oDef && (oSummed ? ' GB solar is NESO’s half-hourly generation, each half-hour’s MW times half an hour, summed over the UK day, on days holding every half-hour.' : ' GB solar generation comes back as means over this window, so its energy per day is not summed.')}
+        {oDef && (oSummed ? ' GB solar is NESO’s half-hourly generation, each half-hour’s MW times half an hour, summed over the UK day, on days holding every half-hour; a day held in part shows the half-hours it holds instead.' : ' GB solar generation comes back as means over this window, so its energy per day is not summed.')}
         {ctx.mode === 'chart' ? ' Select a day to mark it on the chart.' : ' Select a day to mark it.'}
       </p>
     </>

@@ -29,9 +29,9 @@ const view = defineView({
   title: 'Weather at solar sites',
   sub: 'Hourly sunlight on a tilted panel at six places that stand for where GB’s solar panels are, from Open-Meteo’s historical archive and from its forecast model re-run for past days.',
   caveats: [
+    STAMP,
     'The six sites are points gridflow chose to stand for where GB’s solar capacity sits, at approximate centres: they are not named solar farms, and the page neither weights nor averages them.',
     'Tilted means a panel tilted 35° and facing due south, a common GB fixed mount.',
-    STAMP,
   ],
   datasets: [
     {
@@ -42,7 +42,7 @@ const view = defineView({
       caveats: [
         'The publisher documents its reanalysis as arriving about five days late, yet this archive holds hours up to the newest day shown. What fills those newest days is not confirmed here, and they may change when fetched again.',
         'GB solar generation, under the chart, is NESO’s figure from its historic generation mix, read for the same window and set beside the sites for comparison. Because irradiance is stamped at the end of its hour, its lines sit to the right of the generation they go with.',
-        'Sunlight on flat ground, with its direct and diffuse parts, is held for these sites too, as are cloud cover, temperature and snow. This page draws the tilted panel only, one measure across the six sites; the units of cloud cover, temperature and snow are not confirmed in any case.',
+        'Flat-ground sunlight, cloud cover, temperature and snow are held too; this page draws the tilted panel only.',
       ],
       query: { group: 'location' },
       values: [{ column: GTI, label: 'Tilted panel' }],

@@ -33,6 +33,11 @@ export function SiteKey({ ctx }: { ctx: PageContext }) {
     return `hour to ${instantLabel(t)}`
   }
 
+  // The archive beside the re-run keys its peak value only, so the key stays about as tall as the chart;
+  // the working panel sets the archive against the re-run day by day.
+  const showWhen = (d: SeriesDef) => d.from === 'self' || d.column === SOLAR_MW
+  const hidden = drawn.some((d) => !showWhen(d))
+
   // One list per chart panel, headed by what it draws, so each series is named by its site alone.
   const lists = plan.panels.map((p) => p.series)
   const heading = (series: SeriesDef[]) => {
@@ -58,7 +63,7 @@ export function SiteKey({ ctx }: { ctx: PageContext }) {
                     <KeyList items={[{ key: id, mark: { kind: 'line', color: d.color, dashed: ctx.fixture }, label: <span className="gf-series-name">{d.group !== null ? siteLabel(d.group) : d.label}</span> }]} />
                     <span className="gf-series-value">{peak ? d.unit.format(peak.v) : '–'}</span>
                   </button>
-                  {peak && <span className="gf-series-when">{when(d, peak.t)}</span>}
+                  {peak && showWhen(d) && <span className="gf-series-when">{when(d, peak.t)}</span>}
                 </li>
               )
             })}
@@ -67,7 +72,7 @@ export function SiteKey({ ctx }: { ctx: PageContext }) {
       ))}
       <p className="gf-hint">
         Each figure is the series’ highest {bucketed ? 'mean' : 'value'} in {ctx.windowText}
-        {bucketed && model.stepMs ? `, read as ${meansText(model.stepMs)}` : ''}.{pickable && ctx.mode === 'chart' ? (ctx.focus ? ' Select it again to draw them all.' : ' Select a series to draw it on its own.') : ''}
+        {bucketed && model.stepMs ? `, read as ${meansText(model.stepMs)}` : ''}.{hidden ? ' The archive’s peaks are listed without their hours.' : ''}{pickable && ctx.mode === 'chart' ? (ctx.focus ? ' Select it again to draw them all.' : ' Select a series to draw it on its own.') : ''}
       </p>
       {model.empty.length > 0 && <p className="gf-hint">No value held in this window for {model.empty.map((d) => d.label).join(', ')}.</p>}
     </>
