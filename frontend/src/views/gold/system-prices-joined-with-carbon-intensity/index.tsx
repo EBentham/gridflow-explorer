@@ -58,7 +58,7 @@ const view = defineView({
         },
         key: {
           title: 'Key',
-          src: (ctx) => <SourceLine ctx={ctx} columns={[SSP, SBP, NIV, CI_FORECAST, CI_ACTUAL]} unit="£/MWh, MWh and gCO₂/kWh" what={isMeans(ctx) || unjoinable(ctx) ? 'the series drawn' : 'the latest half-hour held, and the window’s price range, extremes and mean'} />,
+          src: (ctx) => <SourceLine ctx={ctx} columns={[SSP, SBP, NIV, CI_FORECAST, CI_ACTUAL]} unit="£/MWh, MWh and gCO₂/kWh" what={unjoinable(ctx) ? 'nothing keyed: the means come apart by price derivation code' : isMeans(ctx) ? 'the series drawn' : 'the latest half-hour held, and the window’s price range, extremes and mean'} />,
           Body: ContextKey,
         },
         working: {
