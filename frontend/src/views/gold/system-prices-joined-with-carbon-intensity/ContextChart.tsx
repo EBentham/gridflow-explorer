@@ -58,7 +58,8 @@ export function ContextChart({ ctx }: { ctx: PageContext }) {
   if (ctx.mode === 'table') {
     return (
       <>
-        <SeriesBody ctx={f.ctx} />
+        {/* The table's caption reads the view's title: over hourly means it names them. */}
+        <SeriesBody ctx={f.means ? { ...f.ctx, view: { ...f.ctx.view, title: 'System price, imbalance volume and carbon intensity, hourly means' } } : f.ctx} />
         {notes}
         <IntensityWords ctx={ctx} cover={cover} steps={steps} table />
       </>
