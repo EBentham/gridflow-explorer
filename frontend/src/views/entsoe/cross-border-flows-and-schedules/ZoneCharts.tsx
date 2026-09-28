@@ -12,7 +12,7 @@ import { SeriesChart } from '../../_template/SeriesChart'
 import { ErrorWords } from '../../_template/panels'
 import type { PageContext } from '../../define'
 import { OUT_SIDE_KEY, zonePanel, zonesOf } from './model'
-import { zoneMissingSentence } from './words'
+import { turnsSentence, zoneMissingSentence } from './words'
 import { ZoneTable } from './ZoneTable'
 
 export function ZoneCharts({ ctx }: { ctx: PageContext }) {
@@ -27,7 +27,7 @@ export function ZoneCharts({ ctx }: { ctx: PageContext }) {
     <>
       <SeriesChart panels={panels} domain={windowDomain(w.start, w.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
       <p className="gf-hint">
-        {zoneMissingSentence(zones, w)} {focus ? '' : 'Each zone has a scale of its own. '}Both sides are drawn at or above zero, as published: the sign is unconfirmed, so they aren’t netted into one line.
+        {turnsSentence(zones)} {zoneMissingSentence(zones, w)} {focus ? '' : 'Each zone has a scale of its own. '}Both sides are drawn at or above zero, as published: the sign is unconfirmed, so they aren’t netted into one line.
       </p>
       {(outside?.state === 'error' || outside?.state === 'refreshing') && (
         <p className="gf-hint">

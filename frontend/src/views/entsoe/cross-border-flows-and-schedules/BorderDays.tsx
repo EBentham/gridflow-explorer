@@ -9,7 +9,7 @@
 import { plural } from '../../../design/format'
 import { dayLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
-import { daysOf, heldText, isPartial } from './figures'
+import { daysOf, heldDayStarts, heldText, isPartial } from './figures'
 import { bordersOf, focusedBorder, roleOf } from './model'
 import { stepWords } from './words'
 
@@ -28,6 +28,7 @@ export function BorderDays({ ctx }: { ctx: PageContext }) {
   const fmt = (x: { v: number } | null) => (x ? unit.plain(x.v) : '–')
   // The cells after Held: mean, lowest, highest and zeros, and the two beside.
   const rest = besideDays ? 6 : 4
+  const anyHeld = heldDayStarts(borders.flatMap((x) => [x.own?.points ?? [], x.beside?.points ?? []]))
 
   return (
     <>
@@ -71,7 +72,7 @@ export function BorderDays({ ctx }: { ctx: PageContext }) {
                   <tr key={d.day} className="is-missing">
                     <th scope="row">{dayLabel(d.start)}</th>
                     <td className="is-num">{d.expected === null ? '0' : `0 of ${d.expected}`}</td>
-                    <td colSpan={rest}>not held locally</td>
+                    <td colSpan={rest}>{anyHeld.has(d.start) ? 'none held on this border' : 'not held locally'}</td>
                   </tr>
                 )
               }
@@ -102,7 +103,10 @@ export function BorderDays({ ctx }: { ctx: PageContext }) {
       </div>
       {days.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
-        Held counts the {stepWords(b.own.step)} with a value, of those the day holds on {b.name}’s own step; a day held in part is set in bold. Means are of the values held, each counted once.
+        {b.own.step === null
+          ? `${b.name} holds too few values in this window to read its step, so Held counts them without a full day to count against. `
+          : `Held counts the ${stepWords(b.own.step)} with a value, of those the day holds on ${b.name}’s own step; a day held in part is set in bold. `}
+        Means are of the values held, each counted once.
         {besideDays ? ` The ${role.beside} is counted on its own step, on the same border.` : ''}
         {ctx.mode === 'chart' ? ' Select a day to mark it on the chart.' : ' Select a day to mark it.'}
         {borders.length > 1 ? ' Select a border in the key to read another.' : ''}

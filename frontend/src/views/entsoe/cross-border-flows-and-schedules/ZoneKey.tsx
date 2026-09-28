@@ -10,7 +10,7 @@ import { periodLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
 import { SIDE_COLORS } from './areas'
 import { sideDays, windowTally, type Tally } from './figures'
-import { focusedZone, SIDE_LABELS, zonesOf, type Line, type Zone } from './model'
+import { focusedZone, latestStamp, SIDE_LABELS, zonesOf, type Line, type Zone } from './model'
 import { stepWords } from './words'
 
 const cap = (s: string) => `${s[0].toUpperCase()}${s.slice(1)}`
@@ -36,7 +36,8 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
     const expected = days.every((d) => d.expected !== null) ? days.reduce((s, d) => s + (d.expected ?? 0), 0) : null
     return { z, tallies, step, held, expected, latest: latestOf(z, tallies) }
   })
-  const stamp = Math.max(...rows.map((r) => r.latest?.t ?? -Infinity))
+  // The source line names this time; a zone whose latest value is older names its own.
+  const stamp = latestStamp(zones.flatMap((z) => [z.inSide, z.outSide]))?.t
   const pickable = zones.length > 1
   // A focus naming no zone in this window selects nothing.
   const focused = zones.some((z) => z.id === ctx.focus)

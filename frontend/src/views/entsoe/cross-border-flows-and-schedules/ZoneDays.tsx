@@ -8,7 +8,7 @@
 import { plural } from '../../../design/format'
 import { dayLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
-import { sideDays } from './figures'
+import { heldDayStarts, sideDays } from './figures'
 import { focusedZone, zonesOf } from './model'
 import { stepWords } from './words'
 
@@ -23,6 +23,7 @@ export function ZoneDays({ ctx }: { ctx: PageContext }) {
   const days = sideDays(z.inSide?.points ?? [], z.outSide?.points ?? [], step, w)
   const mean = (v: number | null) => (v === null || !unit ? '–' : unit.plain(v))
   const both = days.some((d) => d.both > 0)
+  const anyHeld = heldDayStarts(zones.flatMap((x) => [x.inSide?.points ?? [], x.outSide?.points ?? []]))
 
   return (
     <>
@@ -55,7 +56,7 @@ export function ZoneDays({ ctx }: { ctx: PageContext }) {
                   <tr key={d.day} className="is-missing">
                     <th scope="row">{dayLabel(d.start)}</th>
                     <td className="is-num">{d.expected === null ? '0' : `0 of ${d.expected}`}</td>
-                    <td colSpan={4}>not held locally</td>
+                    <td colSpan={4}>{anyHeld.has(d.start) ? 'none held for this zone' : 'not held locally'}</td>
                   </tr>
                 )
               }

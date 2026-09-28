@@ -175,8 +175,19 @@ export function sideDays(inSide: Point[], outSide: Point[], step: number | null,
 /** Held in part: some of the series' own steps that day, not all (a day with none isn't partial, it's missing). */
 export const isPartial = (d: Pick<Tally, 'held' | 'expected'>) => d.held > 0 && d.expected !== null && d.held < d.expected
 
-/** `145 of 168`, or `145` when the clock can't be counted. */
+/** `145 of 168`; the count alone when the clock can't be counted, or the count fills (or passes) it. */
 export function heldText(t: Pick<Tally, 'held' | 'expected'>): string {
   const held = t.held.toLocaleString('en-GB')
-  return t.expected === null || t.held === t.expected ? held : `${held} of ${t.expected.toLocaleString('en-GB')}`
+  return t.expected === null || t.held >= t.expected ? held : `${held} of ${t.expected.toLocaleString('en-GB')}`
+}
+
+/**
+ * The UK days (their London midnights) on which any of the given lines
+ * holds a value: a day none of them holds is not held locally, while a day
+ * others hold and this one doesn't is a gap in this one only.
+ */
+export function heldDayStarts(pointSets: Point[][]): Set<number> {
+  const out = new Set<number>()
+  for (const points of pointSets) for (const p of points) if (p.v !== null) out.add(londonMidnight(p.t))
+  return out
 }

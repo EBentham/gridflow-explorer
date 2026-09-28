@@ -52,9 +52,12 @@ does meanwhile.
    (`GB–France`), never with an arrow, and never says import or export.
 
 7. **The net positions' sign.** Each zone is named as the in area or as the out area, with
-   `REGION_CODE-----` on the other side and a positive value, and in the week checked each
-   quarter-hour holds a zone on exactly one side. The vault's "negative means export"
-   doesn't fit these rows (none is negative). The page keeps the two sides apart.
+   `REGION_CODE-----` on the other side and a positive value. Checked for 15–21 Sep, each of
+   the four zones is named on exactly one side in every one of its 672 quarter-hours (none
+   on both, none on neither), and no value is negative. That is the shape a sign carried by
+   the side would have; which side means export is the open question. The vault's
+   "negative means export" doesn't fit these rows. The page keeps the two sides apart, and
+   says under the chart when they take turns.
 
 8. **Why GB–France comes hourly.** In the week checked, GB–France and GB–Ireland (SEM) come
    once an hour and GB–Belgium and GB–Netherlands every 15 minutes, which accounts for the

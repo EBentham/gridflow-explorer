@@ -11,7 +11,7 @@ import { cadenceText, periodLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
 import { areaName, BESIDE_COLOR } from './areas'
 import { heldText, windowTally } from './figures'
-import { besideState, bordersOf, focusedBorder, roleOf } from './model'
+import { besideState, bordersOf, focusedBorder, latestStamp, roleOf } from './model'
 import { stepWords } from './words'
 
 const cap = (s: string) => `${s[0].toUpperCase()}${s.slice(1)}`
@@ -22,7 +22,8 @@ export function BorderKey({ ctx }: { ctx: PageContext }) {
   const borders = bordersOf(ctx)
   if (!w || !borders.length) return <p className="gf-hint">No border holds a value in this window, so there is nothing to key.</p>
   const tallies = new Map(borders.map((b) => [b.id, b.own ? windowTally(b.own.points, b.own.step, w) : null]))
-  const stamp = Math.max(...[...tallies.values()].map((t) => t?.latest?.t ?? -Infinity))
+  // The source line names this time; a border whose latest value is older names its own.
+  const stamp = latestStamp(borders.map((b) => b.own))?.t
   const pickable = borders.length > 1
   // Focus outlives a change of in area; one naming no border here selects nothing.
   const focused = borders.some((b) => b.id === ctx.focus)

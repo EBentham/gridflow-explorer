@@ -17,7 +17,7 @@
  * power moves in the direction held isn't confirmed. Values stay in MW: the
  * borders run from under 300 MW to about 3,000, and GW would hide the smaller.
  */
-import { instantLabel } from '../../../design/time'
+import { instantLabel, periodLabel } from '../../../design/time'
 import { relatedParts } from '../../_template/panelHelpers'
 import { SourceLine } from '../../_template/panels'
 import { defineView, type PageContext, type PanelSlots, type SlotSpec } from '../../define'
@@ -28,7 +28,7 @@ import { BorderDays } from './BorderDays'
 import { BorderKey } from './BorderKey'
 import { AXIS_WIDTH } from './figures'
 import { InAreaControl } from './InAreaControl'
-import { bordersOf, FLOW_ROLE, focusedBorder, focusedZone, inAreaOf, OUT_SIDE_KEY, roleOf, SCHEDULE_ROLE, zonesOf } from './model'
+import { bordersOf, FLOW_ROLE, focusedBorder, focusedZone, inAreaOf, latestStamp, OUT_SIDE_KEY, roleOf, SCHEDULE_ROLE, zonesOf, type Line } from './model'
 import { ZoneCharts } from './ZoneCharts'
 import { ZoneDays } from './ZoneDays'
 import { ZoneKey } from './ZoneKey'
@@ -38,6 +38,12 @@ const NET_UNIT = 'MW, sign unconfirmed'
 
 /** The filters a border read carries: as the rows came back, else as asked. */
 const borderFilters = (ctx: PageContext) => ctx.response?.filters ?? { in_area_code: inAreaCode(ctx.param(IN_PARAM)) }
+
+/** `latest held values, Mon 21 Sep, 00:45–01:00 BST`: the time a key's latest values are at. */
+function latestText(lines: (Line | null)[]): string {
+  const stamp = latestStamp(lines)
+  return stamp ? `latest held values, ${periodLabel(stamp.t, stamp.step)}` : 'latest held values'
+}
 
 /** The dataset drawn beside the borders, for a source line, once it is read. */
 function besideParts(ctx: PageContext, out?: string) {
@@ -67,7 +73,17 @@ function borderPanels(measure: string): PanelSlots {
     },
     key: {
       title: 'Borders',
-      src: (ctx) => <SourceLine ctx={ctx} columns={[roleOf(ctx).column]} by="out_area_code" filters={borderFilters(ctx)} unit={MW} what="the latest value held on each border, and the values its own step holds" />,
+      src: (ctx) => (
+        <SourceLine
+          ctx={ctx}
+          columns={[roleOf(ctx).column]}
+          by="out_area_code"
+          filters={borderFilters(ctx)}
+          unit={MW}
+          what={`${latestText(bordersOf(ctx).map((b) => b.own))}, and the steps each border holds`}
+          window={false}
+        />
+      ),
       Body: BorderKey,
     },
     working: {
@@ -109,7 +125,18 @@ const zonePanels: PanelSlots = {
   },
   key: {
     title: 'Zones',
-    src: (ctx) => <SourceLine ctx={ctx} columns={['quantity_mw']} by="in_area_code" filters={netFilters(ctx)} unit={NET_UNIT} also={outsideParts(ctx)} what="the latest value held for each zone, and its quarter-hours on each side" />,
+    src: (ctx) => (
+      <SourceLine
+        ctx={ctx}
+        columns={['quantity_mw']}
+        by="in_area_code"
+        filters={netFilters(ctx)}
+        unit={NET_UNIT}
+        also={outsideParts(ctx)}
+        what={`${latestText(zonesOf(ctx).flatMap((z) => [z.inSide, z.outSide]))}, and each zone’s quarter-hours on each side`}
+        window={false}
+      />
+    ),
     Body: ZoneKey,
   },
   working: {

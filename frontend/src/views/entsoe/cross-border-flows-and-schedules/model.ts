@@ -60,6 +60,20 @@ function lineOf(model: SeriesModel, def: SeriesDef | undefined): Line | null {
 
 const holds = (line: Line | null) => Boolean(line?.points.some((p) => p.v !== null))
 
+/**
+ * The latest value held among the lines, with its line's step: the time a
+ * key's "latest" values are at, named in its source line. A line whose
+ * latest value is older names its own.
+ */
+export function latestStamp(lines: (Line | null)[]): { t: number; step: number | null } | null {
+  let best: { t: number; step: number | null } | null = null
+  for (const l of lines) {
+    const last = l?.points.findLast((p) => p.v !== null)
+    if (l && last && (!best || last.t > best.t)) best = { t: last.t, step: l.step }
+  }
+  return best
+}
+
 /** The in area the page reads its borders for: as the rows came back, else as asked. */
 export function inAreaOf(ctx: PageContext): string {
   return str(ctx.response?.filters?.in_area_code) ?? inAreaCode(ctx.param(IN_PARAM))
