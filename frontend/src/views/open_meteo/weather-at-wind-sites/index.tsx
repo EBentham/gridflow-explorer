@@ -65,7 +65,7 @@ const view = defineView({
           values: [{ column: OUTPUT, label: 'GB wind output', color: OUTPUT_COLOR }],
         },
       ],
-      chart: { mark: 'line', maxSeries: 12, height: 470, lower: { from: OUTPUT_KEY, mark: 'line', height: 170 } },
+      chart: { mark: 'line', maxSeries: 12, height: 560, lower: { from: OUTPUT_KEY, mark: 'line', height: 190 } },
       panels: {
         key: {
           title: 'Key',
@@ -112,7 +112,7 @@ const view = defineView({
           groups: SITE_GROUPS,
         },
       ],
-      chart: { mark: 'line', maxSeries: 12, height: 520, lower: false },
+      chart: { mark: 'line', maxSeries: 12, height: 700, lower: false },
       panels: {
         key: {
           title: 'Key',

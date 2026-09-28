@@ -26,3 +26,11 @@
   one flat list. This page wants them under region headings, so it rebuilds the list
   (`SitesKey.tsx`) with the template's `gf-series-key` classes. A `groups[].section` field
   that `SeriesKey` headed would make that unnecessary.
+- **Instant readings named and binned as hour-long periods.** The template names each
+  hourly reading as a period (`Sun 27 Sep, 00:00–01:00 BST`), and this page pairs it with
+  GB wind output's half-hours in the hour from its time stamp (`outputPerStep` in
+  `figures.ts`). Open-Meteo is understood to give wind speed as an instant value at the
+  hour, with only sums and means (rain, radiation) covering the hour before; that is not
+  confirmed in the repo. Confirm Open-Meteo's instant or preceding-hour convention for
+  `wind_speed_100m`. If it is instant, the template should name the reading as an instant,
+  and this page should centre the output pairing on it (the half-hours either side).
