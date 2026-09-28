@@ -22,7 +22,7 @@ import { relatedParts } from '../../_template/panelHelpers'
 import { SourceLine } from '../../_template/panels'
 import { defineView, type PageContext, type PanelSlots, type SlotSpec } from '../../define'
 import { AboutFamily } from './AboutFamily'
-import { areaName, AREA_GROUPS, borderQuery, GB, GB_QUERY, IN_PARAM, IN_SIDE_QUERY, inAreaCode, OUT_SIDE_QUERY } from './areas'
+import { areaPhrase, AREA_GROUPS, borderQuery, GB, GB_QUERY, IN_PARAM, IN_SIDE_QUERY, inAreaCode, OUT_SIDE_QUERY } from './areas'
 import { BorderCharts } from './BorderCharts'
 import { BorderDays } from './BorderDays'
 import { BorderKey } from './BorderKey'
@@ -66,7 +66,7 @@ function borderPanels(measure: string): PanelSlots {
     main: {
       title: (ctx) => {
         const code = inAreaOf(ctx)
-        return code === GB ? `${measure} on GB’s borders` : `${measure}, ${areaName(code)} as the in area`
+        return code === GB ? `${measure} on GB’s borders` : `${measure}, ${areaPhrase(code)} as the in area`
       },
       src: (ctx) => (
         <SourceLine

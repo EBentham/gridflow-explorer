@@ -60,7 +60,7 @@ const areaOf = (code: string | null | undefined) => AREAS.find((a) => a.code ===
 export const areaName = (code: string | null | undefined): string => areaOf(code)?.name ?? code ?? 'an unnamed area'
 
 /** `the Netherlands`: an area's name as it reads inside a sentence. */
-export const areaPhrase = (code: string): string => (code === NL ? 'the Netherlands' : areaName(code))
+export const areaPhrase = (code: string | null | undefined): string => (code === NL ? 'the Netherlands' : areaName(code))
 
 /** Whether gridflow names the area, so a code can be shown beside its name. */
 export const isNamed = (code: string): boolean => areaOf(code) !== undefined

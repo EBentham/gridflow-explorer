@@ -13,7 +13,7 @@ import { windowDomain } from '../../../design/time'
 import { SeriesChart } from '../../_template/SeriesChart'
 import { ErrorWords } from '../../_template/panels'
 import type { PageContext } from '../../define'
-import { areaName } from './areas'
+import { areaPhrase } from './areas'
 import { BorderTable } from './BorderTable'
 import { aloneIn, besideState, borderPanel, bordersOf, roleOf } from './model'
 import { aloneSentence, cadenceSentence, missingSentence } from './words'
@@ -38,7 +38,7 @@ export function BorderCharts({ ctx }: { ctx: PageContext }) {
       </p>
       {beside === 'other-area' && (
         <p className="gf-hint">
-          The {role.beside} is read for GB’s borders only, so none is drawn beside the pairs with {areaName(borders[0]?.inArea)} as the in area.
+          The {role.beside} is read for GB’s borders only, so none is drawn beside the pairs with {areaPhrase(borders[0]?.inArea)} as the in area.
         </p>
       )}
       {beside === 'error' && rel && (
