@@ -76,7 +76,7 @@ export function ArchivePanel({ ctx }: { ctx: PageContext }) {
               <tr>
                 <th scope="col">City</th>
                 <th scope="col" className="is-num">
-                  Hours both hold
+                  {model.bucketed ? 'Values both hold' : 'Hours both hold'}
                 </th>
                 <th scope="col" className="is-num">
                   Hindcast mean, {unit.label ?? 'unit unconfirmed'}

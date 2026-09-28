@@ -11,7 +11,7 @@
  */
 import { SourceLine } from '../../_template/panels'
 import { relatedParts } from '../../_template/panelHelpers'
-import { defineView } from '../../define'
+import { defineView, type ValueSpec } from '../../define'
 import { ArchivePanel } from './ArchivePanel'
 import { DemandPanel } from './DemandPanel'
 import {
@@ -39,9 +39,30 @@ import { WeatherKey } from './WeatherKey'
 
 const BY_CITY = { group: 'location' }
 
-// Every column is a series per city: 11 columns by 7 cities. The main panel draws temperature
-// only, so the cap must hold them all, or the largest means (pressure) would crowd it out.
-const ALL_SERIES = 11 * CITIES.length
+const REANALYSIS_VALUES: ValueSpec[] = [
+  { column: TEMP, label: 'Temperature' },
+  { column: HDD, label: 'Heating degrees' },
+  { column: CDD, label: 'Cooling degrees' },
+  { column: WIND, label: 'Wind at 10 m' },
+  { column: SUN, label: 'Solar radiation' },
+  { column: HUMIDITY, label: 'Relative humidity', unit: '%' },
+  { column: RAIN, label: 'Precipitation', unit: 'mm' },
+  { column: PRESSURE, label: 'Surface pressure', unit: 'hPa' },
+  { column: SNOWFALL, label: 'Snowfall' },
+  { column: SNOW_DEPTH, label: 'Snow depth', unit: 'm' },
+  { column: AIR_DENSITY, label: 'Air density', unit: 'kg/m3' },
+]
+
+const HINDCAST_VALUES: ValueSpec[] = [
+  { column: TEMP, label: 'Temperature' },
+  { column: HDD, label: 'Heating degrees' },
+  { column: CDD, label: 'Cooling degrees' },
+  { column: WIND, label: 'Wind at 10 m' },
+]
+
+// Every column is a series per city. The main panel draws temperature only, so the cap must
+// hold them all, or the largest means (pressure) would crowd it out.
+const capFor = (values: ValueSpec[]) => values.length * CITIES.length
 
 const view = defineView({
   title: 'Weather at demand centres',
@@ -62,19 +83,7 @@ const view = defineView({
       ],
       query: BY_CITY,
       groups: CITIES,
-      values: [
-        { column: TEMP, label: 'Temperature' },
-        { column: HDD, label: 'Heating degrees' },
-        { column: CDD, label: 'Cooling degrees' },
-        { column: WIND, label: 'Wind at 10 m' },
-        { column: SUN, label: 'Solar radiation' },
-        { column: HUMIDITY, label: 'Relative humidity', unit: '%' },
-        { column: RAIN, label: 'Precipitation', unit: 'mm' },
-        { column: PRESSURE, label: 'Surface pressure', unit: 'hPa' },
-        { column: SNOWFALL, label: 'Snowfall' },
-        { column: SNOW_DEPTH, label: 'Snow depth', unit: 'm' },
-        { column: AIR_DENSITY, label: 'Air density', unit: 'kg/m3' },
-      ],
+      values: REANALYSIS_VALUES,
       related: [
         {
           key: DEMAND_KEY,
@@ -84,7 +93,7 @@ const view = defineView({
           values: [{ column: DEMAND, label: 'National demand', color: DEMAND_COLOR }],
         },
       ],
-      chart: { mark: 'line', values: [TEMP], lower: false, maxSeries: ALL_SERIES, axisWidth: AXIS_WIDTH },
+      chart: { mark: 'line', values: [TEMP], lower: false, maxSeries: capFor(REANALYSIS_VALUES), axisWidth: AXIS_WIDTH },
       panels: {
         key: {
           title: 'Key',
@@ -121,12 +130,7 @@ const view = defineView({
       ],
       query: BY_CITY,
       groups: CITIES,
-      values: [
-        { column: TEMP, label: 'Temperature' },
-        { column: HDD, label: 'Heating degrees' },
-        { column: CDD, label: 'Cooling degrees' },
-        { column: WIND, label: 'Wind at 10 m' },
-      ],
+      values: HINDCAST_VALUES,
       related: [
         {
           key: ARCHIVE_KEY,
@@ -138,7 +142,7 @@ const view = defineView({
           values: [{ column: TEMP, label: 'Temperature' }],
         },
       ],
-      chart: { mark: 'line', values: [TEMP], lower: false, maxSeries: 4 * CITIES.length, axisWidth: AXIS_WIDTH },
+      chart: { mark: 'line', values: [TEMP], lower: false, maxSeries: capFor(HINDCAST_VALUES), axisWidth: AXIS_WIDTH },
       panels: {
         key: {
           title: 'Key',
