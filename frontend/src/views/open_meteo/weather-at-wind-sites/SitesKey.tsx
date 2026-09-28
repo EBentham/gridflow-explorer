@@ -113,7 +113,7 @@ export function SitesKey({ ctx }: { ctx: PageContext }) {
             )}
           </dl>
           <p className="gf-hint">
-            The mean of the {sites.length} sites held, each counted the same, over the {fleet.count.toLocaleString('en-GB')} {noun} in {ctx.windowText} where every one holds a speed.
+            The mean of the {sites.length} sites, each counted the same, over the {fleet.count.toLocaleString('en-GB')} {noun} where every one holds a speed.
           </p>
         </>
       ) : (
@@ -142,7 +142,7 @@ export function SitesKey({ ctx }: { ctx: PageContext }) {
             ))}
         </ul>
       )}
-      <p className="gf-hint">Each site’s latest 100 m speed held. A site’s colour is its region’s. {ctx.focus ? 'Select it again to draw them all.' : 'Select a site to draw it on its own.'}</p>
+      <p className="gf-hint">Each site’s latest 100 m speed, in its region’s colour. {ctx.focus ? 'Select it again to draw them all.' : 'Select a site to draw it on its own.'}</p>
       {others.length > 0 && <p className="gf-hint">No speed held in this window at {others.join(', ')}.</p>}
       {rel && (
         <>

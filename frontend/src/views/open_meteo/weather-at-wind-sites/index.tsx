@@ -65,12 +65,12 @@ const view = defineView({
           values: [{ column: OUTPUT, label: 'GB wind output', color: OUTPUT_COLOR }],
         },
       ],
-      chart: { mark: 'line', maxSeries: 12, lower: { from: OUTPUT_KEY, mark: 'line', height: 150 } },
+      chart: { mark: 'line', maxSeries: 12, height: 470, lower: { from: OUTPUT_KEY, mark: 'line', height: 170 } },
       panels: {
         key: {
           title: 'Key',
           src: (ctx) => (
-            <SourceLine ctx={ctx} columns={[SPEED]} by="location" unit="m/s" also={outputParts(ctx)} what="the latest hour held, the mean of the sites, and each site" />
+            <SourceLine ctx={ctx} columns={[SPEED]} by="location" unit="m/s" also={outputParts(ctx)} what="the latest hour, the mean of the sites and each site" />
           ),
           Body: SitesKey,
         },
@@ -112,11 +112,11 @@ const view = defineView({
           groups: SITE_GROUPS,
         },
       ],
-      chart: { mark: 'line', maxSeries: 12, lower: false },
+      chart: { mark: 'line', maxSeries: 12, height: 520, lower: false },
       panels: {
         key: {
           title: 'Key',
-          src: (ctx) => <SourceLine ctx={ctx} columns={[SPEED]} by="location" unit="m/s" what="the latest hour held, the mean of the sites, and each site" />,
+          src: (ctx) => <SourceLine ctx={ctx} columns={[SPEED]} by="location" unit="m/s" what="the latest hour, the mean of the sites and each site" />,
           Body: SitesKey,
         },
         working: {

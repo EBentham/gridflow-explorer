@@ -6,6 +6,7 @@
  * mean, and the mean difference. Hours only one holds are left out of the
  * comparison, never filled.
  */
+import { KeyList } from '../../../design/charts'
 import { plural } from '../../../design/format'
 import { dayLabel, stepNoun, windowDomain } from '../../../design/time'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
@@ -60,7 +61,12 @@ export function HindcastPanel({ ctx }: { ctx: PageContext }) {
       madeSeries(sites[0], REAN, site ? `${site.label}, reanalysis` : 'Reanalysis, mean of the sites', 'var(--chart-actual)', reanPoints),
     ]
     const panel: ChartPanel = { rows, series, mark: 'line', unit, stepMs: model.stepMs, bucketed: model.bucketed, height: 220 }
-    chart = <SeriesChart panels={[panel]} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+    chart = (
+      <>
+        <KeyList items={series.map((d) => ({ key: d.key, mark: { kind: 'line' as const, color: d.color, dashed: ctx.fixture }, label: d.label }))} />
+        <SeriesChart panels={[panel]} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+      </>
+    )
   }
 
   let note = null
@@ -136,7 +142,8 @@ export function HindcastPanel({ ctx }: { ctx: PageContext }) {
       </div>
       {hindDays.length > 8 && <p className="gf-hint">{plural(hindDays.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
-        Means of {who} over the {noun} both hold that day. Difference is the hindcast less the reanalysis.{' '}
+        Each day’s means of {who}, over the {noun} both hold. Difference is the hindcast less the reanalysis.{' '}
+        {hindDays.some((d, i) => d.expected !== null && dDays[i].speed.count > 0 && dDays[i].speed.count < d.expected) ? 'A count in bold is a day held in part: its figures cover only the hours both hold. ' : ''}
         {ctx.mode === 'chart' ? 'Select a day to mark it on both charts.' : 'Select a day to mark it.'}
       </p>
     </>

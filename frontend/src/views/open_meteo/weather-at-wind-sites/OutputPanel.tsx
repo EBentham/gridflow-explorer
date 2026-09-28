@@ -8,7 +8,7 @@
  */
 import type { ReactNode } from 'react'
 import { plural } from '../../../design/format'
-import { dayLabel, stepNoun } from '../../../design/time'
+import { HOUR_MS, dayLabel, stepNoun, stepsInDay } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
@@ -39,6 +39,16 @@ export function OutputPanel({ ctx }: { ctx: PageContext }) {
   const days = speedByDay(model, ctx.window, points)
   const outDays = out && outDef ? meanByDay(out, outDef) : null
   const outNoun = out ? (out.bucketed && out.stepMs ? meansText(out.stepMs) : stepNoun(out.stepMs)) : ''
+  // A day's output held in part is a mean of that part: its count says so beside it.
+  const outExpected = (start: number) => (out && !(out.bucketed && out.stepMs !== null && out.stepMs > HOUR_MS) ? stepsInDay(start, out.stepMs) : null)
+  const outPartial = (start: number, held: number) => {
+    const e = outExpected(start)
+    return e !== null && held < e
+  }
+  const outHeld = (start: number, held: number) => {
+    const e = outExpected(start)
+    return e !== null && held < e ? `${held} of ${e}` : String(held)
+  }
   const fmt = (x: { v: number } | null) => (x ? unit.plain(x.v) : '–')
 
   let scatterNote: ReactNode = null
@@ -90,16 +100,21 @@ export function OutputPanel({ ctx }: { ctx: PageContext }) {
                 Highest
               </th>
               {outDays && outDef && (
-                <th scope="col" className="is-num">
-                  Wind output, mean {outDef.unit.label}
-                </th>
+                <>
+                  <th scope="col" className="is-num">
+                    Output held
+                  </th>
+                  <th scope="col" className="is-num">
+                    Wind output, mean {outDef.unit.label}
+                  </th>
+                </>
               )}
             </tr>
           </thead>
           <tbody>
             {days.map((d) => {
               const o = outDays?.get(d.start)
-              const span = outDays ? 4 : 3
+              const span = outDays ? 5 : 3
               if (d.speed.count === 0 && !o) {
                 return (
                   <tr key={d.day} className="is-missing">
@@ -122,7 +137,12 @@ export function OutputPanel({ ctx }: { ctx: PageContext }) {
                   <td className="is-num">{d.speed.mean === null ? '–' : unit.plain(d.speed.mean)}</td>
                   <td className="is-num">{fmt(d.speed.low)}</td>
                   <td className="is-num">{fmt(d.speed.high)}</td>
-                  {outDays && outDef && <td className="is-num">{o ? outDef.unit.plain(o.mean) : '–'}</td>}
+                  {outDays && outDef && (
+                    <>
+                      <td className={outPartial(d.start, o?.held ?? 0) ? 'is-num is-flag' : 'is-num'}>{outHeld(d.start, o?.held ?? 0)}</td>
+                      <td className="is-num">{o ? outDef.unit.plain(o.mean) : '–'}</td>
+                    </>
+                  )}
                 </tr>
               )
             })}
@@ -132,7 +152,8 @@ export function OutputPanel({ ctx }: { ctx: PageContext }) {
       {days.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
         {site ? `Held counts the ${noun} with a speed at ${site.label}.` : `Held counts the ${noun} with a speed at every site; the speed is their plain mean, each site counted the same.`}{' '}
-        {outDays ? `Wind output is the mean of the ${outNoun} held that day, so a day held in part is a mean of that part. ` : ''}
+        {outDays ? `Wind output is the mean of the ${outNoun} held that day. ` : ''}
+        {days.some((d) => (d.expected !== null && d.speed.count > 0 && d.speed.count < d.expected) || (outDays !== null && outPartial(d.start, outDays.get(d.start)?.held ?? 0))) ? 'A count in bold is a day held in part: its figures cover only what it holds. ' : ''}
         {ctx.mode === 'chart' ? 'Select a day to mark it on the chart.' : 'Select a day to mark it.'}
       </p>
     </>
