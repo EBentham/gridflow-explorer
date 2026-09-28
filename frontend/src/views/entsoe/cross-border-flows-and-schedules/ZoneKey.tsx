@@ -80,7 +80,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
       {pickable && <p className="gf-hint">{focused ? 'Select it again to draw every zone.' : 'Select a zone to draw it alone.'}</p>}
       {sel && selRow && (
         <>
-          <p className="gf-hint">In this window, {sel.name}, each side apart:</p>
+          <p className="gf-hint">In this window, for {sel.phrase}, each side apart:</p>
           <dl className="gf-stats">
             {(['in', 'out'] as const).map((side) => {
               const t = selRow.tallies[side]

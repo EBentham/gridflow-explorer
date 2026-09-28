@@ -17,7 +17,7 @@ interface Named {
 }
 
 interface Sided {
-  name: string
+  phrase: string
   inSide: Line | null
   outSide: Line | null
 }
@@ -64,19 +64,19 @@ function daysText(starts: number[]): string {
 
 /**
  * `Some steps are missing: on every border on Mon 21 Sep; on GB–Ireland (SEM)
- * on Tue 15 Sep, Fri 18 Sep and Sun 20 Sep.` Each name with the days it
- * misses steps on, days all share said once. Only days some line holds a
- * value on: a day none holds is the template's "N of M days hold rows".
+ * on Tue 15 Sep, Fri 18 Sep and Sun 20 Sep.` (`for` a zone). Each name with
+ * the days it misses steps on, days all share said once. Only days some line
+ * holds a value on: a day none holds is the template's "N of M days hold rows".
  */
-function missingText(byName: Map<string, Set<number>>, heldDays: Set<number>, every: string): string {
+function missingText(byName: Map<string, Set<number>>, heldDays: Set<number>, every: string, prep: 'on' | 'for'): string {
   const names = [...byName.keys()]
   const missing = new Map([...byName.entries()].map(([n, days]) => [n, [...days].filter((d) => heldDays.has(d)).sort((a, b) => a - b)]))
   const shared = names.length > 1 ? (missing.get(names[0]) ?? []).filter((d) => names.every((n) => missing.get(n)?.includes(d))) : []
   const parts: string[] = []
-  if (shared.length) parts.push(`on ${every} on ${daysText(shared)}`)
+  if (shared.length) parts.push(`${prep} ${every} on ${daysText(shared)}`)
   for (const n of names) {
     const own = (missing.get(n) ?? []).filter((d) => !shared.includes(d))
-    if (own.length) parts.push(`on ${n} on ${daysText(own)}`)
+    if (own.length) parts.push(`${prep} ${n} on ${daysText(own)}`)
   }
   return parts.length ? `Some steps are missing: ${parts.join('; ')}.` : ''
 }
@@ -94,7 +94,7 @@ export function missingSentence(items: Named[], window: DateRange): string {
     }
     byName.set(name, days)
   }
-  return missingText(byName, heldDays, 'every border')
+  return missingText(byName, heldDays, 'every border', 'on')
 }
 
 /** The zones' days with quarter-hours held on neither side. */
@@ -108,9 +108,9 @@ export function zoneMissingSentence(zones: Sided[], window: DateRange): string {
       if (d.held > 0) heldDays.add(d.start)
       if (d.expected !== null && d.held < d.expected) days.add(d.start)
     }
-    byName.set(z.name, days)
+    byName.set(z.phrase, days)
   }
-  return missingText(byName, heldDays, 'every zone')
+  return missingText(byName, heldDays, 'every zone', 'for')
 }
 
 /**
@@ -132,6 +132,26 @@ export function turnsSentence(zones: Sided[]): string {
   return both === 0
     ? 'In this window no quarter-hour names a zone on both sides, so each zone’s two lines take turns: where one breaks, the other carries on.'
     : `In this window ${plural(both, 'quarter-hour names', 'quarter-hours name')} a zone on both sides at once.`
+}
+
+/**
+ * `Some values have nothing held a step before or after them on their own
+ * line in this window, so the chart draws nothing for them: 3 on GB–Ireland
+ * (SEM) and 1 on GB–France.` (`for` a zone). Empty when every value held is
+ * on a line.
+ */
+export function aloneSentence(items: { name: string; alone: number }[], prep: 'on' | 'for'): string {
+  const parts = items.filter((x) => x.alone > 0).map((x) => `${x.alone.toLocaleString('en-GB')} ${prep} ${x.name}`)
+  return parts.length
+    ? `Some values have nothing held a step before or after them on their own line in this window, so the chart draws nothing for them: ${listText(parts)}. The Table view lists them.`
+    : ''
+}
+
+/** `No value drawn here is below zero.`: counted from the values held, on both sides. */
+export function belowZeroText(zones: Sided[], where: string): string {
+  let below = 0
+  for (const z of zones) for (const line of [z.inSide, z.outSide]) for (const p of line?.points ?? []) if (p.v !== null && p.v < 0) below += 1
+  return below === 0 ? `No value ${where} is below zero.` : `${plural(below, `value ${where} is`, `values ${where} are`)} below zero, as published.`
 }
 
 /** `hours` or `quarter-hours`: what a line's steps are called. */

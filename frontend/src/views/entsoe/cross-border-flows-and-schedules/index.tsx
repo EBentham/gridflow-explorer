@@ -162,7 +162,7 @@ const zonePanels: PanelSlots = {
   working: {
     title: (ctx) => {
       const z = focusedZone(ctx, zonesOf(ctx))
-      return z ? `The days in ${z.name}` : 'The days'
+      return z ? `The days in ${z.phrase}` : 'The days'
     },
     src: (ctx) => {
       const z = focusedZone(ctx, zonesOf(ctx))
@@ -252,9 +252,9 @@ const view = defineView({
       body: 'series',
       label: 'Net positions',
       title: 'Net position by zone, sign unconfirmed',
-      sub: 'Each continental zone’s net position from the implicit auction, as ENTSO-E publishes it: a positive number, with the zone named on one side of the record or the other, so the sign is unconfirmed.',
+      sub: 'Each continental zone’s net position from the implicit auction, as ENTSO-E publishes it, with the zone named on one side of the record or the other: the sign is unconfirmed.',
       caveats: [
-        'Sign unconfirmed. ENTSO-E publishes each zone’s net position as a positive number, naming the zone as the in area or as the out area, with a placeholder in place of the other. Which side means the zone is exporting isn’t confirmed, so the page draws the two sides apart and never nets them into one signed line.',
+        'Sign unconfirmed. ENTSO-E names each zone as the in area or as the out area of its net position, with a placeholder in place of the other, so the side the zone is on carries the sign. Which side means the zone is exporting isn’t confirmed, so the page draws the two sides apart and never nets them into one signed line.',
         'Only the four continental zones hold net positions here: none is held for Great Britain.',
       ],
       values: [{ column: 'quantity_mw', label: 'Net position, sign unconfirmed', display: 'MW' }],

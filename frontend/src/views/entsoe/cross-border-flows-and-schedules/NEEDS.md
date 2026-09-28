@@ -24,6 +24,11 @@ does meanwhile.
      spacing) and places a null one step after each held value that the next doesn't
      follow within a step, so the line breaks there (`figures.ts`, `withBreaks`).
    - Wanted: a per-series step in the model, and breaks at missing steps in `SeriesChart`.
+   - With the breaks, a value with nothing held a step either side on its own line draws
+     nothing: `SeriesChart` dots a line's values only on a clock of a day or longer
+     (`dots`), so on an hourly or 15-minute line no mark is left for it. Meanwhile: the
+     page counts these values per border or zone under the chart (`aloneIn`), and the
+     Table view lists them. Wanted: a dot for a lone held value on any clock.
 
 3. **No held-of-expected counts on a mixed clock.** With `stepMs` null, `daySummaries`
    gives `expected: null`, and `coverageSentences` names no partial day.

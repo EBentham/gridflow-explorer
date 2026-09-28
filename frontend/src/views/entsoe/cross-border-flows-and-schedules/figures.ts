@@ -60,6 +60,22 @@ export function withBreaks(points: Point[], step: number | null): Point[] {
   return out
 }
 
+/**
+ * How many of a line's held values have nothing held a step before or after
+ * them: no segment reaches them. Reads the points with their breaks
+ * (`withBreaks`), where a missing step is a null.
+ */
+export function aloneCount(points: Point[]): number {
+  let n = 0
+  points.forEach((p, i) => {
+    if (p.v === null) return
+    const before = i > 0 && points[i - 1].v !== null
+    const after = i < points.length - 1 && points[i + 1].v !== null
+    if (!before && !after) n += 1
+  })
+  return n
+}
+
 /** Several series' points as chart rows, one per time; a series has no field at another's times. */
 export function rowsOf(parts: { field: string; points: Point[] }[]): WideRow[] {
   const byT = new Map<number, WideRow>()

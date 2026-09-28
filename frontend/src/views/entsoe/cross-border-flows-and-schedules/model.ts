@@ -13,12 +13,13 @@
  *   step (`figures.ts`), and becomes one panel of the stacked chart.
  */
 import { CHART } from '../../../design/chartTheme'
+import { DAY_MS } from '../../../design/time'
 import type { Scalar } from '../../contract'
 import type { PageContext } from '../../define'
 import type { ChartPanel } from '../../_template/SeriesChart'
 import type { SeriesDef, SeriesModel } from '../../_template/seriesModel'
-import { areaColor, areaName, areaRank, borderName, BESIDE_COLOR, IN_PARAM, inAreaCode, SIDE_COLORS } from './areas'
-import { AXIS_WIDTH, PANEL_HEIGHT, pointsOf, rowsOf, stepOf, withBreaks, type Point } from './figures'
+import { areaColor, areaName, areaPhrase, areaRank, borderName, BESIDE_COLOR, IN_PARAM, inAreaCode, SIDE_COLORS } from './areas'
+import { aloneCount, AXIS_WIDTH, PANEL_HEIGHT, pointsOf, rowsOf, stepOf, withBreaks, type Point } from './figures'
 
 export const FLOWS = 'cross_border_flows'
 export const SCHEDULES = 'commercial_schedules'
@@ -138,6 +139,19 @@ const minStep = (steps: (number | null)[]) => {
   return known.length ? Math.min(...known) : null
 }
 
+/**
+ * The values a panel's lines hold that the chart draws nothing for: those
+ * with nothing held a step either side on their own line. The chart dots its
+ * values only on a clock of a day or longer, so on a finer one no mark is
+ * left for them.
+ */
+export function aloneIn(lines: (Line | null)[]): number {
+  const drawn = lines.filter((l): l is Line => l !== null && holds(l))
+  const step = minStep(drawn.map((l) => l.step))
+  if (step !== null && step >= DAY_MS) return 0
+  return drawn.reduce((s, l) => s + aloneCount(l.points), 0)
+}
+
 /** A panel's own caption: the area it draws, then the unit. */
 const captioned = (def: SeriesDef, name: string): SeriesDef['unit'] => ({ ...def.unit, caption: `${name}, ${def.unit.label ?? 'unit unconfirmed'}` })
 
@@ -171,6 +185,8 @@ export interface Zone {
   id: string
   code: string
   name: string
+  /** The name inside a sentence: `the Netherlands`. */
+  phrase: string
   /** Named as the in area, the placeholder as the out area. */
   inSide: Line | null
   /** Named as the out area, the placeholder as the in area. */
@@ -191,6 +207,7 @@ export function zonesOf(ctx: PageContext): Zone[] {
       id: `zone:${code}`,
       code,
       name: areaName(code),
+      phrase: areaPhrase(code),
       inSide: lineOf(model, model.all.find((d) => d.group === code)),
       outSide: outModel ? lineOf(outModel, outModel.all.find((d) => d.group === code)) : null,
     }))

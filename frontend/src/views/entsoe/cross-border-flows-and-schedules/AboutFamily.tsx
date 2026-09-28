@@ -3,7 +3,6 @@
  * each with gridflow's name for it (or the placeholder, which names none),
  * and how the page reads ENTSO-E's in and out areas.
  */
-import { Fragment } from 'react'
 import { About } from '../../_template/panels'
 import type { PageContext } from '../../define'
 import { areaName, isNamed, REGION } from './areas'
@@ -36,11 +35,13 @@ export function AboutFamily({ ctx }: { ctx: PageContext }) {
           <div>
             <dt>Area codes in these rows</dt>
             <dd>
-              {codes.map((c, i) => (
-                <Fragment key={c}>
-                  {i > 0 && '; '}
-                  <code>{c}</code> {isNamed(c) ? areaName(c) : c === REGION ? 'a placeholder that names no area' : 'an area gridflow doesn’t name'}
-                </Fragment>
+              {/* One code to a line: a code broken across two lines reads as two. */}
+              {codes.map((c) => (
+                <div key={c}>
+                  <span>
+                    <code>{c}</code> {isNamed(c) ? areaName(c) : c === REGION ? 'a placeholder that names no area' : 'an area gridflow doesn’t name'}
+                  </span>
+                </div>
               ))}
             </dd>
           </div>
@@ -48,7 +49,7 @@ export function AboutFamily({ ctx }: { ctx: PageContext }) {
       )}
       {net ? (
         <p className="gf-hint">
-          Each row names the zone as the in area or as the out area, with <code>{REGION}</code> on the other side, and a positive value. The page keeps the two sides apart until the sign is confirmed.
+          Each row names the zone as the in area or as the out area, with <code>{REGION}</code> on the other side. The page keeps the two sides apart until the sign is confirmed.
         </p>
       ) : (
         <p className="gf-hint">

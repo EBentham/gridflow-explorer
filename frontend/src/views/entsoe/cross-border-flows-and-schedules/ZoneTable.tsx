@@ -1,12 +1,13 @@
 /**
  * The Table view of the net positions: one row per zone and quarter-hour
- * held, naming the side the zone is on, with the value as published (no
- * sign). Rows from both reads, oldest first; nothing is netted or filled in.
+ * held, naming the side the zone is on, with the value as published. Rows
+ * from both reads, oldest first; nothing is netted or filled in.
  */
 import { periodLabel } from '../../../design/time'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
 import { SIDE_LABELS, zonesOf, type Line } from './model'
+import { belowZeroText } from './words'
 
 interface ZoneRow {
   t: number
@@ -42,7 +43,7 @@ export function ZoneTable({ ctx }: { ctx: PageContext }) {
   return (
     <>
       <WindowedTable columns={columns} rows={rows} caption={caption} initialSort={{ key: 't', dir: 'asc' }} rowKey={(r) => `${r.t}:${r.zone}:${r.side}`} />
-      <p className="gf-hint">Every value is positive, as ENTSO-E publishes it. Which side means the zone is exporting isn’t confirmed, so the table gives the side rather than a sign.</p>
+      <p className="gf-hint">{belowZeroText(zones, 'in the table')} Which side means the zone is exporting isn’t confirmed, so the table gives the side the zone is named on, and never nets the two.</p>
     </>
   )
 }
