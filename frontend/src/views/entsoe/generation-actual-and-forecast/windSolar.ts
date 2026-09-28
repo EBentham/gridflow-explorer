@@ -62,8 +62,8 @@ export function windSolarOf(ctx: PageContext): WindSolar | null {
   }
 }
 
-/** The types a zone holds none of, in words: `offshore wind and solar`. */
+/** The types a zone holds none of, in words: `offshore wind or solar`. */
 export function missingText(ws: WindSolar): string {
   const names = ws.missing.map((t) => t.prose)
-  return names.length <= 1 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`
+  return names.length <= 1 ? names.join('') : `${names.slice(0, -1).join(', ')} or ${names.at(-1)}`
 }

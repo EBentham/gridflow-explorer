@@ -60,6 +60,7 @@ import { UnitsKey } from './UnitsKey'
 import { UnitsPanel } from './UnitsPanel'
 import { WindSolarBody } from './WindSolarBody'
 import { WindSolarKey } from './WindSolarKey'
+import { windSolarOf } from './windSolar'
 import { WindSolarPanel } from './WindSolarPanel'
 import { ZoneControl } from './ZoneControl'
 
@@ -71,8 +72,10 @@ function relatedPart(ctx: PageContext, key: string, column: string): SourcePart[
 }
 
 const wsZone = (ctx: PageContext) => filteredZone(ctx, WS_ZONES).label
+/** Whether the zone's total generation forecast is held beside its wind and solar in this window. */
+const hasTotal = (ctx: PageContext) => Boolean(windSolarOf(ctx)?.total)
 const totalZone = (ctx: PageContext) => zoneInView(ctx, zoneForecasts(ctx))?.zone.label ?? 'one zone'
-const unitWhat = (ctx: PageContext) => `${filteredType(ctx).label.toLowerCase()} units in ${filteredZone(ctx, UNIT_ZONES).label}`
+const unitWhat = (ctx: PageContext) => `${filteredType(ctx).label.toLowerCase()} units in ${filteredZone(ctx, UNIT_ZONES).prose}`
 
 const view = defineView({
   title: 'Generation, actual and forecast',
@@ -110,8 +113,18 @@ const view = defineView({
       controls: ZoneControl,
       panels: {
         main: {
-          title: (ctx) => (ctx.mode === 'chart' ? `Wind and solar forecast in ${wsZone(ctx)}, with its total beneath` : `Wind and solar forecast in ${wsZone(ctx)}`),
-          src: (ctx) => <SourceLine ctx={ctx} columns={[FORECAST]} by={TYPE} filters={ctx.response?.filters} unit="GW" also={ctx.mode === 'chart' ? relatedPart(ctx, TOTAL_KEY, FORECAST) : []} what={ctx.mode === 'chart' ? `${wsZone(ctx)}’s series only` : undefined} />,
+          title: (ctx) => (ctx.mode === 'chart' && hasTotal(ctx) ? `Wind and solar forecast in ${wsZone(ctx)}, with its total beneath` : `Wind and solar forecast in ${wsZone(ctx)}`),
+          src: (ctx) => (
+            <SourceLine
+              ctx={ctx}
+              columns={[FORECAST]}
+              by={TYPE}
+              filters={ctx.response?.filters}
+              unit="GW"
+              also={ctx.mode === 'chart' && hasTotal(ctx) ? relatedPart(ctx, TOTAL_KEY, FORECAST) : []}
+              what={ctx.mode === 'chart' && hasTotal(ctx) ? `${wsZone(ctx)}’s series only` : undefined}
+            />
+          ),
           Body: WindSolarBody,
         },
         key: {
@@ -120,7 +133,7 @@ const view = defineView({
           Body: WindSolarKey,
         },
         working: {
-          title: (ctx) => `${wsZone(ctx)}: wind and solar against the total forecast`,
+          title: (ctx) => (hasTotal(ctx) || !ctx.series ? `${wsZone(ctx)}: wind and solar against the total forecast` : `${wsZone(ctx)}: wind and solar by day`),
           src: (ctx) => (
             <SourceLine
               ctx={ctx}
@@ -128,8 +141,8 @@ const view = defineView({
               by={TYPE}
               filters={ctx.response?.filters}
               unit="GW"
-              also={relatedPart(ctx, TOTAL_KEY, FORECAST)}
-              what={`every type summed at the steps all hold, against ${wsZone(ctx)}’s total, and the total less wind and solar; then each UK day`}
+              also={hasTotal(ctx) || !ctx.series ? relatedPart(ctx, TOTAL_KEY, FORECAST) : []}
+              what={hasTotal(ctx) || !ctx.series ? `every type summed at the steps all hold, against ${wsZone(ctx)}’s total, and the total less wind and solar; then each UK day` : 'each type’s mean per UK day'}
             />
           ),
           Body: WindSolarPanel,

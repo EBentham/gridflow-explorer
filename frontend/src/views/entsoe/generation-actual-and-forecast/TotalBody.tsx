@@ -36,10 +36,12 @@ export function TotalBody({ ctx }: { ctx: PageContext }) {
   const clocks = [...new Set(held.map(({ gen }) => perText(gen.step, model.bucketed)))]
   const clockNote =
     clocks.length > 1
-      ? held
-          .map(({ z, gen }) => `${z.zone.label} ${perText(gen.step, model.bucketed)}`)
-          .join(', ')
-          .replace(/, ([^,]*)$/, ' and $1')
+      ? clocks
+          .map((c) => {
+            const names = held.filter(({ gen }) => perText(gen.step, model.bucketed) === c).map(({ z }) => z.zone.label)
+            return `${names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0]} ${c}`
+          })
+          .join('; ')
       : ''
   const notes = (partial.length > 0 || clockNote) && (
     <div className="gf-notes">

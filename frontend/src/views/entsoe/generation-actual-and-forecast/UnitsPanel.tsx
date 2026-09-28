@@ -88,7 +88,12 @@ export function UnitsPanel({ ctx }: { ctx: PageContext }) {
                 <tr key={id} className={on ? 'is-on' : undefined}>
                   <th scope="row">
                     <button type="button" aria-pressed={on} onClick={() => ctx.setFocus(on ? undefined : id)}>
-                      {r.drawn && <span className="gf-swatch" style={{ background: r.drawn.color }} aria-hidden="true" />} <code>{r.track.def.label}</code>
+                      {r.drawn && (
+                        <svg width="16" height="8" aria-hidden="true">
+                          <line x1="0" y1="4" x2="16" y2="4" stroke={r.drawn.color} strokeWidth="2" />
+                        </svg>
+                      )}{' '}
+                      <code>{r.track.def.label}</code>
                     </button>
                   </th>
                   <td className="is-num">{r.stats.count.toLocaleString('en-GB')}</td>

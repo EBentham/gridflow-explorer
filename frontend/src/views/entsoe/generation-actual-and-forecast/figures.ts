@@ -457,6 +457,21 @@ export function partialDaySentences(series: Tracked[], window: DateRange, bucket
   return [...notes.slice(0, 2), `${rest === 1 ? 'One more day is' : `${plural(rest, 'more day is', 'more days are')}`} held in part between them; the days table gives the counts.`, notes.at(-1) as string]
 }
 
+/** The time most of these latest values share, for a key to say once. */
+export function commonLatest(times: (number | undefined)[]): number | undefined {
+  const counts = new Map<number, number>()
+  for (const t of times) if (t !== undefined) counts.set(t, (counts.get(t) ?? 0) + 1)
+  let best: number | undefined
+  let n = 0
+  for (const [t, c] of counts) {
+    if (c > n) {
+      best = t
+      n = c
+    }
+  }
+  return best
+}
+
 // ---------------------------------------------------------------- focus
 
 /** The series selected in the key, if it is one of these. */

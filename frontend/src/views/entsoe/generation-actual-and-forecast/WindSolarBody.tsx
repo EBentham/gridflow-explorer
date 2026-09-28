@@ -54,6 +54,8 @@ export function WindSolarBody({ ctx }: { ctx: PageContext }) {
   const defs = ws.held.map((k) => k.def)
   if (!defs.length) return <p className="gf-state">Rows are held for {zone.prose} in this window, but none of them holds a forecast value.</p>
   const focus = focusedDef(ctx, defs)
+  const names = ws.types.filter((x) => x.track).map((x) => (x.type.code === 'B18' ? `${x.type.prose} (hatched)` : x.type.prose))
+  const stackText = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0]
   const rows = markGaps(model.rows, ws.held, domain)
   const upper: ChartPanel = {
     rows,
@@ -96,7 +98,7 @@ export function WindSolarBody({ ctx }: { ctx: PageContext }) {
       )}
       {!failed && !lower && <p className="gf-hint">No total generation forecast is held for {zone.prose} in this window, so nothing is drawn under the stack.</p>}
       <p className="gf-hint">
-        Stacked, bottom up: onshore wind, offshore wind (hatched) and solar, each as forecast the day before, {perText(step, model.bucketed)}.{lower ? ` Under it, ${zone.prose}’s total generation forecast, a separate ENTSO-E forecast, on the same clock.` : ''} A step a type isn’t held for is a gap in its band.
+        {defs.length > 1 ? `Stacked, bottom up: ${stackText}, each` : `${stackText.charAt(0).toUpperCase()}${stackText.slice(1)}`} as forecast the day before, {perText(step, model.bucketed)}.{lower ? ` Under it, ${zone.prose}’s total generation forecast, a separate ENTSO-E forecast, on the same clock.` : ''} A step a type isn’t held for is a gap in its band.
       </p>
     </>
   )

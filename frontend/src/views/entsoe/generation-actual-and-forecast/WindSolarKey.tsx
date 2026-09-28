@@ -10,7 +10,7 @@ import { KeyList } from '../../../design/charts'
 import { periodLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
 import { latestValue, seriesId } from '../../_template/seriesModel'
-import { statsOf, stepWords, type Point } from './figures'
+import { commonLatest, statsOf, stepWords, type Point } from './figures'
 import { windSolarOf } from './windSolar'
 
 function Stat({ label, point, format, when }: { label: string; point: Point | null; format: (v: number) => string; when: (t: number) => string }) {
@@ -36,6 +36,8 @@ export function WindSolarKey({ ctx }: { ctx: PageContext }) {
   const solar = ws.solar ? statsOf(ws.solar.points) : null
   const sum = ws.sum ? statsOf(ws.sum.points) : null
   const when = (step: number | null) => (t: number) => periodLabel(t, step)
+  // The latest time most types share is said once, under the list; a type held to another time names its own.
+  const stamp = commonLatest(ws.held.map((k) => k.points.at(-1)?.t))
   const windWord = ws.types.filter((x) => x.track && x.type.code !== 'B16').length > 1 ? 'Wind, onshore and offshore' : 'Wind'
 
   return (
@@ -45,8 +47,10 @@ export function WindSolarKey({ ctx }: { ctx: PageContext }) {
           if (!track) {
             return (
               <li key={type.code} className="is-muted">
-                <KeyList items={[{ key: type.code, mark: { kind: 'swatch', color: type.swatch }, label: <span className="gf-series-name">{type.label}</span> }]} />
-                <span className="gf-series-value">not held</span>
+                <button type="button" disabled>
+                  <KeyList items={[{ key: type.code, mark: { kind: 'swatch', color: type.swatch }, label: <span className="gf-series-name">{type.label}</span> }]} />
+                  <span className="gf-series-value">not held</span>
+                </button>
               </li>
             )
           }
@@ -59,11 +63,12 @@ export function WindSolarKey({ ctx }: { ctx: PageContext }) {
                 <KeyList items={[{ key: id, mark: { kind: 'swatch', color: type.swatch }, label: <span className="gf-series-name">{type.label}</span> }]} />
                 <span className="gf-series-value">{latest ? unit.format(latest.v) : '–'}</span>
               </button>
-              {latest && <span className="gf-series-when">{periodLabel(latest.t, track.step)}</span>}
+              {latest && latest.t !== stamp && <span className="gf-series-when">{periodLabel(latest.t, track.step)}</span>}
             </li>
           )
         })}
       </ul>
+      {stamp !== undefined && <p className="gf-hint">Latest held: {periodLabel(stamp, ws.held[0].step)}.</p>}
       {ws.total && ctx.mode === 'chart' && <KeyList items={[{ key: 'total', mark: { kind: 'line', color: 'var(--chart-actual)', dashed: ctx.fixture }, label: `Total generation forecast, lower chart` }]} />}
       {pickable && <p className="gf-hint">{ctx.focus ? 'Select it again to draw the stack.' : 'Select a type to draw it on its own.'}</p>}
       <p className="gf-hint">{ws.zone.label}, over the window:</p>
@@ -74,8 +79,8 @@ export function WindSolarKey({ ctx }: { ctx: PageContext }) {
         {ws.held.length > 1 && <Stat label="Wind and solar, highest" point={sum?.high ?? null} format={unit.format} when={when(ws.sum?.step ?? null)} />}
       </dl>
       <p className="gf-hint">
-        Read from the {stepWords(ws.sum?.step ?? null, ws.bucketed)} held; a sum only where every part of it is held
-        {sum ? `, ${sum.count.toLocaleString('en-GB')} of them for wind and solar together` : ''}.
+        Read from the {stepWords(ws.sum?.step ?? null, ws.bucketed)} held
+        {ws.held.length > 1 && sum ? `; a sum only where every part of it is held, ${sum.count.toLocaleString('en-GB')} of them for wind and solar together` : ''}.
       </p>
     </>
   )
