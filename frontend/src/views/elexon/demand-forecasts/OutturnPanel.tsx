@@ -134,9 +134,9 @@ export function OutturnPanel({ ctx }: { ctx: PageContext }) {
       )}
       {join && (join.stats.above || join.stats.below) && (
         <p className="gf-hint">
-          {join.stats.above ? `Outturn ran furthest above the forecast in ${periodName(join.stats.above.t, model.stepMs, model.settlement)}, by ${signedMw(join.stats.above.v)} MW` : ''}
+          {join.stats.above ? `Outturn ran furthest above the forecast at ${periodName(join.stats.above.t, model.stepMs, model.settlement)}, by ${signedMw(join.stats.above.v)} MW` : ''}
           {join.stats.above && join.stats.below ? '; ' : ''}
-          {join.stats.below ? `${join.stats.above ? 'furthest' : 'Outturn ran furthest'} below it in ${periodName(join.stats.below.t, model.stepMs, model.settlement)}, by ${signedMw(join.stats.below.v)} MW` : ''}.
+          {join.stats.below ? `${join.stats.above ? 'furthest' : 'Outturn ran furthest'} below it at ${periodName(join.stats.below.t, model.stepMs, model.settlement)}, by ${signedMw(join.stats.below.v)} MW` : ''}.
         </p>
       )}
       {!comparable && <p className="gf-hint">Boundary {boundary} has no outturn held to set beside it: transmission demand outturn is national, which is boundary N. Choose boundary N to compare the two.</p>}
@@ -226,7 +226,7 @@ export function OutturnPanel({ ctx }: { ctx: PageContext }) {
       </div>
       {shown.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
-        Held counts the {noun} of forecast held, so a day held in part is summarised in part; a peak is the highest {noun.replace(/s$/, '')} held that day, and the outturn’s is given only on a day holding all of its own.
+        Held counts the {noun} of forecast held, so a day held in part is summarised in part; a peak is the highest {noun.replace(/s$/, '')} held that day{comparable ? ', and the outturn’s is given only on a day holding all of its own' : ''}.
         {comparable
           ? ` The miss is ${outturnName} less the forecast, read over the ${noun} both hold, and a dash where they hold none in common: above zero, GB drew more than forecast. The share is the absolute misses summed over the outturn summed.`
           : ''}

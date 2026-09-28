@@ -63,13 +63,13 @@ const halfHourPanels: { key: SlotSpec; working: SlotSpec } = {
         filters={ownFilters(ctx)}
         unit="GW"
         also={comparable(ctx) ? relPart(ctx, OUTTURN_KEY) : []}
-        what="the latest half-hour, peak and trough, how far ahead each was issued, and the miss in MW"
+        what={`the latest half-hour, peak and trough, and how far ahead each was issued${comparable(ctx) ? ', and the miss in MW' : ''}`}
       />
     ),
     Body: HalfHourKey,
   },
   working: {
-    title: (ctx) => (ctx.mode === 'chart' ? 'Forecast against outturn, and the days' : 'The days, against outturn'),
+    title: (ctx) => (!comparable(ctx) ? 'The days' : ctx.mode === 'chart' ? 'Forecast against outturn, and the days' : 'The days, against outturn'),
     src: (ctx) => (
       <SourceLine
         ctx={ctx}
@@ -77,7 +77,13 @@ const halfHourPanels: { key: SlotSpec; working: SlotSpec } = {
         filters={ownFilters(ctx)}
         unit="GW"
         also={comparable(ctx) ? relPart(ctx, OUTTURN_KEY, outturnColumn(ctx.dataset.id)) : []}
-        what={ctx.mode === 'chart' ? 'the forecast and its outturn per half-hour with outturn less forecast in MW, then each UK day' : 'each UK day: the forecast, its outturn and the miss in MW'}
+        what={
+          !comparable(ctx)
+            ? 'each UK day: the half-hours held and the forecast peak'
+            : ctx.mode === 'chart'
+              ? 'the forecast and its outturn per half-hour with outturn less forecast in MW, then each UK day'
+              : 'each UK day: the forecast, its outturn and the miss in MW'
+        }
       />
     ),
     Body: OutturnPanel,
