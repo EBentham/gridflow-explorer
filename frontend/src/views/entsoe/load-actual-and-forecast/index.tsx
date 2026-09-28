@@ -84,7 +84,7 @@ const view = defineView({
     'The four zones are Germany-Luxembourg, France, the Netherlands and Belgium. ENTSO-E hasn’t published GB’s load since Brexit, so GB isn’t here; they matter to GB through the interconnectors, and About links GB’s own demand.',
     'Each quarter-hour holds one day-ahead forecast, as ENTSO-E showed it when gridflow fetched it. Earlier versions aren’t kept, and the rows don’t say when the forecast was made.',
     'The chart reads the zones on the UK clock, an hour behind their own Central European time: 19:00 there reads 18:00 here.',
-    'The Netherlands’ actual load runs well below its day-ahead forecast in the September rows held, by about a fifth of its load, where the other three zones miss by a few per cent. The rows don’t say why, so that gap may not be the forecast’s miss alone.',
+    'In every window held, the Netherlands’ actual load runs well below its day-ahead forecast, where the other three zones miss by a few per cent. The gap varies in size: about a fifth of its load in September, about two-fifths in the early-August days. The rows don’t say why, so that gap may not be the forecast’s miss alone.',
     'ENTSO-E’s week-ahead, month-ahead and year-ahead forecasts are held too, but not drawn. ENTSO-E publishes each as two figures per day or week, the lowest and the highest load expected, and the copy held here keeps only one of the two without recording which. Drawn, it could be read as either, so the page leaves them out until both are kept.',
   ],
   datasets: [
