@@ -6,9 +6,13 @@
 import { About } from '../../_template/panels'
 import type { PageContext } from '../../define'
 import { areaName, isNamed, REGION } from './areas'
-import { NET_POSITIONS } from './model'
+import { besideState, bordersOf, NET_POSITIONS } from './model'
 
-/** The area codes in the rows read: the filters' and every split's values. */
+/**
+ * The area codes in the rows drawn: the filters' and every split's values. A
+ * border read beside the page's own counts only when it is drawn; the net
+ * positions draw both their reads.
+ */
 function codesOf(ctx: PageContext): string[] {
   const out = new Set<string>()
   const add = (v: unknown) => {
@@ -16,7 +20,8 @@ function codesOf(ctx: PageContext): string[] {
   }
   for (const v of Object.values(ctx.response?.filters ?? {})) add(v)
   for (const d of ctx.series?.all ?? []) if (d.count > 0) add(d.group)
-  for (const rel of Object.values(ctx.related)) {
+  const drawn = ctx.view.id === NET_POSITIONS || besideState(ctx) === 'drawn'
+  for (const rel of drawn ? Object.values(ctx.related) : []) {
     for (const v of Object.values(rel.response?.filters ?? {})) add(v)
     for (const d of rel.series?.all ?? []) if (d.count > 0) add(d.group)
   }
@@ -27,6 +32,9 @@ function codesOf(ctx: PageContext): string[] {
 export function AboutFamily({ ctx }: { ctx: PageContext }) {
   const codes = codesOf(ctx)
   const net = ctx.view.id === NET_POSITIONS
+  // The example is a border this view draws, so its areas are among the codes above.
+  const first = net ? undefined : bordersOf(ctx)[0]
+  const example = first ? `, ${first.name} for in area ${areaName(first.inArea)} and out area ${areaName(first.out)},` : ''
   return (
     <>
       <About ctx={ctx} />
@@ -53,7 +61,7 @@ export function AboutFamily({ ctx }: { ctx: PageContext }) {
         </p>
       ) : (
         <p className="gf-hint">
-          ENTSO-E names each border by an in area and an out area. The page names a border in that order, GB–France for in area Great Britain and out area France, and doesn’t say which way the power moves.
+          ENTSO-E names each border by an in area and an out area. The page names a border in that order{example} and doesn’t say which way the power moves.
         </p>
       )}
     </>

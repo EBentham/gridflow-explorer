@@ -12,7 +12,7 @@ import type { PageContext } from '../../define'
 import { areaName, BESIDE_COLOR } from './areas'
 import { heldText, windowTally } from './figures'
 import { besideState, bordersOf, focusedBorder, latestStamp, roleOf } from './model'
-import { stepWords } from './words'
+import { figureText, stepWords } from './words'
 
 const cap = (s: string) => `${s[0].toUpperCase()}${s.slice(1)}`
 
@@ -46,11 +46,11 @@ export function BorderKey({ ctx }: { ctx: PageContext }) {
               <button type="button" aria-pressed={on} disabled={!pickable} onClick={() => ctx.setFocus(on ? undefined : b.id)}>
                 {/* A plain span, not the no-wrap name: a long border (Netherlands–Germany/Luxembourg) wraps rather than pushing its value out of the panel. */}
                 <KeyList items={[{ key: b.id, mark: { kind: 'line', color: b.color, dashed: ctx.fixture }, label: <span>{b.name}</span> }]} />
-                <span className="gf-series-value">{t?.latest && b.own ? b.own.def.unit.format(t.latest.v) : '–'}</span>
+                <span className="gf-series-value">{t?.latest && b.own ? figureText(b.own.def.unit, t.latest.v) : '–'}</span>
               </button>
               {t?.latest && t.latest.t !== stamp && <span className="gf-series-when">Latest for {periodLabel(t.latest.t, step)}</span>}
               <span className="gf-series-when">
-                {t && t.held > 0 ? `${step ? cadenceText(step) : 'Step unknown'}: ${heldText(t)} ${stepWords(step)} held` : `No ${role.own} held in this window`}
+                {t && t.held > 0 ? `${step ? cadenceText(step) : 'Step unknown'}: ${heldText(t)} ${stepWords(step, t.expected !== null && t.held < t.expected ? t.expected : t.held)} held` : `No ${role.own} held in this window`}
               </span>
             </li>
           )
@@ -68,13 +68,13 @@ export function BorderKey({ ctx }: { ctx: PageContext }) {
           <dl className="gf-stats">
             <div>
               <dt>Mean</dt>
-              <dd>{selTally.mean === null ? '–' : unit.format(selTally.mean)}</dd>
+              <dd>{selTally.mean === null ? '–' : figureText(unit, selTally.mean)}</dd>
             </div>
             {selTally.high && (
               <div>
                 <dt>Highest</dt>
                 <dd>
-                  {unit.format(selTally.high.v)}
+                  {figureText(unit, selTally.high.v)}
                   <span className="gf-stat-when">{when(selTally.high.t)}</span>
                 </dd>
               </div>
@@ -83,7 +83,7 @@ export function BorderKey({ ctx }: { ctx: PageContext }) {
               <div>
                 <dt>Lowest</dt>
                 <dd>
-                  {unit.format(selTally.low.v)}
+                  {figureText(unit, selTally.low.v)}
                   <span className="gf-stat-when">{when(selTally.low.t)}</span>
                 </dd>
               </div>
@@ -97,13 +97,13 @@ export function BorderKey({ ctx }: { ctx: PageContext }) {
             {besideTally && besideTally.held > 0 && sel.beside && (
               <div>
                 <dt>{cap(role.beside)}, mean</dt>
-                <dd>{besideTally.mean === null ? '–' : sel.beside.def.unit.format(besideTally.mean)}</dd>
+                <dd>{besideTally.mean === null ? '–' : figureText(sel.beside.def.unit, besideTally.mean)}</dd>
               </div>
             )}
           </dl>
           <p className="gf-hint">
-            Of the {selTally.held.toLocaleString('en-GB')} {stepWords(sel.own?.step ?? null)} held, each counted once.
-            {besideTally && besideTally.held > 0 ? ` The ${role.beside}’s mean is of its own ${stepWords(sel.beside?.step ?? null)} held.` : ''} A zero is as published: nothing moved in the direction held. The other direction isn’t held.
+            Of the {selTally.held.toLocaleString('en-GB')} {stepWords(sel.own?.step ?? null, selTally.held)} held{selTally.held > 1 ? ', each counted once' : ''}.
+            {besideTally && besideTally.held > 0 ? ` The ${role.beside}’s mean is of its own ${stepWords(sel.beside?.step ?? null)} held.` : ''} A zero is as published. The other direction isn’t held.
           </p>
         </>
       )}

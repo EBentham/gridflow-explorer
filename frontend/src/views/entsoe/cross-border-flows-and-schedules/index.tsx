@@ -183,7 +183,7 @@ const zonePanels: PanelSlots = {
   side: about,
 }
 
-const ONE_DIRECTION = 'gridflow asks for one direction on each border, with the first-named area as the in area, so the other direction isn’t held and nothing here is a net figure.'
+const ONE_DIRECTION = 'gridflow asks for one direction on each border, with the first-named area as the in area, so the other direction isn’t held and no net flow can be worked out here. Whether ENTSO-E’s value for one direction is already net of the other isn’t known.'
 
 const view = defineView({
   title: 'Cross-border flows and schedules',

@@ -10,7 +10,7 @@ import { dayLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
 import { heldDayStarts, sideDays } from './figures'
 import { focusedZone, zonesOf } from './model'
-import { stepWords } from './words'
+import { figureText, stepWords } from './words'
 
 export function ZoneDays({ ctx }: { ctx: PageContext }) {
   const w = ctx.window
@@ -21,7 +21,7 @@ export function ZoneDays({ ctx }: { ctx: PageContext }) {
   const step = z.inSide?.step ?? z.outSide?.step ?? null
   const unit = line?.def.unit
   const days = sideDays(z.inSide?.points ?? [], z.outSide?.points ?? [], step, w)
-  const mean = (v: number | null) => (v === null || !unit ? '–' : unit.plain(v))
+  const mean = (v: number | null) => (v === null || !unit ? '–' : figureText(unit, v, true))
   const both = days.some((d) => d.both > 0)
   const anyHeld = heldDayStarts(zones.flatMap((x) => [x.inSide?.points ?? [], x.outSide?.points ?? []]))
 

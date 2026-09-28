@@ -11,7 +11,7 @@ import type { PageContext } from '../../define'
 import { SIDE_COLORS } from './areas'
 import { sideDays, windowTally, type Tally } from './figures'
 import { focusedZone, latestStamp, SIDE_LABELS, zonesOf, type Line, type Zone } from './model'
-import { stepWords } from './words'
+import { figureText, stepWords } from './words'
 
 const cap = (s: string) => `${s[0].toUpperCase()}${s.slice(1)}`
 
@@ -62,7 +62,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
             <li key={z.id} className={on ? 'is-focus' : focused ? 'is-muted' : undefined}>
               <button type="button" aria-pressed={on} disabled={!pickable} onClick={() => ctx.setFocus(on ? undefined : z.id)}>
                 <span className="gf-series-name">{z.name}</span>
-                <span className="gf-series-value">{latest ? latest.line.def.unit.format(latest.v) : '–'}</span>
+                <span className="gf-series-value">{latest ? figureText(latest.line.def.unit, latest.v) : '–'}</span>
               </button>
               {latest && (
                 <span className="gf-series-when">
@@ -71,7 +71,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
                 </span>
               )}
               <span className="gf-series-when">
-                In area {(tallies.in?.held ?? 0).toLocaleString('en-GB')}, out area {(tallies.out?.held ?? 0).toLocaleString('en-GB')}, of {(expected ?? held).toLocaleString('en-GB')} {stepWords(step)}
+                In area {(tallies.in?.held ?? 0).toLocaleString('en-GB')}, out area {(tallies.out?.held ?? 0).toLocaleString('en-GB')}, of {(expected ?? held).toLocaleString('en-GB')} {stepWords(step, expected ?? held)}
               </span>
             </li>
           )
@@ -90,10 +90,10 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
                 <div key={side}>
                   <dt>{cap(SIDE_LABELS[side])}</dt>
                   <dd>
-                    {t.mean === null ? '–' : `${line.def.unit.format(t.mean)} mean`}
+                    {t.mean === null ? '–' : `${figureText(line.def.unit, t.mean)} mean`}
                     {t.high && (
                       <span className="gf-stat-when">
-                        Highest {line.def.unit.format(t.high.v)}, {periodLabel(t.high.t, line.step)}
+                        Highest {figureText(line.def.unit, t.high.v)}, {periodLabel(t.high.t, line.step)}
                       </span>
                     )}
                   </dd>

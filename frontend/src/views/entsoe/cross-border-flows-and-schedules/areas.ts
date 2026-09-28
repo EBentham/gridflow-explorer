@@ -51,8 +51,11 @@ export const AREA_GROUPS: GroupSpec[] = AREAS.map((a) => ({ value: a.code, label
  */
 export const BESIDE_COLOR = 'var(--fuel-pumped_storage)'
 
-/** A zone named as the in area, and as the out area, in the net positions. */
-export const SIDE_COLORS = { in: 'var(--fuel-imports)', out: 'var(--fuel-hydro)' } as const
+/**
+ * A zone named as the in area, and as the out area, in the net positions:
+ * orange against blue, neither a direction's colour nor near the accent.
+ */
+export const SIDE_COLORS = { in: 'var(--fuel-gas)', out: 'var(--fuel-hydro)' } as const
 
 const areaOf = (code: string | null | undefined) => AREAS.find((a) => a.code === code)
 

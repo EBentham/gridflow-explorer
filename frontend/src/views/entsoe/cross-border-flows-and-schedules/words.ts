@@ -6,9 +6,10 @@
  * is open.
  */
 import { listText, plural } from '../../../design/format'
-import { cadenceText, dayLabel, stepNoun } from '../../../design/time'
+import { cadenceText, dayLabel, londonMidnight, stepNoun } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
-import { daysOf, isPartial, sideDays } from './figures'
+import type { DisplayUnit } from '../../_template/units'
+import { daysOf, isPartial, sideDays, type Point } from './figures'
 import type { Line } from './model'
 
 interface Named {
@@ -74,14 +75,33 @@ function missingText(byName: Map<string, Set<number>>, heldDays: Set<number>, ev
   const shared = names.length > 1 ? (missing.get(names[0]) ?? []).filter((d) => names.every((n) => missing.get(n)?.includes(d))) : []
   const parts: string[] = []
   if (shared.length) parts.push(`${prep} ${every} on ${daysText(shared)}`)
+  // Names missing steps on the same days are said together.
+  const groups = new Map<string, { names: string[]; days: number[] }>()
   for (const n of names) {
     const own = (missing.get(n) ?? []).filter((d) => !shared.includes(d))
-    if (own.length) parts.push(`${prep} ${n} on ${daysText(own)}`)
+    if (!own.length) continue
+    const g = groups.get(own.join()) ?? { names: [], days: own }
+    g.names.push(n)
+    groups.set(own.join(), g)
   }
+  for (const g of groups.values()) parts.push(`${prep} ${listText(g.names)} on ${daysText(g.days)}`)
   return parts.length ? `Some steps are missing: ${parts.join('; ')}.` : ''
 }
 
-/** The borders' days that miss some of their own steps. */
+/**
+ * `GB–France holds only 1 value in this window, on Mon 21 Sep, too few to
+ * read its step.`: a line whose steps can't be counted, so its missing
+ * steps can't be named either. Empty when the step is known or nothing is held.
+ */
+function unreadSentence(name: string, points: Point[], step: number | null): string {
+  if (step !== null) return ''
+  const held = points.filter((p) => p.v !== null)
+  if (!held.length) return ''
+  const days = [...new Set(held.map((p) => londonMidnight(p.t)))].sort((a, b) => a - b)
+  return `${name[0].toUpperCase()}${name.slice(1)} holds only ${plural(held.length, 'value', 'values')} in this window, on ${daysText(days)}, too few to read its step.`
+}
+
+/** The borders' days that miss some of their own steps, and the borders whose steps can't be read. */
 export function missingSentence(items: Named[], window: DateRange): string {
   const byName = new Map<string, Set<number>>()
   const heldDays = new Set<number>()
@@ -94,10 +114,11 @@ export function missingSentence(items: Named[], window: DateRange): string {
     }
     byName.set(name, days)
   }
-  return missingText(byName, heldDays, 'every border', 'on')
+  const unread = items.map(({ name, line }) => (line ? unreadSentence(name, line.points, line.step) : ''))
+  return [missingText(byName, heldDays, 'every border', 'on'), ...unread].filter(Boolean).join(' ')
 }
 
-/** The zones' days with quarter-hours held on neither side. */
+/** The zones' days with quarter-hours held on neither side, and the zones whose steps can't be read. */
 export function zoneMissingSentence(zones: Sided[], window: DateRange): string {
   const byName = new Map<string, Set<number>>()
   const heldDays = new Set<number>()
@@ -110,7 +131,8 @@ export function zoneMissingSentence(zones: Sided[], window: DateRange): string {
     }
     byName.set(z.phrase, days)
   }
-  return missingText(byName, heldDays, 'every zone', 'for')
+  const unread = zones.map((z) => unreadSentence(z.phrase, [...(z.inSide?.points ?? []), ...(z.outSide?.points ?? [])], z.inSide?.step ?? z.outSide?.step ?? null))
+  return [missingText(byName, heldDays, 'every zone', 'for'), ...unread].filter(Boolean).join(' ')
 }
 
 /**
@@ -154,5 +176,19 @@ export function belowZeroText(zones: Sided[], where: string): string {
   return below === 0 ? `No value ${where} is below zero.` : `${plural(below, `value ${where} is`, `values ${where} are`)} below zero, as published.`
 }
 
-/** `hours` or `quarter-hours`: what a line's steps are called. */
-export const stepWords = (step: number | null) => (step === null ? 'values' : stepNoun(step))
+/** `hours` or `quarter-hours`: what a line's steps are called; `hour` when there is `n` = 1 of them. */
+export function stepWords(step: number | null, n?: number): string {
+  const many = step === null ? 'values' : stepNoun(step)
+  return n === 1 ? many.replace(/s$/, '') : many
+}
+
+/**
+ * A figure as the unit prints it, except one that isn't zero but would print
+ * as zero: `under 1 MW` (`under 1` in a table cell), so a small mean never
+ * reads as an exact zero.
+ */
+export function figureText(unit: Pick<DisplayUnit, 'format' | 'plain'>, v: number, cell = false): string {
+  const print = cell ? unit.plain : unit.format
+  if (v === 0 || unit.plain(Math.abs(v)) !== unit.plain(0)) return print(v)
+  return v > 0 ? `under ${print(1)}` : `between ${print(-1)} and ${cell ? print(0) : 'zero'}`
+}

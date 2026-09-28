@@ -29,6 +29,11 @@ does meanwhile.
      (`dots`), so on an hourly or 15-minute line no mark is left for it. Meanwhile: the
      page counts these values per border or zone under the chart (`aloneIn`), and the
      Table view lists them. Wanted: a dot for a lone held value on any clock.
+   - A panel carries one step (`ChartPanel.stepMs`), and the tooltip names its period from
+     it (`periodName(t, stepMs, …)`). On GB–Netherlands and GB–Belgium the panel holds a
+     15-minute flow and an hourly schedule, so the panel takes the finer step and an hourly
+     value is shown under a 15-minute period (`14:00–14:15`). No workaround in the page.
+     Wanted: each series' period named from its own step in the tooltip.
 
 3. **No held-of-expected counts on a mixed clock.** With `stepMs` null, `daySummaries`
    gives `expected: null`, and `coverageSentences` names no partial day.
@@ -40,6 +45,10 @@ does meanwhile.
    the smaller borders). `ChartPanel` has no title.
    - Meanwhile: each panel's value-axis caption names its border and unit
      (`GB–France, MW`).
+   - A panel whose values are all zero gets an axis from −1 to 1 (`scaleOf` with `lo` =
+     `hi` = 0), so "−1" shows on a line that is never negative (GB–Ireland (SEM) on a
+     one-day window). No workaround in the page. Wanted: an all-zero panel scaled from 0
+     up, or from 0 to 1.
 
 5. **One split column only** (P4-0 NEEDS 2, again). A border is two columns (in and out
    area). Read whole, the flows answer `ambiguous_series`, so the page reads one in area
@@ -55,6 +64,12 @@ does meanwhile.
    3,000 MW; GB–Ireland (SEM) stays under 300 MW), but that is not proof. Until the ENTSO-E
    API guide (A11 and A09) settles it, the page names borders in area first
    (`GB–France`), never with an arrow, and never says import or export.
+   - The same research should settle whether a held value for one direction is already net
+     of the other. The card leaves it open ("unknown whether A11 in>out is already net",
+     `entsoe.yaml:429`). If ENTSO-E publishes each direction as the positive part of the net
+     exchange, a held value is a net figure clipped at zero, and a zero means no net flow
+     that way rather than that nothing moved. The page says it isn't known, and draws no
+     net line.
 
 7. **The net positions' sign.** Each zone is named as the in area or as the out area, with
    `REGION_CODE-----` on the other side and a positive value. Checked for 15–21 Sep, each of

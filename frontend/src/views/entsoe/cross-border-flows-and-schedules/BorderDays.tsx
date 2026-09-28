@@ -11,7 +11,7 @@ import { dayLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
 import { daysOf, heldDayStarts, heldText, isPartial } from './figures'
 import { bordersOf, focusedBorder, roleOf } from './model'
-import { stepWords } from './words'
+import { figureText, stepWords } from './words'
 
 const cap = (s: string) => `${s[0].toUpperCase()}${s.slice(1)}`
 
@@ -25,7 +25,7 @@ export function BorderDays({ ctx }: { ctx: PageContext }) {
   const days = daysOf(b.own.points, b.own.step, w)
   const besideDays = b.beside ? daysOf(b.beside.points, b.beside.step, w) : null
   const besideUnit = b.beside?.def.unit
-  const fmt = (x: { v: number } | null) => (x ? unit.plain(x.v) : '–')
+  const fmt = (x: { v: number } | null) => (x ? figureText(unit, x.v, true) : '–')
   // The cells after Held: mean, lowest, highest and zeros, and the two beside.
   const rest = besideDays ? 6 : 4
   const anyHeld = heldDayStarts(borders.flatMap((x) => [x.own?.points ?? [], x.beside?.points ?? []]))
@@ -85,14 +85,14 @@ export function BorderDays({ ctx }: { ctx: PageContext }) {
                     </button>
                   </th>
                   <td className="is-num">{d.held === 0 && d.expected !== null ? `0 of ${d.expected}` : heldText(d)}</td>
-                  <td className="is-num">{d.mean === null ? '–' : unit.plain(d.mean)}</td>
+                  <td className="is-num">{d.mean === null ? '–' : figureText(unit, d.mean, true)}</td>
                   <td className="is-num">{fmt(d.low)}</td>
                   <td className="is-num">{fmt(d.high)}</td>
                   <td className="is-num">{d.held ? d.zero.toLocaleString('en-GB') : '–'}</td>
                   {s && (
                     <>
                       <td className="is-num">{s.held ? heldText(s) : s.expected === null ? '0' : `0 of ${s.expected}`}</td>
-                      <td className="is-num">{s.mean === null || !besideUnit ? '–' : besideUnit.plain(s.mean)}</td>
+                      <td className="is-num">{s.mean === null || !besideUnit ? '–' : figureText(besideUnit, s.mean, true)}</td>
                     </>
                   )}
                 </tr>
