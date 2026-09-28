@@ -43,10 +43,11 @@ import { HorizonControl } from './HorizonControl'
 import { OutturnPanel } from './OutturnPanel'
 
 /** A related dataset in a source line, named in full with the filters its rows carry. */
-function relPart(ctx: PageContext, key: string, column: string): SourcePart[] {
+function relPart(ctx: PageContext, key: string, column?: string): SourcePart[] {
   const rel = ctx.related[key]
   if (!rel) return []
-  return [{ source: rel.source, dataset: rel.spec.dataset, columns: [column], filters: relatedFilters(rel), unit: 'GW' }]
+  // The key's narrow column names the dataset alone: a long column id would overrun it.
+  return [{ source: rel.source, dataset: rel.spec.dataset, columns: column ? [column] : undefined, filters: column ? relatedFilters(rel) : null, unit: 'GW' }]
 }
 
 const ownFilters = (ctx: PageContext) => ctx.response?.filters
@@ -61,8 +62,8 @@ const halfHourPanels: { key: SlotSpec; working: SlotSpec } = {
         columns={[forecastColumn(ctx.dataset.id), 'published_at']}
         filters={ownFilters(ctx)}
         unit="GW"
-        also={comparable(ctx) ? relPart(ctx, OUTTURN_KEY, outturnColumn(ctx.dataset.id)) : []}
-        what="the latest half-hour held, the window's peak and trough, how far ahead the forecasts drawn were issued, and the miss against outturn in MW"
+        also={comparable(ctx) ? relPart(ctx, OUTTURN_KEY) : []}
+        what="the latest half-hour, peak and trough, how far ahead each was issued, and the miss in MW"
       />
     ),
     Body: HalfHourKey,
@@ -92,8 +93,8 @@ const dailyPanels: { key: SlotSpec; working: SlotSpec } = {
         columns={[forecastColumn(ctx.dataset.id), 'published_at']}
         filters={ownFilters(ctx)}
         unit="GW"
-        also={relPart(ctx, OUTTURN_KEY, outturnColumn(ctx.dataset.id))}
-        what="the highest and lowest delivery day, the newest issue held, and the forecast less the outturn's daily peak and mean"
+        also={relPart(ctx, OUTTURN_KEY)}
+        what="the highest and lowest day, the newest issue held, and the forecast less the outturn's daily peak and mean"
       />
     ),
     Body: DailyKey,
@@ -150,7 +151,7 @@ const view = defineView({
       query: { filters: { [FORECAST_TYPE]: 'day_ahead' } },
       values: [{ column: NATIONAL_FC, label: 'National demand forecast', color: COLORS.national }],
       related: [indo],
-      chart: { mark: 'line', extremes: true, lower: false, axisWidth: AXIS_WIDTH },
+      chart: { mark: 'line', extremes: true, lower: false, axisWidth: AXIS_WIDTH, height: 440 },
       panels: halfHourPanels,
     },
     {
@@ -161,6 +162,7 @@ const view = defineView({
       sub: 'The forecast of transmission system demand, half-hour by half-hour, for the whole system (boundary N) or one of 17 boundaries within it.',
       caveats: [
         'This is not the latest forecast. gridflow keeps only the first issue of this forecast from each day it fetches it, a known fault in gridflow that is not yet fixed, so later issues that day, the ones made closest to each half-hour, aren’t held. Each half-hour shows that first issue from the latest day it was fetched for it; the key reads how far ahead those were issued.',
+        'The line can step sharply where the half-hours drawn pass from one day’s issue to the next day’s: the step is between two issues, not a change in demand.',
         'Boundary N is the whole system and opens by default; B1 to B17 are named by their codes, as the rows don’t say what area each bounds. Only N is set against outturn, which is held for the whole system alone.',
       ],
       query: (params) => {
@@ -170,7 +172,7 @@ const view = defineView({
       controls: BoundaryControl,
       values: [{ column: TRANSMISSION_FC, label: 'Transmission demand forecast', color: COLORS.transmission }],
       related: [itsdo],
-      chart: { mark: 'line', extremes: true, lower: false, axisWidth: AXIS_WIDTH },
+      chart: { mark: 'line', extremes: true, lower: false, axisWidth: AXIS_WIDTH, height: 440 },
       panels: halfHourPanels,
     },
     {

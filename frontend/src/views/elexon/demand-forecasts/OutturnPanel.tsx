@@ -12,7 +12,7 @@ import { pct, plural } from '../../../design/format'
 import { dayLabel, stepNoun, windowDomain } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
-import { daySummaries, type SeriesDef } from '../../_template/seriesModel'
+import { daySummaries, periodName, type SeriesDef } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
 import {
@@ -132,7 +132,14 @@ export function OutturnPanel({ ctx }: { ctx: PageContext }) {
           <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
         </>
       )}
-      {!comparable && <p className="gf-hint">Boundary {boundary} has no outturn held to set beside it: transmission demand outturn is for the whole system, which boundary N forecasts. Choose boundary N to compare the two.</p>}
+      {join && (join.stats.above || join.stats.below) && (
+        <p className="gf-hint">
+          {join.stats.above ? `Outturn ran furthest above the forecast in ${periodName(join.stats.above.t, model.stepMs, model.settlement)}, by ${signedMw(join.stats.above.v)} MW` : ''}
+          {join.stats.above && join.stats.below ? '; ' : ''}
+          {join.stats.below ? `${join.stats.above ? 'furthest' : 'Outturn ran furthest'} below it in ${periodName(join.stats.below.t, model.stepMs, model.settlement)}, by ${signedMw(join.stats.below.v)} MW` : ''}.
+        </p>
+      )}
+      {!comparable && <p className="gf-hint">Boundary {boundary} has no outturn held to set beside it: transmission demand outturn is national, which is boundary N. Choose boundary N to compare the two.</p>}
       {relFailed && (
         <p className="gf-hint">
           The outturn could not be read beside it, so there is no miss to show: <ErrorWords error={rel.error} />
@@ -207,7 +214,7 @@ export function OutturnPanel({ ctx }: { ctx: PageContext }) {
                   <td className="is-num">{fmt(d.high)}</td>
                   {comparable && (
                     <>
-                      <td className="is-num">{o && o.held > 0 ? fmt(o.high) : 'not held'}</td>
+                      <td className="is-num">{!o || o.held === 0 ? 'not held' : o.expected !== null && o.held < o.expected ? `${o.held} of ${o.expected} held` : fmt(o.high)}</td>
                       <ErrorCells s={errDays?.get(d.start)} />
                     </>
                   )}
@@ -219,7 +226,7 @@ export function OutturnPanel({ ctx }: { ctx: PageContext }) {
       </div>
       {shown.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
-        Held counts the {noun} of forecast held, so a day held in part is summarised in part; a peak is the highest {noun.replace(/s$/, '')} held that day.
+        Held counts the {noun} of forecast held, so a day held in part is summarised in part; a peak is the highest {noun.replace(/s$/, '')} held that day, and the outturn’s is given only on a day holding all of its own.
         {comparable
           ? ` The miss is ${outturnName} less the forecast, read over the ${noun} both hold, and a dash where they hold none in common: above zero, GB drew more than forecast. The share is the absolute misses summed over the outturn summed.`
           : ''}

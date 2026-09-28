@@ -32,7 +32,7 @@ export function DailyKey({ ctx }: { ctx: PageContext }) {
   }
   const issued = held.map((d) => figureOf(d)?.issued).filter((t): t is number => typeof t === 'number')
   const newest = issued.length ? Math.max(...issued) : null
-  // The newest issue's delivery days, from every day read (the window may cut it).
+  // The newest issue's delivery days among those read: the window may cut it short.
   const newestDates = newest === null ? [] : [...ownMap.entries()].filter(([, f]) => f.issued === newest).map(([date]) => date).sort()
   const ahead = held.flatMap((d) => {
     const f = figureOf(d)
@@ -71,7 +71,7 @@ export function DailyKey({ ctx }: { ctx: PageContext }) {
               {instantLabel(newest)}
               {newestDates.length > 0 && (
                 <span className="gf-stat-when">
-                  for {newestDates.length > 1 ? `${fmtDay(newestDates[0])} to ${fmtDay(newestDates[newestDates.length - 1])}` : fmtDay(newestDates[0])}
+                  for {newestDates.length > 1 ? `${fmtDay(newestDates[0])} to ${fmtDay(newestDates[newestDates.length - 1])}` : fmtDay(newestDates[0])} in this window
                 </span>
               )}
             </dd>

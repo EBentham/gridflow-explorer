@@ -3,8 +3,7 @@
  * half-hour held, the window's peak and trough, then how far ahead the held
  * forecasts were issued (read from each row's own issue time: this is what
  * says which forecast the page shows), and, where outturn is read beside it,
- * the mean miss and the half-hours where outturn ran furthest from it. Every
- * figure comes from the rows read.
+ * the mean miss. Every figure comes from the rows read.
  */
 import { KeyList, type KeyItem } from '../../../design/charts'
 import { instantLabel, stepNoun } from '../../../design/time'
@@ -73,9 +72,6 @@ export function HalfHourKey({ ctx }: { ctx: PageContext }) {
           </>
         )}
       </dl>
-      <p className="gf-hint">
-        Peak and trough are of the {own.count.toLocaleString('en-GB')} {noun} held.
-      </p>
       {issue ? (
         <>
           <dl className="gf-stats">
@@ -94,7 +90,7 @@ export function HalfHourKey({ ctx }: { ctx: PageContext }) {
             </div>
           </dl>
           <p className="gf-hint">
-            How long before each half-hour began the forecast drawn for it was issued, over the {issue.count.toLocaleString('en-GB')} half-hours held with an issue time.
+            How long before each half-hour the forecast drawn for it was issued, over the {issue.count.toLocaleString('en-GB')} held.
           </p>
         </>
       ) : (
@@ -110,27 +106,9 @@ export function HalfHourKey({ ctx }: { ctx: PageContext }) {
                 <span className="gf-stat-when">mean absolute {ERROR_UNIT.plain(join.stats.sumAbs / join.stats.count)} MW</span>
               </dd>
             </div>
-            {join.stats.above && (
-              <div>
-                <dt>Most above forecast</dt>
-                <dd>
-                  {signedMw(join.stats.above.v)} MW
-                  <span className="gf-stat-when">{when(join.stats.above.t)}</span>
-                </dd>
-              </div>
-            )}
-            {join.stats.below && (
-              <div>
-                <dt>Most below forecast</dt>
-                <dd>
-                  {signedMw(join.stats.below.v)} MW
-                  <span className="gf-stat-when">{when(join.stats.below.t)}</span>
-                </dd>
-              </div>
-            )}
           </dl>
           <p className="gf-hint">
-            The miss is {outturnName} less the forecast, at the {join.stats.count.toLocaleString('en-GB')} {noun} both hold: above zero, GB drew more than forecast.
+            {outturnName.charAt(0).toUpperCase() + outturnName.slice(1)} less the forecast, at the {join.stats.count.toLocaleString('en-GB')} {noun} both hold.
           </p>
         </>
       )}
