@@ -206,8 +206,8 @@ function Profile({ ctx, zones, focus, bucketed }: { ctx: PageContext; zones: Zon
 
   return (
     <>
-      {/* The shared KeyList has no mark for a single pale band, so this key draws its own, in the same list. */}
-      <ul className="gf-key">
+      {/* The shared KeyList has no mark for a single pale band, so this key draws its own, in the same list, in a row: the zone table above already lists the zones. */}
+      <ul className="gf-key" style={{ display: 'flex', flexWrap: 'wrap', columnGap: 18, rowGap: 6 }}>
         {lines.map((l) => (
           <li key={l.key}>
             <svg width="22" height="10" aria-hidden="true">
