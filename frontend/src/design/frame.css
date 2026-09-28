@@ -1,0 +1,598 @@
+/* The screen frame (DESIGN §5): head, toolbar, the panel grid, and what sits
+   in panels (keys, stats, day tables, the data table, states, the fixture
+   tag). Colours come only from tokens.css. */
+
+.gf-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.is-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================================================================ head */
+
+.gf-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+  padding-bottom: 2px;
+}
+.gf-head-text {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding-bottom: 4px;
+}
+.gf-head-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.gf-head h1 {
+  font-family: var(--font-display);
+  font-size: var(--h1-size);
+  font-weight: var(--h1-weight);
+  font-stretch: 86%;
+  font-variation-settings: 'wdth' 86;
+  letter-spacing: var(--h1-tracking);
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.gf-head-sub {
+  max-width: 88ch;
+  color: var(--ink-2);
+}
+.gf-head-stamp {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ================================================================ toolbar */
+
+.gf-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  padding: 8px 10px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+}
+.gf-toolbar .gf-range {
+  flex: 1 1 auto;
+}
+.gf-toolbar-note,
+.gf-range-note {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* segmented control: the active segment is a chartreuse fill with ink text */
+.gf-seg {
+  display: inline-flex;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--raised);
+}
+.gf-seg button {
+  font-size: 13px;
+  color: var(--ink-2);
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--rule-strong);
+  padding: 4px 11px;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+.gf-seg button:first-child {
+  border-left: 0;
+}
+.gf-seg button:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+.gf-seg button.is-on {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.gf-seg button.is-on:hover {
+  background: var(--accent-hover);
+}
+
+.gf-range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+.gf-range-custom {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.gf-range-custom input {
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+}
+
+/* coverage: how much of the range isn't held locally, and the fetch */
+.gf-coverage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px dashed var(--fixture-ink);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: 13px;
+}
+.gf-coverage.is-failed {
+  border-color: var(--status-fail);
+}
+.gf-coverage button {
+  padding: 3px 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 150ms ease-out;
+}
+.gf-coverage button:hover {
+  border-color: var(--ink-2);
+}
+
+/* ================================================================ panels and the grid */
+
+.gf-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 272px;
+  grid-template-areas:
+    'main key'
+    'wide side';
+  gap: 12px;
+  align-items: start;
+}
+.gf-p-main {
+  grid-area: main;
+}
+.gf-p-key {
+  grid-area: key;
+  align-self: stretch;
+}
+.gf-p-wide {
+  grid-area: wide;
+}
+.gf-p-side {
+  grid-area: side;
+}
+
+.gf-panel {
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 11px 14px 14px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gf-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.gf-panel h2 {
+  font-family: var(--font-display);
+  font-size: var(--h2-size);
+  font-weight: 680;
+  font-stretch: 92%;
+  font-variation-settings: 'wdth' 92;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+}
+.gf-src {
+  margin: -2px 0 4px;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.gf-hint {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+/* loading, empty, error and refreshing states inside a panel */
+.gf-state {
+  padding: 48px 0;
+  color: var(--muted);
+  max-width: 72ch;
+}
+.gf-state.is-error {
+  color: var(--status-fail);
+}
+
+/* fixture marker: dashed ochre, never chartreuse */
+.gf-fixture {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fixture-ink);
+  background: var(--fixture-bg);
+  border: 1px dashed var(--fixture-ink);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+/* ================================================================ keys, stats, facts */
+
+.gf-key {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+}
+.gf-key li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.gf-key svg {
+  flex: none;
+}
+.gf-key-band {
+  flex: none;
+  width: 22px;
+  height: 12px;
+  background: var(--band-css);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.gf-stats,
+.gf-facts {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.gf-stats div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.gf-stats dt,
+.gf-facts dt {
+  color: var(--ink-2);
+}
+.gf-stats dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+.gf-facts div {
+  display: grid;
+  gap: 1px;
+}
+.gf-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ================================================================ day tables */
+
+.gf-days {
+  max-height: 268px;
+  overflow: auto;
+}
+.gf-days table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.gf-days th,
+.gf-days td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+  text-align: left;
+}
+.gf-days .is-num {
+  text-align: right;
+}
+.gf-days thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  font-weight: 400;
+  color: var(--muted);
+  border-bottom-color: var(--rule-strong);
+}
+.gf-days tbody th {
+  font-weight: 500;
+}
+.gf-days tbody th button {
+  all: unset;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.gf-days tbody th button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.gf-days tbody tr:hover {
+  background: var(--hover);
+}
+.gf-days tbody tr.is-on {
+  background: var(--selected);
+}
+.gf-days tbody tr.is-on th {
+  font-weight: 700;
+}
+.gf-days .is-flag {
+  font-weight: 700;
+}
+.gf-days tr.is-missing th,
+.gf-days tr.is-missing td {
+  color: var(--muted);
+  font-weight: 400;
+}
+/* a day holding some of its periods, not all: "2 of 48" in its Held column */
+.gf-days tr.is-partial td:first-of-type {
+  font-weight: 700;
+}
+/* five columns in a 272px side panel: tighter cells, so none is cut off */
+.gf-days.is-tight th,
+.gf-days.is-tight td {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+/* ================================================================ the data table (Chart | Table) */
+
+.gf-table-wrap {
+  overflow: auto;
+  max-height: 380px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+}
+.gf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-data);
+  font-size: 13px;
+}
+.gf-table caption {
+  padding: 6px 8px;
+  text-align: left;
+  caption-side: top;
+  color: var(--muted);
+}
+.gf-table th,
+.gf-table td {
+  padding: 4px 10px;
+  border-top: 1px solid var(--rule);
+  white-space: nowrap;
+}
+.gf-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  text-align: left;
+  font-weight: 400;
+  color: var(--muted);
+  border-top: 0;
+  border-bottom: 1px solid var(--rule-strong);
+}
+.gf-table thead th.is-num {
+  text-align: right;
+}
+.gf-table tbody tr:hover {
+  background: var(--hover);
+}
+
+/* ================================================================ runs, interval checks, gates */
+
+.gf-runs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 268px;
+  overflow: auto;
+  font-size: 13px;
+}
+.gf-runs li {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 1px 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.gf-runs li::before {
+  content: '';
+  grid-row: 1 / span 2;
+  align-self: stretch;
+  background: var(--band-css);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.gf-runs-when {
+  font-weight: 600;
+}
+.gf-runs-what {
+  color: var(--ink-2);
+}
+
+.gf-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  font-size: 13px;
+}
+.gf-checks li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+}
+.gf-checks-value {
+  color: var(--ink-2);
+}
+.gf-checks-meter {
+  grid-column: 1 / -1;
+  position: relative;
+  height: 8px;
+  background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+.gf-checks-meter span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--chart-fan);
+  opacity: 0.7;
+}
+.gf-checks-meter i {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 0;
+  border-left: 1.5px solid var(--ink);
+}
+
+.gf-metrics table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.gf-metrics th,
+.gf-metrics td {
+  text-align: left;
+  padding: 5px 12px 5px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.gf-metrics .is-num {
+  text-align: right;
+}
+.gf-metrics thead th {
+  font-weight: 400;
+  color: var(--muted);
+}
+.gf-metrics tbody th {
+  font-weight: 500;
+}
+.gf-metrics-rule {
+  color: var(--ink-2);
+}
+.gf-status {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-weight: 600;
+}
+.gf-status.is-pass {
+  color: var(--status-pass);
+}
+.gf-status.is-fail {
+  color: var(--status-fail);
+}
+.gf-status.is-unknown {
+  color: var(--muted);
+}
+.gf-caveat {
+  margin: 4px 0 0;
+  max-width: 68ch;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* ================================================================ links and breadcrumbs */
+
+.gf-crumb {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.gf-crumb-link {
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-color: var(--link-line);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.gf-crumb-link:hover {
+  color: var(--ink);
+}
+/* a link into a screen: ink with a chartreuse underline */
+.gf-view-link {
+  position: relative;
+  z-index: 1;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.gf-view-link:hover {
+  text-decoration-color: var(--accent-hover);
+}
+.is-none {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ================================================================ narrower windows */
+
+@media (max-width: 1180px) {
+  .gf-grid {
+    grid-template-columns: minmax(0, 1fr) 240px;
+  }
+}
+@media (max-width: 1020px) {
+  .gf-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'main main'
+      'key side'
+      'wide wide';
+  }
+  .gf-head .gf-emblem {
+    width: 84px;
+    height: 45px;
+  }
+}
+@media (max-width: 760px) {
+  .gf-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'main' 'key' 'side' 'wide';
+  }
+}

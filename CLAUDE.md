@@ -40,3 +40,20 @@ architecture and run commands.
   applies here exactly as in gridflow/gridflow_models. `.claude/` is
   local-only and gitignored; hooks run on system Python (this repo has no
   `.venv`).
+
+## Worktree gates
+
+Pipeline dispatchers and builders read this section for worktree setup and gates.
+
+- **No uv sync.** There is no root `pyproject.toml`, and worktrees have no `.venv`. Skip
+  the sync step.
+- **Backend tests:** from `<worktree>/backend`, run
+  `C:/Users/Bobbo/OneDrive/Desktop/Python/gridflow_explorer/backend/.venv/Scripts/python.exe -m pytest -x -q`.
+  The package is an editable install of the main checkout, and `python -m` puts the cwd
+  first on `sys.path`, so run it from `<worktree>/backend`.
+- **Ruff:** from `<worktree>/backend`, run
+  `C:/Users/Bobbo/OneDrive/Desktop/Python/gridflow_explorer/backend/.venv/Scripts/ruff.exe check .`
+  and `... ruff.exe format --check .`. Never bare `ruff`.
+- **mypy:** not enabled.
+- **Frontend:** in `<worktree>/frontend`, run `npm ci` once (retry with
+  `NODE_OPTIONS=--use-system-ca` on a TLS error), then `npm run build` and `npm run lint`.

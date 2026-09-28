@@ -20,11 +20,13 @@ from app.errors import ApiError, error_envelope
 from app.routers.datasets import router as datasets_router
 from app.routers.forecasts import router as forecasts_router
 from app.routers.jobs import router as jobs_router
+from app.sources import router as sources_router
 
 app = FastAPI(title="gridflow-explorer")
 app.include_router(datasets_router)
 app.include_router(forecasts_router)
 app.include_router(jobs_router)
+app.include_router(sources_router)
 
 
 @app.exception_handler(ApiError)
@@ -45,7 +47,7 @@ def handle_api_error(request: Request, exc: ApiError) -> JSONResponse:
 
 
 @app.get("/api/health")
-def health() -> dict[str, str]:
+async def health() -> dict[str, str]:
     """Liveness probe.
 
     Returns:

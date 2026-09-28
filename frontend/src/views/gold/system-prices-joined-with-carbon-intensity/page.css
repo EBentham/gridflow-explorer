@@ -1,0 +1,18 @@
+/* The working panel's second part: a heading in the panel headings' face, a step down from the H2 in size and weight. */
+.gf-imbctx-sub {
+  margin: 14px 0 2px;
+  font-family: var(--font-display);
+  font-size: var(--text-size);
+  font-weight: 650;
+  font-stretch: 92%;
+  font-variation-settings: 'wdth' 92;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+}
+
+/* A low extreme in the price panel is labelled below its dot, over the next
+   panel's top margin: the price panel sits above the panels after it so the
+   next panel's surface doesn't cover the label. */
+.gf-imbctx-chart .gf-chart-stack > .gf-chart:first-child {
+  z-index: 1;
+}

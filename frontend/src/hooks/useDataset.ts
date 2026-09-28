@@ -12,25 +12,28 @@ interface UseDatasetResult {
 }
 
 /**
- * Fetches one dataset's records for `range`. The effect depends on
- * `range.start`/`range.end` (not the `range` object), so a fresh object
- * with unchanged values — e.g. re-clicking the active preset — does not
- * retrigger a fetch. `refetch` bumps an internal counter included in the
- * same dependency array, so a P3 fetch-job completion can force a reload
- * of an otherwise-unchanged range.
+ * Fetches one dataset's records for `range`; a null range (the latest local
+ * day is still being read) waits without fetching. The effect depends on
+ * `range.start`/`range.end` (not the `range` object), so a fresh object with
+ * unchanged values, e.g. re-clicking the active preset, does not retrigger a
+ * fetch. `refetch` bumps an internal counter in the same dependency array,
+ * so a fetch-job completion can force a reload of an unchanged range.
  */
-export function useDataset(datasetId: string, range: DateRange): UseDatasetResult {
+export function useDataset(datasetId: string, range: DateRange | null): UseDatasetResult {
   const [data, setData] = useState<DataRecord[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<ApiError | null>(null)
   const [refetchTick, setRefetchTick] = useState(0)
+  const start = range?.start
+  const end = range?.end
 
   useEffect(() => {
+    if (!start || !end) return undefined
     const controller = new AbortController()
     setLoading(true)
     setError(null)
 
-    const path = `/api/datasets/${datasetId}/data?start=${range.start}&end=${range.end}`
+    const path = `/api/datasets/${datasetId}/data?start=${start}&end=${end}`
     fetchJson<DataRecord[]>(path, controller.signal)
       .then(setData)
       .catch((err: unknown) => {
@@ -39,12 +42,12 @@ export function useDataset(datasetId: string, range: DateRange): UseDatasetResul
       })
       .finally(() => {
         // An aborted request's replacement may already be in flight (StrictMode's
-        // dev double-effect, or a fast range change) — do not flip loading off for it.
+        // dev double-effect, or a fast range change): don't flip loading off for it.
         if (!controller.signal.aborted) setLoading(false)
       })
 
     return () => controller.abort()
-  }, [datasetId, range.start, range.end, refetchTick])
+  }, [datasetId, start, end, refetchTick])
 
   const refetch = useCallback(() => setRefetchTick((tick) => tick + 1), [])
 

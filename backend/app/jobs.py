@@ -40,7 +40,11 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
-_LOCK_MARKERS = ("could not set lock", "conflicting lock")
+_LOCK_MARKERS = (
+    "could not set lock",
+    "conflicting lock",
+    "the process cannot access the file because it is being used by another process",
+)
 
 
 def is_lock_error(text: str) -> bool:

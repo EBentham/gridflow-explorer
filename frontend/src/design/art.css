@@ -1,0 +1,99 @@
+/* Line art: the rail glyphs, the head emblems and the source symbols, all in
+   the gridflow site's grammar (round caps, non-scaling strokes, a ground
+   line). Colours come only from tokens.css. */
+
+.gf-glyph,
+.gf-emblem {
+  display: block;
+  overflow: visible;
+}
+.gf-stroke {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.gf-glyph .gf-stroke {
+  stroke-width: 1.2;
+}
+.gf-fill {
+  fill: currentColor;
+}
+.gf-glyph-ground {
+  opacity: 0.55;
+}
+
+/* the head emblem: the screen's glyph on a hatched ground, quiet */
+.gf-emblem {
+  flex: none;
+  color: var(--glyph);
+}
+.gf-emblem .gf-wire {
+  stroke-width: 0.8;
+  opacity: 0.75;
+}
+.gf-emblem .gf-ground {
+  color: var(--glyph-ground);
+  stroke-width: 1.3;
+}
+.gf-emblem .gf-hatch {
+  fill: none;
+  stroke: var(--glyph-ground);
+  stroke-width: 0.8;
+  opacity: 0.7;
+}
+
+/* The only motion: the rotor turns slowly on the wind screen, or while its
+   rail item is hovered, and only when the viewer allows motion. */
+.gf-rotor {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .is-wind .gf-rotor,
+  .gf-nav-item.is-turbine:hover .gf-rotor {
+    animation: gf-spin 18s linear infinite;
+  }
+  .is-wind .gf-emblem > g:nth-of-type(2) .gf-rotor {
+    animation-duration: 14s;
+  }
+  .is-wind .gf-emblem > g:nth-of-type(3) .gf-rotor {
+    animation-duration: 22s;
+  }
+}
+@keyframes gf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ================================================================ source symbols */
+
+.gf-sym {
+  display: block;
+  flex: none;
+  overflow: visible;
+}
+.gf-sym.is-electricity {
+  color: var(--dom-electricity);
+}
+.gf-sym.is-gas {
+  color: var(--dom-gas);
+}
+.gf-sym.is-weather {
+  color: var(--dom-weather);
+}
+.gf-sym .gf-stroke {
+  stroke-width: 1.4;
+}
+.gf-sym .gf-tint {
+  fill: currentColor;
+  opacity: 0.2;
+}
+.gf-sym .gf-node {
+  fill: var(--panel);
+}
+.gf-sym-ground {
+  opacity: 0.55;
+}

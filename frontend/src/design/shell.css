@@ -1,0 +1,228 @@
+/* The shell (DESIGN §4): a 96px sticky rail with the brand, the pinned
+   screens and the foot; the main column; the land line along the bottom of
+   the viewport. Colours come only from tokens.css. */
+
+.gf-shell {
+  display: grid;
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
+  min-height: 100svh;
+  background: var(--bg);
+}
+
+/* ================================================================ rail */
+
+.gf-rail {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  box-sizing: border-box;
+  padding: 18px 0 var(--land-h);
+  display: flex;
+  flex-direction: column;
+  background: var(--rail-bg);
+  color: var(--rail-ink-2);
+  overflow: hidden;
+}
+
+/* the brand is the way home: it opens the catalogue */
+.gf-brand {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  margin: 0 6px 8px;
+  padding: 8px 2px 14px;
+  border-bottom: 1px solid var(--rail-rule);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: background-color 150ms ease-out;
+}
+.gf-brand:hover {
+  background: var(--rail-hover);
+}
+.gf-brand-name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--rail-ink);
+}
+.gf-brand-sub {
+  font-size: 12px;
+  color: var(--rail-muted);
+}
+.gf-brand.is-active .gf-brand-sub {
+  padding-bottom: 2px;
+  color: var(--rail-ink);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* pinned screens only: never a list of datasets */
+.gf-nav {
+  display: grid;
+  gap: 2px;
+  padding: 4px 6px;
+}
+.gf-nav-item {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 12px 4px 11px;
+  border-radius: var(--radius-sm);
+  color: var(--rail-ink-2);
+  text-decoration: none;
+  text-align: center;
+  font-size: 12.5px;
+  line-height: 1.2;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+.gf-nav-item:hover {
+  background: var(--rail-hover);
+  color: var(--rail-ink);
+}
+.gf-nav-item.is-active {
+  color: var(--rail-ink);
+  font-weight: 600;
+}
+.gf-nav-label {
+  padding-bottom: 3px;
+  text-wrap: balance;
+}
+.gf-nav-item.is-active .gf-nav-label {
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+.gf-nav-item .gf-glyph {
+  color: var(--rail-ink-2);
+}
+.gf-nav-item.is-active .gf-glyph {
+  color: var(--accent);
+}
+.gf-nav-fixture {
+  margin-top: -2px;
+  font-size: 11.5px;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--rail-fixture);
+}
+
+/* ================================================================ rail foot */
+
+.gf-rail-foot {
+  margin-top: auto;
+  display: grid;
+  gap: 2px;
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: var(--rail-muted);
+  text-align: center;
+}
+.gf-rail-foot p {
+  margin: 0;
+  padding: 0 8px;
+}
+.gf-hills {
+  display: block;
+  width: 100%;
+  height: 40px;
+  margin-top: 10px;
+}
+.gf-hill-far {
+  fill: var(--hill-far);
+}
+.gf-hill-near {
+  fill: var(--hill-near);
+}
+
+/* light/dark switch: sun and moon, chartreuse on the active mode */
+.gf-theme {
+  justify-self: center;
+  display: inline-flex;
+  gap: 2px;
+  margin-bottom: 12px;
+  padding: 2px;
+  border: 1px solid var(--rail-rule);
+  border-radius: var(--radius-sm);
+}
+.gf-theme button {
+  all: unset;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 26px;
+  border-radius: 2px;
+  color: var(--rail-muted);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+.gf-theme button:hover {
+  background: var(--rail-hover);
+  color: var(--rail-ink);
+}
+.gf-theme button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.gf-theme button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.gf-theme .gf-stroke {
+  stroke-width: 1.4;
+}
+
+/* ================================================================ main and the land */
+
+.gf-main {
+  min-width: 0;
+  padding: 18px 24px calc(var(--land-h) + 28px);
+}
+
+/* the land: a thin chartreuse ground line with the site's hatching under it */
+.gf-land {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  height: var(--land-h);
+  box-sizing: border-box;
+  border-top: 1.5px solid var(--land);
+  background-color: var(--land-bg);
+  background-image: repeating-linear-gradient(-45deg, var(--land-hatch) 0 1px, transparent 1px 5px);
+  pointer-events: none;
+}
+
+/* the highlight-band hatch the dark theme's --band points at */
+.gf-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+.gf-band-wash {
+  fill: var(--accent);
+  fill-opacity: 0.07;
+}
+.gf-band-line {
+  stroke: var(--accent);
+  stroke-opacity: 0.55;
+  stroke-width: 1;
+}
+
+/* ================================================================ narrow windows */
+
+@media (max-width: 760px) {
+  :root {
+    --rail-w: 72px;
+  }
+  .gf-main {
+    padding-inline: 14px;
+  }
+  .gf-nav-label {
+    font-size: 11.5px;
+  }
+}
