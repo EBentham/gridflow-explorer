@@ -79,6 +79,9 @@ function joinHour(ts: number, held: SeriesRow[]): SeriesRow {
     row[c] = vs.length ? vs.reduce((a, b) => a + b, 0) / vs.length : null
   }
   row[CODE] = listText([...new Set(held.map(codeOf))].sort().map((c) => c || 'blank'))
+  // An hour inside one settlement day keeps the date the backend sends; its period stays blank, as an hour spans two.
+  const dates = [...new Set(held.map((r) => r.settlement_date).filter((v): v is string => typeof v === 'string'))]
+  if (dates.length === 1 && held.every((r) => r.settlement_date === dates[0])) row.settlement_date = dates[0]
   return row
 }
 

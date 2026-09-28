@@ -49,7 +49,7 @@ export function ContextKey({ ctx }: { ctx: PageContext }) {
     return (
       <>
         <KeyList items={items} />
-        <p className="gf-hint">This window is read as hourly means, so the latest half-hour, the extremes and the counts of half-hours are left out: an hour's mean hides its half-hours. Choose a shorter window to read them.</p>
+        <p className="gf-hint">This window is read as hourly means, so the latest half-hour, the half-hour extremes and the counts of half-hours are left out: an hour's mean hides its half-hours. The chart's labelled highest and lowest are hourly means. Choose a shorter window to read them.</p>
       </>
     )
   }
