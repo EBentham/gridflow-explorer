@@ -48,6 +48,9 @@ Sentence case everywhere.
     pumped_storage, imports.
   - Validated for colour-blind separation: light CVD ΔE 12.8, dark 13.5.
   - Colour follows the entity, never its index.
+  - Solar, which FUELHH doesn't carry, is not one of the nine bands. Where a dataset carries
+    it, it takes `--fuel-solar`, a yellow no other fuel uses. Its nearest fuel is biomass, at
+    ΔE2000 12.4–13.0, or 9.7 for tritan, in light, and 12.1–12.8, or 9.8 for tritan, in dark.
 - **Domains:** `--dom-electricity` (petrol), `--dom-gas` (clay) and `--dom-weather` (ochre)
   for symbols and rules; `--dcol-*` for the solid column header bands.
 - **Dataset kinds:** `--kind-series`, `--kind-events` and `--kind-reference` for the

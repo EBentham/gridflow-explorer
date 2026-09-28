@@ -94,6 +94,8 @@
   --fuel-other: #a39a6a;
   --fuel-pumped_storage: #7c6aa8;
   --fuel-imports: #66793b;
+  /* Solar is outside the nine stacked bands (FUELHH carries none); checked for colour-blind separation from every fuel. */
+  --fuel-solar: #f5c518;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -165,6 +167,7 @@
     --fuel-other: #b3aa7c;
     --fuel-pumped_storage: #9a88c8;
     --fuel-imports: #8aa153;
+    --fuel-solar: #fde047;
   }
 }
 
@@ -236,6 +239,7 @@
   --fuel-other: #b3aa7c;
   --fuel-pumped_storage: #9a88c8;
   --fuel-imports: #8aa153;
+  --fuel-solar: #fde047;
 }
 
 /* ---------------------------------------------------------------- catalogue: domains, dataset kinds, landing scene, strata */
