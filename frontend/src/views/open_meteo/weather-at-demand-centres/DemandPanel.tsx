@@ -49,7 +49,7 @@ export function DemandPanel({ ctx }: { ctx: PageContext }) {
     model.bucketed && model.stepMs
       ? `each city’s ${meansText(model.stepMs)} with a temperature`
       : 'each city’s hours with a temperature, of each UK day’s hours (23 or 25 on a clock-change day) for each of the seven'
-  const demandHead = dModel?.bucketed ? 'Demand values held' : 'Half-hours of demand'
+  const demandHead = dModel?.bucketed ? 'Demand values' : 'Demand half-hours'
   const demandSteps = dModel?.bucketed && dModel.stepMs ? `the ${meansText(dModel.stepMs)} held, so the peak is the highest mean` : 'the half-hours held'
 
   return (
@@ -81,10 +81,10 @@ export function DemandPanel({ ctx }: { ctx: PageContext }) {
                 Warmest
               </th>
               <th scope="col" className="is-num">
-                Heating degrees, {kUnit?.label ?? 'unit unconfirmed'}
+                Heating, {kUnit?.label ?? 'unit unconfirmed'}
               </th>
               <th scope="col" className="is-num">
-                Cooling degrees
+                Cooling, {kUnit?.label ?? 'unit unconfirmed'}
               </th>
               <th scope="col" className="is-num">
                 {demandHead}
