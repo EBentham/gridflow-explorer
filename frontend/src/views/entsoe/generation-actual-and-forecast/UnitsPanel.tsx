@@ -25,6 +25,7 @@ export function UnitsPanel({ ctx }: { ctx: PageContext }) {
   const mw = u.units[0].track.def.unit
   const plain = (v: number | null | undefined) => (v === null || v === undefined ? dash : mw.plain(v))
   const total = u.total
+  const mixed = new Set(u.units.map((r) => r.track.step)).size > 1
   const possible = total?.step ? Math.max(...u.units.map((r) => r.track.points.length)) : null
 
   let chart = null
@@ -53,7 +54,7 @@ export function UnitsPanel({ ctx }: { ctx: PageContext }) {
       {ctx.mode === 'chart' && total && total.points.length > 1 && (
         <p className="gf-hint">
           Above, every {u.type.label.toLowerCase()} unit in {u.zone.prose} summed, {perText(total.step, u.bucketed)}, at the {plural(total.points.length, stepWords(total.step, u.bucketed).replace(/s$/, ''), stepWords(total.step, u.bucketed))} they all hold
-          {possible && possible > total.points.length ? ` (the unit holding most holds ${possible.toLocaleString('en-GB')})` : ''}. It is the units ENTSO-E lists, not the zone’s whole {u.type.label.toLowerCase()} output.
+          {possible && possible > total.points.length ? ` (the unit holding most holds ${possible.toLocaleString('en-GB')})` : ''}. {mixed ? 'A unit held more often is averaged into each longer step it holds in full. ' : ''}It is the units ENTSO-E lists, not the zone’s whole {u.type.label.toLowerCase()} output.
         </p>
       )}
       <p className="gf-hint">Every unit over the window, largest mean output first:</p>

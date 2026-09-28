@@ -21,6 +21,7 @@ import { AXIS_WIDTH, LOAD_KEY, markGaps, perText, pointsOf, statsOf, stepWords, 
 import { zoneForecasts, zoneInView, type ZoneForecast } from './total'
 
 const dash = '–'
+const AVG = 'A series held more often is averaged into each longer step it holds in full.'
 const MEASURE = { gen: 'var(--chart-actual)', load: 'var(--chart-fan)', diff: 'var(--fuel-other)' } as const
 
 const meanOf = (points: Point[]) => (points.length ? points.reduce((s, p) => s + p.v, 0) / points.length : null)
@@ -240,7 +241,7 @@ export function BalancePanel({ ctx }: { ctx: PageContext }) {
       {shown.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
         {name}’s generation is forecast {perText(gen.step, model.bucketed)}
-        {z.load ? `, its load ${perText(z.load.step, model.bucketed)}` : ''}; the two are set against each other on the coarser clock, over the {noun} both hold. Held counts the {stepWords(gen.step, model.bucketed)} of generation forecast held, so a day held in part is summarised in part. The zones’ own means in the first table are over the steps both hold; each day’s means are over the steps each forecast holds that day. The two are separate ENTSO-E forecasts, and the rows don’t say whether they count the same plant and the same demand, so generation less load is not a forecast of exports or imports.
+        {z.load ? `, its load ${perText(z.load.step, model.bucketed)}` : ''}; the two are set against each other on the coarser clock, over the {noun} both hold.{z.load && z.load.step !== gen.step ? ` ${AVG}` : ''} Held counts the {stepWords(gen.step, model.bucketed)} of generation forecast held, so a day held in part is summarised in part. The zones’ own means in the first table are over the steps both hold; each day’s means are over the steps each forecast holds that day. The two are separate ENTSO-E forecasts, and the rows don’t say whether they count the same plant and the same demand, so generation less load is not a forecast of exports or imports.
         {ctx.mode === 'chart' ? ' Select a zone to draw it here and alone above, and a day to mark it on every chart.' : ' Select a zone to read its days, and a day to mark it.'}
       </p>
     </>

@@ -21,6 +21,7 @@ export function UnitsKey({ ctx }: { ctx: PageContext }) {
   const total = u.total ? statsOf(u.total.points) : null
   const when = (t: number) => periodLabel(t, u.total?.step ?? null)
   const undrawn = u.units.length - drawn.length
+  const mixed = new Set(u.units.map((r) => r.track.step)).size > 1
   // The latest time most drawn units share is said once, under the list; a unit held to another time names its own.
   const stamp = commonLatest(drawn.map((r) => r.latest?.t))
   const stampStep = drawn.find((r) => r.latest?.t === stamp)?.track.step ?? null
@@ -76,7 +77,7 @@ export function UnitsKey({ ctx }: { ctx: PageContext }) {
       </dl>
       <p className="gf-hint">
         None above zero counts units whose every value held in the window is zero or less.
-        {total && total.count > 0 ? ` All units sums every unit at the ${total.count.toLocaleString('en-GB')} ${stepWords(u.total?.step ?? null, u.bucketed)} they all hold.` : ' The units hold no step in common, so there is no sum to give.'}
+        {total && total.count > 0 ? ` All units sums every unit at the ${total.count.toLocaleString('en-GB')} ${stepWords(u.total?.step ?? null, u.bucketed)} they all hold${mixed ? ', a unit held more often averaged into each longer step it holds in full' : ''}.` : ' The units hold no step in common, so there is no sum to give.'}
       </p>
     </>
   )

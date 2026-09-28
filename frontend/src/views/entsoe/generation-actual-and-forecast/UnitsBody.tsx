@@ -31,7 +31,7 @@ export function UnitsBody({ ctx }: { ctx: PageContext }) {
     <div className="gf-notes">
       <p>
         {count}
-        {u.units.length > UNITS_DRAWN ? `; the chart draws the ${UNITS_DRAWN} with the highest mean output, and the working panel lists every one` : ''}.{steps.length > 1 ? ` Units report on different clocks here (${steps.join(', ')}): each line runs on its own.` : ''}
+        {u.units.length > UNITS_DRAWN && ctx.mode === 'chart' ? `; the chart draws the ${UNITS_DRAWN} with the highest mean output, and the working panel lists every one` : ''}.{steps.length > 1 ? ` Units report on different clocks here (${steps.join(', ')}): each line runs on its own.` : ''}
       </p>
     </div>
   )

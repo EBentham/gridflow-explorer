@@ -21,6 +21,7 @@ import { AXIS_WIDTH, markGaps, perText, pointsOf, statsOf, stepWords, trackDays,
 import { windSolarOf } from './windSolar'
 
 const dash = '–'
+const AVG = 'A series held more often is averaged into each longer step it holds in full.'
 const MEASURE = { total: 'var(--chart-actual)', sum: 'var(--chart-fan)', diff: 'var(--fuel-other)' } as const
 
 function meanOf(points: Point[]): number | null {
@@ -186,7 +187,7 @@ export function WindSolarPanel({ ctx }: { ctx: PageContext }) {
       {shown.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
         Held counts the {stepWords(ws.sum?.step ?? null, ws.bucketed)} with a forecast for every type {zone.prose} holds. Each mean is over the steps that series holds that day; the difference, and the count above the total, over the steps both hold. {zone.label}’s wind and solar come {perText(ws.sum?.step ?? null, ws.bucketed)}
-        {ws.total ? `, its total ${perText(ws.total.step, ws.bucketed)}` : ''}. The total is a separate ENTSO-E forecast, and the rows don’t say whether it counts the same wind and solar, so the difference is not a forecast of any other kind of plant.
+        {ws.total ? `, its total ${perText(ws.total.step, ws.bucketed)}` : ''}.{ws.total && ws.sum && ws.total.step !== ws.sum.step ? ` ${AVG}` : ''} The total is a separate ENTSO-E forecast, and the rows don’t say whether it counts the same wind and solar, so the difference is not a forecast of any other kind of plant.
         {ctx.mode === 'chart' ? ' Select a day to mark it on every chart.' : ' Select a day to mark it.'}
       </p>
     </>

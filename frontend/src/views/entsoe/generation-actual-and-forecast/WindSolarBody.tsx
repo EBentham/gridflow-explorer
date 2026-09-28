@@ -14,6 +14,7 @@ import { dayLabel, windowDomain } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
 import { SeriesBody } from '../../_template/SeriesBody'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
+import { seriesId } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
 import { AXIS_WIDTH, commonStep, focusedDef, markGaps, partialDaySentences, perText } from './figures'
 import { WindHatch } from './WindHatch'
@@ -51,7 +52,8 @@ export function WindSolarBody({ ctx }: { ctx: PageContext }) {
     )
   }
 
-  const defs = ws.held.map((k) => k.def)
+  // A focused offshore band is drawn and labelled in wind's colour: its hatch can't colour a line or a label.
+  const defs = ws.held.map((k) => (k.def.group === 'B18' && ctx.focus && seriesId(k.def) === ctx.focus ? { ...k.def, color: 'var(--fuel-wind)' } : k.def))
   if (!defs.length) return <p className="gf-state">Rows are held for {zone.prose} in this window, but none of them holds a forecast value.</p>
   const focus = focusedDef(ctx, defs)
   const names = ws.types.filter((x) => x.track).map((x) => (x.type.code === 'B18' ? `${x.type.prose} (hatched)` : x.type.prose))

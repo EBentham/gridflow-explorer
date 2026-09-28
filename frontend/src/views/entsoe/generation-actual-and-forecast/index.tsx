@@ -233,7 +233,7 @@ const view = defineView({
         },
         working: {
           title: (ctx) => (ctx.mode === 'chart' ? `All ${unitWhat(ctx)}, summed and one by one` : `All ${unitWhat(ctx)}, one by one`),
-          src: (ctx) => <SourceLine ctx={ctx} columns={[OUTPUT]} by={UNIT} filters={ctx.response?.filters} unit={ctx.mode === 'chart' ? 'GW and MW' : 'MW'} what="the units summed at the steps all hold, then each unit’s steps held, mean, lowest, highest and latest" />,
+          src: (ctx) => <SourceLine ctx={ctx} columns={[OUTPUT]} by={UNIT} filters={ctx.response?.filters} unit={ctx.mode === 'chart' ? 'GW and MW' : 'MW'} what={ctx.mode === 'chart' ? 'the units summed at the steps all hold, then each unit’s steps held, mean, lowest, highest and latest' : 'each unit’s steps held, mean, lowest, highest and latest'} />,
           Body: UnitsPanel,
         },
       },
