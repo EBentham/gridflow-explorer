@@ -57,3 +57,9 @@ does meanwhile.
    folder. The page keeps the read, and says in the main panel when it fails or holds
    nothing. Wanted: related reads that don't hold the page's own rows (draw those, then add
    the related panel with its own loading line), or a faster benchmark read in the backend.
+
+9. **The upper panel's lowest tick has no label.** With a lower panel under it, `SeriesChart`
+   gives the zones' panel a round scale down to −100 (7 days) or −200 (30 days) for a few
+   euros below zero, and that lowest tick is drawn without its label, so the space under
+   zero reads as unlabelled. The GB panel under it labels its own. Not worked around here;
+   the scale and the ticks are the template's.
