@@ -13,8 +13,9 @@ and what it doesn't.
 
 - **A catalogue of 172 datasets from 9 sources:** Elexon BMRS, ENTSO-E, NESO Carbon
   Intensity, the NESO Data Portal, ENTSO-G, GIE AGSI+ and ALSI, Open-Meteo, and
-  gridflow's own derived "gold" tables. It is built live from gridflow's source registry,
-  so a dataset added to gridflow shows up here with no frontend change.
+  gridflow's own derived "gold" tables. The catalogue is one committed spec generated
+  from gridflow's source configuration. Its datasets, grains and identity columns drive
+  both the landing page and the API.
 - **25 dataset pages, each on one shared template.** Every page has the same frame: a
   chart or table, a key, and an "about this data" panel naming the exact table, columns,
   units, cadence and local coverage. Bespoke pages add their own panels. Examples are the
@@ -56,8 +57,8 @@ FastAPI (single uvicorn worker)
 GridflowClient (read-only)  ->  DuckDB catalogue  ->  Parquet silver/gold on disk
 ```
 
-**The rows endpoint** is the part most of the app stands on. It works from gridflow's
-source registry, so it knows every dataset's time column, grain and identity columns.
+**The rows endpoint** is the part most of the app stands on. It works from the source
+spec, so it knows every dataset's time column, grain and identity columns.
 
 - It validates the whole query (window, filters, grouping) before touching DuckDB, so a
   bad request fails fast with a precise 4xx.
