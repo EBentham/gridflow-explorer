@@ -14,10 +14,6 @@ import type { GroupSpec } from '../../define'
 import type { SeriesDef, SeriesModel } from '../../_template/seriesModel'
 
 export const GTI = 'global_tilted_irradiance_wm2'
-export const GHI = 'shortwave_radiation_wm2'
-export const DIRECT = 'direct_radiation_wm2'
-export const DNI = 'direct_normal_irradiance_wm2'
-export const DIFFUSE = 'diffuse_radiation_wm2'
 /** GB solar generation in NESO's historic generation mix. */
 export const SOLAR_MW = 'solar'
 
@@ -39,7 +35,14 @@ const SITE_LIST: [string, string][] = [
   ['oxfordshire', 'Oxfordshire'],
 ]
 
-export const SITES: GroupSpec[] = SITE_LIST.map(([value, label], i) => ({ value, label, color: SERIES_COLORS[i] }))
+/**
+ * Picked from the series tokens so no two sites share a hue family, and none
+ * takes the ink that GB solar generation is drawn in (`--chart-price` is ink
+ * in the dark theme, so it is left out).
+ */
+const SITE_COLORS = [6, 1, 7, 3, 4, 5].map((i) => SERIES_COLORS[i])
+
+export const SITES: GroupSpec[] = SITE_LIST.map(([value, label], i) => ({ value, label, color: SITE_COLORS[i] }))
 
 /** The archive's sites beside the re-run: the same colours, named as the archive. */
 export const ARCHIVE_SITES: GroupSpec[] = SITES.map((s) => ({ ...s, label: `${s.label}, archive` }))

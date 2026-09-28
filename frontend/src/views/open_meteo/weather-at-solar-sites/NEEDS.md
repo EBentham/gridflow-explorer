@@ -13,8 +13,11 @@
   page leaves those columns out and says so. The card (and the manifest) should list them one by one.
 - **`values` can't follow a control.** A "Measure" switch (tilted, flat ground, diffuse, cloud
   cover) would let one chart read each column across the six sites, but `values` and
-  `chart.values` are static. What the page does instead: it draws the tilted panel only, and
-  the table (one row per hour and site) lists the other W/m² columns.
+  `chart.values` are static. Listing the other W/m² columns in `values` doesn't help either:
+  with the lower panel taken by a related dataset, `planPanels` sends them to the table and the
+  main panel says they are there "as their unit fits neither panel", which is untrue for W/m²
+  columns beside a W/m² chart (30 site-column names in one sentence). What the page does
+  instead: `values` holds the tilted panel only, and a caveat says the other columns are held.
 - **No overlay of a related series on the main axis** (as `elexon/demand-outturn/NEEDS.md`
   says). The model re-run and the archive are both W/m² at the same sites, but the archive
   can only go in the lower panel. The working panel sets them side by side in numbers.

@@ -26,13 +26,14 @@ export function RerunPanel({ ctx }: { ctx: PageContext }) {
   }
   const rel = ctx.related[ARCHIVE_KEY]
   const aModel = rel?.series ?? null
-  const fetched = ctx.response ? isoValues(ctx.response.rows, 'available_at') : []
+  // Fetch times a few microseconds apart read as one minute: list the distinct minutes.
+  const fetched = [...new Set((ctx.response ? isoValues(ctx.response.rows, 'available_at') : []).map((iso) => instantLabel(toMs(iso), { year: true })))]
   const fetchedText =
     fetched.length === 0
       ? null
       : fetched.length === 1
-        ? `The re-run’s rows in this window were fetched at ${instantLabel(toMs(fetched[0]), { year: true })}.`
-        : `The re-run’s rows in this window were fetched between ${instantLabel(toMs(fetched[0]), { year: true })} and ${instantLabel(toMs(fetched[fetched.length - 1]), { year: true })}.`
+        ? `The re-run’s rows in this window were fetched at ${fetched[0]}.`
+        : `The re-run’s rows in this window were fetched at ${plural(fetched.length, 'time', 'different times')}, from ${fetched[0]} to ${fetched[fetched.length - 1]}.`
 
   if (!aModel || !(hourly(model) && hourly(aModel))) {
     return (

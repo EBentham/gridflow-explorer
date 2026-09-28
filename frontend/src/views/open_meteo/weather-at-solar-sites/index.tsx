@@ -12,7 +12,7 @@
 import { SourceLine } from '../../_template/panels'
 import { relatedParts } from '../../_template/panelHelpers'
 import { defineView, type PageContext } from '../../define'
-import { ARCHIVE_KEY, ARCHIVE_SITES, AXIS_WIDTH, DIFFUSE, DIRECT, DNI, GHI, GTI, OUTPUT_KEY, SITES, SOLAR_MW, seriesOf, sitesOf } from './figures'
+import { ARCHIVE_KEY, ARCHIVE_SITES, AXIS_WIDTH, GTI, OUTPUT_KEY, SITES, SOLAR_MW, seriesOf, sitesOf } from './figures'
 import { IrradiationPanel } from './IrradiationPanel'
 import { RerunPanel } from './RerunPanel'
 import { SiteKey } from './SiteKey'
@@ -27,10 +27,10 @@ const keySrc = (ctx: PageContext, lower: string, column: string) => {
 
 const view = defineView({
   title: 'Weather at solar sites',
-  sub: 'Hourly sunlight at six places that stand for where GB’s solar panels are, on a tilted panel and on flat ground, from Open-Meteo’s historical archive and from its forecast model re-run for past days.',
+  sub: 'Hourly sunlight on a tilted panel at six places that stand for where GB’s solar panels are, from Open-Meteo’s historical archive and from its forecast model re-run for past days.',
   caveats: [
     'The six sites are points gridflow chose to stand for where GB’s solar capacity sits, at approximate centres: they are not named solar farms, and the page neither weights nor averages them.',
-    'Tilted means a panel tilted 35° and facing due south, a common GB fixed mount; flat ground is the sunlight on a level surface.',
+    'Tilted means a panel tilted 35° and facing due south, a common GB fixed mount.',
     STAMP,
   ],
   datasets: [
@@ -40,18 +40,12 @@ const view = defineView({
       label: 'Historical archive',
       title: 'Tilted irradiance per hour, with GB solar generation',
       caveats: [
-        'The publisher says its reanalysis arrives about five days late, yet this archive holds hours up to the day before today. The newest days may change when they are fetched again.',
+        'The publisher documents its reanalysis as arriving about five days late, yet this archive holds hours up to the newest day shown. What fills those newest days is not confirmed here, and they may change when fetched again.',
         'GB solar generation, under the chart, is NESO’s figure from its historic generation mix, read for the same window and set beside the sites for comparison. Because irradiance is stamped at the end of its hour, its lines sit to the right of the generation they go with.',
-        'Cloud cover, temperature and snow are held for these sites too, but their units are not confirmed, so this page leaves them out. The table lists sunlight on flat ground, with its direct, direct normal and diffuse parts, beside the tilted panel drawn here.',
+        'Sunlight on flat ground, with its direct and diffuse parts, is held for these sites too, as are cloud cover, temperature and snow. This page draws the tilted panel only, one measure across the six sites; the units of cloud cover, temperature and snow are not confirmed in any case.',
       ],
       query: { group: 'location' },
-      values: [
-        { column: GTI, label: 'Tilted panel' },
-        { column: GHI, label: 'Flat ground' },
-        { column: DIRECT, label: 'Direct, flat ground' },
-        { column: DNI, label: 'Direct normal' },
-        { column: DIFFUSE, label: 'Diffuse' },
-      ],
+      values: [{ column: GTI, label: 'Tilted panel' }],
       groups: SITES,
       related: [
         {
@@ -95,10 +89,7 @@ const view = defineView({
         'Under the chart is the historical archive for the same sites and hours, so the two can be read against each other.',
       ],
       query: { group: 'location' },
-      values: [
-        { column: GTI, label: 'Tilted panel' },
-        { column: GHI, label: 'Flat ground' },
-      ],
+      values: [{ column: GTI, label: 'Tilted panel' }],
       groups: SITES,
       related: [
         {
