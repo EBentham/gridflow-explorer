@@ -63,3 +63,11 @@ does meanwhile.
    euros below zero, and that lowest tick is drawn without its label, so the space under
    zero reads as unlabelled. The GB panel under it labels its own. Not worked around here;
    the scale and the ticks are the template's.
+
+10. **Adding to About hides it until the rows land.** The template shows the side panel in
+    every state only when its body is the template's `About` itself; a page's own body that
+    renders `About` and adds a paragraph (as the GB benchmark and outages pages do) waits for
+    the rows, up to 139 s here (item 8), and is replaced on an error. This page therefore uses
+    `About` as it stands, and says what GB's line is, with the link to its page, in the main
+    panel instead, under the chart or above the table. Wanted: a flag on the slot (say
+    `about: true`) so a page can add a paragraph under About without losing it while loading.

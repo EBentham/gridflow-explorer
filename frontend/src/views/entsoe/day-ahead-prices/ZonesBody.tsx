@@ -9,7 +9,8 @@
  * periods are then named on its own clock, its highest and lowest labelled
  * and its runs below zero banded. In the Table view, the template's table,
  * after a note on Ireland's hourly column. Above either, the days some zone
- * holds only in part, zone by zone.
+ * holds only in part, zone by zone; under the chart, or above the table,
+ * what GB's benchmark is and isn't, with a link to its page.
  */
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
@@ -38,10 +39,20 @@ export function ZonesBody({ ctx }: { ctx: PageContext }) {
     </div>
   )
 
+  const to = `${GB_ROUTE}?from=${window.start}&to=${window.end}`
+  const gbLink = (
+    <>
+      The benchmark has <Link to={to}>its own page</Link>, opened on {ctx.windowText}.
+    </>
+  )
+
   if (ctx.mode === 'table') {
     return (
       <>
         {notes}
+        <p className="gf-hint">
+          The Chart view draws gridflow’s GB day-ahead benchmark under the zones, in pounds and on its own axis. It is taken from Elexon’s market index price, a price of short-term trading, not a day-ahead auction, and gridflow holds no exchange rate, so this page works out no spread between GB and the zones. {gbLink}
+        </p>
         {hourly.length > 0 && (
           <p className="gf-hint">
             {hourly.map((z) => z.label).join(' and ')} {hourly.length > 1 ? 'are' : 'is'} priced by the hour, so {hourly.length > 1 ? 'their columns hold' : 'its column holds'} a price on each hour’s first quarter-hour and a dash on the three after it. Anywhere else a dash is a step not held locally.
@@ -101,7 +112,6 @@ export function ZonesBody({ ctx }: { ctx: PageContext }) {
         }
       : null
   const panels = [zonePanel, gbPanel].filter((p): p is ChartPanel => p !== null)
-  const to = `${GB_ROUTE}?from=${window.start}&to=${window.end}`
 
   return (
     <>
@@ -115,7 +125,7 @@ export function ZonesBody({ ctx }: { ctx: PageContext }) {
       {gb && gb.state !== 'error' && gb.state !== 'refreshing' && !gbPanel && <p className="gf-hint">GB’s benchmark holds no price for this window, so nothing is drawn under the zones.</p>}
       <p className="gf-hint">
         {gbPanel ? 'Under the zones, gridflow’s GB day-ahead benchmark, in pounds and on its own axis. ' : ''}
-        It is taken from Elexon’s market index price, a price of short-term trading, not a day-ahead auction, and gridflow holds no exchange rate: read when the prices rise and fall together, not the gap between them. The benchmark has <Link to={to}>its own page</Link>.
+        It is taken from Elexon’s market index price, a price of short-term trading, not a day-ahead auction, and gridflow holds no exchange rate, so this page works out no spread between GB and the zones: read when the prices rise and fall together, not the gap between them. {gbLink}
       </p>
     </>
   )

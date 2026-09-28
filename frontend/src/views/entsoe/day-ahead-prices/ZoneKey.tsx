@@ -8,7 +8,7 @@
  */
 import { CHART } from '../../../design/chartTheme'
 import { currency, plural } from '../../../design/format'
-import { clock, dayLabel, periodLabel } from '../../../design/time'
+import { periodLabel } from '../../../design/time'
 import { latestValue, periodName, seriesId } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
 import { GB_KEY, GB_PRICE, seriesOf, zoneFigures, zoneNoun, type Point, type ZoneFigures } from './figures'
@@ -71,7 +71,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
           const id = seriesId(def)
           const on = ctx.focus === id
           return (
-            <li key={id} className={on ? 'is-focus' : ctx.focus ? 'is-muted' : undefined}>
+            <li key={id} className={on ? 'is-focus' : focus ? 'is-muted' : undefined}>
               <button type="button" aria-pressed={on} disabled={held.length < 2} onClick={() => ctx.setFocus(on ? undefined : id)}>
                 <Row color={z.color} label={z.label} value={z.latest ? currency(z.latest.v, '€', 2) : '–'} dashed={ctx.fixture} />
               </button>
@@ -105,7 +105,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
               <dd>
                 {eur(highest.p.v)}
                 <span className="gf-stat-when">
-                  {highest.z.label}, {dayLabel(highest.p.t)} at {clock(highest.p.t)}
+                  {highest.z.label}, {when(highest.p, highest.z)}
                 </span>
               </dd>
             </div>
@@ -116,7 +116,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
               <dd>
                 {eur(lowest.p.v)}
                 <span className="gf-stat-when">
-                  {lowest.z.label}, {dayLabel(lowest.p.t)} at {clock(lowest.p.t)}
+                  {lowest.z.label}, {when(lowest.p, lowest.z)}
                 </span>
               </dd>
             </div>

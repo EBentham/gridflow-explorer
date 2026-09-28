@@ -13,16 +13,16 @@
  * Main: each zone's line, gaps marked on its own clock, over the GB
  * benchmark (`ZonesBody`). Key: each zone's latest price, and the selected
  * zone's or the window's extremes (`ZoneKey`). Working: the zones compared,
- * their shape through the day, and each UK day (`ZonesPanel`). Side: About,
- * with why there is no GB zone and a link to the benchmark (`AboutPrices`).
+ * their shape through the day, and each UK day (`ZonesPanel`). Side: the
+ * template's About; why there is no GB zone is in the caveats, and what GB's
+ * line is, with a link to its page, is under the main panel's chart or table.
  */
 import { instantLabel } from '../../../design/time'
 import { mainSrc } from '../../_template/defaults'
 import { relatedParts } from '../../_template/panelHelpers'
-import { SourceLine } from '../../_template/panels'
+import { About, SourceLine } from '../../_template/panels'
 import type { PageContext } from '../../define'
 import { defineView } from '../../define'
-import { AboutPrices } from './AboutPrices'
 import { AREA, AXIS_WIDTH, GB_KEY, GB_PRICE, GROUPS, PRICE, seriesOf } from './figures'
 import { ZoneKey } from './ZoneKey'
 import { ZonesBody } from './ZonesBody'
@@ -36,7 +36,7 @@ function gbParts(ctx: PageContext, withColumns: boolean) {
 
 const view = defineView({
   title: 'Day-ahead prices',
-  sub: 'The price each day-ahead auction set in five European bidding zones, in euros per MWh, over gridflow’s GB benchmark in pounds, as ENTSO-E has no GB zone.',
+  sub: 'The price each day-ahead auction set in five European bidding zones, in euros per MWh, over gridflow’s GB benchmark in pounds, as ENTSO-E publishes no GB price.',
   caveats: [
     'There is no GB zone in this data: gridflow asks ENTSO-E for GB with these five zones, and ENTSO-E has published no GB day-ahead price since Brexit.',
     'France, the Netherlands, Belgium and Germany / Luxembourg are priced per quarter-hour, Ireland (SEM) per hour, and every price held is in euros.',
@@ -96,7 +96,8 @@ const view = defineView({
             const read = Date.parse(ctx.readAt)
             return <SourceLine ctx={ctx} also={gbParts(ctx, false)} what={Number.isFinite(read) ? `local coverage as read ${instantLabel(read)}` : 'local coverage'} window={false} />
           },
-          Body: AboutPrices,
+          // The template's own About: it shows in every state, loading and error included (a wrapper would wait for the rows).
+          Body: About,
         },
       },
     },
