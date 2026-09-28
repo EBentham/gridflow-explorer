@@ -68,7 +68,17 @@ function borderPanels(measure: string): PanelSlots {
         const code = inAreaOf(ctx)
         return code === GB ? `${measure} on GB’s borders` : `${measure}, ${areaName(code)} as the in area`
       },
-      src: (ctx) => <SourceLine ctx={ctx} columns={[roleOf(ctx).column]} by="out_area_code" filters={borderFilters(ctx)} unit={MW} also={besideParts(ctx)} what="one panel per border" />,
+      src: (ctx) => (
+        <SourceLine
+          ctx={ctx}
+          columns={[roleOf(ctx).column]}
+          by="out_area_code"
+          filters={borderFilters(ctx)}
+          unit={MW}
+          also={besideParts(ctx)}
+          what={ctx.mode === 'table' ? 'one row per border and time held' : 'one panel per border'}
+        />
+      ),
       Body: BorderCharts,
     },
     key: {
@@ -120,7 +130,17 @@ const netFilters = (ctx: PageContext) => ctx.response?.filters ?? IN_SIDE_QUERY.
 const zonePanels: PanelSlots = {
   main: {
     title: 'Net position by zone, sign unconfirmed',
-    src: (ctx) => <SourceLine ctx={ctx} columns={['quantity_mw']} by="in_area_code" filters={netFilters(ctx)} unit={NET_UNIT} also={outsideParts(ctx)} what="one panel per zone, its two sides apart" />,
+    src: (ctx) => (
+      <SourceLine
+        ctx={ctx}
+        columns={['quantity_mw']}
+        by="in_area_code"
+        filters={netFilters(ctx)}
+        unit={NET_UNIT}
+        also={outsideParts(ctx)}
+        what={ctx.mode === 'table' ? 'one row per zone and quarter-hour held, with the side it is named on' : 'one panel per zone, its two sides apart'}
+      />
+    ),
     Body: ZoneCharts,
   },
   key: {
@@ -174,7 +194,7 @@ const view = defineView({
       body: 'series',
       label: 'Physical flow',
       title: 'Physical flow by border',
-      sub: 'The physical flow ENTSO-E reports on GB’s borders with France, the Netherlands, Belgium and Ireland (SEM), and on four continental borders, one direction per border, with each GB border’s commercial schedule beside it.',
+      sub: 'The physical flow ENTSO-E reports on GB’s four borders and four on the continent, one direction per border, with each GB border’s commercial schedule beside it.',
       caveats: [
         `ENTSO-E reports a border’s flow one direction at a time, naming an in area and an out area. ${ONE_DIRECTION}`,
         'Which way the power moves in the direction held, into the in area or out of it, isn’t confirmed, so the page names both areas as ENTSO-E does and never calls a flow an import or an export.',

@@ -46,12 +46,15 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
 
   return (
     <>
-      <KeyList
-        items={[
-          { key: 'in', mark: { kind: 'line', color: SIDE_COLORS.in, dashed: ctx.fixture }, label: `Zone ${SIDE_LABELS.in}` },
-          { key: 'out', mark: { kind: 'line', color: SIDE_COLORS.out, dashed: ctx.fixture }, label: `Zone ${SIDE_LABELS.out}` },
-        ]}
-      />
+      {/* The sides' marks key the chart's lines; the Table view names the side in words. */}
+      {ctx.mode === 'chart' && (
+        <KeyList
+          items={[
+            { key: 'in', mark: { kind: 'line', color: SIDE_COLORS.in, dashed: ctx.fixture }, label: `Zone ${SIDE_LABELS.in}` },
+            { key: 'out', mark: { kind: 'line', color: SIDE_COLORS.out, dashed: ctx.fixture }, label: `Zone ${SIDE_LABELS.out}` },
+          ]}
+        />
+      )}
       <ul className="gf-series-key">
         {rows.map(({ z, tallies, step, held, expected, latest }) => {
           const on = ctx.focus === z.id

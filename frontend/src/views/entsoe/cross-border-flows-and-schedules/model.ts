@@ -146,8 +146,9 @@ const captioned = (def: SeriesDef, name: string): SeriesDef['unit'] => ({ ...def
  * read beside it. Alone, it takes the full height and labels its extremes.
  */
 export function borderPanel(b: Border, role: Role, alone: boolean): ChartPanel | null {
-  const own = b.own && holds(b.own) ? { ...b.own, def: { ...b.own.def, label: `${b.name}, ${role.own}`, color: b.color } } : null
-  const beside = b.beside && holds(b.beside) ? { ...b.beside, def: { ...b.beside.def, label: `${b.name}, ${role.beside}`, color: BESIDE_COLOR } } : null
+  // The two reads both key a border by its out area: the chart needs a key of its own per line.
+  const own = b.own && holds(b.own) ? { ...b.own, def: { ...b.own.def, key: `own:${b.out}`, label: `${b.name}, ${role.own}`, color: b.color } } : null
+  const beside = b.beside && holds(b.beside) ? { ...b.beside, def: { ...b.beside.def, key: `beside:${b.out}`, label: `${b.name}, ${role.beside}`, color: BESIDE_COLOR } } : null
   const lines = [beside, own].filter((l): l is Line => l !== null)
   if (!lines.length) return null
   const lead = own ?? lines[0]
@@ -204,8 +205,9 @@ export const SIDE_LABELS = { in: 'named as the in area', out: 'named as the out 
 
 /** One zone's panel: the two sides as two unsigned lines, never one signed one. */
 export function zonePanel(z: Zone, alone: boolean): ChartPanel | null {
+  // Both reads key a zone by its code: the chart needs a key of its own per side.
   const side = (line: Line | null, which: 'in' | 'out'): Line | null =>
-    line && holds(line) ? { ...line, def: { ...line.def, label: `${z.name}, ${SIDE_LABELS[which]}`, color: SIDE_COLORS[which] } } : null
+    line && holds(line) ? { ...line, def: { ...line.def, key: `${which}:${z.code}`, label: `${z.name}, ${SIDE_LABELS[which]}`, color: SIDE_COLORS[which] } } : null
   const lines = [side(z.inSide, 'in'), side(z.outSide, 'out')].filter((l): l is Line => l !== null)
   if (!lines.length) return null
   return {

@@ -36,6 +36,26 @@ export function cadenceSentence(items: Named[]): string {
   return `As held, ${parts.join('; ')}.`
 }
 
+/**
+ * `On GB–Netherlands and GB–Belgium the physical flow comes every 15 minutes
+ * and the commercial schedule hourly.`: the borders whose two datasets keep
+ * different steps, so a time one holds may be a time the other doesn't.
+ */
+export function stepsApartSentence(items: { name: string; own: Line | null; beside: Line | null }[], own: string, beside: string): string {
+  const groups = new Map<string, { a: number; b: number; names: string[] }>()
+  for (const x of items) {
+    const a = x.own?.step
+    const b = x.beside?.step
+    if (!a || !b || a === b) continue
+    const g = groups.get(`${a}|${b}`) ?? { a, b, names: [] }
+    g.names.push(x.name)
+    groups.set(`${a}|${b}`, g)
+  }
+  return [...groups.values()]
+    .map((g) => `On ${listText(g.names)} the ${own} comes ${cadenceText(g.a).toLowerCase()} and the ${beside} ${cadenceText(g.b).toLowerCase()}.`)
+    .join(' ')
+}
+
 /** `Tue 15 Sep, Fri 18 Sep and 2 more days`: at most four days named. */
 function daysText(starts: number[]): string {
   const named = starts.slice(0, 4).map(dayLabel)

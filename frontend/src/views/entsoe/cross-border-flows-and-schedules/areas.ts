@@ -37,15 +37,19 @@ const AREAS: Area[] = [
   { code: NL, name: 'Netherlands', short: 'Netherlands', color: 'var(--chart-price-2)' },
   { code: BE, name: 'Belgium', short: 'Belgium', color: 'var(--fuel-wind)' },
   { code: IE_SEM, name: 'Ireland (SEM)', short: 'Ireland (SEM)', color: 'var(--fuel-biomass)' },
-  { code: DE_LU, name: 'Germany / Luxembourg', short: 'Germany/Luxembourg', color: 'var(--fuel-pumped_storage)' },
+  { code: DE_LU, name: 'Germany / Luxembourg', short: 'Germany/Luxembourg', color: 'var(--fuel-peaking)' },
   { code: GB, name: 'Great Britain', short: 'GB', color: 'var(--fuel-other)' },
 ]
 
 /** Labels and colours for the split column's values, in drawing order. */
 export const AREA_GROUPS: GroupSpec[] = AREAS.map((a) => ({ value: a.code, label: a.name, color: a.color }))
 
-/** The dataset read beside a border's own: the schedule beside a flow, or the flow beside a schedule. */
-export const BESIDE_COLOR = 'var(--fuel-peaking)'
+/**
+ * The dataset read beside a border's own: the schedule beside a flow, or the
+ * flow beside a schedule. Purple, which none of GB's four borders uses and
+ * which stays apart from their petrol, orange, teal and gold in both themes.
+ */
+export const BESIDE_COLOR = 'var(--fuel-pumped_storage)'
 
 /** A zone named as the in area, and as the out area, in the net positions. */
 export const SIDE_COLORS = { in: 'var(--fuel-imports)', out: 'var(--fuel-hydro)' } as const
