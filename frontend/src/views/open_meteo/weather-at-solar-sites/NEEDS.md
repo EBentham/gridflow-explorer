@@ -27,5 +27,5 @@
   (site names for all three location lists, a day-total rule, the re-run caveat) would keep
   the three pages saying the same thing.
 - **The backend is slow on this dataset.** One default-window read of `historical_solar` took
-  about 320 s on the shared backend (27 Sep). Pages reading it (and this page's archive beside
-  the re-run) wait that long before they are ready.
+  about 320 s on the shared backend (27 Sep), the first read; later reads took under a
+  minute. Worth watching rather than chasing.
