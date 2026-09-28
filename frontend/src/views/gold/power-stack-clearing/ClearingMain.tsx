@@ -5,7 +5,10 @@
  * clearing demand as one bar per half-hour, coloured by the fuel of the unit
  * whose cost set the price. Table: every half-hour of the window, with what
  * set its price. Values are the rows as held: a half-hour not held is a gap
- * in the lines, no bar, and a dash in the table.
+ * in the lines, no bar, and a dash in the table. When the market index read
+ * fails, the chart is drawn without it, the table leaves out its columns, and
+ * a note gives the error: its prices weren't read, which isn't the same as
+ * not held.
  */
 import { useMemo } from 'react'
 import { Bar, CartesianGrid, Cell, ComposedChart, Line, Tooltip, XAxis, YAxis } from 'recharts'
@@ -27,10 +30,12 @@ import {
   gapOf,
   ownRows,
   priceScale,
+  readFailed,
   relatedRows,
   setterOf,
   type ClearingPoint,
 } from './figures'
+import { UnreadNote } from './UnreadNote'
 
 const PRICE_H = 270
 const DEMAND_H = 150
@@ -61,7 +66,7 @@ const priceText = (v: number | null) => (v === null ? 'no value' : `${money(v, 2
 const gwText = (v: number | null) => (v === null ? 'no value' : `${fmt1(v / 1000)} GW`)
 const dash = <span className="gf-cell-missing">–</span>
 
-function ClearingChart({ ctx, points }: { ctx: PageContext; points: ClearingPoint[] }) {
+function ClearingChart({ ctx, points, unread }: { ctx: PageContext; points: ClearingPoint[]; unread: boolean }) {
   const model = ctx.series
   const window = ctx.window
   const stepMs = model?.stepMs ?? null
@@ -103,11 +108,12 @@ function ClearingChart({ ctx, points }: { ctx: PageContext; points: ClearingPoin
     if (!active || t === undefined) return null
     const title = periodName(t, stepMs, model.settlement)
     const p = byT.get(t)
-    if (!p || (p.model === null && p.market === null && p.demand === null)) return <TooltipBox title={title} rows={[]} note="Not held locally" />
+    // With the market index unread, a half-hour the run doesn't hold may still hold a market price: say what is known of each.
+    if (!p || (!unread && p.model === null && p.market === null && p.demand === null)) return <TooltipBox title={title} rows={[]} note="Not held locally" />
     const setter = setterOf(p)
     const gap = gapOf(p)
     const tip: TipRow[] = [
-      { key: 'market', color: MARKET_COLOR, label: 'Market index price', value: priceText(p.market) },
+      { key: 'market', color: MARKET_COLOR, label: 'Market index price', value: unread ? 'not read' : priceText(p.market) },
       { key: 'model', color: MODEL_COLOR, label: p.atFloor === true ? 'Modelled price, at the floor' : 'Modelled price', value: priceText(p.model) },
     ]
     if (gap !== null) tip.push({ key: 'gap', color: 'transparent', label: 'Modelled minus market', value: priceText(gap) })
@@ -172,7 +178,7 @@ function ClearingChart({ ctx, points }: { ctx: PageContext; points: ClearingPoin
   )
 }
 
-function ClearingTable({ ctx, points }: { ctx: PageContext; points: ClearingPoint[] }) {
+function ClearingTable({ ctx, points, unread }: { ctx: PageContext; points: ClearingPoint[]; unread: boolean }) {
   const model = ctx.series
   if (!model) return null
   const settlement = model.settlement
@@ -187,8 +193,13 @@ function ClearingTable({ ctx, points }: { ctx: PageContext; points: ClearingPoin
         ]
       : []),
     { key: 'model', label: 'Modelled, £/MWh', num: true, render: (p) => money2(p.model), sortValue: (p) => p.model },
-    { key: 'market', label: 'Market index, £/MWh', num: true, render: (p) => money2(p.market), sortValue: (p) => p.market },
-    { key: 'gap', label: 'Modelled − market, £/MWh', num: true, render: (p) => money2(gapOf(p)), sortValue: gapOf },
+    // Unread, the market's columns would be all dashes, which here mean not held: they are left out, and a note says why.
+    ...(unread
+      ? []
+      : [
+          { key: 'market', label: 'Market index, £/MWh', num: true, render: (p: ClearingPoint) => money2(p.market), sortValue: (p: ClearingPoint) => p.market },
+          { key: 'gap', label: 'Modelled − market, £/MWh', num: true, render: (p: ClearingPoint) => money2(gapOf(p)), sortValue: gapOf },
+        ]),
     { key: 'set', label: 'Set by', render: (p) => setterOf(p)?.style.label ?? dash, sortValue: (p) => setterOf(p)?.style.label ?? null },
     { key: 'unit', label: 'Marginal unit', render: (p) => (p.unit ? <code>{p.unit}</code> : dash), sortValue: (p) => p.unit },
     { key: 'demand', label: 'Clearing demand, MW', num: true, render: (p) => mw(p.demand), sortValue: (p) => p.demand },
@@ -197,7 +208,7 @@ function ClearingTable({ ctx, points }: { ctx: PageContext; points: ClearingPoin
   ]
   const noun = model.bucketed && model.stepMs ? meansText(model.stepMs) : stepNoun(model.stepMs)
   // The caption spans the table, wider than its box: kept short so it shows whole; the rest goes under.
-  const caption = `${points.length.toLocaleString('en-GB')} ${noun}, oldest first, with the market index price at the same time. Select a column heading to sort.`
+  const caption = `${points.length.toLocaleString('en-GB')} ${noun}, oldest first${unread ? '' : ', with the market index price at the same time'}. Select a column heading to sort.`
   return (
     <>
       <WindowedTable columns={columns} rows={points} caption={caption} initialSort={{ key: 't', dir: 'asc' }} rowKey={(p) => p.t} />
@@ -211,5 +222,18 @@ export function ClearingMain({ ctx }: { ctx: PageContext }) {
   const market = relatedRows(ctx, 'market')
   const points = useMemo(() => clearingPoints(rows, market), [rows, market])
   if (!ctx.window || !ctx.series) return null
-  return ctx.mode === 'table' ? <ClearingTable ctx={ctx} points={points} /> : <ClearingChart ctx={ctx} points={points} />
+  const unread = readFailed(ctx, 'market')
+  const table = ctx.mode === 'table'
+  return (
+    <>
+      {table ? <ClearingTable ctx={ctx} points={points} unread={unread} /> : <ClearingChart ctx={ctx} points={points} unread={unread} />}
+      {unread && (
+        <div className="gf-notes">
+          <UnreadNote ctx={ctx} overlay="market">
+            The market index price couldn’t be read, so {table ? 'the table leaves out its columns' : 'the chart is drawn without it'}.
+          </UnreadNote>
+        </div>
+      )}
+    </>
+  )
 }

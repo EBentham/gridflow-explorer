@@ -2,14 +2,15 @@
  * The supply curve view's key: the reference lines' marks; each fuel in the
  * stack at the half-hour shown, cheapest first, with its capacity, units and
  * cost range; then where the stack clears against the market index. Figures
- * are the rows' own for that half-hour.
+ * are the rows' own for that half-hour; a market index that wasn't read says
+ * so, rather than "not held".
  */
 import { useMemo } from 'react'
-import { KeyList } from '../../../design/charts'
+import { KeyList, type KeyItem } from '../../../design/charts'
 import { fmt1, listText, money, plural } from '../../../design/format'
 import { periodName } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { FLOOR_STYLE, MARKET_COLOR, MODEL_COLOR, chosenTime, clearingAt, curveAt, curveTimes, fuelWords, fuelsIn, gapOf, marketAt, ownRows } from './figures'
+import { FLOOR_STYLE, MARKET_COLOR, MODEL_COLOR, chosenTime, clearingAt, curveAt, curveTimes, fuelWords, fuelsIn, gapOf, marketAt, ownRows, readFailed } from './figures'
 
 /** A sentence's first letter capitalised. */
 const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
@@ -30,19 +31,16 @@ export function CurveKey({ ctx }: { ctx: PageContext }) {
   const gap = clearing ? gapOf({ ...clearing, market }) : null
   const coal = fuels.find((f) => f.fuel === 'COAL')
   const chart = ctx.mode === 'chart'
+  // The key names the lines drawn: none for an overlay that wasn't read, or holds nothing at this half-hour.
+  const lines: KeyItem[] = []
+  if (market !== null) lines.push({ key: 'market', mark: { kind: 'line', color: MARKET_COLOR }, label: 'Market index price' })
+  if (clearing && clearing.demand !== null) lines.push({ key: 'model', mark: { kind: 'line', color: MODEL_COLOR }, label: 'Clearing demand, and the price the stack clears at' })
   // Fuels the design draws in one colour (coal and OCGT are both its peaking band).
   const sharing = [...new Set(fuels.map((f) => f.style.color))].map((c) => fuels.filter((f) => f.style.color === c)).filter((g) => g.length > 1)
 
   return (
     <>
-      {chart && (
-        <KeyList
-          items={[
-            { key: 'market', mark: { kind: 'line', color: MARKET_COLOR }, label: 'Market index price' },
-            { key: 'model', mark: { kind: 'line', color: MODEL_COLOR }, label: 'Clearing demand, and the price the stack clears at' },
-          ]}
-        />
-      )}
+      {chart && lines.length > 0 && <KeyList items={lines} />}
       <p className="gf-hint">For {periodName(at, model.stepMs, model.settlement)}. Cheapest fuel first; capacity is what the rows say is available.</p>
       <dl className="gf-stats">
         {fuels.map((f) => (
@@ -99,7 +97,7 @@ export function CurveKey({ ctx }: { ctx: PageContext }) {
           </div>
           <div>
             <dt>Market index price</dt>
-            <dd>{market === null ? 'not held' : money(market, 2)}</dd>
+            <dd>{readFailed(ctx, 'market') ? 'not read' : market === null ? 'not held' : money(market, 2)}</dd>
           </div>
           {gap !== null && (
             <div>

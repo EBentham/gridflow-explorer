@@ -144,6 +144,18 @@ export function publishedSearch(current: URLSearchParams, first: string, last: s
 /** Whether the family's supply-curve dataset is held, so a link to it leads somewhere. */
 export const curveHeld = (ctx: PageContext): boolean => Boolean(ctx.family.datasets.find((d) => d.id === CURVE_DATASET)?.held)
 
+/**
+ * Whether a related read failed: an error, or gridflow refreshing the local
+ * store. Its values are then missing because they weren't read, not because
+ * they aren't held, so a panel says "not read" and gives the error
+ * (`UnreadNote`). The template holds the page until every related read has
+ * answered, so no panel meets one still being read.
+ */
+export function readFailed(ctx: PageContext, key: string): boolean {
+  const state = ctx.related[key]?.state
+  return state === 'error' || state === 'refreshing'
+}
+
 /** A related dataset's rows, when they were read. */
 export function relatedRows(ctx: PageContext, key: string): SeriesRow[] | null {
   const response = ctx.related[key]?.response

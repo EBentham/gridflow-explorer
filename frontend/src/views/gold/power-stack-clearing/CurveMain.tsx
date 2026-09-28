@@ -4,7 +4,9 @@
  * capacity and as tall as its modelled cost, placed by the capacity held
  * through the merit order and coloured by fuel; the clearing demand read
  * across to where the stack clears, and the market index price at the same
- * half-hour. Table: the template's table of every row the window holds.
+ * half-hour. Table: the template's table of every row the window holds. An
+ * overlay whose read failed is left off the curve, and a note gives the
+ * error: its values weren't read, which isn't the same as not held.
  *
  * The x axis is capacity, not time, so this chart is composed here from the
  * shared theme's pieces rather than drawn by `SeriesChart` (NEEDS.md).
@@ -15,7 +17,6 @@ import { ChartFrame, Extreme, TooltipBox, ZeroLine } from '../../../design/chart
 import { CHART, CURSOR, GRID, TICK, extremeAnchor, valueAxis } from '../../../design/chartTheme'
 import { fmt0, fmt1, fmtN, money, niceTicks, plural, stepDigits } from '../../../design/format'
 import { SeriesBody } from '../../_template/SeriesBody'
-import { ErrorWords } from '../../_template/panels'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
 import {
@@ -30,10 +31,12 @@ import {
   marketAt,
   missingUnits,
   ownRows,
+  readFailed,
   unitAtDemand,
   type ClearingPoint,
   type CurveUnit,
 } from './figures'
+import { UnreadNote } from './UnreadNote'
 
 const CURVE_H = 400
 /** A block narrower than this share of the axis (about 4 px) is drawn without its surface-coloured edge. */
@@ -208,7 +211,8 @@ export function CurveMain({ ctx }: { ctx: PageContext }) {
 
   const clearing = clearingAt(ctx, at)
   const market = marketAt(ctx, at)
-  const clearingRel = ctx.related.clearing
+  const clearingRead = Boolean(ctx.related.clearing) && !readFailed(ctx, 'clearing')
+  const marketRead = Boolean(ctx.related.market) && !readFailed(ctx, 'market')
   const missing = missingUnits(rows, at)
   const within = clearing?.demand !== null && clearing?.demand !== undefined ? unitAtDemand(units, clearing.demand) : null
   const differs = clearing?.atFloor === false && clearing.unit !== null && within !== null && within.unit !== clearing.unit
@@ -217,16 +221,20 @@ export function CurveMain({ ctx }: { ctx: PageContext }) {
     <>
       <CurveChart units={units} clearing={clearing} market={market} />
       <div className="gf-notes">
-        {clearingRel && (clearingRel.state === 'error' || clearingRel.state === 'refreshing') && (
+        <UnreadNote ctx={ctx} overlay="clearing">
+          The clearing demand and price couldn’t be read, so the curve is drawn without them.
+        </UnreadNote>
+        <UnreadNote ctx={ctx} overlay="market">
+          The market index price couldn’t be read, so the curve is drawn without it.
+        </UnreadNote>
+        {clearingRead && !clearing && <p>The clearing run holds no row for this half-hour, so the curve is drawn without its clearing demand and price.</p>}
+        {clearing?.atFloor === true && (
           <p>
-            The clearing demand and price couldn’t be read, so the curve is drawn without them. <ErrorWords error={clearingRel.error} />
-          </p>
-        )}
-        {clearingRel?.state === 'data' && !clearing && <p>The clearing run holds no row for this half-hour, so the curve is drawn without its clearing demand and price.</p>}
-        {clearing?.atFloor === true && clearing.demand !== null && (
-          <p>
-            At this half-hour the clearing demand is {fmt1(clearing.demand / 1000)} GW, below zero, and the model’s price floor set the price
-            {clearing.model !== null ? `, at ${money(clearing.model, 2)}/MWh` : ''}. The line marks the clearing demand; no unit’s cost set the price.
+            {clearing.demand === null
+              ? 'At this half-hour the model’s price floor set the price'
+              : `At this half-hour the clearing demand is ${fmt1(clearing.demand / 1000)} GW${clearing.demand < 0 ? ', below zero,' : ''} and the model’s price floor set the price`}
+            {clearing.model !== null ? `, at ${money(clearing.model, 2)}/MWh` : ''}.{' '}
+            {clearing.demand === null ? 'The clearing demand isn’t held, so no line marks it; no unit’s cost set the price.' : 'The line marks the clearing demand; no unit’s cost set the price.'}
           </p>
         )}
         {differs && within && clearing?.unit && (
@@ -234,7 +242,7 @@ export function CurveMain({ ctx }: { ctx: PageContext }) {
             The clearing run names <code>{clearing.unit}</code> as the unit that set the price, but on this curve the clearing demand falls in the block of <code>{within.unit}</code>. Both are shown as held.
           </p>
         )}
-        {market === null && <p>No market index price is held for this half-hour.</p>}
+        {marketRead && market === null && <p>No market index price is held for this half-hour.</p>}
         {missing.length > 0 && (
           <p>
             {plural(missing.length, 'unit', 'units')} with rows elsewhere in this window {missing.length === 1 ? 'has' : 'have'} none for this half-hour, so {missing.length === 1 ? 'it is' : 'they are'} not in

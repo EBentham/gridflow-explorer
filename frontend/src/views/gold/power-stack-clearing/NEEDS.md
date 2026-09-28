@@ -70,3 +70,23 @@ works around each gap inside its folder.
    published window", and the clearing view's "Its supply curve" and "Open"
    links. The page never changes them on its own. Asked for: a sanctioned
    helper for a page to link to a window of one of its own datasets.
+
+9. **A slow related read holds every panel.** The template keeps the whole
+   page on "Reading the local store…" until every related read has answered:
+   in `DatasetPage.tsx`, a related read still loading makes the page's state
+   loading. The market index overlay, `gold_gb_day_ahead_benchmark`, is by
+   far this page's slowest read.
+   - Review pass 1, on `:8003`: about 43 s for any window (43.0 s for
+     5 Aug – 3 Sep, 43.7 s for 14 – 20 Sep). The clearing rows took
+     0.2–0.6 s.
+   - This branch, on `:8003`: 4.2 s for 28 Aug – 3 Sep on a quiet backend.
+     While other pages were being shot, 137 s for 5 Aug – 3 Sep, and no
+     answer within 150 s for 14 – 20 Sep.
+
+   So the clearing chart, its key and the days table, and the supply
+   curve's panels, all wait on a line they could be drawn without. The page
+   already says when an overlay's read fails (`UnreadNote`). Asked for:
+   related reads that don't hold the page's own rows (draw them, then add
+   the overlay with its own loading note), or a faster benchmark read in
+   the backend. Any page reading the benchmark as an overlay waits the same
+   way.

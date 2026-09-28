@@ -4,14 +4,17 @@
  * index prices and the mean gap between them, how often the price floor set
  * the price, and the fuel that set it most often otherwise. Select a day to
  * mark it on the charts; each held day links to its supply curves, read one
- * day at a time.
+ * day at a time. When the market index read fails, the market's two columns
+ * are left out and a note gives the error, rather than a column of dashes
+ * that would read as not held.
  */
 import { useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { fmtN, plural } from '../../../design/format'
 import { dayLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
-import { FLOOR_STYLE, clearingDays, clearingPoints, curveHeld, curveSearch, ownRows, relatedRows, type Mean } from './figures'
+import { FLOOR_STYLE, clearingDays, clearingPoints, curveHeld, curveSearch, ownRows, readFailed, relatedRows, type Mean } from './figures'
+import { UnreadNote } from './UnreadNote'
 
 const fmt = (m: Mean) => (m.mean === null ? '–' : fmtN(m.mean, 2))
 
@@ -27,6 +30,7 @@ export function ClearingDays({ ctx }: { ctx: PageContext }) {
   const first = ctx.dataset.coverage?.first_day
   const last = ctx.dataset.coverage?.last_day
   const noun = model.bucketed ? 'means' : 'half-hours'
+  const unread = readFailed(ctx, 'market')
 
   return (
     <>
@@ -41,12 +45,16 @@ export function ClearingDays({ ctx }: { ctx: PageContext }) {
               <th scope="col" className="is-num">
                 Modelled, £/MWh
               </th>
-              <th scope="col" className="is-num">
-                Market index, £/MWh
-              </th>
-              <th scope="col" className="is-num">
-                Modelled − market, £/MWh
-              </th>
+              {!unread && (
+                <>
+                  <th scope="col" className="is-num">
+                    Market index, £/MWh
+                  </th>
+                  <th scope="col" className="is-num">
+                    Modelled − market, £/MWh
+                  </th>
+                </>
+              )}
               <th scope="col" className="is-num">
                 At the floor
               </th>
@@ -63,8 +71,12 @@ export function ClearingDays({ ctx }: { ctx: PageContext }) {
                     <th scope="row">{dayLabel(d.start)}</th>
                     <td className="is-num">{d.expected === null ? '0' : `0 of ${d.expected}`}</td>
                     <td className="is-num">–</td>
-                    <td className="is-num">{fmt(d.market)}</td>
-                    <td className="is-num">–</td>
+                    {!unread && (
+                      <>
+                        <td className="is-num">{fmt(d.market)}</td>
+                        <td className="is-num">–</td>
+                      </>
+                    )}
                     <td className="is-num">–</td>
                     <td colSpan={linked ? 2 : 1}>{outside ? 'no modelled price: not held locally' : 'no modelled price held'}</td>
                   </tr>
@@ -82,8 +94,12 @@ export function ClearingDays({ ctx }: { ctx: PageContext }) {
                   </th>
                   <td className="is-num">{partial ? `${d.held} of ${d.expected}` : d.held}</td>
                   <td className="is-num">{fmt(d.model)}</td>
-                  <td className="is-num">{fmt(d.market)}</td>
-                  <td className="is-num">{fmt(d.gap)}</td>
+                  {!unread && (
+                    <>
+                      <td className="is-num">{fmt(d.market)}</td>
+                      <td className="is-num">{fmt(d.gap)}</td>
+                    </>
+                  )}
                   <td className="is-num">{d.atFloor}</td>
                   <td>
                     {mostly ? (
@@ -110,10 +126,13 @@ export function ClearingDays({ ctx }: { ctx: PageContext }) {
       </div>
       {days.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
-        Held counts the {noun} with a modelled price. Each mean is of the {noun} held that day, and modelled minus market of those holding both. Mostly set by is the fuel that set the
-        price most often where a unit set it.{ctx.mode === 'chart' ? ' Select a day to mark it on both charts.' : ' Select a day to mark it.'}
+        Held counts the {noun} with a modelled price. Each mean is of the {noun} held that day{unread ? '' : ', and modelled minus market of those holding both'}. Mostly set by is the fuel
+        that set the price most often where a unit set it.{ctx.mode === 'chart' ? ' Select a day to mark it on both charts.' : ' Select a day to mark it.'}
         {linked ? ' Open reads that day’s supply curves, one half-hour at a time.' : ''}
       </p>
+      <UnreadNote ctx={ctx} overlay="market" className="gf-hint">
+        The market index price couldn’t be read, so the table leaves out its columns.
+      </UnreadNote>
     </>
   )
 }

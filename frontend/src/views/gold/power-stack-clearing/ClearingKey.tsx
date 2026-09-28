@@ -4,6 +4,9 @@
  * the window's means and the mean gap between the model and the market; and
  * how many half-hours each fuel, or the price floor, set the price in. Every
  * figure is read from the rows; a mean says how many half-hours it is of.
+ * The market's mean is taken over the half-hours with a modelled price, so
+ * the two means compare. When the market index read fails, its figures read
+ * "not read", not "not held".
  */
 import { useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -27,6 +30,7 @@ import {
   meanOf,
   ownRows,
   priceScale,
+  readFailed,
   relatedRows,
   setterCounts,
   setterOf,
@@ -53,17 +57,21 @@ export function ClearingKey({ ctx }: { ctx: PageContext }) {
   const floorText = floors.length ? listText(floors.map((v) => `${money(v, 2)}/MWh`)) : null
   const latest = [...points].reverse().find((p) => p.model !== null)
   const when = (t: number) => periodName(t, model.stepMs, model.settlement)
-  const modelMean = meanOf(points.map((p) => p.model))
-  const marketMean = meanOf(points.map((p) => p.market))
+  const unread = readFailed(ctx, 'market')
+  const modelled = points.filter((p) => p.model !== null)
+  const modelMean = meanOf(modelled.map((p) => p.model))
+  // Over the same half-hours as the modelled mean: a window wider than the run holds market prices the model has none for.
+  const marketMean = meanOf(modelled.map((p) => p.market))
   const gapAll = meanOf(points.map(gapOf))
   const gapStack = meanOf(points.filter((p) => p.atFloor === false).map(gapOf))
   const noun = model.bucketed ? 'periods' : 'half-hours'
+  const single = noun.replace(/s$/, '')
   const unknownBars = points.some((p) => p.demand !== null && !setterOf(p))
 
-  const items: KeyItem[] = [
-    { key: 'market', mark: { kind: 'line', color: MARKET_COLOR, dashed: ctx.fixture }, label: 'Market index price, £/MWh' },
-    { key: 'model', mark: { kind: 'line', color: MODEL_COLOR, dashed: ctx.fixture }, label: 'Modelled price, £/MWh' },
-  ]
+  const items: KeyItem[] = []
+  // The key names the lines drawn: none for a market index that wasn't read, or holds nothing in this window.
+  if (points.some((p) => p.market !== null)) items.push({ key: 'market', mark: { kind: 'line', color: MARKET_COLOR, dashed: ctx.fixture }, label: 'Market index price, £/MWh' })
+  items.push({ key: 'model', mark: { kind: 'line', color: MODEL_COLOR, dashed: ctx.fixture }, label: 'Modelled price, £/MWh' })
   if (chart && runs.length) items.push({ key: 'floor', mark: { kind: 'band' }, label: 'The price floor set the modelled price' })
 
   const latestSetter = latest ? setterOf(latest) : null
@@ -80,7 +88,7 @@ export function ClearingKey({ ctx }: { ctx: PageContext }) {
             </div>
             <div>
               <dt>Market index price</dt>
-              <dd>{latest.market === null ? 'not held' : money(latest.market, 2)}</dd>
+              <dd>{unread ? 'not read' : latest.market === null ? 'not held' : money(latest.market, 2)}</dd>
             </div>
             <div>
               <dt>Set by</dt>
@@ -113,14 +121,24 @@ export function ClearingKey({ ctx }: { ctx: PageContext }) {
           <dt>Modelled, mean</dt>
           <dd>
             {modelMean.mean === null ? '–' : money(modelMean.mean, 2)}
-            <span className="gf-stat-when">of {plural(modelMean.n, noun.replace(/s$/, ''), noun)}</span>
+            <span className="gf-stat-when">of {plural(modelMean.n, single, noun)}</span>
           </dd>
         </div>
         <div>
           <dt>Market index, mean</dt>
           <dd>
-            {marketMean.mean === null ? '–' : money(marketMean.mean, 2)}
-            <span className="gf-stat-when">of {plural(marketMean.n, noun.replace(/s$/, ''), noun)}</span>
+            {unread ? (
+              'not read'
+            ) : marketMean.mean === null ? (
+              'not held'
+            ) : (
+              <>
+                {money(marketMean.mean, 2)}
+                <span className="gf-stat-when">
+                  {marketMean.n === modelMean.n ? `of the same ${plural(marketMean.n, single, noun)}` : `of ${marketMean.n.toLocaleString('en-GB')} of those ${plural(modelMean.n, single, noun)}`}
+                </span>
+              </>
+            )}
           </dd>
         </div>
         {gapAll.mean !== null && (
@@ -128,7 +146,7 @@ export function ClearingKey({ ctx }: { ctx: PageContext }) {
             <dt>Modelled minus market</dt>
             <dd>
               {money(gapAll.mean, 2)}
-              <span className="gf-stat-when">mean of the {plural(gapAll.n, noun.replace(/s$/, ''), noun)} both hold</span>
+              <span className="gf-stat-when">mean of the {plural(gapAll.n, single, noun)} both hold</span>
             </dd>
           </div>
         )}
@@ -137,7 +155,7 @@ export function ClearingKey({ ctx }: { ctx: PageContext }) {
             <dt>Where a unit set the price</dt>
             <dd>
               {money(gapStack.mean, 2)}
-              <span className="gf-stat-when">modelled minus market, of {plural(gapStack.n, noun.replace(/s$/, ''), noun)}</span>
+              <span className="gf-stat-when">modelled minus market, of {plural(gapStack.n, single, noun)}</span>
             </dd>
           </div>
         )}
