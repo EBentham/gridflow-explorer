@@ -35,7 +35,7 @@ export const ZONES: GroupSpec[] = [
 /** The working panel's measures: one zone's actual and forecast, and the error between them. */
 export const MEASURE = {
   actual: 'var(--chart-actual)',
-  forecast: 'var(--fuel-hydro)',
+  forecast: 'var(--chart-fan)',
   error: 'var(--fuel-other)',
 } as const
 
@@ -44,6 +44,9 @@ export const AXIS_WIDTH = 52
 
 /** Errors print in MW: a miss of a few hundred MW would read as 0.3 GW. */
 export const ERROR_UNIT = displayUnit('MW', 'MW')
+
+/** A signed error: `+431 MW`-style numbers, with a true minus below zero. */
+export const signedMw = (v: number) => `${Math.round(v) > 0 ? '+' : ''}${ERROR_UNIT.plain(v)}`
 
 export const zoneName = (area: string) => ZONES.find((z) => z.value === area)?.label ?? area
 

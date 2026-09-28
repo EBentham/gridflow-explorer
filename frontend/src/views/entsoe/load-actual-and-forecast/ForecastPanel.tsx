@@ -16,7 +16,7 @@ import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import { daySummaries, seriesId, type SeriesDef, type SeriesModel } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, ERROR_UNIT, MEASURE, ZONES, errorByDay, joinZone, pairOf, sameClock, zoneDef, zoneInView, zoneName, type ErrorStats } from './figures'
+import { AXIS_WIDTH, ERROR_UNIT, MEASURE, ZONES, errorByDay, joinZone, signedMw, pairOf, sameClock, zoneDef, zoneInView, zoneName, type ErrorStats } from './figures'
 
 const dash = '–'
 const mw = (v: number) => ERROR_UNIT.plain(v)
@@ -38,7 +38,7 @@ function ErrorCells({ s }: { s: ErrorStats }) {
   }
   return (
     <>
-      <td className="is-num">{mw(s.sum / s.count)}</td>
+      <td className="is-num">{signedMw(s.sum / s.count)}</td>
       <td className="is-num">{mw(s.sumAbs / s.count)}</td>
       <td className="is-num">{s.sumActual > 0 ? pct(s.sumAbs / s.sumActual) : dash}</td>
     </>
@@ -71,7 +71,7 @@ function ZoneTable({ ctx, actual, forecast, zone }: { ctx: PageContext; actual: 
               Mean absolute error, MW
             </th>
             <th scope="col" className="is-num">
-              Share of load
+              Absolute error, share of load
             </th>
           </tr>
         </thead>
@@ -168,6 +168,10 @@ export function ForecastPanel({ ctx }: { ctx: PageContext }) {
         ]
       : []
   const days = ownDef ? daySummaries(model, ctx.window, ownDef) : []
+  // A long window opening on days not fetched shows them as one row, so the held days aren't below the fold.
+  const firstHeld = days.findIndex((d) => d.held > 0)
+  const lead = firstHeld === -1 ? 0 : firstHeld
+  const shown = lead >= 2 ? days.slice(lead) : days
   const errDays = join && aDef ? errorByDay(join, ctx.window, aDef.unit.factor) : null
   const own = ownIsActual ? 'actual' : 'forecast'
   const unit = ownDef?.unit
@@ -207,10 +211,10 @@ export function ForecastPanel({ ctx }: { ctx: PageContext }) {
                 Mean {own}, GW
               </th>
               <th scope="col" className="is-num">
-                Trough
+                Trough, GW
               </th>
               <th scope="col" className="is-num">
-                Peak
+                Peak, GW
               </th>
               <th scope="col" className="is-num">
                 Mean error, MW
@@ -219,12 +223,21 @@ export function ForecastPanel({ ctx }: { ctx: PageContext }) {
                 Mean absolute error, MW
               </th>
               <th scope="col" className="is-num">
-                Share of load
+                Absolute error, share of load
               </th>
             </tr>
           </thead>
           <tbody>
-            {days.map((d) => {
+            {lead >= 2 && (
+              <tr className="is-missing">
+                <th scope="row">
+                  {dayLabel(days[0].start)} – {dayLabel(days[lead - 1].start)}
+                </th>
+                <td className="is-num">0</td>
+                <td colSpan={6}>not held locally, {plural(lead, 'day', 'days')}</td>
+              </tr>
+            )}
+            {shown.map((d) => {
               if (d.held === 0) {
                 return (
                   <tr key={d.day} className="is-missing">
@@ -255,7 +268,7 @@ export function ForecastPanel({ ctx }: { ctx: PageContext }) {
           </tbody>
         </table>
       </div>
-      {days.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
+      {shown.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
         The error is actual load less the forecast: above zero, the zone drew more than forecast. The means and the share of load are read over the {noun} both hold, a dash where they hold none in common; the share is the absolute errors summed over the actual load summed. Held counts the {noun} of {own} held, so a day held in part is summarised in part.
         {bucketed ? ` This window is read as ${noun}, so the errors are between means, and the mean absolute error can only read smaller than it would per quarter-hour.` : ''}

@@ -24,7 +24,7 @@ function otherPart(ctx: PageContext): SourcePart[] {
   const key = ctx.dataset.id === ACTUAL_ID ? FORECAST_KEY : ACTUAL_KEY
   const rel = ctx.related[key]
   if (!rel) return []
-  return [{ source: rel.source, dataset: rel.spec.dataset, columns: [key === FORECAST_KEY ? FORECAST : ACTUAL], by: AREA, filters: relatedFilters(rel), unit: 'GW, errors in MW' }]
+  return [{ source: rel.source, dataset: rel.spec.dataset, columns: [key === FORECAST_KEY ? FORECAST : ACTUAL], by: AREA, filters: relatedFilters(rel), unit: 'GW' }]
 }
 
 const ownColumn = (ctx: PageContext) => (ctx.dataset.id === ACTUAL_ID ? ACTUAL : FORECAST)
@@ -48,7 +48,7 @@ const panels: { key: SlotSpec; working: SlotSpec; side: SlotSpec } = {
         by={AREA}
         unit="GW"
         also={otherPart(ctx)}
-        what={`each zone's latest value held${latestText(ctx)}, then ${zoneText(ctx)}'s peak, trough and largest misses`}
+        what={`each zone's latest value held${latestText(ctx)}, then ${zoneText(ctx)}'s peak, trough and largest misses in MW`}
       />
     ),
     Body: ZoneKey,
@@ -62,7 +62,11 @@ const panels: { key: SlotSpec; working: SlotSpec; side: SlotSpec } = {
         by={AREA}
         unit="GW"
         also={otherPart(ctx)}
-        what={ctx.mode === 'chart' ? `${zoneText(ctx)} per quarter-hour, then each zone over the window and ${zoneText(ctx)}'s UK days` : `each zone over the window, then ${zoneText(ctx)}'s UK days`}
+        what={
+          ctx.mode === 'chart'
+            ? `${zoneText(ctx)} per quarter-hour with actual less forecast in MW, then each zone over the window and ${zoneText(ctx)}'s UK days`
+            : `actual less forecast in MW, for each zone over the window, then ${zoneText(ctx)}'s UK days`
+        }
       />
     ),
     Body: ForecastPanel,
@@ -80,6 +84,7 @@ const view = defineView({
     'The four zones are Germany-Luxembourg, France, the Netherlands and Belgium. ENTSO-E hasn’t published GB’s load since Brexit, so GB isn’t here; they matter to GB through the interconnectors, and About links GB’s own demand.',
     'Each quarter-hour holds one day-ahead forecast, as ENTSO-E showed it when gridflow fetched it. Earlier versions aren’t kept, and the rows don’t say when the forecast was made.',
     'The chart reads the zones on the UK clock, an hour behind their own Central European time: 19:00 there reads 18:00 here.',
+    'The Netherlands’ actual load runs well below its day-ahead forecast in the September rows held, by about a fifth of its load, where the other three zones miss by a few per cent. The rows don’t say why, so that gap may not be the forecast’s miss alone.',
     'ENTSO-E’s week-ahead, month-ahead and year-ahead forecasts are held too, but not drawn. ENTSO-E publishes each as two figures per day or week, the lowest and the highest load expected, and the copy held here keeps only one of the two without recording which. Drawn, it could be read as either, so the page leaves them out until both are kept.',
   ],
   datasets: [

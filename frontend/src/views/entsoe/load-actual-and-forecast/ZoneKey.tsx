@@ -11,7 +11,7 @@ import { SeriesKey } from '../../_template/panels'
 import { extremesOf, periodName } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { ERROR_UNIT, joinZone, pairOf, sameClock, zoneDef, zoneInView, zoneName } from './figures'
+import { joinZone, pairOf, sameClock, signedMw, zoneDef, zoneInView, zoneName } from './figures'
 
 export function ZoneKey({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
@@ -26,7 +26,6 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
   const step = model.stepMs
   const when = (t: number) => periodName(t, step, model.settlement)
   const noun = model.bucketed && step ? meansText(step) : stepNoun(step)
-  const signedMw = (v: number) => `${v > 0 ? '+' : ''}${ERROR_UNIT.format(v)}`
 
   return (
     <>
@@ -57,7 +56,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
           <div>
             <dt>Most above forecast</dt>
             <dd>
-              {signedMw(join.stats.above.v)}
+              {signedMw(join.stats.above.v)} MW
               <span className="gf-stat-when">{when(join.stats.above.t)}</span>
             </dd>
           </div>
@@ -66,7 +65,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
           <div>
             <dt>Most below forecast</dt>
             <dd>
-              {signedMw(join.stats.below.v)}
+              {signedMw(join.stats.below.v)} MW
               <span className="gf-stat-when">{when(join.stats.below.t)}</span>
             </dd>
           </div>
