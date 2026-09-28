@@ -38,3 +38,8 @@
    about 212 s on the shared capped backend while other pages were reading, likely because
    the table holds five years. The page asks for nothing extra, but the shots may time out
    under load.
+8. **Key labels repeat the column.** With more than one value column, `buildSeriesModel`
+   names each series `<site>, <column>`, so the key reads "Belfast, Temperature" though the
+   chart draws temperature alone. The page keeps the other columns in `values` so the
+   table and its own panels can read them. The model could name series by site alone when
+   the chart panels draw one column.

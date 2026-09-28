@@ -109,7 +109,7 @@ export interface WeatherDay {
   hdd: number | null
   cdd: number | null
   /** National demand's mean and peak over the half-hours held, when it is read. */
-  demand: { held: number; mean: number | null; peak: number | null } | null
+  demand: { held: number; expected: number | null; mean: number | null; peak: number | null } | null
 }
 
 const meanOf = (rows: SeriesModel['rows'], defs: SeriesDef[]) => spreadOf(rows, defs).mean
@@ -140,7 +140,8 @@ export function weatherDays(model: SeriesModel, window: DateRange, demand: { mod
     let dFig: WeatherDay['demand'] = null
     if (demand && dem) {
       const vals = (dem.get(start) ?? []).map((r) => r[demand.def.field]).filter((v): v is number => typeof v === 'number')
-      dFig = { held: vals.length, mean: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null, peak: vals.length ? Math.max(...vals) : null }
+      const dClockOk = !demand.model.bucketed || (demand.model.stepMs !== null && demand.model.stepMs <= HOUR_MS)
+      dFig = { held: vals.length, expected: dClockOk ? stepsInDay(start, demand.model.stepMs) : null, mean: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null, peak: vals.length ? Math.max(...vals) : null }
     }
     return {
       day,

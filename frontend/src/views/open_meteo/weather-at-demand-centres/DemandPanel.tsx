@@ -83,6 +83,9 @@ export function DemandPanel({ ctx }: { ctx: PageContext }) {
                 Cooling degrees
               </th>
               <th scope="col" className="is-num">
+                Demand held
+              </th>
+              <th scope="col" className="is-num">
                 Demand mean, {dUnit?.label ?? 'GW'}
               </th>
               <th scope="col" className="is-num">
@@ -98,7 +101,7 @@ export function DemandPanel({ ctx }: { ctx: PageContext }) {
                   <tr key={d.day} className="is-missing">
                     <th scope="row">{dayLabel(d.start)}</th>
                     <td className="is-num">{d.expected === null ? '0' : `0 of ${d.expected}`}</td>
-                    <td colSpan={7}>not held locally</td>
+                    <td colSpan={8}>not held locally</td>
                   </tr>
                 )
               }
@@ -124,9 +127,12 @@ export function DemandPanel({ ctx }: { ctx: PageContext }) {
                     </>
                   )}
                   {noDemand ? (
-                    <td colSpan={2}>{rel?.state === 'data' || rel?.state === 'empty' ? 'no demand held' : '–'}</td>
+                    <td colSpan={3}>{rel?.state === 'data' || rel?.state === 'empty' ? 'no demand held' : '–'}</td>
                   ) : (
                     <>
+                      <td className="is-num">
+                        {d.demand && d.demand.expected !== null && d.demand.held < d.demand.expected ? `${d.demand.held} of ${d.demand.expected}` : d.demand?.held}
+                      </td>
                       <td className="is-num">{fmt(d.demand?.mean, dUnit)}</td>
                       <td className="is-num">{fmt(d.demand?.peak, dUnit)}</td>
                     </>
@@ -141,7 +147,7 @@ export function DemandPanel({ ctx }: { ctx: PageContext }) {
       <p className="gf-hint">
         {heldHead} counts {heldText}. The mean and the degrees weight every city alike; a day held in part is a
         mean of the part held. Heating and cooling degrees here are the day&rsquo;s mean, so a whole day reads as its degree-days. Demand is national demand as first published,
-        its mean and peak over {demandSteps} each day; it is not matched hour by hour to the weather.
+        its mean and peak over {demandSteps} each day. A day it holds in part gives the figures of that part, and demand is not matched hour by hour to the weather.
         {ctx.mode === 'chart' ? ' Select a day to mark it on both charts.' : ' Select a day to mark it.'}
       </p>
     </>
