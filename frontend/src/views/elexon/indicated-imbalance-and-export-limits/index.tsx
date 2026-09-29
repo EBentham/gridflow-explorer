@@ -94,8 +94,8 @@ const view = defineView({
   title: 'Indicated imbalance and margin',
   sub: 'Elexon’s day and day-ahead indicated imbalance and indicated margin for boundary N, the whole system, half-hour by half-hour on one clock: each half-hour shows the first issue of the latest day it was fetched, not the latest issue.',
   caveats: [
-    'Not the latest figures: for each half-hour, gridflow keeps only the first issue of each day it fetches, though each day holds 47 (a known gridflow fault, checked against the files fetched for 1 to 5 Aug and 13 to 21 Sep 2026). Most of a past day comes from the issue made at about 01:17 BST that day; the key and the working panel name the issue behind each figure.',
-    'Boundary N, the whole system, only. Elexon publishes 18 boundaries, but gridflow’s copy drops the boundary and keeps the last row in each file, which was N’s at every half-hour checked; if that order changed, another boundary’s figures would show here unmarked.',
+    'Not the latest figures: for each half-hour, gridflow keeps only the first issue of each day it fetches, though each day holds 47 (a known gridflow fault, checked against the files fetched for 1 to 5 Aug and 13 to 21 Sep 2026). A past day usually comes mostly from the issue made at about 01:17 BST that day; the key and the working panel name the issue behind each figure.',
+    'Boundary N, the whole system, only. Elexon publishes 18 boundaries, but gridflow’s copy drops the boundary and keeps, for each half-hour, the last row of that day’s files, which was N’s at every half-hour checked; if that order changed, another boundary’s figures would show here unmarked.',
     'Within each issue the imbalance jumps at 23:00 BST, by 1.5 to 7.1 GW on all 16 nights held, where the median half-hour move is 0.4 GW; the margin moves then too, by up to 5.8 GW, though by 0.6 GW or less on 4 nights. Both move again where a newer issue takes over, usually at 01:30 BST. The rows don’t say why, and the key’s highest and lowest can fall between the two (checked 29 Sep 2026).',
     'The source list calls this family “export limits”; its second dataset is Elexon’s indicated margin.',
   ],
