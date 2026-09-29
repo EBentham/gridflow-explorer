@@ -11,7 +11,7 @@ import { ErrorWords } from '../../_template/panels'
 import { daySummaries } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { DEMAND_KEY, INDO, TEMP, seriesOf, tempText } from './figures'
+import { DEMAND_KEY, INDO, TEMP, seriesOf } from './figures'
 
 export function DaysPanel({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
@@ -36,7 +36,7 @@ export function DaysPanel({ ctx }: { ctx: PageContext }) {
             <tr>
               <th scope="col">Day</th>
               <th scope="col" className="is-num">
-                Temperature, unit unconfirmed
+                Temperature, {temp.unit.label ?? 'unit unconfirmed'}
               </th>
               <th scope="col" className="is-num">
                 {demand ? `National demand, ${noun} held` : 'National demand'}
@@ -84,7 +84,7 @@ export function DaysPanel({ ctx }: { ctx: PageContext }) {
                       {dayLabel(d.start)}
                     </button>
                   </th>
-                  <td className="is-num">{d.mean === null ? '–' : tempText(d.mean)}</td>
+                  <td className="is-num">{d.mean === null ? '–' : temp.unit.plain(d.mean)}</td>
                   {demandCells}
                 </tr>
               )

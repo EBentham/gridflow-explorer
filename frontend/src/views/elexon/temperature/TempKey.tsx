@@ -3,14 +3,14 @@
  * figure, the mean over the 7 days ending on it (only the days held, and
  * said so when fewer), the warmest and coolest days in the window, and how
  * many of the window's days hold a figure. Every figure is read from the
- * rows (`ctx.series`); the unit stays unconfirmed.
+ * rows (`ctx.series`).
  */
 import { KeyList } from '../../../design/charts'
 import { plural } from '../../../design/format'
 import { datesBetween, dayLabel } from '../../../design/time'
 import { extremesOf } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { TEMP, daysAt, heldFigures, seriesOf, sevenDayMean, tempText } from './figures'
+import { TEMP, daysAt, heldFigures, seriesOf, sevenDayMean } from './figures'
 
 export function TempKey({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
@@ -33,12 +33,12 @@ export function TempKey({ ctx }: { ctx: PageContext }) {
 
   return (
     <>
-      <KeyList items={[{ key: 'temp', mark: { kind: 'line', color: def.color, dashed: ctx.fixture }, label: `${def.label}, one figure per day, unit unconfirmed` }]} />
+      <KeyList items={[{ key: 'temp', mark: { kind: 'line', color: def.color, dashed: ctx.fixture }, label: `${def.label}, one figure per day, ${def.unit.label ?? 'unit unconfirmed'}` }]} />
       <dl className="gf-stats">
         <div>
           <dt>Latest day</dt>
           <dd>
-            {tempText(latest.v)}
+            {def.unit.format(latest.v)}
             <span className="gf-stat-when">{dayLabel(latest.day)}</span>
           </dd>
         </div>
@@ -46,7 +46,7 @@ export function TempKey({ ctx }: { ctx: PageContext }) {
           <div>
             <dt>{spanLabel}</dt>
             <dd>
-              {tempText(span.mean)}
+              {def.unit.format(span.mean)}
               <span className="gf-stat-when">{spanWhen}</span>
             </dd>
           </div>
@@ -56,14 +56,14 @@ export function TempKey({ ctx }: { ctx: PageContext }) {
             <div>
               <dt>Warmest day</dt>
               <dd>
-                {tempText(ex.high.v)}
+                {def.unit.format(ex.high.v)}
                 <span className="gf-stat-when">{daysAt(held, ex.high.v, dayLabel)}</span>
               </dd>
             </div>
             <div>
               <dt>Coolest day</dt>
               <dd>
-                {tempText(ex.low.v)}
+                {def.unit.format(ex.low.v)}
                 <span className="gf-stat-when">{daysAt(held, ex.low.v, dayLabel)}</span>
               </dd>
             </div>
@@ -78,8 +78,7 @@ export function TempKey({ ctx }: { ctx: PageContext }) {
         </div>
       </dl>
       <p className="gf-hint">
-        Figures are as published, with no unit: the rows carry none, and the degrees Celsius in gridflow’s notes on this dataset aren’t confirmed by the data.
-        {ranged ? ' Warmest and coolest are of the days held in this window.' : ''}
+        {def.count === 1 ? 'One day is held in this window, so there is no mean and no range to give.' : ranged ? 'Warmest and coolest are of the days held in this window.' : ''}
         {span && span.held < span.days ? ' The mean leaves out the days not held.' : ''}
       </p>
     </>

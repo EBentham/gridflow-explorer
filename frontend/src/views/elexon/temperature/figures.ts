@@ -1,13 +1,14 @@
 /**
  * What the temperature panels share: the column ids, one colour per measure,
- * the unit marker that keeps the figure's unit unconfirmed, and the figures
- * read from the rows. `temp` holds one figure per UK day, placed on the day
+ * the unit as printed, and the figures read from the rows. `temp` holds one figure per UK day, placed on the day
  * it was measured; a day not held is a gap, never a zero.
  */
 import { fmtN, listText } from '../../../design/format'
 import { dayStart, londonMidnight, shiftDate, ukDate } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
+import { plannedParts } from '../../_template/panelHelpers'
 import type { SeriesDef, SeriesModel } from '../../_template/seriesModel'
+import type { PageContext } from '../../define'
 
 export const TEMP = 'temperature'
 /** National demand per half-hour (`indo`), read beside the temperature. */
@@ -20,15 +21,13 @@ export const COLORS = {
   demand: 'var(--chart-actual)',
 } as const
 
-/**
- * The source list gives `degC`, but that comes from gridflow's notes alone:
- * neither the rows nor gridflow's schema state a unit. A unit the template
- * doesn't recognise prints as "unit unconfirmed" on every axis, tooltip and
- * table, which is what the page must say until a primary source settles it.
- */
-export const UNIT_UNCONFIRMED = 'unit unconfirmed'
+/** The temperature's unit as printed (`°C`): from the rows read, else as planned from the source list. */
+export function tempUnit(ctx: PageContext): string | null | undefined {
+  const t = seriesOf(ctx.series, TEMP)
+  return t ? t.unit.label : plannedParts(ctx).unit
+}
 
-/** The rows hold one decimal; print every temperature figure at one. */
+/** A figure at the one decimal the rows hold: two days tie when these match. */
 export const tempText = (v: number) => fmtN(v, 1)
 
 /** A column's series in a model, when the rows hold it. */

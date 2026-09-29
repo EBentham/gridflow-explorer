@@ -10,14 +10,14 @@
  *   same day (`indo`, read as a related dataset): half-hours held, mean, peak.
  * - Side: the template's About.
  *
- * The unit is shown as unconfirmed everywhere (`UNIT_UNCONFIRMED`): the
- * source list's `degC` comes from gridflow's notes alone. See NEEDS.md.
+ * The unit, °C, is the one gridflow's source list gives; gridflow's schema
+ * for the dataset names none. See NEEDS.md.
  */
 import { SourceLine } from '../../_template/panels'
 import { SeriesBody } from '../../_template/SeriesBody'
 import { plannedParts, relatedParts } from '../../_template/panelHelpers'
 import { defineView } from '../../define'
-import { COLORS, DEMAND_KEY, INDO, TEMP, UNIT_UNCONFIRMED, seriesOf } from './figures'
+import { COLORS, DEMAND_KEY, INDO, TEMP, seriesOf, tempUnit } from './figures'
 import { DaysPanel } from './DaysPanel'
 import { TempKey } from './TempKey'
 
@@ -31,12 +31,12 @@ const view = defineView({
       label: 'Temperature',
       title: 'Temperature per day',
       caveats: [
-        'The unit is unconfirmed: the rows carry none, gridflow’s schema for this dataset states none, and only gridflow’s notes give degrees Celsius. Figures show as published, with no unit.',
+        'The °C is the unit gridflow’s source list gives for this dataset; gridflow’s schema for it names none.',
         'Each figure sits on the day it was measured, not the day it was published. The rows say nothing of how it was taken, so the page doesn’t call it a mean or a reading at a set time.',
         'gridflow’s schema and notes list normal, low and high reference temperatures for this dataset, but none of them is held, so the page draws the measured figure alone.',
         'A day with no figure hasn’t been fetched here. It is a gap in the line and “not held locally” in the table, never a zero.',
       ],
-      values: [{ column: TEMP, label: 'Temperature', color: COLORS.temp, unit: UNIT_UNCONFIRMED }],
+      values: [{ column: TEMP, label: 'Temperature', color: COLORS.temp }],
       related: [
         {
           key: DEMAND_KEY,
@@ -53,7 +53,12 @@ const view = defineView({
         // The template's body; the source line names `temp` alone, as the main panel never draws national demand.
         main: {
           title: 'Temperature per day',
-          src: (ctx) => <SourceLine ctx={ctx} columns={[TEMP]} unit={null} what={ctx.mode === 'table' ? 'a row per UK day' : 'a marker per UK day, joined where days run on'} />,
+          src: (ctx) => {
+            // The template draws a daily row at the day's start; on a one-day clock axis that reads as a time of day.
+            const oneDay = ctx.window !== null && ctx.window.start === ctx.window.end
+            const what = ctx.mode === 'table' ? 'a row per UK day' : oneDay ? 'one figure for the day, drawn at the day’s start, not at a time of day' : 'a marker per UK day, joined where days run on'
+            return <SourceLine ctx={ctx} columns={[TEMP]} unit={tempUnit(ctx)} what={what} />
+          },
           Body: SeriesBody,
         },
         key: {
@@ -61,8 +66,8 @@ const view = defineView({
           src: (ctx) => {
             const t = seriesOf(ctx.series, TEMP)
             // One day held gives no mean and no range, so the line names only what the key shows.
-            const what = t && t.count < 2 ? 'the latest day held, and the days held' : 'the latest day held, the 7 days to it, the warmest and coolest days, and the days held'
-            return <SourceLine ctx={ctx} columns={[TEMP]} unit={null} what={what} />
+            const what = !t || !t.count ? 'the days held' : t.count < 2 ? 'the latest day held, and the days held' : 'the latest day held, the 7 days to it, the warmest and coolest days, and the days held'
+            return <SourceLine ctx={ctx} columns={[TEMP]} unit={tempUnit(ctx)} what={what} />
           },
           Body: TempKey,
         },
@@ -74,7 +79,7 @@ const view = defineView({
               <SourceLine
                 ctx={ctx}
                 columns={[TEMP]}
-                unit={null}
+                unit={tempUnit(ctx)}
                 also={n ? relatedParts(ctx, [n]) : plannedParts(ctx).also}
                 what="each UK day’s temperature, and national demand’s half-hours held, mean and peak that day"
               />
