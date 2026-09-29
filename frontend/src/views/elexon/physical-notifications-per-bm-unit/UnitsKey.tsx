@@ -86,9 +86,9 @@ function TopKey({ ctx, model }: { ctx: PageContext; model: SeriesModel }) {
   return (
     <>
       {full ? (
-        <dl className="gf-stats">
+        <dl className="gf-stats gf-pn-stats">
           <div>
-            <dt>{model.bucketed ? `Sum of the ${n}, latest mean` : `Sum of the ${n}`}</dt>
+            <dt>{`Sum of ${n}`}</dt>
             <dd>
               {GW.format(full.sum * GW.factor)}
               <span className="gf-stat-when">{when(full.t)}</span>
@@ -116,7 +116,7 @@ function TopKey({ ctx, model }: { ctx: PageContext; model: SeriesModel }) {
       })}
       <p className="gf-hint">
         {full
-          ? `Listed as they stack, top first: each unit’s start level ${model.bucketed ? 'in that period' : 'at that half-hour'}, in MW, and each fuel’s part of the sum, in GW. `
+          ? `Listed as they stack, top first: each unit’s ${model.bucketed ? 'mean start level over that period' : 'start level at that half-hour'}, in MW, and each fuel’s part of the sum, in GW. `
           : 'Listed as they stack, top first: each unit’s latest start level, in MW. '}
         {ctx.mode === 'chart'
           ? focus
@@ -175,8 +175,8 @@ function UnitKey({ ctx, model, id }: { ctx: PageContext; model: SeriesModel; id:
           },
         ]}
       />
-      <dl className="gf-stats">
-        {latest && stat(model.bucketed ? 'Latest mean start level' : 'Latest start level', MW.format(latest.v), latest.t)}
+      <dl className="gf-stats gf-pn-stats">
+        {latest && stat(model.bucketed ? 'Latest mean' : 'Latest level', MW.format(latest.v), latest.t)}
         {/* A level held flat all window has no highest, lowest or mean apart from it. */}
         {ex && ex.low.v === ex.high.v && stat(model.bucketed ? 'Mean in every period' : 'Level in every half-hour', MW.format(ex.low.v))}
         {ex && ex.low.v !== ex.high.v && (
@@ -196,7 +196,7 @@ function UnitKey({ ctx, model, id }: { ctx: PageContext; model: SeriesModel; id:
       <PriceItem ctx={ctx} price={price} at={latest?.t} />
       {split.length > 0 && paired && (
         <>
-          <dl className="gf-stats">{split.map((s) => stat(`Mean price, ${s.label.toLowerCase()}`, price.def.unit.format(s.mean)))}</dl>
+          <dl className="gf-stats gf-pn-stats">{split.map((s) => stat(`Mean price, ${s.label.toLowerCase()}`, price.def.unit.format(s.mean)))}</dl>
           <p className="gf-hint">
             The market index price, averaged over the {plural(pairs.length, noun === 'half-hours' ? 'half-hour' : noun, noun)} holding both figures, split by where the start level sat: {split.map((s) => `${s.label.toLowerCase()} ${s.n.toLocaleString('en-GB')}`).join(', ')}. Each counts the same.
           </p>

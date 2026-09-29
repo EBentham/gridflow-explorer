@@ -78,3 +78,11 @@ around each gap inside its folder.
     `T_KEAD-2`'s 0 MW, at the foot of its 0–1,000 MW axis, is one. The key names the lowest
     and when, so nothing is lost. Asked for: a lowest label that flips above its dot near
     the floor, as `extremeAnchor` flips the text's side near the right edge.
+11. **A unit selected in the key can't be linked to or shot.** Key focus is React state in
+    `DatasetPage`, not a URL parameter, so `npm run shoot` can't reach the state where one unit
+    is drawn alone, and a reader can't share it. The v0.4 follow-up shot it with a scratch
+    script that clicks the key. Asked for: focus kept in the URL, as the window and view are.
+12. **`ChartPanel` has no control over the value axis.** A series flat at zero gets ticks from
+    −1 to 1 MW in steps of 0.5, a scale the data never uses. The page works around it by
+    drawing such a unit in a panel under 200px, which asks for 3 ticks and so gets whole MW
+    (`LevelsMain`). Asked for: a `domain` or a smallest tick step on `ChartPanel`.

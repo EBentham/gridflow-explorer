@@ -11,7 +11,7 @@ import { dayLabel } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { MW, PRICE_KEY, pricePairs, priceSeries, sameClock, unitDays, unitLines, unitShown } from './figures'
+import { MW, PRICE_KEY, flatLevel, pricePairs, priceSeries, sameClock, unitDays, unitLines, unitShown } from './figures'
 import { PriceScatter } from './PriceScatter'
 
 export function UnitPrice({ ctx }: { ctx: PageContext }) {
@@ -40,6 +40,9 @@ export function UnitPrice({ ctx }: { ctx: PageContext }) {
   const days = unitDays(model, ctx.window, def, paired ? price : null)
   const noun = model.bucketed && model.stepMs ? meansText(model.stepMs) : 'half-hours'
   const fmt = (x: { v: number } | null) => (x ? MW.plain(x.v) : '–')
+  // A level that never moves makes a single row of dots on a made-up scale: said in words instead.
+  const flat = flatLevel(line)
+  const scatter = ctx.mode === 'chart' && paired && pairs.length > 0 && flat === null
 
   let note: ReactNode = null
   if (ctx.mode === 'chart') {
@@ -52,11 +55,18 @@ export function UnitPrice({ ctx }: { ctx: PageContext }) {
     } else if (!price) note = <p className="gf-hint">No market index price is held in this window, so there is nothing to set the levels against.</p>
     else if (!paired) note = <p className="gf-hint">The price and the levels come at different steps in this window, so they aren’t paired. Try a shorter window.</p>
     else if (!pairs.length) note = <p className="gf-hint">No half-hour in this window holds both a start level and a price.</p>
+    else if (flat !== null) {
+      note = (
+        <p className="gf-hint">
+          {one} held {MW.format(flat)} in every {model.bucketed ? 'period' : 'half-hour'} it holds here, so there is no spread of levels to set against the price. The key gives the mean price over the {plural(pairs.length, noun === 'half-hours' ? 'half-hour' : noun, noun)} holding both.
+        </p>
+      )
+    }
   }
 
   return (
     <>
-      {ctx.mode === 'chart' && paired && pairs.length > 0 && (
+      {scatter && (
         <>
           <PriceScatter pairs={pairs} unitId={one} color={line.fuel.color} price={price.def.unit} stepMs={model.stepMs} settlement={model.settlement} />
           <p className="gf-hint">

@@ -215,6 +215,12 @@ export function focusedLine(ctx: PageContext, lines: UnitLine[]): UnitLine | und
   return lines.length > 1 ? lines.find((l) => l.id === ctx.focus) : undefined
 }
 
+/** The one level a line holds in every half-hour it holds, when it never moves; null when it moves or holds none. */
+export function flatLevel(line: UnitLine | undefined): number | null {
+  if (!line || !line.def.count || line.def.min === null) return null
+  return line.def.min === line.def.max ? line.def.min : null
+}
+
 /** A line as a chart series: named by its unit, coloured by its fuel. */
 function asSeries(line: UnitLine, unit = MW): SeriesDef {
   const scale = (v: number | null) => (v === null ? null : v * unit.factor)
