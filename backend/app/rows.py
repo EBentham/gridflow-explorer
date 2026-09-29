@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 import math
 import re
-import sys
 import threading
 import time
 import uuid
@@ -301,8 +300,7 @@ class _SelectionScope:
             raise ValueError("Rows selection reused with a different relation or dataset")
         return self.semantic
 
-    def close(self) -> None:
-        primary = sys.exc_info()[1]
+    def close(self, primary: BaseException | None = None) -> None:
         first_drop_error: duckdb.Error | None = None
         for name in reversed(self.owned):
             try:
@@ -824,11 +822,11 @@ def _varying_ancillary_columns(
 
 def _memory_bytes(value: str) -> Decimal:
     """Parse DuckDB's normalized binary memory setting for policy comparison."""
-    match = re.fullmatch(r"\s*(\d+(?:\.\d+)?)\s*([KMGT]?i?B)\s*", value, re.I)
+    match = re.fullmatch(r"\s*(\d+(?:\.\d+)?)\s*([KMGTPE]?i?B)\s*", value, re.I)
     if match is None:
         raise RuntimeError(f"Unrecognized DuckDB memory_limit: {value!r}")
     unit = match.group(2).upper().replace("I", "")
-    return Decimal(match.group(1)) * (Decimal(1024) ** "BKMGT".index(unit[0]))
+    return Decimal(match.group(1)) * (Decimal(1024) ** "BKMGTPE".index(unit[0]))
 
 
 def _configure_resources(client: Any) -> None:
@@ -862,9 +860,13 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
     _configure_resources(client)
     scope = _SelectionScope(client)
     try:
-        return _execute_selected(scope, request, config)
-    finally:
-        scope.close()
+        result = _execute_selected(scope, request, config)
+    except BaseException as primary:
+        scope.close(primary)
+        raise
+    else:
+        scope.close(None)
+        return result
 
 
 def _execute_selected(client: Any, request: Request, config: str) -> dict[str, Any]:

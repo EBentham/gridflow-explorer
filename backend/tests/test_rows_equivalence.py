@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import copy
 import json
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from typing import Any
 
 import duckdb
@@ -21,6 +23,14 @@ from app import sources
 from app.main import app
 
 STAMP = datetime(2026, 9, 22, tzinfo=UTC)
+
+
+@pytest.fixture(autouse=True)
+def clear_equivalence_caches() -> Iterator[None]:
+    """Clear both comparison arms even when a test fails."""
+    yield
+    D._cache.clear()
+    N._cache.clear()
 
 
 class _FixedDatetime(datetime):
@@ -272,8 +282,6 @@ def test_comparator_detects_changed_order(
 
     monkeypatch.setattr(N, "_record_rows", reversed_tie_breaker)
     assert _outcome(N, sources_db, spec, {}) != baseline
-    D._cache.clear()
-    N._cache.clear()
 
 
 def test_exact_50000_row_boundary(
@@ -291,8 +299,6 @@ def test_exact_50000_row_boundary(
     status, payload = _compare(monkeypatch, sources_db, spec)
     assert status == 200
     assert json.loads(payload)["row_count"] == 50_000
-    D._cache.clear()
-    N._cache.clear()
 
 
 def test_resource_ceiling_applied_once(
@@ -313,7 +319,6 @@ def test_resource_ceiling_applied_once(
     ) == N._memory_bytes("7GiB")
     assert len([sql for sql in db.config_calls if sql.startswith("SET temp_directory=")]) == 1
     assert len([sql for sql in db.config_calls if "SET memory_limit='7GiB'" in sql]) == 1
-    N._cache.clear()
 
 
 def test_lower_memory_limit_preserved(sources_db: SourcesDuckDBClient) -> None:
@@ -323,6 +328,26 @@ def test_lower_memory_limit_preserved(sources_db: SourcesDuckDBClient) -> None:
     N._configure_resources(db)
     actual = db.con.sql("SELECT current_setting('memory_limit')").fetchone()[0]
     assert N._memory_bytes(actual) == N._memory_bytes("1GiB")
+
+
+def test_large_memory_units_and_unlimited_setting(
+    monkeypatch: pytest.MonkeyPatch, sources_db: SourcesDuckDBClient
+) -> None:
+    """Large normalized settings parse and still receive the rows ceiling."""
+    assert N._memory_bytes("16383.9 PiB") == Decimal("16383.9") * 1024**5
+    assert N._memory_bytes("1 EiB") == Decimal(1024) ** 6
+    original = sources_db.query
+
+    def unlimited_setting(sql: str) -> pl.DataFrame:
+        if sql == "SELECT current_setting('memory_limit') AS memory_limit":
+            return pl.DataFrame({"memory_limit": ["16383.9 PiB"]})
+        return original(sql)
+
+    monkeypatch.setattr(sources_db, "query", unlimited_setting)
+    N._configure_resources(sources_db)
+    assert N._memory_bytes(
+        sources_db.con.sql("SELECT current_setting('memory_limit')").fetchone()[0]
+    ) == N._memory_bytes(N._ROWS_MEMORY_CEILING)
 
 
 def test_setting_mismatch_fails_before_rows_query(
@@ -404,7 +429,6 @@ def test_real_stages_exist_during_request_and_are_dropped(
     N.execute(sources_db, N.validate("test", "sample", None, None, None, None), "temp-lifetime")
     assert seen and any(any(name.startswith("__rows_") for name in tables) for tables in seen)
     assert _temporary_tables(sources_db) == set()
-    N._cache.clear()
 
 
 def test_temp_creation_oom_uses_unmaterialised_selection(
@@ -433,8 +457,6 @@ def test_temp_creation_oom_uses_unmaterialised_selection(
     assert _outcome(N, sources_db, spec, {}) == expected
     assert calls > 1
     assert _temporary_tables(sources_db) == set()
-    D._cache.clear()
-    N._cache.clear()
 
 
 def test_cleanup_preserves_primary_and_attempts_every_drop(
@@ -457,11 +479,31 @@ def test_cleanup_preserves_primary_and_attempts_every_drop(
     with pytest.raises(ValueError, match="primary"):
         try:
             raise ValueError("primary")
-        finally:
-            scope.close()
+        except ValueError as primary:
+            scope.close(primary)
+            raise
     assert attempted == list(reversed(scope.owned))
     assert scope.owned[0] not in _temporary_tables(sources_db)
     sources_db.con.execute(f"DROP TABLE IF EXISTS temp.main.{scope.owned[-1]}")
+
+
+def test_cleanup_without_primary_raises_drop_error_in_unrelated_handler(
+    monkeypatch: pytest.MonkeyPatch, sources_db: SourcesDuckDBClient
+) -> None:
+    """An unrelated handled exception cannot suppress a successful request's cleanup error."""
+    scope = N._SelectionScope(sources_db)
+    scope.stage("SELECT 1 AS n")
+
+    def failing_drop(name: str) -> None:
+        raise duckdb.Error("injected DROP failure")
+
+    monkeypatch.setattr(scope.operations, "drop", failing_drop)
+    try:
+        raise ValueError("unrelated caller failure")
+    except ValueError:
+        with pytest.raises(duckdb.Error, match="injected DROP failure"):
+            scope.close(None)
+    sources_db.con.execute(f"DROP TABLE IF EXISTS temp.main.{scope.owned[0]}")
 
 
 def test_selection_key_guard_and_memoization(
@@ -505,5 +547,3 @@ def test_collision_pair_is_stable_without_sql_sort(
     actual = _outcome(N, sources_db, spec, {})
     assert not any("JOIN r ON" in sql and "ORDER BY" in sql for sql in sources_db.calls)
     assert actual == _outcome(D, sources_db, spec, {})
-    D._cache.clear()
-    N._cache.clear()

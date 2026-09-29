@@ -57,7 +57,7 @@ class SourcesDuckDBClient:
         )
 
     def query(self, sql: str) -> pl.DataFrame:
-        if sql.startswith("SET temp_directory="):
+        if sql.startswith("SET temp_directory=") or sql.startswith("SELECT current_setting("):
             self.config_calls.append(sql)
         else:
             self.calls.append(sql)
