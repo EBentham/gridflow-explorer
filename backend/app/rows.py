@@ -26,6 +26,8 @@ MAX_RESPONSE_ROWS = 50_000
 MAX_DUPLICATE_PROOF = 50_000
 TTL_SECONDS = 600
 _ROWS_MEMORY_CEILING = "8GiB"
+ROWS_OPERATION_TIMEOUT_SECONDS = 30
+ROWS_REQUEST_TIMEOUT_SECONDS = 30
 LOG = logging.getLogger(__name__)
 GRAINS = {
     "15s": 15_000,
@@ -67,6 +69,8 @@ class RowsErrorCode(StrEnum):
     BAD_RANGE = "bad_range"
     BAD_FILTER = "bad_filter"
     BAD_GROUP = "bad_group"
+    BAD_COLUMNS = "bad_columns"
+    QUERY_TIMEOUT = "query_timeout"
     WINDOW_UNAVAILABLE = "window_unavailable"
     AMBIGUOUS_SERIES = "ambiguous_series"
     RESULT_TOO_LARGE = "result_too_large"
@@ -85,6 +89,8 @@ class RowsError(Exception):
             if code == RowsErrorCode.UNKNOWN_DATASET
             else 413
             if code == RowsErrorCode.RESULT_TOO_LARGE
+            else 503
+            if code == RowsErrorCode.QUERY_TIMEOUT
             else 422
         )
 
@@ -153,6 +159,7 @@ class Request:
     group: str | None
     filters: tuple[tuple[str, str], ...]
     use_defaults: bool
+    columns: tuple[str, ...] | None = None
 
 
 def validate(
@@ -162,6 +169,7 @@ def validate(
     end: str | None,
     group: str | None,
     filters: list[str] | None,
+    columns: list[str] | None = None,
 ) -> Request:
     dataset = REGISTRY.get((source, dataset_id))
     if dataset is None:
@@ -216,7 +224,30 @@ def validate(
             parsed[column] = value
     if any(column not in dims for column in parsed):
         raise _error(RowsErrorCode.BAD_IDENTIFIER, "Default filter is not a dimension.")
-    return Request(source, dataset, first, last, group, tuple(parsed.items()), filters is None)
+    selected_columns = None
+    if columns is not None:
+        names = tuple(name.strip() for name in columns[0].split(",")) if len(columns) == 1 else ()
+        if (
+            not names
+            or any(not name for name in names)
+            or len(set(names)) != len(names)
+            or any(name not in _projection(dataset) for name in names)
+        ):
+            raise _error(
+                RowsErrorCode.BAD_COLUMNS,
+                "Columns must be a non-empty, unique subset of the declared projection.",
+            )
+        selected_columns = names
+    return Request(
+        source,
+        dataset,
+        first,
+        last,
+        group,
+        tuple(parsed.items()),
+        filters is None,
+        selected_columns,
+    )
 
 
 @dataclass(frozen=True)
@@ -244,6 +275,8 @@ class _TempOperations:
     def create(self, name: str, selection: str) -> None:
         if not name.startswith(self._prefix) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
             raise ValueError("TEMP name is not owned by this rows request")
+        if not selection.lstrip().upper().startswith(("SELECT ", "WITH ")) or ";" in selection:
+            raise ValueError("TEMP creation requires one generated selection")
         self._connection.execute(f"CREATE TEMP TABLE {_quote(name)} AS {selection}")
 
     def drop(self, name: str) -> None:
@@ -260,16 +293,89 @@ def _temp_operations(client: Any, prefix: str) -> _TempOperations:
     return _TempOperations(client._require_con(), prefix)
 
 
+def _query_timeout() -> RowsError:
+    return _error(RowsErrorCode.QUERY_TIMEOUT, "Rows query exceeded its time limit.")
+
+
+class _DeadlineClient:
+    """Bound each database call by the shared monotonic request deadline."""
+
+    def __init__(self, client: Any, deadline: float) -> None:
+        self.client = client
+        self.deadline = deadline
+        self.prefix = "__rows_" + uuid.uuid4().hex + "_"
+        self.operations = _temp_operations(client, self.prefix)
+
+    def check(self) -> None:
+        if time.monotonic() >= self.deadline:
+            raise _query_timeout()
+
+    def run(self, operation: Any, *, cleanup_budget: float | None = None) -> Any:
+        remaining = self.deadline - time.monotonic() if cleanup_budget is None else cleanup_budget
+        if remaining <= 0:
+            raise _query_timeout()
+        timeout = min(ROWS_OPERATION_TIMEOUT_SECONDS, remaining)
+        lock = threading.Lock()
+        active = True
+        expired = False
+
+        def interrupt() -> None:
+            nonlocal expired
+            with lock:
+                if active:
+                    expired = True
+                    self.operations.interrupt()
+
+        timer = threading.Timer(timeout, interrupt)
+        timer.start()
+        try:
+            try:
+                result = operation()
+            except duckdb.InterruptException as exc:
+                with lock:
+                    timed_out = expired
+                if timed_out:
+                    raise _query_timeout() from exc
+                raise
+        finally:
+            with lock:
+                active = False
+                timed_out = expired
+            timer.cancel()
+            timer.join()
+        if timed_out or (cleanup_budget is None and time.monotonic() >= self.deadline):
+            raise _query_timeout()
+        return result
+
+    def query(self, sql: str) -> pl.DataFrame:
+        return self.run(lambda: self.client.query(sql))
+
+    def get_tables(self) -> list[str]:
+        return self.run(self.client.get_tables)
+
+    def create(self, name: str, sql: str) -> None:
+        self.run(lambda: self.operations.create(name, sql))
+
+    def drop(self, name: str, *, cleanup_budget: float | None = None) -> None:
+        self.run(lambda: self.operations.drop(name), cleanup_budget=cleanup_budget)
+
+
 class _SelectionScope:
     """Own reusable selections for one rows execution and clean them on exit."""
 
     def __init__(self, client: Any) -> None:
         self.client = client
-        self.prefix = "__rows_" + uuid.uuid4().hex + "_"
+        self.prefix = (
+            client.prefix
+            if isinstance(client, _DeadlineClient)
+            else "__rows_" + uuid.uuid4().hex + "_"
+        )
         self.owned: list[str] = []
         self.semantic: str | None = None
         self.semantic_key: tuple[str, dict[str, Any]] | None = None
-        self.operations = _temp_operations(client, self.prefix)
+        self.operations = (
+            client if isinstance(client, _DeadlineClient) else _temp_operations(client, self.prefix)
+        )
 
     def query(self, sql: str) -> pl.DataFrame:
         return self.client.query(sql)
@@ -302,9 +408,15 @@ class _SelectionScope:
 
     def close(self, primary: BaseException | None = None) -> None:
         first_drop_error: duckdb.Error | None = None
+        cleanup_deadline = time.monotonic() + 1
         for name in reversed(self.owned):
             try:
-                self.operations.drop(name)
+                if isinstance(self.operations, _DeadlineClient):
+                    self.operations.drop(name, cleanup_budget=cleanup_deadline - time.monotonic())
+                else:
+                    self.operations.drop(name)
+            except RowsError:
+                break
             except duckdb.Error as exc:
                 LOG.exception("Failed to drop rows TEMP table %s", name)
                 if first_drop_error is None:
@@ -609,6 +721,12 @@ def _native_collision_check(
         for index, (values, raw) in enumerate(
             zip(frame.select(keys).iter_rows(), byte_rows, strict=True)
         ):
+            if (
+                index % 256 == 0
+                and isinstance(client, _SelectionScope)
+                and isinstance(client.client, _DeadlineClient)
+            ):
+                client.client.check()
             if values in signatures and signatures[values][0] != raw:
                 previous = signatures[values][1]
                 varying = [
@@ -857,15 +975,18 @@ def _configure_resources(client: Any) -> None:
 
 def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
     """Execute one rows request with instance resource policy and owned TEMP stages."""
-    _configure_resources(client)
-    scope = _SelectionScope(client)
+    bounded = _DeadlineClient(client, time.monotonic() + ROWS_REQUEST_TIMEOUT_SECONDS)
+    _configure_resources(bounded)
+    scope = _SelectionScope(bounded)
     try:
         result = _execute_selected(scope, request, config)
+        bounded.check()
     except BaseException as primary:
         scope.close(primary)
         raise
     else:
         scope.close(None)
+        bounded.check()
         return result
 
 
@@ -999,6 +1120,7 @@ def _execute_selected(client: Any, request: Request, config: str) -> dict[str, A
             ]
             candidates.extend(day * 86_400_000 for day in range(1, 402))
             for candidate in candidates:
+                client.client.check()
                 if grain and (candidate <= grain or candidate % grain):
                     continue
                 _check_bucket_identity(client, request, selected, clock, meta.types, candidate)
@@ -1046,6 +1168,8 @@ def _execute_selected(client: Any, request: Request, config: str) -> dict[str, A
         raise _limit("row_cap", "Narrow the date window or filter a dimension.")
     rows: list[dict[str, Any]] = []
     for item in frame.to_dicts():
+        if len(rows) % 256 == 0:
+            client.client.check()
         if width:
             ms = int(item.pop("bucket_ms"))
             item["ts"] = max(ms, _ts_ms(window[2])) if window else ms
@@ -1078,6 +1202,7 @@ def _execute_selected(client: Any, request: Request, config: str) -> dict[str, A
         }
         expanded_rows = []
         for group_value in groups_seen:
+            client.client.check()
             utc_phases = phases_by_group[group_value]
             use_local_grid = calendar_cadence and len(utc_phases) != 1
             if not width and len(utc_phases) == 1:
@@ -1150,6 +1275,8 @@ def _execute_selected(client: Any, request: Request, config: str) -> dict[str, A
                     )
                 grid = utc_grid
             for ts in grid:
+                if len(expanded_rows) % 256 == 0:
+                    client.client.check()
                 record = observed.get((ts, group_value))
                 if record is None:
                     record = {"ts": ts}
@@ -1197,7 +1324,7 @@ def _execute_selected(client: Any, request: Request, config: str) -> dict[str, A
             )
         else:
             notes.append("No rows in this window; the dataset has rows outside it.")
-    return {
+    result = {
         "dataset": dataset["id"],
         "source": request.source,
         "kind": dataset["kind"],
@@ -1223,3 +1350,15 @@ def _execute_selected(client: Any, request: Request, config: str) -> dict[str, A
         "coverage": coverage,
         "notes": notes,
     }
+    if request.columns is not None:
+        retained = set(request.columns)
+        retained.add("ts")
+        if request.group:
+            retained.add(request.group)
+        result["rows"] = [
+            {key: value for key, value in row.items() if key in retained} for row in result["rows"]
+        ]
+        result["columns"] = [
+            value for value in result["columns"] if value["column"] in request.columns
+        ]
+    return result
