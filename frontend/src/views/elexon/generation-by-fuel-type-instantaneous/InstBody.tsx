@@ -34,7 +34,7 @@ export function InstBody({ ctx }: { ctx: PageContext }) {
             // Native readings are named by their stamp, an instant: a five-minute window from it would run five minutes late.
             stepMs: model.bucketed ? model.stepMs : null,
             bucketed: model.bucketed,
-            height: 460,
+            height: 760,
             zero: true,
             axisWidth: AXIS_WIDTH,
           },
@@ -64,7 +64,7 @@ export function InstBody({ ctx }: { ctx: PageContext }) {
           </>
         )}{' '}
         A gap is a time with no reading held.
-        {multiDay ? ' Click a day to read it in the panel below.' : ''}
+        {multiDay && !means ? ' Click a day to read it in the panel below.' : ''}
       </p>
     </>
   )

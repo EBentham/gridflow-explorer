@@ -1,0 +1,4 @@
+/* Short tables (the key's folded codes, the ten fuel rows below the chart), listed whole rather than in a scrolling box. */
+.gf-days.fi-whole {
+  max-height: none;
+}

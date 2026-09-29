@@ -56,5 +56,6 @@ export function InstTable({ ctx }: { ctx: PageContext }) {
   ]
   const noun = bucketed && model.stepMs ? meansText(model.stepMs) : 'readings'
   const caption = `Generation by fuel code, ${ctx.windowText}: ${model.rows.length.toLocaleString('en-GB')} ${noun}, a column per code as Elexon sends it, interconnectors signed (below zero is GB exporting). Select a column heading to sort.`
-  return <WindowedTable columns={columns} rows={model.rows} caption={caption} initialSort={{ key: 't', dir: 'asc' }} rowKey={(r) => r.t} />
+  // Taller than the template's default, so the table stands as tall as the key beside it.
+  return <WindowedTable columns={columns} rows={model.rows} caption={caption} initialSort={{ key: 't', dir: 'asc' }} rowKey={(r) => r.t} maxHeight={820} />
 }

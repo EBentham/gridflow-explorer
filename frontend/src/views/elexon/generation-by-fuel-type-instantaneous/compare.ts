@@ -58,6 +58,8 @@ export interface PairSummary {
   whole: number
   /** Of those, the ones FUELHH holds too. */
   matched: number
+  /** The median size of the gap, six-reading mean less FUELHH, over those, in display units. */
+  typical: number | null
   /** The largest gap, six-reading mean less FUELHH, in display units (sign kept). */
   gap: { t: number; v: number } | null
   /** The half-hour whose readings spread widest. */
@@ -68,14 +70,19 @@ export function summarise(pairs: HalfHourPair[]): PairSummary {
   let gap: PairSummary['gap'] = null
   let move: HalfHourPair | null = null
   let matched = 0
+  const sizes: number[] = []
   for (const p of pairs) {
     if (!move || p.hi.v - p.lo.v > move.hi.v - move.lo.v) move = p
     if (p.hh === null) continue
     matched += 1
     const d = p.mean - p.hh
+    sizes.push(Math.abs(d))
     if (!gap || Math.abs(d) > Math.abs(gap.v)) gap = { t: p.t, v: d }
   }
-  return { whole: pairs.length, matched, gap, move }
+  sizes.sort((a, b) => a - b)
+  const mid = sizes.length >> 1
+  const typical = sizes.length ? (sizes.length % 2 ? sizes[mid] : (sizes[mid - 1] + sizes[mid]) / 2) : null
+  return { whole: pairs.length, matched, typical, gap, move }
 }
 
 /** FUELHH folded into the same bands, when it has rows. */
@@ -110,15 +117,20 @@ export function dayFor(days: Day[], picked: number | undefined): Day | undefined
   return pick ?? held.filter((d) => d.expected !== null && d.held >= d.expected).at(-1) ?? held.at(-1)
 }
 
-/** The day's readings and FUELHH's figure held flat across each half-hour's six, as chart rows. */
+/**
+ * The day's readings and FUELHH's figure held flat across each half-hour's
+ * six, as chart rows. FUELHH is drawn only for half-hours holding a reading:
+ * the panel compares the two, and a stub day would otherwise show FUELHH alone.
+ */
 export function dayRows(inst: Folded, hh: Folded | null, field: string, day: Day): WideRow[] {
   const hhAt = new Map((hh?.rows ?? []).map((r) => [r.t, r]))
-  return inst.rows
-    .filter((r) => r.t > day.start && r.t <= day.end)
-    .map((r) => {
-      const h = hhAt.get(halfHourOf(r.t))?.[field]
-      return { t: r.t, reading: typeof r[field] === 'number' ? r[field] : null, hh: typeof h === 'number' ? h : null }
-    })
+  const rows = inst.rows.filter((r) => r.t > day.start && r.t <= day.end)
+  const withReading = new Set(rows.filter((r) => typeof r[field] === 'number').map((r) => halfHourOf(r.t)))
+  return rows.map((r) => {
+    const half = halfHourOf(r.t)
+    const h = withReading.has(half) ? hhAt.get(half)?.[field] : null
+    return { t: r.t, reading: typeof r[field] === 'number' ? r[field] : null, hh: typeof h === 'number' ? h : null }
+  })
 }
 
 export interface BandLine {

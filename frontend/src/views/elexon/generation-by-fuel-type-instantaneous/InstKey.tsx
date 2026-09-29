@@ -12,6 +12,7 @@ import { extremesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import { displayUnit } from '../../_template/units'
 import type { PageContext } from '../../define'
+import './page.css'
 import { bandField, bandOf, codeDefs, codeLabel, codeOrder, fold, latestRow, totalDef } from './fuels'
 
 const MW = displayUnit('MW', 'MW')
@@ -45,7 +46,7 @@ export function InstKey({ ctx }: { ctx: PageContext }) {
       <FuelKey latest={bandRow} focus={ctx.focus} onPick={ctx.setFocus} />
       <p className="gf-hint">
         GW, {bucketed ? `the latest ${meansText(model.stepMs as number).replace(/s$/, '')} held, ${when(latest.t)}` : `the latest reading held, stamped ${when(latest.t)}`}.{' '}
-        {ctx.focus ? 'Select the fuel again to return to the full stack.' : 'Select a fuel to draw it on its own and to read it against its half-hour below.'}
+        {ctx.focus ? 'Select the fuel again to return to the full stack.' : bucketed ? 'Select a fuel to draw it on its own.' : 'Select a fuel to draw it on its own and to read it against its half-hour below.'}
       </p>
       <dl className="gf-stats">
         <div>
@@ -73,7 +74,7 @@ export function InstKey({ ctx }: { ctx: PageContext }) {
       </dl>
       <p className="gf-hint">Total generation adds up every band above zero, so exports and pumping don’t reduce it. Highest and lowest are over the {bucketed ? meansText(model.stepMs as number) : 'readings'} in the window.</p>
       {folds.length > 0 && (
-        <div className="gf-days is-tight">
+        <div className="gf-days is-tight fi-whole">
           <table>
             <thead>
               <tr>

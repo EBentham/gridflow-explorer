@@ -61,14 +61,14 @@ const view = defineView({
       panels: {
         main: {
           title: (ctx) => {
-            if (ctx.mode === 'table') return 'Every reading, by fuel code'
-            const band = focusedBand(ctx.focus)
             const means = ctx.series?.bucketed && ctx.series.stepMs ? `, ${meansText(ctx.series.stepMs)}` : ', every five minutes'
+            if (ctx.mode === 'table') return means === ', every five minutes' ? 'Every reading, by fuel code' : `Generation by fuel code${means}`
+            const band = focusedBand(ctx.focus)
             return band ? `${band.label} generation${means}` : `Generation by fuel${means}`
           },
           src: (ctx) =>
             ctx.mode === 'table' ? (
-              <SourceLine ctx={ctx} columns={[VALUE]} by={FUEL_TYPE} unit="MW" what="a row per reading, a column per code" />
+              <SourceLine ctx={ctx} columns={[VALUE]} by={FUEL_TYPE} unit="MW" what={ctx.series?.bucketed ? 'a row per period, a column per code' : 'a row per reading, a column per code'} />
             ) : (
               <SourceLine ctx={ctx} columns={[VALUE]} by={FUEL_TYPE} unit="GW" what={focusedBand(ctx.focus) ? `the ${focusedBand(ctx.focus)?.label.toLowerCase()} band alone` : 'codes folded into nine bands, stacked'} />
             ),

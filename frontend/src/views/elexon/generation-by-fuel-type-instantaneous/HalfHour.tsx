@@ -21,11 +21,14 @@ import type { SeriesDef } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import { displayUnit } from '../../_template/units'
 import type { PageContext } from '../../define'
+import './page.css'
 import { bandLines, dayName, dayRows, halfHourView, hhFolded, pairsFor, summarise, type Day, type PairSummary } from './compare'
 import { AXIS_WIDTH, HH_KEY, TOTAL_FIELD, bandField, focusedBand, seriesFor } from './fuels'
 
 const MW = displayUnit('MW', 'MW')
 const HH_COLOR = 'var(--chart-actual)'
+/** Total generation's readings: not a fuel, so a series colour that stands apart from FUELHH's ink line in both themes. */
+const TOTAL_COLOR = 'var(--chart-price-2)'
 
 function lineDef(field: string, label: string, color: string, unit: SeriesDef['unit']): SeriesDef {
   return { key: field, field, column: field, group: null, label, color, unit, from: 'self', count: 0, mean: null, min: null, max: null, signed: false }
@@ -37,11 +40,10 @@ const mw = (gw: number, unit: SeriesDef['unit']) => gw / unit.factor
 function summaryText(name: string, s: PairSummary, day: Day, unit: SeriesDef['unit'], hhHeld: boolean): string[] {
   const out: string[] = []
   out.push(`All six readings are held for ${s.whole} of ${dayName(day)}’s half-hours.`)
-  if (hhHeld && s.matched > 0 && s.gap) {
-    const gap = Math.abs(mw(s.gap.v, unit))
-    // Both publish whole megawatts: a mean of six can sit up to half a megawatt off a figure rounded from it.
-    const close = gap <= 0.5 ? ' That is rounding: here FUELHH is the half-hour mean of these readings.' : ''
-    out.push(`In the ${s.matched} of those FUELHH holds too, the mean of the six is within ${fmtN(gap, 1)} MW of FUELHH’s figure (the largest gap, in ${halfHourWindow(s.gap.t)}).${close}`)
+  if (hhHeld && s.matched > 0 && s.gap && s.typical !== null) {
+    out.push(
+      `In the ${s.matched} of those FUELHH holds too, the mean of the six sits a median ${fmtN(mw(s.typical, unit), 1)} MW from FUELHH’s figure; the largest gap is ${fmtN(mw(s.gap.v, unit), 1)} MW, in ${halfHourWindow(s.gap.t)}.`,
+    )
   } else if (hhHeld) {
     out.push('FUELHH holds none of those half-hours, so there is nothing to set them against.')
   }
@@ -75,6 +77,7 @@ export function HalfHour({ ctx }: { ctx: PageContext }) {
   const def = seriesFor(folded, band?.key)
   const field = band ? bandField(band.key) : TOTAL_FIELD
   const name = def.label
+  const color = band ? def.color : TOTAL_COLOR
   const unit = folded.unit
   const pairs = pairsFor(folded, hh, field, day.start, day.end)
   const summary = summarise(pairs)
@@ -87,7 +90,7 @@ export function HalfHour({ ctx }: { ctx: PageContext }) {
         panels={[
           {
             rows: dayRows(folded, hh, field, day),
-            series: [lineDef('reading', `${name}, each reading`, def.color, unit), ...(hh ? [lineDef('hh', `${name}, FUELHH half-hour`, HH_COLOR, unit)] : [])],
+            series: [lineDef('reading', `${name}, each reading`, color, unit), ...(hh ? [lineDef('hh', `${name}, FUELHH half-hour`, HH_COLOR, unit)] : [])],
             mark: 'line',
             unit,
             stepMs: null,
@@ -102,7 +105,7 @@ export function HalfHour({ ctx }: { ctx: PageContext }) {
       />
       <KeyList
         items={[
-          { key: 'reading', mark: { kind: 'line', color: def.color }, label: `${name}, each five-minute reading` },
+          { key: 'reading', mark: { kind: 'line', color }, label: `${name}, each five-minute reading` },
           ...(hh ? [{ key: 'hh', mark: { kind: 'line' as const, color: HH_COLOR }, label: 'FUELHH’s half-hour figure, held flat across its six readings' }] : []),
         ]}
       />
@@ -114,8 +117,9 @@ export function HalfHour({ ctx }: { ctx: PageContext }) {
           FUELHH couldn’t be read, so only the readings are drawn. <ErrorWords error={rel.error} />
         </p>
       )}
+      {!hh && !hhFailed && <p className="gf-hint">FUELHH holds no rows for this window, so only the readings are drawn.</p>}
       <p className="gf-hint">{summaryText(name, summary, day, unit, Boolean(hh)).join(' ')}</p>
-      <div className="gf-days">
+      <div className="gf-days fi-whole">
         <table>
           <thead>
             <tr>
@@ -128,7 +132,10 @@ export function HalfHour({ ctx }: { ctx: PageContext }) {
               </th>
               <th scope="col">In</th>
               <th scope="col" className="is-num">
-                Six-reading mean less FUELHH, largest, MW
+                Median gap to FUELHH, MW
+              </th>
+              <th scope="col" className="is-num">
+                Largest gap to FUELHH, MW
               </th>
             </tr>
           </thead>
@@ -147,6 +154,7 @@ export function HalfHour({ ctx }: { ctx: PageContext }) {
                   <td className="is-num">{s.whole}</td>
                   <td className="is-num">{spread === null ? '–' : MW.plain(spread)}</td>
                   <td>{s.move && spread ? halfHourWindow(s.move.t).replace(/^\w+ \d+ \w+, /, '') : '–'}</td>
+                  <td className="is-num">{s.typical === null ? '–' : fmtN(mw(s.typical, unit), 1)}</td>
                   <td className="is-num">{s.gap ? fmtN(mw(s.gap.v, unit), 1) : '–'}</td>
                 </tr>
               )
@@ -155,8 +163,7 @@ export function HalfHour({ ctx }: { ctx: PageContext }) {
         </table>
       </div>
       <p className="gf-hint">
-        For {dayName(day)}: the half-hours with all six readings held, the widest spread between the lowest and highest reading inside one, and the largest gap between the mean of the six and FUELHH’s figure, below
-        zero where the readings’ mean is lower. Select a fuel to draw it above.
+        For {dayName(day)}: the half-hours with all six readings held; the widest spread between the lowest and highest reading inside one; and, over the half-hours FUELHH also holds, the median size of the gap between the six readings’ mean and FUELHH’s figure, and the largest gap (the mean less FUELHH, signed). Select a fuel to draw it above.
       </p>
     </>
   )

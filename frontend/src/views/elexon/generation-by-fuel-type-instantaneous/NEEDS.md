@@ -13,6 +13,9 @@ around each gap inside its folder.
    - Checked against `fuelhh` for 16–22 Sep 2026: the mean of the six readings stamped
      `T + 5` to `T + 30` minutes matches FUELHH's half-hour `T` to 0.4 MW on average (5,800
      half-hours, every code). The six stamped `T` to `T + 25` miss it by 15 MW on average.
+     Three half-hours miss by more than 5 MW on several codes at once (16 Sep 12:30 and
+     20:30 BST, 21 Sep 10:00 BST; CCGT by up to 98 MW). The page reports such gaps as it
+     finds them and doesn't explain them; why FUELHH differs there is a research question.
    - The page pairs readings with FUELHH on that `T + 5` to `T + 30` rule, draws and names
      readings by their stamp, and says so in a caveat.
    - Asked for: stamp on `startTime`, or keep both columns.
