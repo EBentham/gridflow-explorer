@@ -149,12 +149,12 @@ export interface DayFigures {
  * their mean, the peak and when, and the energy they sum to. A day with none
  * held has a null mean and no peak, never a zero.
  */
-export function dayFigures(model: SeriesModel, window: DateRange, def: SeriesDef | undefined): Map<number, DayFigures> {
+export function dayFigures(model: SeriesModel, window: DateRange, def: SeriesDef | undefined, only?: Set<number>): Map<number, DayFigures> {
   const acc = new Map<number, { held: number; sum: number; peak: { t: number; v: number } | null }>()
   if (def) {
     for (const row of model.rows) {
       const v = row[def.field]
-      if (typeof v !== 'number') continue
+      if (typeof v !== 'number' || (only && !only.has(row.t))) continue
       const day = londonMidnight(row.t)
       const a = acc.get(day) ?? { held: 0, sum: 0, peak: null }
       a.held += 1

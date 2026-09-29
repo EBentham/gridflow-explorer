@@ -68,8 +68,10 @@ export function RecordedPanel({ ctx }: { ctx: PageContext }) {
 
   const fw = dayFigures(model, ctx.window, wind)
   const fs = dayFigures(model, ctx.window, solar)
-  const mw = mix ? dayFigures(mix, ctx.window, mixWind) : null
-  const ms = mix ? dayFigures(mix, ctx.window, mixSolar) : null
+  // The mix is read over the half-hours the forecast holds, so a day the forecast holds in part compares like with like.
+  const forecastHeld = new Set(model.rows.filter((r) => typeof r[wind.field] === 'number' || typeof r[solar.field] === 'number').map((r) => r.t))
+  const mw = mix ? dayFigures(mix, ctx.window, mixWind, forecastHeld) : null
+  const ms = mix ? dayFigures(mix, ctx.window, mixSolar, forecastHeld) : null
   const energy = (a: DayFigures | undefined, b: DayFigures | undefined) => (a?.energy == null || b?.energy == null ? null : (a.energy + b.energy) / 1000)
   const u = wind.unit
   const days = [...fw.keys()]
@@ -171,7 +173,7 @@ export function RecordedPanel({ ctx }: { ctx: PageContext }) {
       {days.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
         Means and peaks in {u.label}; wind and solar together in {GWH.label}, the {noun} held summed, so a day held in part sums in part.
-        {model.bucketed && ' The window is read as means, so nothing is summed.'} The mix is NESO’s figure for each half-hour from its historic generation mix; its solar isn’t split into embedded and
+        {model.bucketed && ' The window is read as means, so nothing is summed.'} The mix columns count only the half-hours the forecast holds, so each row compares the same half-hours. The mix is NESO’s figure for each half-hour from its historic generation mix; its solar isn’t split into embedded and
         transmission-connected, so it is set beside the embedded forecast for comparison only.
         {ctx.mode === 'chart' ? ' Select a day to mark it on the charts.' : ' Select a day to mark it.'}
       </p>
