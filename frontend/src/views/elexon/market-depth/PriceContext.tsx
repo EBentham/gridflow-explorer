@@ -20,14 +20,14 @@ import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
 import { ACC_OFFER, AXIS_WIDTH, IMBALANCE, NIV, PRICES, SSP, dayFigures, seriesOf, systemPrices } from './figures'
 
-/** Why the system prices aren't drawn, in words; null when they are. */
+/** Why the system prices aren't shown (drawn, or in the days table's price column), in words. */
 function PricesWords({ ctx }: { ctx: PageContext }) {
   const rel = ctx.related[PRICES]
   const state = systemPrices(ctx)
   if (state.kind === 'means') {
     return (
       <p className="gf-hint">
-        The system prices aren’t drawn for this window: it is long enough that they come as means, and the means come apart by how each half-hour’s price was derived, so they can’t be joined into one line. A shorter window draws
+        The system prices aren’t shown for this window: it is long enough that they come as means, and the means come apart by how each half-hour’s price was derived, so they can’t be joined into one line. A shorter window shows
         them.
       </p>
     )
@@ -42,13 +42,13 @@ function PricesWords({ ctx }: { ctx: PageContext }) {
         </p>
       )
     }
-    return <p className="gf-hint">The system prices come once per price derivation code, and each half-hour holds a price under one of them: the page draws that one.</p>
+    return <p className="gf-hint">The system prices come once per price derivation code, and each half-hour holds a price under one of them: the page shows that one.</p>
   }
   if (!rel || rel.state === 'loading') return <p className="gf-hint">The system prices are still being read.</p>
   if (rel.state === 'error' || rel.state === 'refreshing') {
     return (
       <p className="gf-hint">
-        The system prices aren’t drawn: <ErrorWords error={rel.error} />
+        The system prices aren’t shown: <ErrorWords error={rel.error} />
       </p>
     )
   }
@@ -100,7 +100,7 @@ export function PriceContext({ ctx }: { ctx: PageContext }) {
       {ctx.mode === 'chart' && panels.length > 0 && (
         <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
       )}
-      {ctx.mode === 'chart' && <PricesWords ctx={ctx} />}
+      <PricesWords ctx={ctx} />
       {ctx.mode === 'chart' && (!imbalance || imbalance.count === 0) && <p className="gf-hint">No indicated imbalance is held in this window.</p>}
       <div className="gf-days">
         <table>
