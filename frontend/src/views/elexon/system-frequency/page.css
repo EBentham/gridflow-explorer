@@ -1,0 +1,23 @@
+/* Short tables (a window's days, the longest spells), listed whole rather than in a scrolling box. */
+.gf-days.sf-whole {
+  max-height: none;
+}
+.sf-sub {
+  margin: 14px 0 2px;
+  font-family: var(--font-display);
+  font-size: var(--text-size);
+  font-weight: 650;
+  font-stretch: 92%;
+  font-variation-settings: 'wdth' 92;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+}
+.sf-gaps {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.sf-gaps li {
+  padding: 2px 0;
+}
