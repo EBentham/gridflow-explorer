@@ -24,7 +24,7 @@
 import { SourceLine } from '../../_template/panels'
 import type { PageContext } from '../../define'
 import { defineView } from '../../define'
-import { AXIS_WIDTH, END, FUEL_DATASET, FUEL_KEY, FUEL_VALUE, PRICE, PRICE_COLOR, PRICE_DATASET, PRICE_KEY, START, TOP_N, UNIT, UNIT_PARAM, focusedLine, fuelPart, pricePart, unitLines, unitShown, validUnit } from './figures'
+import { AXIS_WIDTH, END, FUEL_DATASET, FUEL_KEY, FUEL_VALUE, PRICE, PRICE_COLOR, PRICE_DATASET, PRICE_KEY, START, TOP_N, UNIT, UNIT_PARAM, flatLevel, focusedLine, fuelPart, pricePart, unitLines, unitShown, validUnit } from './figures'
 import { LevelsMain } from './LevelsMain'
 import { UnitControl } from './UnitControl'
 import { UnitsKey } from './UnitsKey'
@@ -78,6 +78,9 @@ function keySrc(ctx: PageContext) {
   )
 }
 
+/** Whether the working panel sets the one unit's levels against the price: in the Chart view, unless its level never moves. */
+const scatterShown = (ctx: PageContext) => ctx.mode === 'chart' && flatLevel(unitLines(ctx)[0]) === null
+
 function workingSrc(ctx: PageContext) {
   const one = unitShown(ctx)
   if (!one) return <SourceLine ctx={ctx} columns={[START]} by={UNIT} filters={ctx.response?.filters} unit="MW" also={[fuelPart(ctx)]} what="each unit’s half-hours held, mean, lowest, highest and half-hours at zero" />
@@ -88,7 +91,7 @@ function workingSrc(ctx: PageContext) {
       filters={ctx.response?.filters}
       unit="MW and £/MWh"
       also={[pricePart(ctx)]}
-      what={ctx.mode === 'chart' ? 'each half-hour’s start level against its price, then per UK day' : 'per UK day, with the mean price'}
+      what={scatterShown(ctx) ? 'each half-hour’s start level against its price, then per UK day' : 'per UK day, with the mean price'}
     />
   )
 }
@@ -138,7 +141,7 @@ const view = defineView({
         main: { title: mainTitle, src: mainSrc, Body: LevelsMain },
         key: { title: 'Key', src: keySrc, Body: UnitsKey },
         working: {
-          title: (ctx) => (unitShown(ctx) ? (ctx.mode === 'chart' ? 'Level against price, and the days' : 'The days') : `The top ${unitCount(ctx)} units in this window`),
+          title: (ctx) => (unitShown(ctx) ? (scatterShown(ctx) ? 'Level against price, and the days' : 'The days') : `The top ${unitCount(ctx)} units in this window`),
           src: workingSrc,
           Body: Working,
         },

@@ -11,7 +11,7 @@ import { SeriesChart } from '../../_template/SeriesChart'
 import { ErrorWords } from '../../_template/panels'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { PRICE_KEY, focusedLine, linePanel, priceCover, pricePanel, priceSeries, stackPanel, unitLines, unitShown } from './figures'
+import { MW, PRICE_KEY, flatLevel, focusedLine, linePanel, priceCover, pricePanel, priceSeries, stackPanel, unitLines, unitShown } from './figures'
 import { LevelsTable } from './LevelsTable'
 
 export function LevelsMain({ ctx }: { ctx: PageContext }) {
@@ -23,8 +23,12 @@ export function LevelsMain({ ctx }: { ctx: PageContext }) {
   const one = unitShown(ctx)
   const focus = focusedLine(ctx, lines)
   const alone = one ? lines[0] : focus
+  const flat = flatLevel(alone)
+  const period = model.bucketed ? 'period' : 'half-hour'
+  const flatText = flat === null ? '' : `${MW.format(flat)} in every ${period} it holds`
   // The stack's key lists every unit under its fuel, so the stack takes the height to stand beside it.
-  const top = alone ? linePanel(model, alone, 380) : stackPanel(model, lines, 620)
+  // A level that never moves gets a panel under 200px, which asks the axis for 3 ticks: whole MW, not a made-up 0.5 MW scale.
+  const top = alone ? linePanel(model, alone, flat === null ? 380 : 150) : stackPanel(model, lines, 620)
   const price = priceSeries(ctx)
   const rel = ctx.related[PRICE_KEY]
   const panels = price ? [top, pricePanel(price, alone ? 170 : 200)] : [top]
@@ -39,10 +43,10 @@ export function LevelsMain({ ctx }: { ctx: PageContext }) {
       <SeriesChart panels={panels} domain={windowDomain(w.start, w.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
       <p className="gf-hint">
         {one
-          ? `${one}’s notified level at the start of each half-hour, in MW.`
+          ? `${one}’s notified level at the start of each half-hour, in MW${flatText ? `: ${flatText}` : ''}.`
           : focus
-            ? `${focus.id} alone, in MW: its notified level at the start of each half-hour. Select it again in the key to draw all ${lines.length}.`
-            : `Each band is one unit’s notified level at the start of each half-hour, in GW, coloured by its fuel and stacked fuel by fuel. The top of the stack is the sum of these ${lines.length} units only, not GB’s total.`}
+            ? `${focus.id} alone, in MW: its notified level at the start of each half-hour${flatText ? `, ${flatText}` : ''}. Select it again in the key to draw all ${lines.length}.`
+            : `Each band is one unit’s notified level at the start of each half-hour, in GW, coloured by its fuel and stacked fuel by fuel. The top of the stack is the sum of these ${lines.length} units only, where every one of them holds a level, not GB’s total.`}
         {means} A gap is a half-hour with no level held.
         {price ? ` Under it, the market index price on the same clock${banded ? ', its runs below zero banded' : ''}.${thin}` : ''}
       </p>
