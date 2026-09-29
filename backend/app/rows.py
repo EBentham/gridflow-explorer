@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import logging
 import math
 import re
+import sys
 import threading
 import time
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -23,6 +26,8 @@ LONDON = ZoneInfo("Europe/London")
 MAX_RESPONSE_ROWS = 50_000
 MAX_DUPLICATE_PROOF = 50_000
 TTL_SECONDS = 600
+_ROWS_MEMORY_CEILING = "8GiB"
+LOG = logging.getLogger(__name__)
 GRAINS = {
     "15s": 15_000,
     "5min": 300_000,
@@ -264,6 +269,7 @@ class _SelectionScope:
         self.prefix = "__rows_" + uuid.uuid4().hex + "_"
         self.owned: list[str] = []
         self.semantic: str | None = None
+        self.semantic_key: tuple[str, dict[str, Any]] | None = None
         self.operations = _temp_operations(client, self.prefix)
 
     def query(self, sql: str) -> pl.DataFrame:
@@ -290,11 +296,23 @@ class _SelectionScope:
             if (dedup and dedup["order_by"]) or dataset["row_filter"] or dataset["snapshot_column"]:
                 selected = self.stage(selected)
             self.semantic = selected
+            self.semantic_key = (relation, dataset)
+        elif self.semantic_key != (relation, dataset):
+            raise ValueError("Rows selection reused with a different relation or dataset")
         return self.semantic
 
     def close(self) -> None:
+        primary = sys.exc_info()[1]
+        first_drop_error: duckdb.Error | None = None
         for name in reversed(self.owned):
-            self.operations.drop(name)
+            try:
+                self.operations.drop(name)
+            except duckdb.Error as exc:
+                LOG.exception("Failed to drop rows TEMP table %s", name)
+                if first_drop_error is None:
+                    first_drop_error = exc
+        if primary is None and first_drop_error is not None:
+            raise first_drop_error
 
 
 def _cache_key(request: Request, config: str) -> tuple[str, str, str]:
@@ -573,12 +591,8 @@ def _native_collision_check(
         if request.group:
             same += f" AND s.{group} IS NOT DISTINCT FROM r.{group}"
         cols = ", ".join(f"s.{_quote(column)}" for column in projection)
-        order = [f"s.{_quote(clock)} ASC NULLS LAST"]
-        if request.group:
-            order.append(f"s.{group} ASC NULLS LAST")
         frame = client.query(
-            f"WITH s AS ({sql}), r AS ({repeated}) SELECT {cols} FROM s JOIN r ON {same} "
-            f"ORDER BY {', '.join(order)}"
+            f"WITH s AS ({sql}), r AS ({repeated}) SELECT {cols} FROM s JOIN r ON {same}"
         )
         keys = [clock] + ([request.group] if request.group else [])
         signatures: dict[tuple[Any, ...], tuple[bytes, int]] = {}
@@ -808,13 +822,37 @@ def _varying_ancillary_columns(
     return [column for column in columns if flags[column]]
 
 
-def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
-    """Execute one rows request with instance resource policy and owned TEMP stages."""
-    client.query(
-        "SET temp_directory=''; SET memory_limit='8GiB'; "
+def _memory_bytes(value: str) -> Decimal:
+    """Parse DuckDB's normalized binary memory setting for policy comparison."""
+    match = re.fullmatch(r"\s*(\d+(?:\.\d+)?)\s*([KMGT]?i?B)\s*", value, re.I)
+    if match is None:
+        raise RuntimeError(f"Unrecognized DuckDB memory_limit: {value!r}")
+    unit = match.group(2).upper().replace("I", "")
+    return Decimal(match.group(1)) * (Decimal(1024) ** "BKMGT".index(unit[0]))
+
+
+def _configure_resources(client: Any) -> None:
+    """Disable spill and cap memory without raising an existing lower limit."""
+    current = client.query("SELECT current_setting('memory_limit') AS memory_limit").to_dicts()[0][
+        "memory_limit"
+    ]
+    lower_to_ceiling = _memory_bytes(current) > _memory_bytes(_ROWS_MEMORY_CEILING)
+    memory_set = f" SET memory_limit={_literal(_ROWS_MEMORY_CEILING)};" if lower_to_ceiling else ""
+    applied = client.query(
+        f"SET temp_directory='';{memory_set} "
         "SELECT current_setting('temp_directory') AS temp_directory, "
         "current_setting('memory_limit') AS memory_limit"
-    )
+    ).to_dicts()[0]
+    expected = _ROWS_MEMORY_CEILING if lower_to_ceiling else current
+    if applied["temp_directory"] != "" or _memory_bytes(applied["memory_limit"]) != _memory_bytes(
+        expected
+    ):
+        raise RuntimeError(f"DuckDB rows resource policy was not applied: {applied!r}")
+
+
+def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
+    """Execute one rows request with instance resource policy and owned TEMP stages."""
+    _configure_resources(client)
     scope = _SelectionScope(client)
     try:
         return _execute_selected(scope, request, config)

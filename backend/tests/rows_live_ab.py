@@ -1,4 +1,8 @@
-"""Explicit live rows comparison; importing this module never opens the catalogue."""
+"""Manually invoked live-verification script, not a pytest test file.
+
+Never import this module for side effects. Client construction occurs only inside
+explicitly invoked functions, and the live catalogue opens only under __main__.
+"""
 
 from __future__ import annotations
 
