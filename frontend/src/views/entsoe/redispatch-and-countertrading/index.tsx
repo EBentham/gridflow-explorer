@@ -53,7 +53,7 @@ const view = defineView({
       caveats: [
         'Only the Netherlands and Belgium are held; ENTSO-E’s rows here hold no GB zone. Each row names the same zone on both sides, so this is redispatching inside a zone, not across a border.',
         'The rows say how many MW each quarter-hour and nothing more: no direction (up or down), no reason and no plant. The page says how much and when, never why. It shows MW, not GW, as tens of MW would round away in GW.',
-        'The Netherlands holds whole days of quarter-hours, many of them at 0 MW. Belgium holds values in short runs only, with no rows between them. The page leaves those quarter-hours as gaps, never as 0 MW: the rows don’t say whether Belgium redispatched then.',
+        'The Netherlands holds whole days of quarter-hours, many of them at 0 MW. Belgium holds values in runs, with no rows between them. The page leaves those quarter-hours as gaps, never as 0 MW: the rows don’t say whether Belgium redispatched then.',
         'The chart reads both zones on the UK clock, an hour behind their own Central European time: 19:00 there reads 18:00 here.',
       ],
       panels,
