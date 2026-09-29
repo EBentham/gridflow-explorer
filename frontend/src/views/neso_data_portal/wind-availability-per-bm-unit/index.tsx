@@ -23,7 +23,7 @@ import type { PageContext } from '../../define'
 import { defineView } from '../../define'
 import { AvailabilityKey } from './AvailabilityKey'
 import { AvailabilityMain } from './AvailabilityMain'
-import { AXIS_WIDTH, OUTPUT, OUTPUT_COLOR, OUTPUT_DATASET, OUTPUT_FILTER, OUTPUT_KEY, OUTPUT_SOURCE, UNIT, VALUE, outputPart, unitShown } from './figures'
+import { AXIS_WIDTH, OUTPUT, OUTPUT_COLOR, OUTPUT_DATASET, OUTPUT_FILTER, OUTPUT_KEY, OUTPUT_SOURCE, UNIT, VALUE, outputPart, unitMissing, unitShown } from './figures'
 import { UnitControl } from './UnitControl'
 import { Working } from './Working'
 import './page.css'
@@ -34,6 +34,8 @@ const oneFilter = (ctx: PageContext) => {
 }
 
 function mainTitle(ctx: PageContext): string {
+  const missing = unitMissing(ctx)
+  if (missing) return `No unit ${missing} in this window`
   const one = unitShown(ctx)
   if (ctx.mode === 'table') return one ? `Each day of ${one.id}` : 'Each unit, each day'
   return one ? `Forecast available capacity of ${one.id}` : 'Forecast available capacity, all units, with GB wind output'
@@ -94,7 +96,7 @@ const view = defineView({
         main: { title: mainTitle, src: mainSrc, Body: AvailabilityMain },
         key: { title: 'Key', src: keySrc, Body: AvailabilityKey },
         working: {
-          title: (ctx) => (unitShown(ctx) && ctx.mode === 'chart' ? 'The days' : 'The days, and the units that change'),
+          title: (ctx) => (unitMissing(ctx) ? 'The days' : unitShown(ctx) && ctx.mode === 'chart' ? 'The days' : 'The days, and the units that change'),
           src: workingSrc,
           Body: Working,
         },

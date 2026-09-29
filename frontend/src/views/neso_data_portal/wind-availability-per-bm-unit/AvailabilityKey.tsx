@@ -8,7 +8,6 @@
  */
 import type { ReactNode } from 'react'
 import { KeyList } from '../../../design/charts'
-import { plural } from '../../../design/format'
 import type { PageContext } from '../../define'
 import { AVAIL_COLOR, GW, MW, OUTPUT_COLOR, TOP_N, UNIT_COLOR, UNIT_PARAM, aheadText, captureFrom, dayText, outputSeries, publishedText, unitMissing, unitShown, type Capture, type Unit } from './figures'
 
@@ -30,8 +29,8 @@ function Published({ cap }: { cap: Capture }) {
   if (!when) return null
   return (
     <p className="gf-hint">
-      Published {when}
-      {ahead ? `, for the days ${ahead} after.` : '.'}
+      Published {when}.
+      {ahead ? (cap.days.length === 1 ? ` The day in this window is ${ahead} after it.` : ` The days in this window are ${ahead} after it.`) : ''}
     </p>
   )
 }
@@ -58,7 +57,7 @@ function AllKey({ ctx, cap }: { ctx: PageContext; cap: Capture }) {
             {stat('Lowest day', GW.format(low.sum * GW.factor), dayText(low.day))}
           </>
         )}
-        {stat('Units that change', `${changing.toLocaleString('en-GB')} of ${cap.units.length.toLocaleString('en-GB')}`)}
+        {cap.days.length > 1 && stat('Units that change', `${changing.toLocaleString('en-GB')} of ${cap.units.length.toLocaleString('en-GB')}`)}
         {zero > 0 && stat('At 0 MW every day', zero.toLocaleString('en-GB'))}
         {below > 0 && stat('Below 0 MW on a day', below.toLocaleString('en-GB'))}
       </dl>
@@ -72,7 +71,7 @@ function AllKey({ ctx, cap }: { ctx: PageContext; cap: Capture }) {
           ]}
         />
       )}
-      <p className="gf-hint gf-wa-head">The {plural(top.length, 'largest unit', `${top.length} largest units`)}, by mean</p>
+      <p className="gf-hint gf-wa-head">{top.length === 1 ? 'The largest unit' : `The ${top.length} largest units`}, by mean</p>
       <ul className="gf-series-key">
         {top.map((u) => {
           const v = u.values.get(lastDay)

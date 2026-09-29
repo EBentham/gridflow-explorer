@@ -50,7 +50,7 @@ export function AvailabilityMain({ ctx }: { ctx: PageContext }) {
         <SeriesChart panels={[unitPanel(one, w, flat ? 180 : 420)]} domain={domain} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
         <p className="gf-hint">
           <code>{one.id}</code>’s forecast available capacity for each day, in MW, held flat from midnight to midnight as it is one figure for the whole day
-          {flat && one.low ? `: ${MW.format(one.low.v)} on every day it holds` : ''}. A gap is a day with no figure held. It holds {plural(one.held, 'day', 'days')} of the {plural(cap.days.length, 'day', 'days')} the window holds.
+          {flat && one.low ? `: ${MW.format(one.low.v)} on every day it holds` : ''}. A gap is a day with no figure held. It has a figure on {one.held} of the {plural(cap.days.length, 'day', 'days')} in this window that hold rows.
         </p>
       </>
     )

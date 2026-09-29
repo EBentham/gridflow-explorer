@@ -62,7 +62,7 @@ function DaysTable({ ctx, cap }: { ctx: PageContext; cap: Capture }) {
         </table>
       </div>
       <p className="gf-hint">
-        One row for each day holding rows. The total is every unit’s figure summed, in GW; the change on the day before is in MW, where both days’ totals are whole. Units moved counts the units whose figure differs from the day before. Select a day to band it on the chart.
+        One row for each day holding rows. The total is every unit’s figure summed, in GW; the change on the day before is in MW, where both days’ totals are whole. Units moved counts the units whose figure differs from the day before.{ctx.mode === 'chart' ? ' Select a day to band it on the chart.' : ''}
       </p>
     </div>
   )
@@ -74,7 +74,9 @@ function ChangingUnits({ ctx, cap }: { ctx: PageContext; cap: Capture }) {
   return (
     <div>
       <p className="gf-hint gf-wa-head">Units whose figure changes</p>
-      {changing.length === 0 ? (
+      {cap.days.length < 2 ? (
+        <p className="gf-hint">One day in this window holds rows, so there is no day before to set it against.</p>
+      ) : changing.length === 0 ? (
         <p className="gf-hint">Every unit holds the same figure on every day it holds in this window, so none moves the total.</p>
       ) : (
         <>
