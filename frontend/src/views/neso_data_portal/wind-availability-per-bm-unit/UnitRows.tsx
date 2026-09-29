@@ -36,7 +36,7 @@ export function UnitRows({ ctx, unit }: { ctx: PageContext; unit: Unit }) {
                 Forecast available, {MW.label}
               </th>
               <th scope="col" className="is-num">
-                On the day before
+                Change on the day before
               </th>
               <th scope="col" className="is-num">
                 All units, {GW.label}

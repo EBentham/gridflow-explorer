@@ -50,7 +50,7 @@ function AllKey({ ctx, cap }: { ctx: PageContext; cap: Capture }) {
     <>
       <dl className="gf-stats gf-wa-stats">
         {latest ? stat(`All ${cap.units.length} units`, GW.format(latest.sum * GW.factor), dayText(latest.day)) : null}
-        {low && high && low.sum === high.sum && stat('On every day', GW.format(low.sum * GW.factor))}
+        {cap.days.length > 1 && low && high && low.sum === high.sum && stat('On every day', GW.format(low.sum * GW.factor))}
         {low && high && low.sum !== high.sum && (
           <>
             {stat('Highest day', GW.format(high.sum * GW.factor), dayText(high.day))}
@@ -99,13 +99,13 @@ function ordinal(n: number): string {
 }
 
 function OneKey({ ctx, cap, unit }: { ctx: PageContext; cap: Capture; unit: Unit }) {
-  const rank = cap.units.indexOf(unit) + 1
+  const tied = cap.units.flatMap((u, i) => (u.mean !== null && u.mean === unit.mean ? [i + 1] : []))
   const flat = unit.low && unit.high && unit.low.v === unit.high.v
   const lastTotal = unit.last ? cap.totalByDay.get(unit.last.day) : undefined
   const part = unit.last && lastTotal?.full && lastTotal.sum > 0 ? (100 * unit.last.v) / lastTotal.sum : null
   return (
     <>
-      <KeyList items={[{ key: unit.id, mark: { kind: 'line', color: UNIT_COLOR, dashed: ctx.fixture }, label: <code>{unit.id}</code> }]} />
+      {ctx.mode === 'chart' && <KeyList items={[{ key: unit.id, mark: { kind: 'line', color: UNIT_COLOR, dashed: ctx.fixture }, label: <code>{unit.id}</code> }]} />}
       <dl className="gf-stats gf-wa-stats">
         {unit.last && stat('Latest day', MW.format(unit.last.v), dayText(unit.last.day))}
         {flat && unit.low && stat('On every day held', MW.format(unit.low.v))}
@@ -114,7 +114,8 @@ function OneKey({ ctx, cap, unit }: { ctx: PageContext; cap: Capture; unit: Unit
         {!flat && unit.mean !== null && stat('Mean', MW.format(unit.mean))}
         {stat('Days held', `${unit.held} of ${cap.days.length}`)}
         {part !== null && stat('Part of all units', `${part.toFixed(2)}%`, unit.last ? dayText(unit.last.day) : undefined)}
-        {rank > 0 && unit.mean !== null && stat('By mean', `${ordinal(rank)} of ${cap.units.length}`)}
+        {tied.length === 1 && stat('By mean', `${ordinal(tied[0])} of ${cap.units.length}`)}
+        {tied.length > 1 && stat('By mean', `joint ${ordinal(tied[0])}–${ordinal(tied[tied.length - 1])} of ${cap.units.length}`)}
       </dl>
       <p className="gf-hint">In MW, over the days this window holds a figure for it. Its part is its figure over the sum of every unit’s that day.</p>
       <Published cap={cap} />

@@ -34,7 +34,7 @@ function DaysTable({ ctx, cap }: { ctx: PageContext; cap: Capture }) {
                 All units, {GW.label}
               </th>
               <th scope="col" className="is-num">
-                On the day before
+                Change on the day before
               </th>
               <th scope="col" className="is-num">
                 Units moved
@@ -80,7 +80,7 @@ function ChangingUnits({ ctx, cap }: { ctx: PageContext; cap: Capture }) {
         <p className="gf-hint">Every unit holds the same figure on every day it holds in this window, so none moves the total.</p>
       ) : (
         <>
-          <div className="gf-days gf-wa-long">
+          <div className="gf-days gf-wa-whole">
             <table>
               <thead>
                 <tr>

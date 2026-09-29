@@ -41,7 +41,15 @@ function mainTitle(ctx: PageContext): string {
   return one ? `Forecast available capacity of ${one.id}` : 'Forecast available capacity, all units, with GB wind output'
 }
 
+/** A unit asked for that the rows don't hold: the panels name what was looked for, and nothing else. */
+function missingSrc(ctx: PageContext) {
+  const missing = unitMissing(ctx)
+  return missing ? <SourceLine ctx={ctx} columns={[VALUE]} filters={{ [UNIT]: missing }} unit="MW" what="no rows for this unit" /> : null
+}
+
 function mainSrc(ctx: PageContext) {
+  const gone = missingSrc(ctx)
+  if (gone) return gone
   const one = oneFilter(ctx)
   if (ctx.mode === 'table') {
     return <SourceLine ctx={ctx} columns={[VALUE]} by={one ? null : UNIT} filters={one} unit={one ? 'MW, totals in GW' : 'MW'} what={one ? 'one row per day, with the total over every unit' : 'one row per unit, one column per day held'} />
@@ -51,12 +59,16 @@ function mainSrc(ctx: PageContext) {
 }
 
 function keySrc(ctx: PageContext) {
+  const gone = missingSrc(ctx)
+  if (gone) return gone
   const one = oneFilter(ctx)
   if (one) return <SourceLine ctx={ctx} columns={[VALUE]} filters={one} unit="MW" what="its latest day, range, days held and part of the total" />
   return <SourceLine ctx={ctx} columns={[VALUE]} by={UNIT} unit="GW, units in MW" what="the total’s latest day and range, and the largest units" />
 }
 
 function workingSrc(ctx: PageContext) {
+  const gone = missingSrc(ctx)
+  if (gone) return gone
   const one = oneFilter(ctx)
   if (one && ctx.mode === 'chart') return <SourceLine ctx={ctx} columns={[VALUE]} filters={one} unit="MW, totals in GW" what="one row per day, with the total over every unit" />
   return <SourceLine ctx={ctx} columns={[VALUE]} by={UNIT} unit="GW, changes in MW" what="each day held, and the units whose figure changes" />
