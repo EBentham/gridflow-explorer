@@ -25,7 +25,7 @@
   part isn't time order, and keeps the last row per half-hour without sorting by
   `published_at`; the files are newest first, so it keeps the earliest issue of whichever
   file is read last. The Explorer's read then keeps, across days fetched, the newest of those.
-  Reproduced from the files fetched for all 14 days held at every one of the 780 half-hours
+  Reproduced from the files for all 14 days fetched at every one of the 780 half-hours
   held (checked 29 Sep 2026): the half-hour shows the last issue fetched for it at only 26.
   The page says so and names each figure's issue. Fix: sort by `published_at` before the
   `unique`, or keep every issue and let the read choose.
