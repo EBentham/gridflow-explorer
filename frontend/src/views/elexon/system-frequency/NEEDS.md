@@ -30,8 +30,13 @@ works around each gap inside its folder.
    - Asked for: `ChartPanel.refs: { y, label, strong }[]` and `ChartPanel.domain` (a floor
      and ceiling the scale must include).
 4. **The chart draws every reading.** At 7 days that is 40,320 points in one Recharts line.
-   It renders and the shot harness settles on it, but hover responsiveness at that size
-   hasn't been measured. The page doesn't thin readings client-side, so no excursion is
+   It renders, and hover keeps up. This was measured on 29 Sep 2026 in headless Edge at 1440
+   px, sweeping 60 positions across the chart in each theme:
+   - from a mouse move to the second animation frame after it took a median of 39 ms and at
+     most 65 ms, including the harness's own round trips;
+   - no task ran 50 ms or longer;
+   - the console showed no errors.
+   The page doesn't thin readings client-side, so no excursion is
    hidden. A min/max envelope from the endpoint (item 1) would let long native windows be
    drawn lighter without losing one.
 

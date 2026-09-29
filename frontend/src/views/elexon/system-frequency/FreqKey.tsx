@@ -62,34 +62,39 @@ export function FreqKey({ ctx }: { ctx: PageContext }) {
         </div>
       </dl>
       {bucketed && (
-        <p className="gf-hint">These are means of the readings, not readings: a mean hides the swings inside its {period}. Choose 7 days or fewer for the readings’ own lowest and highest.</p>
+        <p className="gf-hint">
+          These are means of the readings, not readings: a mean hides the swings inside its {period}, and a {period} next to a gap may hold only some of its readings, its mean being over those. Choose
+          7 days or fewer for the readings’ own lowest and highest.
+        </p>
       )}
-      <KeyList
-        items={[
-          {
-            key: 'f',
-            mark: { kind: 'line', color: FREQ_COLOR, dashed: ctx.fixture },
-            label: bucketed ? `System frequency, ${noun}s` : 'System frequency, each reading',
-          },
-          {
-            key: 'n',
-            mark: { kind: 'line', color: 'var(--chart-axis)' },
-            label: `${NOMINAL_HZ} Hz, nominal (the middle rule)`,
-          },
-          {
-            key: 's',
-            mark: { kind: 'line', color: 'var(--chart-axis)' },
-            label: `Statutory limits, ${bandText(STATUTORY)} (labelled)`,
-          },
-          {
-            key: 'b',
-            mark: { kind: 'swatch', color: BAND_FILL },
-            label: bucketed ? `${bandText(NARROW)}, the shaded band` : `${bandText(NARROW)}, the shaded band counted below`,
-          },
-        ]}
-      />
+      <div className="sf-key">
+        <KeyList
+          items={[
+            {
+              key: 'f',
+              mark: { kind: 'line', color: FREQ_COLOR, dashed: ctx.fixture },
+              label: bucketed ? `System frequency, ${noun}s` : 'System frequency, each reading',
+            },
+            {
+              key: 'n',
+              mark: { kind: 'line', color: 'var(--chart-axis)' },
+              label: `${NOMINAL_HZ} Hz, nominal (the middle rule)`,
+            },
+            {
+              key: 's',
+              mark: { kind: 'line', color: 'var(--chart-axis)' },
+              label: `Statutory limits, ${bandText(STATUTORY)} (labelled)`,
+            },
+            {
+              key: 'b',
+              mark: { kind: 'swatch', color: BAND_FILL },
+              label: bucketed ? `${bandText(NARROW)}, the shaded band` : `${bandText(NARROW)}, the shaded band counted below`,
+            },
+          ]}
+        />
+      </div>
       <p className="gf-hint">
-        The statutory range is the one gridflow’s notes on this dataset give. The {bandText(NARROW)} band is the one this page was asked to count; no source held here says who sets it, so the page
+        The statutory range is the one gridflow’s notes on this dataset give. The {bandText(NARROW)} band is a narrower reference band around 50 Hz; no source held here says who sets it, so the page
         doesn’t call it a limit.
       </p>
     </>
