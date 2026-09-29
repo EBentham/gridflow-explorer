@@ -85,10 +85,10 @@ export function DaysPanel({ ctx }: { ctx: PageContext }) {
                 Forecast, mean
               </th>
               <th scope="col" className="is-num">
-                Actual, mean
+                Estimated actual, mean
               </th>
               <th scope="col" className="is-num">
-                Actual less forecast, mean
+                Estimate less forecast, mean
               </th>
               <th scope="col" className="is-num">
                 Mean absolute difference

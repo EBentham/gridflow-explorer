@@ -54,7 +54,7 @@ export function IntensityKey({ ctx }: { ctx: PageContext }) {
               <th scope="col">{unit.label ?? 'Unit unconfirmed'}</th>
               {lines.map(({ d }) => (
                 <th key={d.key} scope="col" className="is-num">
-                  {d.column === ACTUAL ? 'Actual' : 'Forecast'}
+                  {d.column === ACTUAL ? 'Estimate' : 'Forecast'}
                 </th>
               ))}
             </tr>
