@@ -78,7 +78,8 @@ function PairTable({ ctx, pair }: { ctx: PageContext; pair: Pair }) {
   ]
   const steps = pair.bucketed && pair.stepMs ? meansText(pair.stepMs) : stepNoun(pair.stepMs)
   const own = pair.ownIsDemand ? 'demand' : 'generation'
-  const caption = `${boundaryName(pair.boundary).replace(/^b/, 'B')}, ${ctx.windowText}: ${pair.rows.length.toLocaleString('en-GB')} ${steps}. Demand as held is negative; flipped is the same figure with its sign turned. Select a column heading to sort.`
+  const held = pair.rows.filter((r) => typeof r.g === 'number' || typeof r.d === 'number').length
+  const caption = `${boundaryName(pair.boundary).replace(/^b/, 'B')}, ${ctx.windowText}: ${pair.rows.length.toLocaleString('en-GB')} ${steps}, ${held.toLocaleString('en-GB')} held. Demand as held is negative; flipped is the same figure with its sign turned. Select a column heading to sort.`
   return (
     <>
       <WindowedTable columns={cols} rows={pair.rows} caption={caption} initialSort={{ key: 't', dir: 'asc' }} rowKey={(r) => r.t} />

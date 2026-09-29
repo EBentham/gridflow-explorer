@@ -31,3 +31,13 @@
 - **Vintage (for the gridflow backlog).** gridflow keeps only the earliest issue from each
   day's fetch of both datasets, so the page can't show the issue made closest to each
   half-hour. It is bronze-checked for `inddem` only; `indgen` is expected to match.
+- **The far end of each issue reads low (for the gridflow backlog, with the vintage item).**
+  In the rows held (checked 29 Sep 2026), the figures each issue made at about 01:17 BST
+  gives for its last half-hours (that day's last two and the next day's first three) read
+  several GW below those before them, for both datasets, so both lines drop each night from
+  about 23:00 to 01:30 BST. The drop follows the issue, not the clock: on 22 Sep the
+  21 Sep 00:17 UTC issue runs on to SP 10 and both figures lift at SP 11, where the
+  10:47 UTC issue takes over. Whether later issues, which gridflow doesn't keep, revise
+  these half-hours, and why the far end reads low, isn't known here. What the page does
+  instead: a caveat states what the rows show, names no cause, and warns that the key's
+  lowest figures can fall in these half-hours.

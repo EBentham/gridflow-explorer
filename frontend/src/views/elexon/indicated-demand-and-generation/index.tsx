@@ -49,7 +49,7 @@ const panels: PanelSlots = {
         filters={at(ctx)}
         unit={ctx.mode === 'table' ? 'MW' : 'GW'}
         also={otherPart(ctx, ctx.mode === 'table' ? 'MW' : 'GW')}
-        what={ctx.mode === 'table' ? 'a row per half-hour, demand as held and with its sign flipped, and the issue behind it' : 'the latest issue held per half-hour, demand drawn with its sign flipped'}
+        what={ctx.mode === 'table' ? 'a row per half-hour, demand as held and with its sign flipped, and the issue behind it' : 'per half-hour the first issue from the latest day fetched, demand drawn with its sign flipped'}
       />
     ),
     Body: PairBody,
@@ -101,9 +101,10 @@ const common: Pick<DatasetView, 'controls' | 'panels' | 'query'> = { controls: B
 
 const view = defineView({
   title: 'Indicated demand and generation',
-  sub: 'Elexon’s day and day-ahead indicated demand and indicated generation, half-hour by half-hour, side by side for the whole system (boundary N) or one of 17 boundaries within it.',
+  sub: 'Elexon’s day and day-ahead indicated demand and indicated generation, half-hour by half-hour, side by side for the whole system (boundary N) or one of 17 other boundaries, B1 to B17.',
   caveats: [
-    'These are forecasts, and Elexon issues them more than once a day. Each half-hour shows the latest issue held for it, but gridflow keeps only the earliest issue from each day’s fetch (a known fault in gridflow, not yet fixed), so the issues made closer to each half-hour aren’t held. In the rows held (checked 29 Sep 2026), a past day’s figures come from an issue made at about 01:17 BST that day, its first three half-hours from the one made the day before: early half-hours were issued minutes ahead, evening ones most of a day ahead. The key and the working panel read the issue behind each figure.',
+    'These are not the latest forecasts. gridflow keeps only the first issue from each day it fetches them (a known fault in gridflow, not yet fixed; for demand, checked against the files fetched for 3 Aug 2026), and each half-hour shows that issue from the latest day it was fetched for: for a past day, the one made at about 01:17 BST that day. The key and the working panel give the issue behind each figure.',
+    'Both lines drop sharply each night at about 23:00 BST and rise again at 01:30 BST. The drop follows the issue, not the clock: in the rows held (checked 29 Sep 2026), the figures each issue made at about 01:17 BST gives for its last half-hours, that day’s last two and the next day’s first three, read several GW lower than those before them. On Tue 22 Sep the same issue runs on to 05:00 BST, and the drop with it, until a later issue takes over. The key’s lowest figures and the days’ ranges can fall in these half-hours. Why isn’t set out in the rows held.',
     'Indicated demand is held as a negative figure. This page turns its sign for display only, so that demand reads above zero beside generation; it is named “sign flipped” wherever it is drawn, and the table gives the figure as held beside it.',
     'Boundary N is the whole system and opens by default; B1 to B17 are named by their codes, as the rows don’t say what area each bounds. They are not parts of N: at a half-hour checked on 18 Sep 2026 (checked 29 Sep 2026), B1 to B17 added up to about twice N for demand and more than four times N for generation.',
     'The gap between the two lines is not Elexon’s indicated imbalance, published separately: generation plus demand as held matches none of its 96 half-hours on 18 and 19 Sep 2026 (checked 29 Sep 2026). What each figure counts isn’t set out in the rows held.',
@@ -114,7 +115,6 @@ const view = defineView({
       id: INDDEM,
       body: 'series',
       label: 'Indicated demand',
-      caveats: ['Checked against the files fetched for 3 Aug 2026: every figure held for that day came from the earliest issue in its fetch.'],
       values: [{ column: DEMAND, label: 'Indicated demand, as held (negative)', color: COLORS.demand }],
       related: [generation],
       chart: { mark: 'line', lower: false, axisWidth: AXIS_WIDTH },
