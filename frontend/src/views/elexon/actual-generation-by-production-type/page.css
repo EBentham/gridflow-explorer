@@ -1,0 +1,4 @@
+/* Short tables (the working panel's twelve pairings), listed whole rather than in a scrolling box. */
+.gf-days.agpt-whole {
+  max-height: none;
+}
