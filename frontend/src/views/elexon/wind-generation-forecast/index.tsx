@@ -49,7 +49,7 @@ const view = defineView({
           values: [{ column: METERED, label: 'Metered wind output', color: COLORS.metered }],
         },
       ],
-      chart: { mark: 'line', extremes: true, lower: false, axisWidth: AXIS_WIDTH, height: 400 },
+      chart: { mark: 'line', extremes: true, lower: false, axisWidth: AXIS_WIDTH, height: 480 },
       panels: {
         key: {
           title: 'Key',

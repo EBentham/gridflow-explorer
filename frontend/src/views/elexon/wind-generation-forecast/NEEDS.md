@@ -25,3 +25,7 @@
   with the two metered half-hours from its stamp and says so. Confirm the convention for
   `WINDFOR`; if it is an instant, the template should name it as one and the pairing
   should centre on it.
+- **The table view has no issue time per row.** The template's hourly table lists the
+  period and the value, but not `published_at`, which is what says which issue a row is.
+  What the page does instead: the working panel's days table names each issue drawn per
+  day and whether its hours were issued before or after them.

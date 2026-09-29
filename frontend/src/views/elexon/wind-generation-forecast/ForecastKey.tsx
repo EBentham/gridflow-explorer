@@ -7,7 +7,7 @@
  * hours both hold, split the same way. Every figure comes from the rows read.
  */
 import { KeyList, type KeyItem } from '../../../design/charts'
-import { instantLabel, stepNoun } from '../../../design/time'
+import { dayLabel, instantLabel, stepNoun } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
 import { extremesOf, latestValue, periodName } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
@@ -102,6 +102,10 @@ export function ForecastKey({ ctx }: { ctx: PageContext }) {
               </dd>
             </div>
             <div>
+              <dt>Issues drawn</dt>
+              <dd>{summary.issues.length.toLocaleString('en-GB')}</dd>
+            </div>
+            <div>
               <dt>Newest issue drawn</dt>
               <dd>
                 {instantLabel(summary.issues[summary.issues.length - 1])}
@@ -109,9 +113,7 @@ export function ForecastKey({ ctx }: { ctx: PageContext }) {
               </dd>
             </div>
           </dl>
-          <p className="gf-hint">
-            The hours drawn come from {summary.issues.length === 1 ? 'one issue' : `${summary.issues.length} issues`} of the forecast. Each hour shows the latest issue held for it, and an issue also covers hours before it was made, so an hour issued after it shows a figure made once the hour had passed, not a forecast made ahead.
-          </p>
+          <p className="gf-hint">An hour issued after it shows a figure made once the hour had passed, not a forecast made ahead.</p>
         </>
       ) : (
         <p className="gf-hint">The rows read carry no issue time{model.bucketed ? ', as they come back as means' : ''}, so which issue each hour comes from can’t be said here.</p>
@@ -130,8 +132,8 @@ export function ForecastKey({ ctx }: { ctx: PageContext }) {
             {join.ahead.count + join.after.count < join.all.count && <DiffStat label="Metered less forecast" s={join.all} />}
           </dl>
           <p className="gf-hint">
-            The mean of the metered half-hours in each hour less that hour’s forecast, at the {join.all.count.toLocaleString('en-GB')} {noun} both hold. Only the hours issued before them are a forecast’s miss.
-            {join.meteredTo !== null && mModel && summary?.newestReach != null && join.meteredTo < summary.newestReach ? ` Metered output is held locally to ${periodName(join.meteredTo, mModel.stepMs, mModel.settlement)}; the hours after it have a forecast only.` : ''}
+            Each hour’s mean of the metered half-hours less its forecast, over the {join.all.count.toLocaleString('en-GB')} {noun} both hold. Only hours issued before them measure a forecast’s miss.
+            {join.meteredTo !== null && summary?.newestReach != null && join.meteredTo < summary.newestReach ? ` Metered output is held locally to ${dayLabel(join.meteredTo)}.` : ''}
           </p>
         </>
       )}

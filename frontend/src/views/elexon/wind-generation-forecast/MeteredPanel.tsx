@@ -39,7 +39,14 @@ function IssueCells({ d }: { d: DayRow }) {
   const lead = d.ahead === 0 ? 'all after' : d.ahead === d.held ? 'all before' : `${d.ahead} before, ${d.held - d.ahead} after`
   return (
     <>
-      <td>{d.issues.map(issueShort).join(' and ')}</td>
+      <td>
+        {d.issues.map((t, i) => (
+          <span key={t}>
+            {i > 0 && <br />}
+            {issueShort(t)}
+          </span>
+        ))}
+      </td>
       <td>{lead}</td>
     </>
   )
@@ -128,10 +135,10 @@ export function MeteredPanel({ ctx }: { ctx: PageContext }) {
             <tr>
               <th scope="col">Day</th>
               <th scope="col" className="is-num">
-                Hours held
+                Hours
               </th>
               <th scope="col">Issued</th>
-              <th scope="col">Before or after the hours</th>
+              <th scope="col">Before or after</th>
               <th scope="col" className="is-num">
                 Forecast mean, {unit.label}
               </th>
@@ -141,10 +148,10 @@ export function MeteredPanel({ ctx }: { ctx: PageContext }) {
                     Metered mean, {unit.label}
                   </th>
                   <th scope="col" className="is-num">
-                    Metered less forecast, mean, MW
+                    Metered less forecast, MW
                   </th>
                   <th scope="col" className="is-num">
-                    Mean absolute, MW
+                    Absolute, MW
                   </th>
                 </>
               )}
@@ -199,11 +206,11 @@ export function MeteredPanel({ ctx }: { ctx: PageContext }) {
           </tbody>
         </table>
       </div>
-      {shown.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
+      {shown.length > 5 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
-        Hours held counts the {noun} of forecast held, and a mean over a day held in part is a mean of that part. Issued names each issue drawn that day on the UK clock, and whether it was made before or after the hours it gives.
+        Hours counts the {noun} of forecast held, and a mean over a day held in part is a mean of that part. Issued names each issue drawn that day on the UK clock, and whether it was made before or after the hours it gives.
         {hasMetered
-          ? ` The metered mean is over the ${mNoun} of wind output held that day; where it holds only some, the cell says over how many. Metered less forecast sets each hour’s forecast against the mean of the metered half-hours in that hour, over the hours both hold, and a dash where they hold none in common: above zero, more wind was metered than forecast.`
+          ? ` The metered mean is over the ${mNoun} of wind output held that day; where it holds only some, the cell says over how many. Metered less forecast is the mean over the hours both hold of each hour’s metered mean less its forecast, and Absolute the mean of its size; a dash where they hold none in common. Above zero, more wind was metered than forecast.`
           : ''}
         {model.bucketed ? ` This window is read as ${noun}, so the differences are between means.` : ''}
         {ctx.mode === 'chart' ? ' Select a day to mark it on every chart.' : ' Select a day to mark it.'}
