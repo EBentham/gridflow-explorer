@@ -10,7 +10,7 @@
 2. **Daily markers sit on the day rules.** A `DATE` row arrives at UTC midnight, so each
    day's marker is drawn at 00:00 or 01:00 UK time, on its day's left rule, not across its
    day, and a one-day window shows it as a dot at 01:00 BST on a clock axis; the main
-   panel's source line says it is drawn at the day's start. `elexon/demand-outturn` asks the
+   panel's source line says it is drawn at midnight UTC (01:00 BST). `elexon/demand-outturn` asks the
    same for daily bars. Asked for: day-grain rows drawn
    at the middle of their UK day, or a band from midnight to midnight.
 3. **No reference temperatures held.** gridflow's schema and notes list normal, low and high

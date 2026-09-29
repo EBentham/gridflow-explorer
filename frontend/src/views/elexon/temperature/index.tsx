@@ -16,6 +16,7 @@
 import { SourceLine } from '../../_template/panels'
 import { SeriesBody } from '../../_template/SeriesBody'
 import { plannedParts, relatedParts } from '../../_template/panelHelpers'
+import { clock, zoneAbbrev } from '../../../design/time'
 import { defineView } from '../../define'
 import { COLORS, DEMAND_KEY, INDO, TEMP, seriesOf, tempUnit } from './figures'
 import { DaysPanel } from './DaysPanel'
@@ -54,9 +55,11 @@ const view = defineView({
         main: {
           title: 'Temperature per day',
           src: (ctx) => {
-            // The template draws a daily row at the day's start; on a one-day clock axis that reads as a time of day.
+            // A daily row arrives at midnight UTC (01:00 BST, 00:00 GMT); on a one-day clock axis that reads as a time of day.
             const oneDay = ctx.window !== null && ctx.window.start === ctx.window.end
-            const what = ctx.mode === 'table' ? 'a row per UK day' : oneDay ? 'one figure for the day, drawn at the day’s start, not at a time of day' : 'a marker per UK day, joined where days run on'
+            const at = ctx.series?.rows.find((r) => typeof r[seriesOf(ctx.series, TEMP)?.field ?? ''] === 'number')?.t
+            const drawnAt = at === undefined ? 'midnight UTC' : `midnight UTC (${clock(at)} ${zoneAbbrev(at)})`
+            const what = ctx.mode === 'table' ? 'a row per UK day' : oneDay ? `one figure for the day, drawn at ${drawnAt}, not at a time of day` : 'a marker per UK day, joined where days run on'
             return <SourceLine ctx={ctx} columns={[TEMP]} unit={tempUnit(ctx)} what={what} />
           },
           Body: SeriesBody,
