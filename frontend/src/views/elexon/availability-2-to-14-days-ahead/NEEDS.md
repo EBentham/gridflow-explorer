@@ -56,3 +56,14 @@ around each gap inside its folder.
    series around zero, so a unit forecast at 0 MW every day (`T_PEHE-1`, 23–29 Sep 2026) draws
    on an axis running below zero, which availability never does. The key says the unit held
    one figure every day. Asked for: a floor at zero when a panel's values never go below it.
+10. **A stacked area can't draw a held day with no held neighbour.** `SeriesChart` draws a
+    stack as `Area`s with no dots (`bandProps`), so a day needs a held day beside it to have any
+    width. A window holding one delivery day (the 1-day preset), or a held day with a gap either
+    side in a longer window, draws nothing. What the page does: for one day it puts a sentence in
+    place of the chart; for a lone day in a longer window the hint says it has no band and where
+    its figures are. Asked for: a dot or a one-step block for a stacked point with no held
+    neighbour.
+11. **Daily bars sit astride the day rule.** `SeriesChart` draws a point at its row time, and a
+    daily row comes at the day's start, so a bar is split by the midnight rule and the first is
+    half clipped. What the page does: its own rows put each day's point at the middle of the UK
+    day. A day-centred mark for a daily step in the template would serve every daily page.

@@ -17,7 +17,7 @@
  * peaking band).
  */
 import { FUEL_BANDS, fuelVar } from '../../../design/fuels'
-import { DAY_MS, datesBetween, dayStart, londonMidnight, ukDate } from '../../../design/time'
+import { DAY_MS, datesBetween, dayStart, londonMidnight, nextLondonMidnight, ukDate } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { RowsResponse, SeriesRow } from '../../contract'
 import type { PageContext } from '../../define'
@@ -104,7 +104,7 @@ export function bandOf(code: string | null): Band {
   const key = code === null ? null : code.startsWith('INT') ? 'imports' : BAND_OF[code]
   const band = key ? bandByKey.get(key) : undefined
   if (band) return band
-  const name = code ?? 'No fuel listed'
+  const name = code ?? 'Fuel not listed'
   return { key: `code:${name}`, label: name, prose: name, color: NEUTRAL, order: BANDS.length }
 }
 
@@ -176,8 +176,10 @@ export interface BandSum {
 
 export interface Day {
   date: string
-  /** The UK midnight it starts at: the chart's point and the picked day. */
+  /** The UK midnight it starts at: the picked day. */
   start: number
+  /** The middle of the UK day: where the charts draw its figure, between the day rules. */
+  mid: number
   /** Rows holding a value. */
   held: number
   bands: Map<string, BandSum>
@@ -192,7 +194,8 @@ export interface Day {
 }
 
 function emptyDay(date: string): Day {
-  return { date, start: dayStart(date), held: 0, bands: new Map(), total: null, domestic: null, issued: [], items: new Map() }
+  const start = dayStart(date)
+  return { date, start, mid: start + (nextLondonMidnight(start) - start) / 2, held: 0, bands: new Map(), total: null, domestic: null, issued: [], items: new Map() }
 }
 
 /** A unit's key: its BM unit id, or, for a row naming none, its National Grid id marked as such. */
@@ -277,10 +280,22 @@ function bandSeries(band: Band, i: number, rows: WideRow[]): SeriesDef {
 /** The id the key's selection and `SeriesChart`'s focus share for a band. */
 export const bandId = (band: Band) => `self/${band.key}`
 
-/** The bands stacked per delivery day, in GW: one point per day at its UK midnight, a day holding nothing a gap in every band. */
+/**
+ * How the window's held days sit for a stack: how many hold figures, and how
+ * many of those have no held day either side. A stacked area needs two
+ * neighbouring points, so a lone day draws nothing (NEEDS.md); the panels
+ * say so rather than leave it unexplained.
+ */
+export function heldShape(days: Day[]): { held: number; lone: number } {
+  const has = days.map((d) => d.held > 0)
+  const lone = has.filter((h, i) => h && !has[i - 1] && !has[i + 1]).length
+  return { held: has.filter(Boolean).length, lone }
+}
+
+/** The bands stacked per delivery day, in GW: one point per day at the middle of its UK day, a day holding nothing a gap in every band. */
 export function stackPanel(days: Day[], bands: Band[], height: number): ChartPanel {
   const rows: WideRow[] = days.map((d) => {
-    const row: WideRow = { t: d.start }
+    const row: WideRow = { t: d.mid }
     bands.forEach((b, i) => {
       const s = d.bands.get(b.key)
       row[`b${i}`] = s ? s.mw * GW.factor : null
@@ -386,7 +401,7 @@ export function unitShown(ctx: PageContext): UnitInfo | null {
 /** A unit's name in words: its fuel code in words, or what it lacks. */
 export function unitFuel(u: UnitInfo): string {
   if (u.code) return codeName(u.code)
-  return u.codes.length > 1 ? 'More than one fuel listed' : 'No fuel listed'
+  return u.codes.length > 1 ? 'More than one fuel listed' : 'Fuel not listed'
 }
 
 // ---------------------------------------------------------------- the units against the fuel figure
@@ -415,7 +430,7 @@ export function totalDiffs(unitDays: Day[], fuelDays: Day[]): { t: number; v: nu
   const fuel = new Map(fuelDays.map((d) => [d.date, d]))
   return unitDays.map((d) => {
     const f = fuel.get(d.date)
-    return { t: d.start, v: d.total !== null && f && f.total !== null ? d.total - f.total : null }
+    return { t: d.mid, v: d.total !== null && f && f.total !== null ? d.total - f.total : null }
   })
 }
 
@@ -431,4 +446,10 @@ export function issuedRange(issued: number[], label: (t: number) => string): str
   const lo = issued[0]
   const hi = issued[issued.length - 1]
   return lo === hi ? label(lo) : `${label(lo)} to ${label(hi)}`
+}
+
+/** A sentence for held days the stack can't draw, or nothing when there are none. */
+export function loneWords(lone: number, where: string): string {
+  if (!lone) return ''
+  return ` ${lone === 1 ? 'One held day has' : `${lone} held days have`} no held day either side, so ${lone === 1 ? 'it has' : 'they have'} no band on the chart; the key and ${where} give ${lone === 1 ? 'its' : 'their'} figures.`
 }

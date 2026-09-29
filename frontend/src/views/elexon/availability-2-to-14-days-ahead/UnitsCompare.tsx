@@ -36,13 +36,13 @@ export function UnitsCompare({ ctx }: { ctx: PageContext }) {
             <tr>
               <th scope="col">Fuel</th>
               <th scope="col" className="is-num">
-                Units
+                Units, GW
               </th>
               <th scope="col" className="is-num">
-                By fuel
+                By fuel, GW
               </th>
               <th scope="col" className="is-num">
-                Less
+                Less, MW
               </th>
             </tr>
           </thead>
