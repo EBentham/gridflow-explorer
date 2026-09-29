@@ -5,21 +5,25 @@
  * stay out of the URL. A zone that holds one direction only names it rather
  * than offering a choice that would read an empty window.
  *
- * A long window of every product can't be read: one bid id can carry both
- * products, so its means would mix two series, and the rows endpoint
- * refuses. The main panel's error says to choose a shorter window; the
- * product control adds that picking one product reads it too.
+ * A window over 7 days of every product can't be read: one bid id can
+ * carry both products, so its means would mix two series, and the rows
+ * endpoint refuses. Over 7 days the read keeps one product (A05 unless
+ * another is picked, `zones.ts`), and the control offers no "All". Any
+ * other refusal of that kind still gets the note to pick one.
  */
 import { Segmented } from '../../../design/frame'
 import type { PageContext } from '../../define'
-import { DIRECTIONS, DIR_PARAM, PRODUCT_PARAM, ZONES, ZONE_PARAM, directionOf, productOf, zoneOf } from './zones'
+import { DIRECTIONS, DIR_PARAM, PRODUCT_PARAM, ZONES, ZONE_PARAM, directionOf, oneProductOnly, productFor, productOf, windowDays, zoneOf } from './zones'
 
 const ALL = 'all'
 
 export function BidsControl({ ctx }: { ctx: PageContext }) {
   const zone = zoneOf(ctx.param(ZONE_PARAM))
   const dir = directionOf(zone, ctx.param(DIR_PARAM))
-  const product = productOf(zone, ctx.param(PRODUCT_PARAM))
+  const days = windowDays(ctx.param)
+  const long = oneProductOnly(zone, days)
+  const picked = productOf(zone, ctx.param(PRODUCT_PARAM))
+  const product = productFor(zone, ctx.param(PRODUCT_PARAM), days)
   const held = DIRECTIONS.filter((d) => zone.directions.includes(d.code))
   const setZone = (param: string) => {
     const next = zoneOf(param)
@@ -27,7 +31,7 @@ export function BidsControl({ ctx }: { ctx: PageContext }) {
     ctx.setParams({
       [ZONE_PARAM]: next === ZONES[0] ? null : next.param,
       [DIR_PARAM]: keep.code === next.directions[0] ? null : keep.code.toLowerCase(),
-      [PRODUCT_PARAM]: product && next.products.includes(product) ? product.toLowerCase() : null,
+      [PRODUCT_PARAM]: picked && next.products.includes(picked) ? picked.toLowerCase() : null,
     })
   }
   const mixed = ctx.state === 'error' && ctx.error?.status === 413 && ctx.error.reason === 'mixed_identity' && product === null
@@ -55,11 +59,12 @@ export function BidsControl({ ctx }: { ctx: PageContext }) {
           <span className="gf-toolbar-note">Product</span>
           <Segmented
             label="Product"
-            options={[{ value: ALL, label: 'All' }, ...zone.products.map((p) => ({ value: p, label: p }))]}
+            options={[...(long ? [] : [{ value: ALL, label: 'All' }]), ...zone.products.map((p) => ({ value: p, label: p }))]}
             value={product ?? ALL}
             onChange={(v) => ctx.setParam(PRODUCT_PARAM, v === ALL ? null : v.toLowerCase())}
           />
-          {mixed && <span className="gf-toolbar-note">Too long to read with every product: pick one.</span>}
+          {long && <span className="gf-toolbar-note">A window over 7 days reads one product at a time.</span>}
+          {mixed && !long && <span className="gf-toolbar-note">Too long to read with every product: pick one.</span>}
         </div>
       )}
     </>

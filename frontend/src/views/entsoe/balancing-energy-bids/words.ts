@@ -37,12 +37,13 @@ export function cutOffText(zone: Zone, book: Book | null): string | null {
   if (!book || !book.held) return why
   const times = new Set(book.heldRows.map((r) => clock(r.t)))
   const at = times.size === 1 && !book.bucketed ? `, ${clock(book.heldRows[0].t)} ${zoneAbbrev(book.heldRows[0].t)}` : ''
-  const per =
-    book.mostPerDay === 1
-      ? `one ${oneStep(book)} a day only${at}`
-      : `at most ${n(book.mostPerDay)} ${stepsText(book)} a day`
   const counts = book.bidsPerStep
   const each = counts.length === 1 ? `, ${n(counts[0][0])} bids in each` : counts.length ? `, up to ${n(counts[0][0])} bids in each` : ''
+  if (book.bucketed) {
+    const where = book.mostPerDay === 1 ? `at most one ${oneStep(book)} a day` : `at most ${n(book.mostPerDay)} ${stepsText(book)} a day`
+    return `In this window gridflow holds ${zone.name}’s bids in ${where}${each}; the 1-day window shows which quarter-hour. ${why}`
+  }
+  const per = book.mostPerDay === 1 ? `one ${oneStep(book)} a day only${at}` : `at most ${stepCount(book, book.mostPerDay)} a day`
   return `In this window gridflow holds ${zone.name}’s bids for ${per}${each}. ${why}`
 }
 

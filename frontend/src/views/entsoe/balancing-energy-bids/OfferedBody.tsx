@@ -14,7 +14,7 @@ import { periodLabel, windowDomain } from '../../../design/time'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
-import type { WideRow } from '../../_template/seriesModel'
+import type { SeriesDef, WideRow } from '../../_template/seriesModel'
 import { AXIS_WIDTH, n, pageBook, type Book } from './figures'
 import { cutOffText, dailyHoleText, oneStep, stepCount, stepsText } from './words'
 
@@ -29,6 +29,9 @@ export function CutOffNote({ ctx }: { ctx: PageContext }) {
     </div>
   )
 }
+
+/** Label the highest and lowest only when there are two different values to tell apart. */
+const spread = (d: SeriesDef) => (d.count > 1 && d.min !== d.max ? d : null)
 
 function MeansWords({ book }: { book: Book }) {
   return (
@@ -109,7 +112,7 @@ export function OfferedBody({ ctx }: { ctx: PageContext }) {
   }
   const hole = dailyHoleText(book, ctx.window)
   const panel: ChartPanel = book.bucketed
-    ? { rows: book.isolated ? book.heldRows : book.rows, series: [book.bids], mark: 'bars', unit: book.bids.unit, stepMs: book.stepMs, bucketed: true, zero: true, axisWidth: AXIS_WIDTH, extremes: book.bids }
+    ? { rows: book.isolated ? book.heldRows : book.rows, series: [book.bids], mark: 'bars', unit: book.bids.unit, stepMs: book.stepMs, bucketed: true, zero: true, axisWidth: AXIS_WIDTH, extremes: spread(book.bids) }
     : {
         rows: book.isolated ? book.heldRows : book.rows,
         series: [book.total],
@@ -118,7 +121,7 @@ export function OfferedBody({ ctx }: { ctx: PageContext }) {
         stepMs: book.stepMs,
         zero: true,
         axisWidth: AXIS_WIDTH,
-        extremes: book.total,
+        extremes: spread(book.total),
       }
   return (
     <>

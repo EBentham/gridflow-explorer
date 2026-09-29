@@ -58,8 +58,8 @@ const view = defineView({
   caveats: [
     'Each row is one bid’s offered MW for one quarter-hour. The page adds up the bids offered at each quarter-hour; gridflow holds no price for them, and none of GB’s balancing.',
     'Direction is held as ENTSO-E codes it, A01 or A02. The page reads A01 as up and A02 as down, as ENTSO-E’s code list and gridflow’s activated-balancing tables do; this table itself keeps the codes.',
-    'ENTSO-E sends these bids in pages, and gridflow’s downloader stops after a set number of pages. For France and Germany / Luxembourg it may have been cut off there: gridflow holds one quarter-hour a day for each, so their bids, counts and totals are not complete. Belgium is held through the day. Germany / Luxembourg holds A02 bids only.',
-    'Belgium’s bids carry a product code, A05 or A07; gridflow gives no words for them. The page adds every product together unless one is picked. A window read as means needs one picked, as one bid id can carry both.',
+    'ENTSO-E sends these bids in pages, and gridflow’s downloader stops after a set number of pages. For France and Germany / Luxembourg it may have been cut off there: gridflow holds one quarter-hour a day for each, so their bids, counts and totals are not complete. Belgium is held for most of each UK day; the note under the chart names any hours every day lacks. Germany / Luxembourg holds A02 bids only.',
+    'Belgium’s bids carry a product code, A05 or A07; gridflow gives no words for them. The page adds every product together unless one is picked. A window over 7 days reads one product at a time, A05 unless A07 is picked, as one bid id can carry both.',
   ],
   datasets: [
     {
@@ -86,7 +86,7 @@ const view = defineView({
                 ctx.mode === 'table'
                   ? 'the bids added up, one row per step held'
                   : bucketed(ctx)
-                    ? 'bids offered per step, no MW added up'
+                    ? 'offered per step, no MW added up'
                     : 'the bids added up per quarter-hour'
               }
             />

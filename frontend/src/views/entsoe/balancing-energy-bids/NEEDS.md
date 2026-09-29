@@ -14,13 +14,14 @@ does meanwhile.
      one more bid in the week and it comes back as 30-minute means, and the headline becomes a
      count of bids. A 30-day window of one product comes back as hourly means. A sum of per-bid
      means isn't the MW offered, so such a window gets a count of bids per step and no MW.
-   - A 30-day window of every product (Belgium's default) is refused: 413 `mixed_identity`, as one
+   - A window over 7 days of every product in Belgium is refused: 413 `mixed_identity`, as one
      bid id carries A05 at one time and A07 at another, so its means would mix two series. The
-     template's error says "Choose a shorter window". The page can't add that picking one
-     product also works: on an error the main body doesn't render and the key and working
-     panels show the pending line. It says so in the toolbar, beside the product control,
-     which is the one place it can. Wanted: a page hook into the error state (a sentence of its
-     own under the template's), or the sum in the next bullet.
+     page reads one product for such a window (A05 unless A07 is picked), reading the window's
+     length from the template's `days`/`from`/`to` parameters in `bidsQuery`, and the product
+     control drops "All" and says why. Should another read be refused that way (the check
+     runs per bucket, so a week past the row cap could be), the toolbar still says to pick one
+     product: the page can't add a sentence to the template's error state, where the main body
+     doesn't render. Wanted: a page hook into the error state, or the sum in the next bullet.
    - What the page does instead: reads one zone and one direction split by `bid_mrid`, and adds
      the bids up in `figures.ts` (`bookOf`). On means it draws the bids per step and says why.
    - Wanted: a `sum` aggregation (and a count of contributing rows) across a dim that isn't the
@@ -52,7 +53,13 @@ does meanwhile.
    has no product control (it would miss those bids). It adds every product together and says
    so.
 
-7. **The source list's notes for this dataset are stale.** They give "BE 30,335 rows; FR and
+7. **A lowest label near zero sits on the day ticks.** `SeriesChart` sets the lowest extreme's
+   label under its point. Belgium's A02 total falls to 1 MW, so on the 7-day view "1 MW, lowest,
+   Mon 21 at 13:15" overprints the "Mon 21" tick. There is no option to label the highest only,
+   and the page doesn't edit the chart. Wanted: a lowest label within a few pixels of the zero line
+   drawn above its point, or a `highest only` extremes option.
+
+8. **The source list's notes for this dataset are stale.** They give "BE 30,335 rows; FR and
    DE-LU 500 each" and a `bid_mrid` cardinality of 1,082, from 5 days. On 29 Sep 2026 the store
    held 14 days (1–5 Aug, 13–21 Sep), 81,563 rows: Belgium 78,763, France and
    Germany / Luxembourg 1,400 each, exactly 100 bids a day for each, all at 00:00 UTC. That is
