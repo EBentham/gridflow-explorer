@@ -96,9 +96,7 @@ def test_bad_range_unparseable_date_returns_422(
 ) -> None:
     monkeypatch.setattr(datasets_router, "client_ctx", stub_client_ctx)
 
-    response = _client().get(
-        "/api/datasets/generation-mix/data", params={"start": "nonsense"}
-    )
+    response = _client().get("/api/datasets/generation-mix/data", params={"start": "nonsense"})
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "bad_range"

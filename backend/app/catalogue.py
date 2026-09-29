@@ -148,9 +148,7 @@ def get_dataset(dataset_id: str) -> DatasetSpec:
         return DATASETS[dataset_id]
     except KeyError:
         known = ", ".join(sorted(DATASETS))
-        raise UnknownDataset(
-            f"Unknown dataset '{dataset_id}'. Known datasets: {known}."
-        ) from None
+        raise UnknownDataset(f"Unknown dataset '{dataset_id}'. Known datasets: {known}.") from None
 
 
 def to_catalogue_entry(spec: DatasetSpec) -> dict[str, Any]:

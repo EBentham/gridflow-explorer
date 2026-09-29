@@ -83,9 +83,7 @@ def probe_writer_lock() -> None:
         raise CatalogueMissing(str(exc)) from exc
     except duckdb.IOException as exc:
         if is_lock_error(str(exc)):
-            raise RefreshInProgress(
-                "A dataset refresh is in progress. Try again shortly."
-            ) from exc
+            raise RefreshInProgress("A dataset refresh is in progress. Try again shortly.") from exc
         raise
     finally:
         if client is not None:
