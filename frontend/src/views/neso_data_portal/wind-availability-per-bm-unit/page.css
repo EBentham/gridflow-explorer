@@ -1,0 +1,82 @@
+/*
+ * The wind availability page's own layout. Tokens only, and only the shapes
+ * the design already uses (DESIGN.md): no new looks.
+ */
+
+/* ---------------------------------------------------------------- toolbar */
+
+.gf-wa-control,
+.gf-wa-unitform,
+.gf-wa-unitlabel {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.gf-wa-control {
+  gap: 8px 14px;
+}
+.gf-wa-unitform {
+  margin: 0;
+}
+/* a unit id is an identifier, so the box sets it in the id face */
+.gf-input.gf-wa-input {
+  width: 11rem;
+  font-family: var(--font-id);
+}
+.gf-input.gf-wa-input::placeholder {
+  font-family: var(--font-ui);
+}
+
+/* ---------------------------------------------------------------- key */
+
+.gf-wa-stats dt {
+  white-space: nowrap;
+}
+/* a list's name over it, as the wind sites key heads its regions */
+.gf-hint.gf-wa-head {
+  margin: 12px 0 4px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+/* ---------------------------------------------------------------- tables */
+
+/* the days and the changing units, side by side in the wide working panel */
+.gf-wa-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 12px 24px;
+  align-items: start;
+}
+.gf-wa-pair .gf-hint.gf-wa-head {
+  margin-top: 0;
+}
+/* a fortnight of days: the whole list, not a scroll box */
+.gf-days.gf-wa-long {
+  max-height: 440px;
+}
+/* a figure that differs from the day before */
+.gf-wa-changed {
+  font-weight: 700;
+}
+/* a unit's id in the table opens it on its own: ink with the chartreuse underline of a link into a screen */
+.gf-wa-open {
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+.gf-wa-open:hover {
+  text-decoration-color: var(--accent-hover);
+}
+.gf-wa-open:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
