@@ -32,12 +32,14 @@
   day's fetch of both datasets, so the page can't show the issue made closest to each
   half-hour. It is bronze-checked for `inddem` only; `indgen` is expected to match.
 - **Both figures step down at 23:00 BST inside every issue (for the gridflow backlog, with
-  the vintage item).** At boundary N, in every issue held (1 to 6 Aug and 13 to 23 Sep 2026,
+  the vintage item).** At boundary N, in every issue held (1 to 7 Aug and 13 to 23 Sep 2026,
   the two 10:47 UTC issues included; checked 29 Sep 2026), demand and generation step down
   at 23:00 BST on the last evening the issue covers, by different amounts on different
   nights: demand by 1.2 to 6.3 GW, generation by 0.6 to 9.7 GW. They stay down to the end of
-  that issue's figures and step back up only where a newer issue takes over, usually at
-  01:30 BST (05:00 BST on 22 Sep; not at all on 23 Sep, where the rows end). So the fall
+  that issue's figures and rise again only where a newer issue takes over, usually at
+  01:30 BST (05:00 BST on 6 Aug and 22 Sep; on 7 Aug and 23 Sep the rows end before a newer
+  issue). On the nights of 16 to 19 Sep, where generation fell by 1.4 GW or less, it moves
+  by 0.6 GW or less at the takeover, one way or the other. So the fall
   follows the clock and the recovery follows the issue. Whether later issues, which gridflow
   doesn't keep, revise these half-hours, and why the figures step down, isn't known here.
   What the page does instead: a caveat states what the rows show, names no cause, and warns
