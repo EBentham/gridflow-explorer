@@ -17,7 +17,7 @@ import { PriceContext } from './PriceContext'
 
 const view = defineView({
   title: 'Market depth',
-  sub: 'How much was offered and bid in the Balancing Mechanism for each half-hour, how much of it was accepted, and the indicated imbalance, with the system price beside it.',
+  sub: 'How much was offered and bid for balancing in each half-hour, how much of it was accepted, and the indicated imbalance, with the system price beside it.',
   caveats: [
     'Elexon publishes bid volumes, and accepted bids, below zero. The page draws them as published and reads no sign convention into the indicated imbalance.',
     'The accepted volumes are totals built from the individual acceptances and adjustments that other Elexon datasets list one by one. Don’t add them to those in a model, or the same volume counts twice.',

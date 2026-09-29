@@ -25,7 +25,7 @@ export function DepthWords({ ctx }: { ctx: PageContext }) {
   if (c.day_count >= span) return null
   return (
     <p className="gf-hint">
-      gridflow holds this dataset locally on {plural(c.day_count, 'day', 'days')} of the {span} from {rangeText(c.first_day, c.last_day).replace(' – ', ' to ')}, in separate runs. The days between them are not fetched locally and show as gaps.
+      gridflow holds this dataset locally on {plural(c.day_count, 'day', 'days')} of the {span} from {rangeText(c.first_day, c.last_day).replace(' – ', ' to ')}. The other days are not fetched locally and show as gaps.
     </p>
   )
 }

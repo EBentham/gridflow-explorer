@@ -31,6 +31,6 @@
 4. **The source list's notes for `market_depth` are stale.** They say the local days are
    "1–5 Aug, then 1, 17 and 21 Sep only" and that 21 Sep holds nulls. On 29 Sep 2026 the
    rows endpoint returned 1–5 Aug, 1 Sep and 13–22 Sep, every one full but 1 Sep, and
-   21 Sep held all 48 half-hours of every column. So a later fetch did fill 21 Sep's
-   nulls, which answers the card's open question for that day; 1 Sep's remain. The page
+   21 Sep held all 48 half-hours of every column. So a later fetch appears to have
+   filled 21 Sep's nulls (not verified beyond that comparison); 1 Sep's remain. The page
    words its caveats without those dates. Wanted: a refresh of the card and the notes.

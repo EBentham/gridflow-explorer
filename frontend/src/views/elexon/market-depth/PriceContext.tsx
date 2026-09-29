@@ -27,8 +27,8 @@ function PricesWords({ ctx }: { ctx: PageContext }) {
   if (state.kind === 'means') {
     return (
       <p className="gf-hint">
-        The system prices aren’t drawn for this window: it is long enough that they come as means, and the means come apart by how each half-hour’s price was derived, so they can’t be joined into one line. A window of a month
-        or less draws them.
+        The system prices aren’t drawn for this window: it is long enough that they come as means, and the means come apart by how each half-hour’s price was derived, so they can’t be joined into one line. A shorter window draws
+        them.
       </p>
     )
   }
@@ -79,7 +79,7 @@ export function PriceContext({ ctx }: { ctx: PageContext }) {
   const items: KeyItem[] = []
   for (const p of panels) {
     const d = p.series[0]
-    items.push({ key: d.key, mark: p.mark === 'bars' ? { kind: 'bars', color: d.color, shape: 'fall' } : { kind: 'line', color: d.color }, label: `${d.label}, ${d.unit.label ?? 'unit unconfirmed'}` })
+    items.push({ key: d.key, mark: p.mark === 'bars' ? { kind: 'bars', color: d.color, shape: 'rise' } : { kind: 'line', color: d.color }, label: `${d.label}, ${d.unit.label ?? 'unit unconfirmed'}` })
     if (p.belowZero) items.push({ key: `${d.key}-below`, mark: { kind: 'band' }, label: `${d.label} below zero` })
   }
   const days = dayFigures(ctx, prices)
