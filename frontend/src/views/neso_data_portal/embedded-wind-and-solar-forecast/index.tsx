@@ -30,10 +30,10 @@ function mixPart(ctx: PageContext, unit: string): SourcePart[] {
 
 const view = defineView({
   title: 'Embedded wind and solar forecast',
-  sub: 'NESO’s forecast of the wind and solar generation on the distribution networks, half-hour by half-hour, with the capacity it assumes and its own figure for the same half-hours beside it.',
+  sub: 'NESO’s forecast of the wind and solar generation on the distribution networks, half-hour by half-hour, with the capacity it assumes and NESO’s generation-mix figure for the same half-hours beside it.',
   caveats: [
     'Embedded means connected to the distribution networks rather than the transmission system. Embedded wind and solar meet demand before it reaches the transmission system, so the more they generate, the lower the demand the transmission system sees.',
-    'gridflow reads only the forecast NESO currently publishes, and each new issue replaces the last, so only the issues gridflow fetched at the time are held. Days no fetched issue covers are not held and can’t be fetched now; 14 to 20 Sep is one such week. Each half-hour shows the latest issue held for it: the line under the chart and the key name that issue and how far ahead it was made.',
+    'gridflow reads only the forecast NESO currently publishes, and each new issue replaces the last, so only the issues gridflow fetched at the time are held. Days no fetched issue covers are not held and can’t be fetched now; 14 to 20 Sep is one such week. Each half-hour shows the latest issue held for it: the line under the chart or table and the key name that issue and how far ahead it was made.',
     'The forecasts and capacities are in MW, shown as GW. The capacities are the embedded wind and solar capacity NESO’s forecast assumes; the key gives them rather than the chart, as they sit far above the forecasts.',
     'Each half-hour is placed by its settlement date and period. NESO also sends a time column whose convention, the start or the end of the half-hour, isn’t documented; the page doesn’t use it.',
   ],
@@ -72,7 +72,7 @@ const view = defineView({
           src: (ctx) => (
             <SourceLine
               ctx={ctx}
-              columns={[WIND_FC, SOLAR_FC, 'issue_time']}
+              columns={[WIND_FC, SOLAR_FC]}
               filters={ctx.response?.filters}
               unit="GW"
               what={ctx.mode === 'chart' ? 'each half-hour, wind and solar stacked' : 'each half-hour, with the capacities'}
@@ -85,7 +85,7 @@ const view = defineView({
           src: (ctx) => (
             <SourceLine
               ctx={ctx}
-              columns={[WIND_FC, SOLAR_FC, WIND_CAP, SOLAR_CAP, 'issue_time']}
+              columns={[WIND_FC, SOLAR_FC, WIND_CAP, SOLAR_CAP]}
               filters={ctx.response?.filters}
               unit="GW"
               what="each forecast’s peak, the issue behind the window, and the capacity assumed"

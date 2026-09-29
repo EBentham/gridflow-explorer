@@ -76,6 +76,20 @@ export function RecordedPanel({ ctx }: { ctx: PageContext }) {
   const u = wind.unit
   const days = [...fw.keys()]
   const noun = model.bucketed ? 'means' : 'half-hours'
+  // A run of days with no forecast held folds into one row, so the held days aren't pushed below the fold.
+  type DayRow = { kind: 'day'; start: number; held: number } | { kind: 'gap'; first: number; last: number; days: number; expected: number | null }
+  const dayRows: DayRow[] = []
+  for (const start of days) {
+    const held = Math.max(fw.get(start)?.held ?? 0, fs.get(start)?.held ?? 0)
+    const expected = stepsInDay(start, model.stepMs)
+    const prev = dayRows.at(-1)
+    if (held > 0) dayRows.push({ kind: 'day', start, held })
+    else if (prev?.kind === 'gap') {
+      prev.last = start
+      prev.days += 1
+      prev.expected = prev.expected === null || expected === null ? null : prev.expected + expected
+    } else dayRows.push({ kind: 'gap', first: start, last: start, days: 1, expected })
+  }
 
   return (
     <>
@@ -134,20 +148,22 @@ export function RecordedPanel({ ctx }: { ctx: PageContext }) {
             </tr>
           </thead>
           <tbody>
-            {days.map((start) => {
-              const w = fw.get(start)
-              const s = fs.get(start)
-              const held = Math.max(w?.held ?? 0, s?.held ?? 0)
-              const expected = stepsInDay(start, model.stepMs)
-              if (held === 0) {
+            {dayRows.map((row) => {
+              if (row.kind === 'gap') {
+                const one = row.first === row.last
                 return (
-                  <tr key={start} className="is-missing">
-                    <th scope="row">{dayLabel(start)}</th>
-                    <td className="is-num">{expected === null ? '0' : `0 of ${expected}`}</td>
-                    <td colSpan={6}>not held locally</td>
+                  <tr key={row.first} className="is-missing">
+                    <th scope="row">{one ? dayLabel(row.first) : `${dayLabel(row.first)} – ${dayLabel(row.last)}`}</th>
+                    <td className="is-num">{row.expected === null ? '0' : `0 of ${row.expected.toLocaleString('en-GB')}`}</td>
+                    <td colSpan={6}>no forecast held locally{one ? '' : `, ${row.days} days`}</td>
                   </tr>
                 )
               }
+              const start = row.start
+              const w = fw.get(start)
+              const s = fs.get(start)
+              const held = row.held
+              const expected = stepsInDay(start, model.stepMs)
               const on = start === ctx.picked
               const partial = expected !== null && held < expected
               return (
@@ -170,7 +186,7 @@ export function RecordedPanel({ ctx }: { ctx: PageContext }) {
           </tbody>
         </table>
       </div>
-      {days.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
+      {dayRows.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
         Means and peaks in {u.label}; wind and solar together in {GWH.label}, the {noun} held summed, so a day held in part sums in part.
         {model.bucketed && ' The window is read as means, so nothing is summed.'} The mix columns count only the half-hours the forecast holds, so each row compares the same half-hours. The mix is NESO’s figure for each half-hour from its historic generation mix; its solar isn’t split into embedded and
