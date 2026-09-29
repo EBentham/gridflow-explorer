@@ -10,7 +10,7 @@ import { plural, pct } from '../../../design/format'
 import { instantLabel } from '../../../design/time'
 import { periodName, type WideRow } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { SOLAR_CAP, SOLAR_FC, WIND_CAP, WIND_FC, WIND_STRIPE, SOLAR_COLOR, capacityOf, idOf, issuesOf, leadText, seriesOf } from './figures'
+import { SOLAR_CAP, SOLAR_FC, WIND_CAP, WIND_FC, WIND_STRIPE, SOLAR_COLOR, aheadParts, capacityOf, idOf, issuesOf, seriesOf } from './figures'
 
 const ITEMS = [
   { column: SOLAR_FC, label: 'Solar, embedded', swatch: SOLAR_COLOR },
@@ -57,7 +57,6 @@ export function ForecastKey({ ctx }: { ctx: PageContext }) {
     { name: 'Wind', cap: capacityOf(model, WIND_CAP) },
     { name: 'Solar', cap: capacityOf(model, SOLAR_CAP) },
   ]
-  const steady = caps.every((c) => c.cap === null || c.cap.min === c.cap.max)
 
   return (
     <>
@@ -91,8 +90,9 @@ export function ForecastKey({ ctx }: { ctx: PageContext }) {
             <div>
               <dt>Made ahead</dt>
               <dd>
-                {issues.shortest === issues.longest ? leadText(issues.shortest) : `${leadText(issues.shortest)} to ${leadText(issues.longest)}`}
-                <span className="gf-stat-when">before the half-hours in this window</span>
+                {aheadParts(issues).value}
+                <span className="gf-stat-when">before the half-hours in this window{aheadParts(issues).late ? '.' : ''}</span>
+                {aheadParts(issues).late && <span className="gf-stat-when">{aheadParts(issues).late}</span>}
               </dd>
             </div>
           </>
@@ -130,21 +130,16 @@ export function ForecastKey({ ctx }: { ctx: PageContext }) {
             </dd>
           </div>
         )}
-        {caps.some((c) => c.cap) && (
-          <div>
-            <dt>Capacity assumed</dt>
-            <dd>
-              {caps
-                .filter((c) => c.cap)
-                .map((c) => {
-                  const cap = c.cap as NonNullable<typeof c.cap>
-                  const u = cap.def.unit
-                  return `${c.name} ${cap.min === cap.max ? u.format(cap.min) : `${u.format(cap.min)} to ${u.format(cap.max)}`}`
-                })
-                .join(', ')}
-              <span className="gf-stat-when">{steady ? 'the same in every half-hour held' : 'varying across the half-hours held'}</span>
-            </dd>
-          </div>
+        {caps.map(({ name, cap }) =>
+          cap ? (
+            <div key={name}>
+              <dt>{name} capacity assumed</dt>
+              <dd>
+                {cap.min === cap.max ? cap.def.unit.format(cap.min) : `${cap.def.unit.format(cap.min)} to ${cap.def.unit.format(cap.max)}`}
+                <span className="gf-stat-when">{cap.min === cap.max ? 'the same in every half-hour held' : 'varying across the half-hours held'}</span>
+              </dd>
+            </div>
+          ) : null,
         )}
       </dl>
       <p className="gf-hint">

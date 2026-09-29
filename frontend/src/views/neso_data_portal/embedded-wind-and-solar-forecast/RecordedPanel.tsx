@@ -100,22 +100,34 @@ export function RecordedPanel({ ctx }: { ctx: PageContext }) {
                 Held
               </th>
               <th scope="col" className="is-num">
-                Wind mean, forecast
+                Wind mean, GW
+                <br />
+                forecast
               </th>
               <th scope="col" className="is-num">
-                Wind mean, mix
+                Wind mean, GW
+                <br />
+                mix
               </th>
               <th scope="col" className="is-num">
-                Solar peak, forecast
+                Solar peak, GW
+                <br />
+                forecast
               </th>
               <th scope="col" className="is-num">
-                Solar peak, mix
+                Solar peak, GW
+                <br />
+                mix
               </th>
               <th scope="col" className="is-num">
-                Wind and solar, forecast
+                Wind and solar, GWh
+                <br />
+                forecast
               </th>
               <th scope="col" className="is-num">
-                Wind and solar, mix
+                Wind and solar, GWh
+                <br />
+                mix
               </th>
             </tr>
           </thead>

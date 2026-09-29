@@ -67,6 +67,8 @@ export interface Issues {
   longest: number
   /** Half-hours with a forecast value and an issue time. */
   count: number
+  /** Of those, the half-hours that had already begun when their forecast was issued. */
+  late: number
 }
 
 const heldValue = (r: Record<string, unknown>) => typeof r[WIND_FC] === 'number' || typeof r[SOLAR_FC] === 'number'
@@ -83,6 +85,7 @@ export function issuesOf(response: RowsResponse | null | undefined): Issues | nu
   let shortest = Infinity
   let longest = -Infinity
   let count = 0
+  let late = 0
   for (const r of response.rows) {
     if (!heldValue(r) || typeof r.issue_time !== 'string') continue
     const at = Date.parse(r.issue_time)
@@ -92,20 +95,36 @@ export function issuesOf(response: RowsResponse | null | undefined): Issues | nu
     shortest = Math.min(shortest, lead)
     longest = Math.max(longest, lead)
     count += 1
+    if (lead < 0) late += 1
   }
   if (!count) return null
-  return { times: [...times].sort((a, b) => a - b), shortest, longest, count }
+  return { times: [...times].sort((a, b) => a - b), shortest, longest, count, late }
+}
+
+/**
+ * How far ahead the window's forecasts were made: `6 days to 13 days`, or
+ * `up to 13 days` when some half-hours had already begun at their issue,
+ * which `late` then says in words (a lead is measured to the half-hour's start).
+ */
+export function aheadParts(issues: Issues): { value: string; late: string | null } {
+  const { shortest, longest } = issues
+  if (shortest >= 0) return { value: shortest === longest ? leadText(shortest) : `${leadText(shortest)} to ${leadText(longest)}`, late: null }
+  const n = issues.late
+  const late = `${n === 1 ? 'One half-hour' : `${plural(n, 'half-hour', 'half-hours')}`} had already begun when ${n === 1 ? 'its' : 'their'} forecast was issued, by ${n === 1 ? '' : 'up to '}${leadText(-shortest)}.`
+  return { value: longest >= 0 ? `up to ${leadText(longest)}` : 'none', late }
 }
 
 /** Which forecast the window's half-hours come from, and how far ahead it was made. */
 export function vintageText(issues: Issues): string {
-  const ahead = issues.shortest === issues.longest ? leadText(issues.shortest) : `between ${leadText(issues.shortest)} and ${leadText(issues.longest)}`
+  const { value, late } = aheadParts(issues)
+  const ahead = value.startsWith('up to') || !value.includes(' to ') ? value : `between ${value.replace(' to ', ' and ')}`
+  const tail = late ? ` ${late}` : ''
   const when = (t: number) => instantLabel(t, { year: true })
   if (issues.times.length === 1) {
-    return `Every half-hour here comes from one forecast, issued ${when(issues.times[0])}, made ${ahead} before the half-hour it is for.`
+    return `Every half-hour here comes from one forecast, issued ${when(issues.times[0])}, made ${ahead} before the half-hour it is for.${tail}`
   }
   const newest = issues.times[issues.times.length - 1]
-  return `The half-hours here come from ${plural(issues.times.length, 'issue', 'issues')} of the forecast, the oldest issued ${when(issues.times[0])} and the newest ${when(newest)}. Each half-hour shows the latest issue held for it, made ${ahead} before it.`
+  return `The half-hours here come from ${plural(issues.times.length, 'issue', 'issues')} of the forecast, the oldest issued ${when(issues.times[0])} and the newest ${when(newest)}. Each half-hour shows the latest issue held for it, made ${ahead} before it.${tail}`
 }
 
 /** A capacity column's values in the window: lowest and highest, or null when none is held. */
