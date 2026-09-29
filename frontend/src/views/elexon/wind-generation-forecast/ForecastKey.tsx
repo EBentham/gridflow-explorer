@@ -14,14 +14,14 @@ import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
 import { COLORS, FORECAST, METERED, METERED_KEY, MW_UNIT, issuesByHour, joinMetered, leadText, seriesOf, signedMw, summariseIssues, type DiffStats } from './figures'
 
-function DiffStat({ label, s }: { label: string; s: DiffStats }) {
+function DiffStat({ label, s, noun }: { label: string; s: DiffStats; noun: string }) {
   return (
     <div>
       <dt>{label}</dt>
       <dd>
         {signedMw(s.sum / s.count)} MW
         <span className="gf-stat-when">
-          mean absolute {MW_UNIT.plain(s.sumAbs / s.count)} MW, over {s.count.toLocaleString('en-GB')} {s.count === 1 ? 'hour' : 'hours'}
+          mean absolute {MW_UNIT.plain(s.sumAbs / s.count)} MW, over {s.count.toLocaleString('en-GB')} {s.count === 1 ? noun.replace(/s$/, '') : noun}
         </span>
       </dd>
     </div>
@@ -127,9 +127,9 @@ export function ForecastKey({ ctx }: { ctx: PageContext }) {
       {join.all.count > 0 && (
         <>
           <dl className="gf-stats">
-            {join.after.count > 0 && <DiffStat label="Metered less forecast, issued after" s={join.after} />}
-            {join.ahead.count > 0 && <DiffStat label="Metered less forecast, issued before" s={join.ahead} />}
-            {join.ahead.count + join.after.count < join.all.count && <DiffStat label="Metered less forecast" s={join.all} />}
+            {join.after.count > 0 && <DiffStat label="Metered less forecast, issued after" s={join.after} noun={noun} />}
+            {join.ahead.count > 0 && <DiffStat label="Metered less forecast, issued before" s={join.ahead} noun={noun} />}
+            {join.ahead.count + join.after.count < join.all.count && <DiffStat label="Metered less forecast" s={join.all} noun={noun} />}
           </dl>
           <p className="gf-hint">
             Each hour’s mean of the metered half-hours less its forecast, over the {join.all.count.toLocaleString('en-GB')} {noun} both hold. Only hours issued before them measure a forecast’s miss.
