@@ -14,7 +14,7 @@ import { meansText } from '../../_template/text'
 import { plural } from '../../../design/format'
 import { dayLabel, instantLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
-import { allFigures, mwText, mwh, mwhText, zoneDays, zoneName, zonesOf, type Edge, type Stretch } from './figures'
+import { allFigures, mwText, mwh, mwhText, zoneDays, zoneList, zoneName, type Edge, type Stretch, type ZoneDay } from './figures'
 
 const EDGE: Record<Edge, string> = {
   zero: 'held 0 MW',
@@ -35,9 +35,12 @@ function DayTable({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
   const window = ctx.window
   if (!model || !window) return null
-  const zones = zonesOf(model)
-  const perZone = zones.map((z) => zoneDays(model, z, window))
-  const days = perZone[0] ?? []
+  const zones = zoneList(model)
+  const none: ZoneDay = { held: 0, active: 0, sumMw: 0 }
+  // The window's days, whichever zone holds rows; a zone with none in the window gets a column of "none held".
+  const blank = zoneDays(model, null, window).map((d) => ({ ...d, z: none }))
+  const perZone = zones.map((z) => (z.def ? zoneDays(model, z.def, window) : blank))
+  const days = blank
   const heldOn = (i: number) => perZone.some((zd) => zd[i].z.held > 0)
   // A long window opening on days not held shows them as one row, so the held days aren't below the fold.
   let lead = 0
@@ -50,7 +53,7 @@ function DayTable({ ctx }: { ctx: PageContext }) {
     perZone.map((zd, zi) => {
       const { z } = zd[i]
       const expected = zd[i].expected
-      const key = zones[zi].key
+      const key = zones[zi].group
       if (!z.held) {
         return (
           <td key={key} colSpan={3}>
@@ -60,7 +63,7 @@ function DayTable({ ctx }: { ctx: PageContext }) {
       }
       return [
         <td key={`${key}-h`} className="is-num">
-          {expected !== null && z.held < expected ? `${z.held} of ${expected}` : z.held}
+          {expected !== null && z.held < expected ? <strong>{`${z.held} of ${expected}`}</strong> : z.held}
         </td>,
         <td key={`${key}-a`} className="is-num">
           {z.active}
@@ -80,20 +83,20 @@ function DayTable({ ctx }: { ctx: PageContext }) {
                 Day
               </th>
               {zones.map((z) => (
-                <th key={z.key} scope="colgroup" colSpan={3}>
+                <th key={z.group} scope="colgroup" colSpan={3}>
                   {zoneName(z.group)}
                 </th>
               ))}
             </tr>
             <tr>
               {zones.map((z) => [
-                <th key={`${z.key}-h`} scope="col" className="is-num">
+                <th key={`${z.group}-h`} scope="col" className="is-num">
                   Held
                 </th>,
-                <th key={`${z.key}-a`} scope="col" className="is-num">
+                <th key={`${z.group}-a`} scope="col" className="is-num">
                   Redispatching
                 </th>,
-                <th key={`${z.key}-e`} scope="col" className="is-num">
+                <th key={`${z.group}-e`} scope="col" className="is-num">
                   MWh
                 </th>,
               ])}
@@ -119,9 +122,9 @@ function DayTable({ ctx }: { ctx: PageContext }) {
                 )
               }
               const on = d.start === ctx.picked
-              const partial = perZone.some((zd) => zd[i].z.held > 0 && zd[i].expected !== null && zd[i].z.held < (zd[i].expected ?? 0))
+              // A partly held day is marked in its zone's own Held cell, not on the row.
               return (
-                <tr key={d.day} className={on ? 'is-on' : partial ? 'is-partial' : undefined}>
+                <tr key={d.day} className={on ? 'is-on' : undefined}>
                   <th scope="row">
                     <button type="button" aria-pressed={on} onClick={() => ctx.pick(on ? undefined : d.start)}>
                       {dayLabel(d.start)}
@@ -163,7 +166,10 @@ export function StretchesPanel({ ctx }: { ctx: PageContext }) {
     { key: 'after', label: 'After it', render: (s) => EDGE[s.after], sortValue: (s) => EDGE[s.after] },
   ]
   const open = stretches.filter((s) => s.before === 'gap' || s.after === 'gap').length
-  const counts = figures.filter((f) => f.held > 0).map((f) => `${zoneName(f.zone.group)} ${f.stretches.length.toLocaleString('en-GB')}`)
+  const counts = zoneList(model).map((z) => {
+    const f = figures.find((x) => x.zone === z.def)
+    return f && f.held > 0 ? `${zoneName(z.group)} ${f.stretches.length.toLocaleString('en-GB')}` : `${zoneName(z.group)} none held`
+  })
 
   return (
     <>

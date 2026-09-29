@@ -25,6 +25,19 @@ export const zoneName = (area: string | null) => ZONES.find((z) => z.value === a
 /** The zones read in this window: every series the response holds, in the key's order. */
 export const zonesOf = (model: SeriesModel | null): SeriesDef[] => (model ? model.all.filter((d) => d.from === 'self') : [])
 
+/**
+ * Every zone the page knows, then any other the rows hold, each with its
+ * series when the window holds rows for it. The model only has series for
+ * zones in the response, so a zone with no rows in the window is kept here
+ * to be named as holding none, not dropped.
+ */
+export function zoneList(model: SeriesModel | null): { group: string; def: SeriesDef | undefined }[] {
+  const defs = zonesOf(model)
+  const known = ZONES.map((z) => ({ group: z.value, def: defs.find((d) => d.group === z.value) }))
+  const others = defs.filter((d) => !ZONES.some((z) => z.value === d.group)).map((d) => ({ group: d.group ?? '', def: d as SeriesDef | undefined }))
+  return [...known, ...others]
+}
+
 /** How a stretch's edge was met: a held 0 MW, a quarter-hour not held, or the window's edge. */
 export type Edge = 'zero' | 'gap' | 'window'
 
@@ -123,12 +136,12 @@ export interface ZoneDay {
   sumMw: number
 }
 
-/** Per UK day of the window, one zone's quarter-hours held, those redispatching, and the MW summed. */
-export function zoneDays(model: SeriesModel, def: SeriesDef, window: DateRange): { day: string; start: number; expected: number | null; z: ZoneDay }[] {
+/** Per UK day of the window, one zone's quarter-hours held, those redispatching, and the MW summed; with no zone, the days alone. */
+export function zoneDays(model: SeriesModel, def: SeriesDef | null, window: DateRange): { day: string; start: number; expected: number | null; z: ZoneDay }[] {
   const byDay = new Map<number, ZoneDay>()
-  for (const row of model.rows) {
-    const raw = row[def.field]
-    if (typeof raw !== 'number') continue
+  for (const row of def ? model.rows : []) {
+    const raw = def ? row[def.field] : undefined
+    if (!def || typeof raw !== 'number') continue
     const v = raw / def.unit.factor
     const d = londonMidnight(row.t)
     const s = byDay.get(d) ?? { held: 0, active: 0, sumMw: 0 }
