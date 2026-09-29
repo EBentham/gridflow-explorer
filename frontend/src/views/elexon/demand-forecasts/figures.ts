@@ -76,9 +76,17 @@ export function boundaryOf(ctx: Pick<PageContext, 'param'>): string {
 
 // ---------------------------------------------------------------- issue times
 
-/** `13 min`, `5 h 20 min`, `2 days 3 h`: how long before its period a forecast was issued (`… after` if it came later). */
+/**
+ * `13 min`, `5 h 20 min`, `2 days 3 h`: how long before its period a forecast
+ * was issued (`… after` if it came later). The parts are joined with
+ * non-breaking spaces, so a lead time never wraps mid-figure.
+ */
 export function leadText(ms: number): string {
-  if (ms < 0) return `${leadText(-ms)} after`
+  return leadWords(ms).replace(/ /g, '\u00a0')
+}
+
+function leadWords(ms: number): string {
+  if (ms < 0) return `${leadWords(-ms)} after`
   const min = Math.round(ms / MINUTE_MS)
   if (min < 60) return `${min} min`
   if (ms < 2 * DAY_MS) {
