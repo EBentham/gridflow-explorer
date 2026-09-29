@@ -28,6 +28,7 @@ TTL_SECONDS = 600
 _ROWS_MEMORY_CEILING = "8GiB"
 ROWS_OPERATION_TIMEOUT_SECONDS = 30
 ROWS_REQUEST_TIMEOUT_SECONDS = 30
+MIN_OPERATION_SECONDS = 0.05
 LOG = logging.getLogger(__name__)
 GRAINS = {
     "15s": 15_000,
@@ -312,19 +313,23 @@ class _DeadlineClient:
 
     def run(self, operation: Any, *, cleanup_budget: float | None = None) -> Any:
         remaining = self.deadline - time.monotonic() if cleanup_budget is None else cleanup_budget
-        if remaining <= 0:
+        if remaining <= MIN_OPERATION_SECONDS:
             raise _query_timeout()
         timeout = min(ROWS_OPERATION_TIMEOUT_SECONDS, remaining)
         lock = threading.Lock()
         active = True
         expired = False
+        stop = threading.Event()
 
         def interrupt() -> None:
             nonlocal expired
             with lock:
-                if active:
-                    expired = True
-                    self.operations.interrupt()
+                if not active:
+                    return
+                expired = True
+            while not stop.is_set():
+                self.operations.interrupt()
+                stop.wait(0.05)
 
         timer = threading.Timer(timeout, interrupt)
         timer.start()
@@ -341,6 +346,7 @@ class _DeadlineClient:
             with lock:
                 active = False
                 timed_out = expired
+            stop.set()
             timer.cancel()
             timer.join()
         if timed_out or (cleanup_budget is None and time.monotonic() >= self.deadline):
@@ -409,13 +415,18 @@ class _SelectionScope:
     def close(self, primary: BaseException | None = None) -> None:
         first_drop_error: duckdb.Error | None = None
         cleanup_deadline = time.monotonic() + 1
-        for name in reversed(self.owned):
+        names = list(reversed(self.owned))
+        for index, name in enumerate(names):
             try:
                 if isinstance(self.operations, _DeadlineClient):
                     self.operations.drop(name, cleanup_budget=cleanup_deadline - time.monotonic())
                 else:
                     self.operations.drop(name)
             except RowsError:
+                LOG.warning(
+                    "Rows TEMP cleanup budget exhausted; leaving %s for connection close",
+                    names[index:],
+                )
                 break
             except duckdb.Error as exc:
                 LOG.exception("Failed to drop rows TEMP table %s", name)
@@ -986,7 +997,6 @@ def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
         raise
     else:
         scope.close(None)
-        bounded.check()
         return result
 
 
