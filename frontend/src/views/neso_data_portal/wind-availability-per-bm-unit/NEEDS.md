@@ -32,3 +32,12 @@ each gap inside its folder.
    request, so an unknown `?unit=` reads fine and the main, key and working panels each say
    "No unit X in this window's rows". A template sentence for a view-level miss would do
    this once.
+6. **`ChartPanel` has no control over the value axis.** A unit at 0 MW on every day (18 of
+   them in 28 Aug – 3 Sep 2026, e.g. `INCWO-1`) gets an axis from −1 to 1 MW, a range the
+   data never uses. The page draws such a unit in a panel under 200px, as the physical
+   notifications page does, so the ticks are whole MW. The same ask as that page's item 12:
+   a `domain` or a smallest tick step on `ChartPanel`.
+7. **The half-hour grid is capped.** `clockOf` in `figures.ts` stops at 20,000 points, so a
+   custom window of more than about 13 months with no GB wind output held would draw only
+   its first 13 months. With output held, the backend's means widen the step first. The
+   dataset holds 13 days today, so no window reaches it.
