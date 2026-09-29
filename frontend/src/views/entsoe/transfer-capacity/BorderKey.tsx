@@ -63,7 +63,12 @@ export function BorderKey({ ctx }: { ctx: PageContext }) {
       </ul>
       {pickable && <p className="gf-hint">{focused ? 'Select it again to draw every border.' : 'Select a border to draw it alone, with its highest and lowest labelled.'}</p>}
       {drawn.length > 0 && ctx.mode === 'chart' && (
-        <KeyList items={drawn.map((m) => ({ key: m.key, mark: { kind: 'line' as const, color: m.color, dashed: ctx.fixture }, label: `${m.label}, on the same border` }))} />
+        <KeyList
+          items={[
+            { key: own.key, mark: { kind: 'line' as const, color: own.color, dashed: ctx.fixture }, label: `${own.label}, the borders above` },
+            ...drawn.map((m) => ({ key: m.key, mark: { kind: 'line' as const, color: m.color, dashed: ctx.fixture }, label: `${m.label}, on the same border` })),
+          ]}
+        />
       )}
       {sel && selTally && unit && selTally.held > 0 && (
         <>
@@ -75,23 +80,32 @@ export function BorderKey({ ctx }: { ctx: PageContext }) {
               <dt>Mean</dt>
               <dd>{selTally.mean === null ? '–' : figureText(unit, selTally.mean)}</dd>
             </div>
-            {selTally.high && (
+            {selTally.distinct === 1 && selTally.high ? (
               <div>
-                <dt>Highest</dt>
-                <dd>
-                  {figureText(unit, selTally.high.v)}
-                  <span className="gf-stat-when">{when(selTally.high.t)}</span>
-                </dd>
+                <dt>Every value held</dt>
+                <dd>{figureText(unit, selTally.high.v)}</dd>
               </div>
-            )}
-            {selTally.low && (
-              <div>
-                <dt>Lowest</dt>
-                <dd>
-                  {figureText(unit, selTally.low.v)}
-                  <span className="gf-stat-when">{when(selTally.low.t)}</span>
-                </dd>
-              </div>
+            ) : (
+              <>
+                {selTally.high && (
+                  <div>
+                    <dt>Highest</dt>
+                    <dd>
+                      {figureText(unit, selTally.high.v)}
+                      <span className="gf-stat-when">{when(selTally.high.t)}</span>
+                    </dd>
+                  </div>
+                )}
+                {selTally.low && (
+                  <div>
+                    <dt>Lowest</dt>
+                    <dd>
+                      {figureText(unit, selTally.low.v)}
+                      <span className="gf-stat-when">{when(selTally.low.t)}</span>
+                    </dd>
+                  </div>
+                )}
+              </>
             )}
             <div>
               <dt>At zero</dt>

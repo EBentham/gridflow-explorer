@@ -70,3 +70,12 @@ template fix would serve both pages.
 9. The `net_transfer_capacity` note says "14–20 Sep: only 14 Sep held". The local rows as
    read on 29 Sep hold every hour of 8–21 Sep (and 1–5 Aug). The page doesn't print the
    note; the template's coverage sentences read the rows.
+
+## Template (from review pass 1)
+
+10. **No per-view cadence phrase.** About's "Cadence" line comes from the manifest grain
+    (`_template/text.ts` `cadenceOf`), so the DC link limits read "Hourly, with gaps". The
+    page's own rule is that an hour with no limit isn't a gap, as ENTSO-E publishes a limit
+    only when one is set. No workaround in the page: About is the template's. Wanted: a
+    `cadence` phrase on the view (e.g. "Hourly, published only when a limit is set") that
+    About prints in place of the manifest's.
