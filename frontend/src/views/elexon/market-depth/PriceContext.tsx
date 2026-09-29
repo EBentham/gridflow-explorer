@@ -10,6 +10,8 @@
  * the half-hours holding them; and the system price's mean, unweighted.
  * Select a day to mark it on every chart.
  */
+import './page.css'
+import { KeyList, type KeyItem } from '../../../design/charts'
 import { plural } from '../../../design/format'
 import { dayLabel, stepNoun, windowDomain } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
@@ -73,6 +75,13 @@ export function PriceContext({ ctx }: { ctx: PageContext }) {
   if (imbalance && imbalance.count > 0) {
     panels.push({ rows: model.rows, series: [imbalance], mark: 'line', unit: imbalance.unit, stepMs: model.stepMs, bucketed: model.bucketed, settlement: model.settlement, height: 150, zero: true, axisWidth: AXIS_WIDTH })
   }
+  // The charts here carry no key of their own: this names each panel's series, top to bottom, and the band.
+  const items: KeyItem[] = []
+  for (const p of panels) {
+    const d = p.series[0]
+    items.push({ key: d.key, mark: p.mark === 'bars' ? { kind: 'bars', color: d.color, shape: 'fall' } : { kind: 'line', color: d.color }, label: `${d.label}, ${d.unit.label ?? 'unit unconfirmed'}` })
+    if (p.belowZero) items.push({ key: `${d.key}-below`, mark: { kind: 'band' }, label: `${d.label} below zero` })
+  }
   const days = dayFigures(ctx, prices)
   // A sum of bucket means isn't the volume accepted: a window read as means gets no daily totals.
   const summed = !model.bucketed
@@ -83,6 +92,11 @@ export function PriceContext({ ctx }: { ctx: PageContext }) {
 
   return (
     <>
+      {ctx.mode === 'chart' && panels.length > 0 && (
+        <div className="gf-mdepth-key">
+          <KeyList items={items} />
+        </div>
+      )}
       {ctx.mode === 'chart' && panels.length > 0 && (
         <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
       )}

@@ -31,17 +31,18 @@ export const ACCEPTED = [ACC_OFFER, PRICED_OFFER, ACC_BID, PRICED_BID]
 
 /**
  * Offers take the colour the system prices use for a short system and bids
- * the one for a long system; the priced parts take a darker token of the
- * same side, so a side reads by hue and total against priced by depth.
+ * the one for a long system. The priced parts take hues of their own, as a
+ * darker shade of the same hue sat too close to its total in the dark
+ * theme; the indicated imbalance takes one no other series here uses.
  */
 export const VALUES: ValueSpec[] = [
   { column: OFFER, label: 'Offer volume', color: 'var(--chart-niv-short)' },
   { column: BID, label: 'Bid volume', color: 'var(--chart-niv-long)' },
   { column: ACC_OFFER, label: 'Accepted offers', color: 'var(--chart-niv-short)' },
-  { column: PRICED_OFFER, label: 'Priced accepted offers', color: 'var(--fuel-peaking)' },
+  { column: PRICED_OFFER, label: 'Priced accepted offers', color: 'var(--fuel-biomass)' },
   { column: ACC_BID, label: 'Accepted bids', color: 'var(--chart-niv-long)' },
-  { column: PRICED_BID, label: 'Priced accepted bids', color: 'var(--fuel-nuclear)' },
-  { column: IMBALANCE, label: 'Indicated imbalance', color: 'var(--chart-price)' },
+  { column: PRICED_BID, label: 'Priced accepted bids', color: 'var(--fuel-pumped_storage)' },
+  { column: IMBALANCE, label: 'Indicated imbalance', color: 'var(--fuel-imports)' },
 ]
 
 /** Every chart on the page gives its value axis this width, so the clocks line up. */

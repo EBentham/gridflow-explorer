@@ -58,7 +58,7 @@ const view = defineView({
               ctx={ctx}
               columns={[IMBALANCE, ACC_OFFER, ACC_BID]}
               unit="MWh"
-              also={[{ source: ctx.related[PRICES]?.source, dataset: 'system_prices', columns: [SSP, NIV], by: null, unit: '£/MWh and MWh' }]}
+              also={[{ source: ctx.related[PRICES]?.source, dataset: 'system_prices', columns: ctx.mode === 'chart' ? [SSP, NIV] : [SSP], by: null, unit: ctx.mode === 'chart' ? '£/MWh and MWh' : '£/MWh' }]}
               what={ctx.mode === 'chart' ? 'per half-hour on one clock, then per UK day' : 'per UK day'}
             />
           ),

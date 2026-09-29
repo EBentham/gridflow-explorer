@@ -1,0 +1,7 @@
+/* The working panel's key sits over a wide chart: one row, not the key panel's column. */
+.gf-mdepth-key .gf-key {
+  grid-auto-flow: column;
+  justify-content: start;
+  column-gap: 22px;
+  margin-bottom: 4px;
+}

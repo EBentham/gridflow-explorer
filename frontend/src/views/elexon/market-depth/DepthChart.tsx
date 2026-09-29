@@ -63,8 +63,8 @@ export function DepthChart({ ctx }: { ctx: PageContext }) {
   const offered = OFFERED.map((c) => seriesOf(model, c)).filter((d) => d !== undefined && d.count > 0) as NonNullable<ReturnType<typeof seriesOf>>[]
   const accepted = ACCEPTED.map((c) => seriesOf(model, c)).filter((d) => d !== undefined && d.count > 0) as NonNullable<ReturnType<typeof seriesOf>>[]
   const panels: ChartPanel[] = []
-  if (offered.length) panels.push({ ...common, series: offered, mark: 'bars', unit: offered[0].unit, height: 230 })
-  if (accepted.length) panels.push({ ...common, series: accepted, mark: 'line', unit: accepted[0].unit, height: 230 })
+  if (offered.length) panels.push({ ...common, series: offered, mark: 'bars', unit: offered[0].unit, height: 260 })
+  if (accepted.length) panels.push({ ...common, series: accepted, mark: 'line', unit: accepted[0].unit, height: 260 })
 
   return (
     <>
