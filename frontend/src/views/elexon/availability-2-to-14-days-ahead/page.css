@@ -1,0 +1,69 @@
+/*
+ * The availability page's own layout. Tokens only, and only the shapes the
+ * design already uses (DESIGN.md): no new looks.
+ */
+
+/* ---------------------------------------------------------------- toolbar */
+
+/* the window of delivery days, the units switch, then the id box with its button */
+.gf-av-control,
+.gf-av-unitform,
+.gf-av-unitlabel {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.gf-av-control {
+  gap: 8px 14px;
+}
+.gf-av-unitform {
+  margin: 0;
+}
+/* a unit id is an identifier, so the box sets it in the id face */
+.gf-input.gf-av-input {
+  width: 12.5rem;
+  font-family: var(--font-id);
+}
+.gf-input.gf-av-input::placeholder {
+  font-family: var(--font-ui);
+}
+
+/* ---------------------------------------------------------------- tables */
+
+/* the delivery days: two weeks at most, the whole list rather than a scroll box */
+.gf-av-days,
+.gf-av-codes,
+.gf-av-compare {
+  max-height: none;
+}
+.gf-av-compare tr.gf-av-sum th,
+.gf-av-compare tr.gf-av-sum td {
+  font-weight: 600;
+  border-top: 1px solid var(--rule-strong);
+}
+.gf-av-fuelcell {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+/* opening a unit alone: its id with the chartreuse underline of a link into a screen */
+.gf-av-open {
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+.gf-av-open:hover {
+  text-decoration-color: var(--accent-hover);
+}
+.gf-av-open:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
