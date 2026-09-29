@@ -50,7 +50,8 @@ const solid = (value: string, label: string, prose: string, color: string): Prod
 /** Every type either dataset carries, bottom of the stack first. */
 export const TYPES: ProductionType[] = [
   solid('Nuclear', 'Nuclear', 'nuclear', 'var(--fuel-nuclear)'),
-  solid('Hydro Run-of-river and poundage', 'Hydro run-of-river and poundage', 'run-of-river hydro', 'var(--fuel-hydro)'),
+  // Shortened to fit the 272px key, as the ENTSO-E generation page names B11; the working table keeps the full name.
+  solid('Hydro Run-of-river and poundage', 'Hydro run-of-river', 'run-of-river hydro', 'var(--fuel-hydro)'),
   solid('Biomass', 'Biomass', 'biomass', 'var(--fuel-biomass)'),
   solid('Wind Onshore', 'Wind onshore', 'onshore wind', 'var(--fuel-wind)'),
   { value: 'Wind Offshore', label: 'Wind offshore', prose: 'offshore wind', color: 'var(--fuel-wind)', fill: `url(#${HATCH.wind})`, swatch: stripe('--fuel-wind') },

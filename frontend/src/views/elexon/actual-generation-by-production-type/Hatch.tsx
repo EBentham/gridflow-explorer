@@ -2,8 +2,8 @@
  * The two hatches the page's charts fill with: wind's colour for offshore
  * wind and peaking's for oil, each crossed by 1.5px lines of the chart
  * surface every 5px, as the ENTSO-E and NESO pages mark a second kind of
- * wind. Drawn once beside each chart that uses them; the tokens keep them
- * right in both themes.
+ * wind. Drawn once per page, by the main panel; the working panel's charts
+ * use the same ids. The tokens keep them right in both themes.
  */
 import { HATCH } from './types'
 
