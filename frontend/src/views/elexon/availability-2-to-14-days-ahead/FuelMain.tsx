@@ -47,7 +47,7 @@ export function FuelMain({ ctx }: { ctx: PageContext }) {
   const missing = days.filter((d) => d.held === 0).length
   return (
     <>
-      <SeriesChart panels={[stackPanel(days, bands, 470)]} domain={windowDomain(w.start, w.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+      <SeriesChart panels={[stackPanel(days, bands, 560)]} domain={windowDomain(w.start, w.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
       <p className="gf-hint">
         {focus
           ? `${focus.label} alone: its forecast usable output for each delivery day, in GW. Select it again in the key to draw every fuel.`

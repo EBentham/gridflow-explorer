@@ -40,7 +40,7 @@ export function FuelCodes({ ctx }: { ctx: PageContext }) {
         </table>
       </div>
       <p className="gf-hint">
-        {fmtDay(day.date)}, {codes.length} codes, bottom of the stack first. Each interconnector is one link, named by Elexon’s code for it.
+        {fmtDay(day.date)}, {codes.length} codes, bottom of the stack first. Each interconnector is one link, named by Elexon’s code for it; <code>NPSHYD</code> is hydro other than pumped storage.
       </p>
     </>
   )

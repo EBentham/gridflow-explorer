@@ -18,6 +18,8 @@ export function FuelDays({ ctx }: { ctx: PageContext }) {
   const bands = bandsIn(days)
   const most = Math.max(...days.map((d) => d.held))
   const thin = days.filter((d) => d.held > 0 && d.held < most).length
+  // Codes held per day only earns a column when some day holds fewer than another.
+  const counts = thin > 0
   return (
     <>
       <div className="gf-days gf-av-days">
@@ -37,9 +39,11 @@ export function FuelDays({ ctx }: { ctx: PageContext }) {
               <th scope="col" className="is-num">
                 Total, GW
               </th>
-              <th scope="col" className="is-num">
-                Codes
-              </th>
+              {counts && (
+                <th scope="col" className="is-num">
+                  Codes
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -62,7 +66,7 @@ export function FuelDays({ ctx }: { ctx: PageContext }) {
                     </td>
                   ))}
                   <td className="is-num">{gw(d.total)}</td>
-                  <td className={partial ? 'is-num is-flag' : 'is-num'}>{d.held === 0 ? dash : partial ? `${d.held} of ${most}` : d.held}</td>
+                  {counts && <td className={partial ? 'is-num is-flag' : 'is-num'}>{d.held === 0 ? dash : partial ? `${d.held} of ${most}` : d.held}</td>}
                 </tr>
               )
             })}
@@ -70,8 +74,9 @@ export function FuelDays({ ctx }: { ctx: PageContext }) {
         </table>
       </div>
       <p className="gf-hint">
-        Each fuel in GW, summed over its codes held that day. Issued is the issue behind the day on the UK clock, and ahead counts whole UK days from it to the delivery day. Codes counts the fuel codes held
-        {thin > 0 ? `; ${plural(thin, 'day holds', 'days hold')} fewer than the window’s fullest day, in bold, and ${thin === 1 ? 'its' : 'their'} totals leave the missing codes out` : ''}. {ctx.mode === 'chart' ? 'Select a day to mark it on the chart and read it in the key.' : 'Select a day to read it in the key.'}
+        Each fuel in GW, summed over its codes held that day. Issued is the issue behind the day on the UK clock, and ahead counts whole UK days from it to the delivery day. {counts
+          ? `Codes counts the fuel codes held; ${plural(thin, 'day holds', 'days hold')} fewer than the window’s fullest day, in bold, and ${thin === 1 ? 'its' : 'their'} totals leave the missing codes out.`
+          : `Every day holding a forecast holds all ${most} fuel codes.`} {ctx.mode === 'chart' ? 'Select a day to mark it on the chart and read it in the key.' : 'Select a day to read it in the key.'}
       </p>
     </>
   )

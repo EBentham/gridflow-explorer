@@ -82,7 +82,6 @@ const BAND_OF: Record<string, string> = {
 
 /** Each code's own name, where it says more than its band's. */
 const CODE_NAMES: Record<string, string> = {
-  NPSHYD: 'Hydro, not pumped storage',
   CCGT: 'Gas (CCGT)',
   OCGT: 'Gas (OCGT)',
   COAL: 'Coal',

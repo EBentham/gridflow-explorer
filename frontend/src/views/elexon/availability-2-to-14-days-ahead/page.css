@@ -67,3 +67,7 @@
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
+/* a fuel's name may take two lines, so the side panel's four columns fit its 272px */
+.gf-av-compare tbody th {
+  white-space: normal;
+}
