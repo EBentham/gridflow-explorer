@@ -45,7 +45,8 @@ const view = defineView({
         { column: FORECAST, label: 'Forecast', color: COLORS.forecast },
         { column: INDEX, label: 'NESO index' },
       ],
-      chart: { mark: 'line', extremes: true, lower: false, axisWidth: AXIS_WIDTH },
+      // Zero on the axis: intensity has a true zero, and a short window's few gCO₂/kWh would otherwise fill the chart.
+      chart: { mark: 'line', extremes: true, zero: true, lower: false, axisWidth: AXIS_WIDTH },
       panels: {
         main: {
           title: 'Carbon intensity per half-hour',
