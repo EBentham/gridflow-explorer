@@ -67,8 +67,8 @@ export function DepthKey({ ctx }: { ctx: PageContext }) {
   const mostBid = accBid ? extremesOf(model.rows, accBid)?.low : null
   const counts = [
     { label: 'Indicated imbalance', h: heldOf(model, ctx, seriesOf(model, IMBALANCE)) },
-    { label: 'Offer and bid volumes', h: heldOf(model, ctx, offer) },
-    { label: 'Accepted volumes', h: heldOf(model, ctx, accOffer) },
+    { label: 'Offer volume', h: heldOf(model, ctx, offer) },
+    { label: 'Accepted offers', h: heldOf(model, ctx, accOffer) },
   ]
   const n = (x: number) => x.toLocaleString('en-GB')
 
@@ -110,7 +110,7 @@ export function DepthKey({ ctx }: { ctx: PageContext }) {
         ))}
       </dl>
       <p className="gf-hint">
-        In MWh, as published, over the {noun} of {ctx.windowText}. Held counts the {noun} with a value; the rest are gaps, not zeros.
+        In MWh, as published, over the {noun} of {ctx.windowText}. Held counts the {noun} with a value, on the offer side for the volumes; the rest are gaps, not zeros.
       </p>
     </>
   )

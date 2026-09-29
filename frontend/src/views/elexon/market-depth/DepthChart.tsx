@@ -10,19 +10,34 @@
  * less of than others.
  */
 import { plural } from '../../../design/format'
-import { datesBetween, rangeText, stepNoun, windowDomain } from '../../../design/time'
+import { datesBetween, dayStart, londonMidnight, rangeText, stepNoun, windowDomain } from '../../../design/time'
 import { SeriesBody } from '../../_template/SeriesBody'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
 import { ACCEPTED, ACC_OFFER, AXIS_WIDTH, IMBALANCE, OFFER, OFFERED, heldOf, seriesOf } from './figures'
 
-/** Where the local rows run, when they run on some days of their span only. */
+/**
+ * Where the local rows run, said only when this window has a day inside
+ * them that holds no row: those gaps are local, not the publisher's. When the
+ * window takes in the whole local span, the template's own line already
+ * gives the count, so this says only what the gaps are.
+ */
 export function DepthWords({ ctx }: { ctx: PageContext }) {
   const c = ctx.dataset.coverage
-  if (!c?.first_day || !c.last_day || c.day_count === null) return null
+  const model = ctx.series
+  if (!c?.first_day || !c.last_day || c.day_count === null || !ctx.window || !model) return null
   const span = datesBetween(c.first_day, c.last_day).length
   if (c.day_count >= span) return null
+  const held = new Set<number>()
+  for (const row of model.rows) if (model.all.some((d) => typeof row[d.field] === 'number')) held.add(londonMidnight(row.t))
+  const first = c.first_day
+  const last = c.last_day
+  const inside = datesBetween(ctx.window.start, ctx.window.end).filter((d) => d >= first && d <= last)
+  if (!inside.some((d) => !held.has(dayStart(d)))) return null
+  if (ctx.window.start <= c.first_day && ctx.window.end >= c.last_day) {
+    return <p className="gf-hint">The days without rows are not fetched locally, and show as gaps.</p>
+  }
   return (
     <p className="gf-hint">
       gridflow holds this dataset locally on {plural(c.day_count, 'day', 'days')} of the {span} from {rangeText(c.first_day, c.last_day).replace(' – ', ' to ')}. The other days are not fetched locally and show as gaps.
@@ -42,7 +57,7 @@ function HeldWords({ ctx }: { ctx: PageContext }) {
   const n = (x: number) => x.toLocaleString('en-GB')
   return (
     <p className="gf-hint">
-      This window holds the indicated imbalance for {n(imbalance.held)} {noun}, but the offer and bid volumes for {n(offered.held)} and the accepted volumes for {n(accepted.held)}. The rest are gaps, not zeros; the days table
+      This window holds the indicated imbalance for {n(imbalance.held)} {noun}, but the offer volume for {n(offered.held)} and the accepted offers for {n(accepted.held)}. The rest are gaps, not zeros; the days table
       below names the days.
     </p>
   )

@@ -33,7 +33,8 @@ export const ACCEPTED = [ACC_OFFER, PRICED_OFFER, ACC_BID, PRICED_BID]
  * Offers take the colour the system prices use for a short system and bids
  * the one for a long system. The priced parts take hues of their own, as a
  * darker shade of the same hue sat too close to its total in the dark
- * theme; the indicated imbalance takes one no other series here uses.
+ * theme; the indicated imbalance and the net imbalance volume (`PRICE_VALUES`)
+ * take ones no other series here uses.
  */
 export const VALUES: ValueSpec[] = [
   { column: OFFER, label: 'Offer volume', color: 'var(--chart-niv-short)' },
@@ -57,7 +58,8 @@ const PRICE_COLUMNS = [SSP, 'system_buy_price', NIV]
 
 export const PRICE_VALUES: ValueSpec[] = [
   { column: SSP, label: 'System sell price', color: 'var(--chart-price)' },
-  { column: NIV, label: 'Net imbalance volume', color: 'var(--chart-fan-soft)' },
+  // Not the teal of the bids nor any other colour on this page: net imbalance volume is its own quantity.
+  { column: NIV, label: 'Net imbalance volume', color: 'var(--fuel-peaking)' },
 ]
 
 /** A column's series in a model, when the rows hold it. */
