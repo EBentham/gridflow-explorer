@@ -20,13 +20,14 @@ export const ACTUAL = 'actual_gco2_kwh'
 export const INDEX = 'intensity_index'
 
 /**
- * The forecast and the estimate take the demand-forecast page's pair (forecast
- * in the fan colour, what came in the actual's), so a forecast reads the same
- * across the Explorer. In light the forecast is also the carbon intensity's
- * colour on the historic generation mix page; in dark the estimate is.
+ * The estimate takes the actual's colour and the forecast the fan's softer
+ * tone, a forecast colour as on the demand-forecast page. The fan's own
+ * petrol sat too close to the actual's near-black on the light surface for
+ * two lines that cross all day; the softer tone stays clear of it in both
+ * themes. The index wash is the heat ramp's darker end.
  */
 export const COLORS = {
-  forecast: 'var(--chart-fan)',
+  forecast: 'var(--chart-fan-soft)',
   actual: 'var(--chart-actual)',
   miss: 'var(--fuel-other)',
   grade: 'var(--heat-hi)',

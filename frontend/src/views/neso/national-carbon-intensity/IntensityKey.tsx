@@ -108,7 +108,7 @@ export function IntensityKey({ ctx }: { ctx: PageContext }) {
             })}
           </ul>
           <p className="gf-hint">
-            NESO’s index, as published with each half-hour: the strip over the chart.
+            {ctx.mode === 'chart' ? 'NESO’s index, as published with each half-hour: the strip over the chart.' : 'NESO’s index, as published with each half-hour: the table’s last column.'}
             {absent.length ? ` ${absent.length === 1 ? 'Its other grade' : 'Its other grades'}, ${listText(absent)}, ${absent.length === 1 ? 'isn’t' : 'aren’t'} held in this window.` : ''}
           </p>
         </>
