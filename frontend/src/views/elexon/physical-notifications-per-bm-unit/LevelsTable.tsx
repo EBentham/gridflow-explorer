@@ -97,7 +97,7 @@ export function LevelsTable({ ctx }: { ctx: PageContext }) {
         initialSort={{ key: 't', dir: 'asc' }}
         rowKey={(r, i) => `${r.ts}:${idOf(r) ?? i}`}
         // Beside the top units' key, which lists every unit under its fuel, the table takes the height to match.
-        maxHeight={one ? undefined : 760}
+        maxHeight={one ? undefined : 830}
       />
       <p className="gf-hint">
         Both levels in MW, as gridflow holds them. A dash is a half-hour with no value held.

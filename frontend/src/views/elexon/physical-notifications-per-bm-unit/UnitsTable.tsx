@@ -70,7 +70,7 @@ export function UnitsTable({ ctx }: { ctx: PageContext }) {
                       {l.fuel.label}
                     </span>
                   </td>
-                  <td className={partial ? 'is-num is-flag' : 'is-num'}>{expected === null || !partial ? lv.held : `${lv.held} of ${expected}`}</td>
+                  <td className={partial ? 'is-num is-flag' : 'is-num'}>{expected === null || !partial ? lv.held.toLocaleString('en-GB') : `${lv.held.toLocaleString('en-GB')} of ${expected.toLocaleString('en-GB')}`}</td>
                   <td className="is-num">{fmt(l.def.mean)}</td>
                   <td className="is-num">{fmt(l.def.min)}</td>
                   <td className="is-num">{fmt(l.def.max)}</td>

@@ -116,8 +116,8 @@ function TopKey({ ctx, model }: { ctx: PageContext; model: SeriesModel }) {
       })}
       <p className="gf-hint">
         {full
-          ? `Each unit’s start level ${model.bucketed ? 'in that period' : 'at that half-hour'}, in MW, and each fuel’s part of the sum, in GW. `
-          : 'Each unit’s latest start level, in MW. '}
+          ? `Listed as they stack, top first: each unit’s start level ${model.bucketed ? 'in that period' : 'at that half-hour'}, in MW, and each fuel’s part of the sum, in GW. `
+          : 'Listed as they stack, top first: each unit’s latest start level, in MW. '}
         {ctx.mode === 'chart'
           ? focus
             ? 'Select it again to draw them all.'
@@ -178,7 +178,7 @@ function UnitKey({ ctx, model, id }: { ctx: PageContext; model: SeriesModel; id:
       <dl className="gf-stats">
         {latest && stat(model.bucketed ? 'Latest mean start level' : 'Latest start level', MW.format(latest.v), latest.t)}
         {/* A level held flat all window has no highest, lowest or mean apart from it. */}
-        {ex && ex.low.v === ex.high.v && stat(model.bucketed ? 'Every mean held' : 'Every half-hour held', MW.format(ex.low.v))}
+        {ex && ex.low.v === ex.high.v && stat(model.bucketed ? 'Mean in every period' : 'Level in every half-hour', MW.format(ex.low.v))}
         {ex && ex.low.v !== ex.high.v && (
           <>
             {stat('Highest', MW.format(ex.high.v), ex.high.t)}
@@ -190,7 +190,8 @@ function UnitKey({ ctx, model, id }: { ctx: PageContext; model: SeriesModel; id:
         {lv.below > 0 && stat('Below zero', `${lv.below.toLocaleString('en-GB')} of ${lv.held.toLocaleString('en-GB')}`)}
       </dl>
       <p className="gf-hint">
-        In MW, over the {plural(lv.held, noun === 'half-hours' ? 'half-hour' : noun, noun)} held in the window. The mean is of their start levels; a half-hour with none held is left out.
+        In MW, over the {plural(lv.held, noun === 'half-hours' ? 'half-hour' : noun, noun)} held in the window.
+        {ex && ex.low.v !== ex.high.v ? ' The mean is of their start levels; a half-hour with none held is left out.' : ''}
       </p>
       <PriceItem ctx={ctx} price={price} at={latest?.t} />
       {split.length > 0 && paired && (

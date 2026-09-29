@@ -300,6 +300,13 @@ export function sameClock(model: SeriesModel, price: PriceSeries | null): price 
   return price !== null && price.model.stepMs === model.stepMs && price.model.bucketed === model.bucketed
 }
 
+/** How many of the window's half-hours (or means) hold a price, of how many it has; null where its periods straddle UK days. */
+export function priceCover(price: PriceSeries, window: DateRange): { held: number; expected: number } | null {
+  const days = daySummaries(price.model, window, price.def)
+  if (!days.length || days.some((d) => d.expected === null)) return null
+  return { held: days.reduce((s, d) => s + d.held, 0), expected: days.reduce((s, d) => s + (d.expected ?? 0), 0) }
+}
+
 /** The price at each time it holds one. */
 export function priceAt(price: PriceSeries): Map<number, number> {
   const out = new Map<number, number>()

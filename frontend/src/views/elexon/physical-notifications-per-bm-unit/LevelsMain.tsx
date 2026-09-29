@@ -11,7 +11,7 @@ import { SeriesChart } from '../../_template/SeriesChart'
 import { ErrorWords } from '../../_template/panels'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { PRICE_KEY, focusedLine, linePanel, pricePanel, priceSeries, stackPanel, unitLines, unitShown } from './figures'
+import { PRICE_KEY, focusedLine, linePanel, priceCover, pricePanel, priceSeries, stackPanel, unitLines, unitShown } from './figures'
 import { LevelsTable } from './LevelsTable'
 
 export function LevelsMain({ ctx }: { ctx: PageContext }) {
@@ -24,12 +24,16 @@ export function LevelsMain({ ctx }: { ctx: PageContext }) {
   const focus = focusedLine(ctx, lines)
   const alone = one ? lines[0] : focus
   // The stack's key lists every unit under its fuel, so the stack takes the height to stand beside it.
-  const top = alone ? linePanel(model, alone, 380) : stackPanel(model, lines, 560)
+  const top = alone ? linePanel(model, alone, 380) : stackPanel(model, lines, 620)
   const price = priceSeries(ctx)
   const rel = ctx.related[PRICE_KEY]
   const panels = price ? [top, pricePanel(price, alone ? 170 : 200)] : [top]
   const means = model.bucketed && model.stepMs ? ` Each point is a mean of the start levels in its period, as the window is read as ${meansText(model.stepMs)}.` : ''
   const banded = price && price.def.min !== null && price.def.min < 0
+  // A price held for part of the window is said in words: its line simply stops.
+  const cover = price ? priceCover(price, w) : null
+  const priceNoun = price?.model.bucketed && price.model.stepMs ? meansText(price.model.stepMs) : 'half-hours'
+  const thin = cover && cover.held < cover.expected ? ` The price is held for ${cover.held.toLocaleString('en-GB')} of the window’s ${cover.expected.toLocaleString('en-GB')} ${priceNoun}.` : ''
   return (
     <>
       <SeriesChart panels={panels} domain={windowDomain(w.start, w.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
@@ -40,7 +44,7 @@ export function LevelsMain({ ctx }: { ctx: PageContext }) {
             ? `${focus.id} alone, in MW: its notified level at the start of each half-hour. Select it again in the key to draw all ${lines.length}.`
             : `Each band is one unit’s notified level at the start of each half-hour, in GW, coloured by its fuel and stacked fuel by fuel. The top of the stack is the sum of these ${lines.length} units only, not GB’s total.`}
         {means} A gap is a half-hour with no level held.
-        {price ? ` Under it, the market index price on the same clock${banded ? ', its runs below zero banded' : ''}.` : ''}
+        {price ? ` Under it, the market index price on the same clock${banded ? ', its runs below zero banded' : ''}.${thin}` : ''}
       </p>
       {!price && rel && (rel.state === 'error' || rel.state === 'refreshing') && (
         <p className="gf-hint">
