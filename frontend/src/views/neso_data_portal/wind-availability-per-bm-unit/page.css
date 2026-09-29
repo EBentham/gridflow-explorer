@@ -52,9 +52,13 @@
 .gf-wa-pair .gf-hint.gf-wa-head {
   margin-top: 0;
 }
-/* a fortnight of days: the whole list, not a scroll box */
+/* the held days (13 at most today): a box tall enough for the whole list */
 .gf-days.gf-wa-long {
   max-height: 440px;
+}
+/* the units that change: a few dozen at most, so the whole list, never a scroll box */
+.gf-days.gf-wa-whole {
+  max-height: none;
 }
 /* a figure that differs from the day before */
 .gf-wa-changed {

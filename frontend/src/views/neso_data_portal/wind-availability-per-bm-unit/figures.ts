@@ -105,8 +105,6 @@ export interface Capture {
   published: string[]
   /** The days between publication and the day a figure is for, lowest and highest, where both are known. */
   ahead: { min: number; max: number } | null
-  /** Rows naming no unit: left out of every figure, and said. */
-  blankUnit: number
 }
 
 const num = (v: Scalar | undefined): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
@@ -157,17 +155,13 @@ export function captureOf(response: RowsResponse | null): Capture | null {
   const perUnit = new Map<string, Map<string, number | null>>()
   const daySet = new Set<string>()
   const published = new Set<string>()
-  let blankUnit = 0
   let aheadMin = Infinity
   let aheadMax = -Infinity
   for (const r of response.rows) {
     const id = r[UNIT]
     const day = r[DAY_COL]
     if (typeof day !== 'string' || !DAY_RE.test(day)) continue
-    if (typeof id !== 'string' || id === '') {
-      blankUnit += 1
-      continue
-    }
+    if (typeof id !== 'string' || id === '') continue
     daySet.add(day)
     const values = perUnit.get(id) ?? new Map<string, number | null>()
     values.set(day, num(r[VALUE]))
@@ -205,7 +199,6 @@ export function captureOf(response: RowsResponse | null): Capture | null {
     totalByDay: new Map(totals.map((t) => [t.day, t])),
     published: [...published].sort(),
     ahead: Number.isFinite(aheadMin) ? { min: aheadMin, max: aheadMax } : null,
-    blankUnit,
   }
   captures.set(response, out)
   return out
