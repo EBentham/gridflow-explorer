@@ -17,7 +17,7 @@ import { ErrorWords } from '../../_template/panels'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import type { SeriesDef, WideRow } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, markGaps, perText, pointsOf, statsOf, stepWords, trackDays, type Point } from './figures'
+import { AXIS_WIDTH, markGaps, onClock, perText, pointsOf, statsOf, stepWords, trackDays, type Clocked, type Point } from './figures'
 import { windSolarOf } from './windSolar'
 
 const dash = '–'
@@ -102,11 +102,28 @@ export function WindSolarPanel({ ctx }: { ctx: PageContext }) {
       </p>
     ) : null
 
-  const days = trackDays(ws.sum?.points ?? [], ws.sum?.step ?? null, window, ws.bucketed)
-  const dayOf = (points: Point[] | undefined, start: number) => (points ?? []).filter((p) => londonMidnight(p.t) === start)
+  // Every cell of a day's row is read over the same steps, which Held counts: those holding every type the
+  // zone holds and, where the total is held beside them, the total too. A day held in part says so in Held.
+  const joined = pair ? pair.rows.filter((r) => r.d !== null) : []
+  const useJoin = joined.length > 0
+  const baseStep = useJoin ? (pair?.step ?? null) : (ws.sum?.step ?? null)
+  const base: Point[] = useJoin ? joined.map((r) => ({ t: r.t, v: r.b as number })) : (ws.sum?.points ?? [])
+  const times = base.map((p) => p.t)
+  const at = (c: Clocked | null) => (c ? onClock(c, baseStep ?? c.step ?? 0, times) : null)
+  const windAt = at(ws.wind)
+  const solarAt = at(ws.solar)
+  const joinAt = new Map(joined.map((r) => [r.t, r]))
+  const days = trackDays(base, baseStep, window, ws.bucketed)
   const firstHeld = days.findIndex((d) => d.held > 0)
   const lead0 = firstHeld === -1 ? 0 : firstHeld
   const shown = lead0 >= 2 ? days.slice(lead0) : days
+  const cols = 1 + (ws.solar ? 1 : 0) + (useJoin ? 3 : 0)
+  const anyOwn = (start: number) => [...(ws.sum?.points ?? []), ...(ws.total?.points ?? [])].some((p) => londonMidnight(p.t) === start)
+  const meanAt = (m: Map<number, number> | null, ts: number[]) => {
+    if (!m) return null
+    const vs = ts.map((t) => m.get(t)).filter((v): v is number => v !== undefined)
+    return vs.length === ts.length ? meanOf(vs.map((v) => ({ t: 0, v }))) : null
+  }
 
   return (
     <>
@@ -120,23 +137,29 @@ export function WindSolarPanel({ ctx }: { ctx: PageContext }) {
             <tr>
               <th scope="col">Day</th>
               <th scope="col" className="is-num">
-                Held, all types
+                {useJoin ? 'Held, every type and total' : 'Held, every type'}
               </th>
               <th scope="col" className="is-num">
                 Mean wind, {unit.label}
               </th>
-              <th scope="col" className="is-num">
-                Mean solar, {unit.label}
-              </th>
-              <th scope="col" className="is-num">
-                Mean total, {unit.label}
-              </th>
-              <th scope="col" className="is-num">
-                Total less wind and solar, mean, {unit.label}
-              </th>
-              <th scope="col" className="is-num">
-                Wind and solar above total
-              </th>
+              {ws.solar && (
+                <th scope="col" className="is-num">
+                  Mean solar, {unit.label}
+                </th>
+              )}
+              {useJoin && (
+                <>
+                  <th scope="col" className="is-num">
+                    Mean total, {unit.label}
+                  </th>
+                  <th scope="col" className="is-num">
+                    Total less wind and solar, mean, {unit.label}
+                  </th>
+                  <th scope="col" className="is-num">
+                    Wind and solar above total
+                  </th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -146,23 +169,28 @@ export function WindSolarPanel({ ctx }: { ctx: PageContext }) {
                   {dayLabel(days[0].start)} – {dayLabel(days[lead0 - 1].start)}
                 </th>
                 <td className="is-num">0</td>
-                <td colSpan={5}>not held locally, {plural(lead0, 'day', 'days')}</td>
+                <td colSpan={cols}>not held locally, {plural(lead0, 'day', 'days')}</td>
               </tr>
             )}
             {shown.map((d) => {
-              const wind = dayOf(ws.wind?.points, d.start)
-              const solar = dayOf(ws.solar?.points, d.start)
-              const total = dayOf(ws.total?.points, d.start)
-              const bothDay = dayOf(both, d.start)
-              if (d.held === 0 && !wind.length && !solar.length && !total.length) {
+              if (d.held === 0) {
                 return (
                   <tr key={d.day} className="is-missing">
                     <th scope="row">{dayLabel(d.start)}</th>
                     <td className="is-num">{d.expected === null ? '0' : `0 of ${d.expected}`}</td>
-                    <td colSpan={5}>not held locally</td>
+                    <td colSpan={cols}>{anyOwn(d.start) ? (useJoin ? 'no step with every type and the total held' : 'no step with every type held') : 'not held locally'}</td>
                   </tr>
                 )
               }
+              const ts = d.points.map((p) => p.t)
+              const diffs = ts.flatMap((t) => {
+                const r = joinAt.get(t)
+                return r && r.d !== null ? [r.d] : []
+              })
+              const totals = ts.flatMap((t) => {
+                const r = joinAt.get(t)
+                return r && r.a !== null ? [{ t, v: r.a }] : []
+              })
               const on = d.start === ctx.picked
               const partial = d.expected !== null && d.held < d.expected
               return (
@@ -173,11 +201,15 @@ export function WindSolarPanel({ ctx }: { ctx: PageContext }) {
                     </button>
                   </th>
                   <td className="is-num">{d.expected === null || !partial ? d.held : `${d.held} of ${d.expected}`}</td>
-                  <td className="is-num">{plain(meanOf(wind))}</td>
-                  <td className="is-num">{plain(meanOf(solar))}</td>
-                  <td className="is-num">{plain(meanOf(total))}</td>
-                  <td className="is-num">{plain(meanOf(bothDay))}</td>
-                  <td className="is-num">{bothDay.length ? bothDay.filter((p) => p.v < 0).length : dash}</td>
+                  <td className="is-num">{plain(meanAt(windAt, ts))}</td>
+                  {ws.solar && <td className="is-num">{plain(meanAt(solarAt, ts))}</td>}
+                  {useJoin && (
+                    <>
+                      <td className="is-num">{plain(meanOf(totals))}</td>
+                      <td className="is-num">{plain(meanOf(diffs.map((v) => ({ t: 0, v }))))}</td>
+                      <td className="is-num">{diffs.filter((v) => v < 0).length}</td>
+                    </>
+                  )}
                 </tr>
               )
             })}
@@ -186,8 +218,9 @@ export function WindSolarPanel({ ctx }: { ctx: PageContext }) {
       </div>
       {shown.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
-        Held counts the {stepWords(ws.sum?.step ?? null, ws.bucketed)} with a forecast for every type {zone.prose} holds. Each mean is over the steps that series holds that day; the difference, and the count above the total, over the steps both hold. {zone.label}’s wind and solar come {perText(ws.sum?.step ?? null, ws.bucketed)}
-        {ws.total ? `, its total ${perText(ws.total.step, ws.bucketed)}` : ''}.{ws.total && ws.sum && ws.total.step !== ws.sum.step ? ` ${AVG}` : ''} The total is a separate ENTSO-E forecast, and the rows don’t say whether it counts the same wind and solar, so the difference is not a forecast of any other kind of plant.
+        Every figure in a day’s row is read over the same {stepWords(baseStep, ws.bucketed)}, which Held counts: those with a forecast for every type {zone.prose} holds{useJoin ? ', and for the total' : ''}. A day held in part is summarised in part, and its Held count says so. {zone.label}’s wind and solar come {perText(ws.sum?.step ?? null, ws.bucketed)}
+        {ws.total ? `, its total ${perText(ws.total.step, ws.bucketed)}` : ''}.{ws.total && ws.sum && ws.total.step !== ws.sum.step ? ` ${AVG}` : ''}
+        {ws.total ? ' The total is a separate ENTSO-E forecast, and the rows don’t say whether it counts the same wind and solar, so the difference is not a forecast of any other kind of plant.' : ''}
         {ctx.mode === 'chart' ? ' Select a day to mark it on every chart.' : ' Select a day to mark it.'}
       </p>
     </>

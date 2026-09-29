@@ -49,3 +49,10 @@ does meanwhile.
    say which. The page says so in a caveat and draws nothing from it. Once gridflow keeps
    generation and consumption apart, it would be a stacked mix per zone here, with the
    forecasts set against it.
+
+7. **Near-identical series colours.** Nine units drawn at once use all nine `SERIES_COLORS`,
+   and three of them read as nearly the same ochre in both themes (`--chart-price-2`,
+   `--fuel-biomass`, `--fuel-other`). The page gives each unit a colour from a hash of its
+   code, so it keeps its colour when the window changes, and the key and the table name
+   every line. A series palette with more separation between its warm colours would help
+   every page that draws many entities.

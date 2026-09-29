@@ -151,8 +151,30 @@ export function filteredType(ctx: PageContext): Fuel {
   return UNIT_TYPES.find((f) => f.code === code) ?? typeFrom(ctx.param)
 }
 
-/** Unit lines take the series tokens in turn (a unit has no colour of its own), after the model's order. */
-export const unitColor = (i: number) => SERIES_COLORS[i % SERIES_COLORS.length]
+/** A unit's preferred series token: a hash of its code, so that it keeps its colour from window to window. */
+function hashSlot(code: string): number {
+  let h = 0
+  for (let i = 0; i < code.length; i += 1) h = (h * 31 + code.charCodeAt(i)) >>> 0
+  return h % SERIES_COLORS.length
+}
+
+/**
+ * Colours for the units drawn together: each takes its code's slot in the
+ * series tokens, or the next free one when another drawn unit holds it (in
+ * code order, so the same set always gets the same colours). No two drawn
+ * units share a colour while there are no more of them than tokens.
+ */
+export function unitColors(codes: string[]): Map<string, string> {
+  const taken = new Set<number>()
+  const out = new Map<string, string>()
+  for (const code of [...codes].sort()) {
+    let slot = hashSlot(code)
+    for (let k = 0; k < SERIES_COLORS.length && taken.has(slot); k += 1) slot = (slot + 1) % SERIES_COLORS.length
+    taken.add(slot)
+    out.set(code, SERIES_COLORS[slot])
+  }
+  return out
+}
 
 // ---------------------------------------------------------------- tracks: a series on its own clock
 

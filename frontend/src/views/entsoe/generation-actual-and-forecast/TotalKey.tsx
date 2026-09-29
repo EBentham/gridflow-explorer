@@ -9,7 +9,7 @@ import { periodLabel } from '../../../design/time'
 import { SeriesKey } from '../../_template/panels'
 import type { PageContext } from '../../define'
 import { statsOf, stepWords } from './figures'
-import { zoneForecasts, zoneInView } from './total'
+import { zoneForecasts, zoneInView, zoneOfParam } from './total'
 
 export function TotalKey({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
@@ -27,7 +27,7 @@ export function TotalKey({ ctx }: { ctx: PageContext }) {
     <>
       <SeriesKey ctx={ctx} />
       <p className="gf-hint">
-        {z.zone.label} over the window{ctx.focus ? '' : ', the first in the key'}:
+        {z.zone.label} over the window{ctx.focus ? '' : zoneOfParam(ctx, zones) ? ', the zone chosen on the wind and solar tab' : ', the first in the key'}:
       </p>
       <dl className="gf-stats">
         {own.high && (

@@ -22,7 +22,8 @@ import { zoneForecasts, zoneInView, type ZoneForecast } from './total'
 
 const dash = '–'
 const AVG = 'A series held more often is averaged into each longer step it holds in full.'
-const MEASURE = { gen: 'var(--chart-actual)', load: 'var(--chart-fan)', diff: 'var(--fuel-other)' } as const
+/** Generation takes its zone's own colour, as in the chart above; load and the difference take tokens no zone line uses, in either theme. */
+const MEASURE = { load: 'var(--fuel-imports)', diff: 'var(--fuel-other)' } as const
 
 const meanOf = (points: Point[]) => (points.length ? points.reduce((s, p) => s + p.v, 0) / points.length : null)
 
@@ -129,7 +130,7 @@ export function BalancePanel({ ctx }: { ctx: PageContext }) {
   if (ctx.mode === 'chart' && pair && both.length) {
     const def = (key: string, label: string, color: string): SeriesDef => ({ ...gen.def, key, field: key, label, color, from: key })
     const domain = windowDomain(window.start, window.end)
-    const lines = [def('a', `${name}, generation forecast`, MEASURE.gen), def('b', `${name}, load forecast`, MEASURE.load)]
+    const lines = [def('a', `${name}, generation forecast`, z.zone.color), def('b', `${name}, load forecast`, MEASURE.load)]
     const bars = [def('d', 'Generation less load', MEASURE.diff)]
     const wide: WideRow[] = pair.rows.map((r) => ({ t: r.t, a: r.a, b: r.b, d: r.d }))
     const rows = markGaps(
@@ -145,7 +146,7 @@ export function BalancePanel({ ctx }: { ctx: PageContext }) {
       <>
         <KeyList
           items={[
-            { key: 'a', mark: { kind: 'line', color: MEASURE.gen, dashed: ctx.fixture }, label: `${name}, generation forecast, ${unit.label}` },
+            { key: 'a', mark: { kind: 'line', color: z.zone.color, dashed: ctx.fixture }, label: `${name}, generation forecast, ${unit.label}` },
             { key: 'b', mark: { kind: 'line', color: MEASURE.load, dashed: ctx.fixture }, label: `${name}, load forecast, ${unit.label}` },
             { key: 'd', mark: { kind: 'bars', color: MEASURE.diff, shape: 'rise' }, label: `Generation less load, ${unit.label}, lower chart` },
           ]}
@@ -157,12 +158,19 @@ export function BalancePanel({ ctx }: { ctx: PageContext }) {
     chart = <p className="gf-hint">{name} holds no step with both forecasts in this window, so there is nothing to draw.</p>
   }
 
-  const days = trackDays(gen.points, gen.step, window, model.bucketed)
-  const dayOf = (points: Point[], start: number) => points.filter((p) => londonMidnight(p.t) === start)
+  // Every cell of a day's row is read over the same steps, which Held counts: those holding both
+  // forecasts, or the generation forecast alone when no load forecast is held beside it.
+  const joined = pair ? pair.rows.filter((r) => r.d !== null) : []
+  const useJoin = joined.length > 0
+  const baseStep = useJoin ? (pair?.step ?? null) : gen.step
+  const base: Point[] = useJoin ? joined.map((r) => ({ t: r.t, v: r.a as number })) : gen.points
+  const joinAt = new Map(joined.map((r) => [r.t, r]))
+  const days = trackDays(base, baseStep, window, model.bucketed)
   const firstHeld = days.findIndex((d) => d.held > 0)
   const lead0 = firstHeld === -1 ? 0 : firstHeld
   const shown = lead0 >= 2 ? days.slice(lead0) : days
-  const loadPoints = z.load?.points ?? []
+  const cols = useJoin ? 5 : 3
+  const genOn = (start: number) => gen.points.filter((p) => londonMidnight(p.t) === start).length
 
   return (
     <>
@@ -177,7 +185,7 @@ export function BalancePanel({ ctx }: { ctx: PageContext }) {
             <tr>
               <th scope="col">Day</th>
               <th scope="col" className="is-num">
-                Held
+                {useJoin ? 'Held by both' : 'Held'}
               </th>
               <th scope="col" className="is-num">
                 Mean generation forecast, {unit.label}
@@ -188,12 +196,16 @@ export function BalancePanel({ ctx }: { ctx: PageContext }) {
               <th scope="col" className="is-num">
                 Highest, {unit.label}
               </th>
-              <th scope="col" className="is-num">
-                Mean load forecast, {unit.label}
-              </th>
-              <th scope="col" className="is-num">
-                Generation less load, mean, {unit.label}
-              </th>
+              {useJoin && (
+                <>
+                  <th scope="col" className="is-num">
+                    Mean load forecast, {unit.label}
+                  </th>
+                  <th scope="col" className="is-num">
+                    Generation less load, mean, {unit.label}
+                  </th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -203,20 +215,29 @@ export function BalancePanel({ ctx }: { ctx: PageContext }) {
                   {dayLabel(days[0].start)} – {dayLabel(days[lead0 - 1].start)}
                 </th>
                 <td className="is-num">0</td>
-                <td colSpan={5}>not held locally, {plural(lead0, 'day', 'days')}</td>
+                <td colSpan={cols}>not held locally, {plural(lead0, 'day', 'days')}</td>
               </tr>
             )}
             {shown.map((d) => {
               if (d.held === 0) {
+                const own = genOn(d.start)
                 return (
                   <tr key={d.day} className="is-missing">
                     <th scope="row">{dayLabel(d.start)}</th>
                     <td className="is-num">{d.expected === null ? '0' : `0 of ${d.expected}`}</td>
-                    <td colSpan={5}>not held locally</td>
+                    <td colSpan={cols}>{own ? `no step with both forecasts held; the generation forecast holds ${plural(own, stepWords(gen.step, model.bucketed).replace(/s$/, ''), stepWords(gen.step, model.bucketed))}` : 'not held locally'}</td>
                   </tr>
                 )
               }
               const s = statsOf(d.points)
+              const loads = d.points.flatMap((p) => {
+                const r = joinAt.get(p.t)
+                return r && r.b !== null ? [{ t: p.t, v: r.b }] : []
+              })
+              const diffs = d.points.flatMap((p) => {
+                const r = joinAt.get(p.t)
+                return r && r.d !== null ? [{ t: p.t, v: r.d }] : []
+              })
               const on = d.start === ctx.picked
               const partial = d.expected !== null && d.held < d.expected
               return (
@@ -230,8 +251,12 @@ export function BalancePanel({ ctx }: { ctx: PageContext }) {
                   <td className="is-num">{plain(s.mean)}</td>
                   <td className="is-num">{plain(s.low?.v ?? null)}</td>
                   <td className="is-num">{plain(s.high?.v ?? null)}</td>
-                  <td className="is-num">{plain(meanOf(dayOf(loadPoints, d.start)))}</td>
-                  <td className="is-num">{plain(meanOf(dayOf(both, d.start)))}</td>
+                  {useJoin && (
+                    <>
+                      <td className="is-num">{plain(meanOf(loads))}</td>
+                      <td className="is-num">{plain(meanOf(diffs))}</td>
+                    </>
+                  )}
                 </tr>
               )
             })}
@@ -241,7 +266,11 @@ export function BalancePanel({ ctx }: { ctx: PageContext }) {
       {shown.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
         {name}’s generation is forecast {perText(gen.step, model.bucketed)}
-        {z.load ? `, its load ${perText(z.load.step, model.bucketed)}` : ''}; the two are set against each other on the coarser clock, over the {noun} both hold.{z.load && z.load.step !== gen.step ? ` ${AVG}` : ''} Held counts the {stepWords(gen.step, model.bucketed)} of generation forecast held, so a day held in part is summarised in part. The zones’ own means in the first table are over the steps both hold; each day’s means are over the steps each forecast holds that day. The two are separate ENTSO-E forecasts, and the rows don’t say whether they count the same plant and the same demand, so generation less load is not a forecast of exports or imports.
+        {z.load ? `, its load ${perText(z.load.step, model.bucketed)}` : ''}
+        {useJoin ? `; the two are set against each other on the coarser clock, over the ${noun} both hold.` : '.'}
+        {useJoin && z.load && z.load.step !== gen.step ? ` ${AVG}` : ''} Every figure in a day’s row, and in a zone’s row above, is read over the same steps, which Held counts
+        {useJoin ? ': those holding both forecasts' : ''}. A day held in part is summarised in part, and its Held count says so.
+        {z.load ? ' The two are separate ENTSO-E forecasts, and the rows don’t say whether they count the same plant and the same demand, so generation less load is not a forecast of exports or imports.' : ''}
         {ctx.mode === 'chart' ? ' Select a zone to draw it here and alone above, and a day to mark it on every chart.' : ' Select a zone to read its days, and a day to mark it.'}
       </p>
     </>

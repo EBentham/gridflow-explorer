@@ -83,7 +83,7 @@ const view = defineView({
   caveats: [
     'ENTSO-E has published no generation figures for GB since Brexit, so GB isn’t here. The zones are Germany-Luxembourg, France, the Netherlands, Belgium and Ireland’s single market, as each dataset holds them; they matter to GB through the interconnectors.',
     'ENTSO-E’s actual generation by production type is held too, but not shown. In the copy held here, a type that both generates and consumes, such as pumped storage, can carry the power it consumed in place of the power it generated, and the rows don’t say which. Drawn, it would mislead, so the page leaves it out until the two are kept apart.',
-    'Every time is on the UK clock, an hour behind the zones’ own Central European time: 19:00 there reads 18:00 here.',
+    'Every time is on the UK clock, an hour behind the continental zones’ Central European time (19:00 there reads 18:00 here); Ireland keeps the UK clock.',
   ],
   datasets: [
     {

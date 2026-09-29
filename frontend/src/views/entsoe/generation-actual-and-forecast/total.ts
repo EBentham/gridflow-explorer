@@ -6,7 +6,7 @@
  */
 import type { PageContext } from '../../define'
 import { seriesId } from '../../_template/seriesModel'
-import { joinPair, LOAD_KEY, TOTAL_ZONES, trackOf, zoneByCode, type Pair, type Track, type Zone } from './figures'
+import { joinPair, LOAD_KEY, TOTAL_ZONES, trackOf, ZONE_PARAM, zoneByCode, type Pair, type Track, type Zone } from './figures'
 
 export interface ZoneForecast {
   zone: Zone
@@ -35,7 +35,13 @@ export function zoneForecasts(ctx: PageContext): ZoneForecast[] {
   })
 }
 
-/** The zone the key and working panel read: the one selected in the key, else the first held. */
+/** The zone `?zone=` names, when it is one of these and held (it carries over from the other tabs). */
+export function zoneOfParam(ctx: PageContext, zones: ZoneForecast[]): ZoneForecast | undefined {
+  const p = ctx.param(ZONE_PARAM)
+  return zones.find((z) => z.gen && z.zone.param === p)
+}
+
+/** The zone the key and working panel read: the one selected in the key, else the one `?zone=` names, else the first held. */
 export function zoneInView(ctx: PageContext, zones: ZoneForecast[]): ZoneForecast | undefined {
-  return zones.find((z) => z.gen && seriesId(z.gen.def) === ctx.focus) ?? zones.find((z) => z.gen)
+  return zones.find((z) => z.gen && seriesId(z.gen.def) === ctx.focus) ?? zoneOfParam(ctx, zones) ?? zones.find((z) => z.gen)
 }

@@ -7,7 +7,7 @@
 import type { PageContext } from '../../define'
 import { seriesId, type SeriesDef } from '../../_template/seriesModel'
 import { displayUnit } from '../../_template/units'
-import { filteredType, filteredZone, statsOf, sumTracks, trackOf, UNIT_ZONES, unitColor, type Clocked, type Fuel, type Stats, type Track, type Zone } from './figures'
+import { filteredType, filteredZone, statsOf, sumTracks, trackOf, UNIT_ZONES, unitColors, type Clocked, type Fuel, type Stats, type Track, type Zone } from './figures'
 
 /** The chart draws at most this many units: one per series colour. */
 export const UNITS_DRAWN = 9
@@ -47,7 +47,8 @@ export function unitsOf(ctx: PageContext): Units | null {
       return { track, stats, latest: track.points.at(-1) ?? null, idle: stats.high !== null && stats.high.v <= 0 }
     })
     .sort((a, b) => (b.stats.mean ?? 0) - (a.stats.mean ?? 0))
-  const drawn = rows.slice(0, UNITS_DRAWN).map((r, i) => ({ ...r.track.def, color: unitColor(i) }))
+  const colors = unitColors(rows.slice(0, UNITS_DRAWN).map((r) => r.track.def.group ?? r.track.def.key))
+  const drawn = rows.slice(0, UNITS_DRAWN).map((r) => ({ ...r.track.def, color: colors.get(r.track.def.group ?? r.track.def.key) ?? 'var(--chart-price)' }))
   return {
     zone: filteredZone(ctx, UNIT_ZONES),
     type: filteredType(ctx),
