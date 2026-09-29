@@ -92,6 +92,7 @@ const view = defineView({
         'Elexon calls these figures actual or estimated. The rows don’t say which half-hours are estimates.',
         'Whether the solar figure covers all of GB’s solar or only part of it is unconfirmed.',
         'Some past days hold two different figures for the same half-hour and type, and the rows don’t say which is the newer. A window that includes one, 28 to 30 March 2026 among them, can’t be read yet: the page says so rather than mix the two. The 30 days to 26 September 2026 read cleanly (checked 29 Sep 2026).',
+        'From 16:30 BST on 17 Sep to 16:30 BST on 18 Sep 2026, offshore wind reads 0.1 to 0.3 GW, while FUELHH’s wind runs near 16 GW at times in that day (checked 29 Sep 2026). The rows don’t say why; the chart draws it as held.',
         'agpt carries the same three types among its eleven, over far fewer days; its page sets them side by side.',
       ],
       query: { group: PSR },
