@@ -81,7 +81,8 @@ function MeansDays({ ctx, days }: { ctx: PageContext; days: FreqDay[] }) {
     <>
       <p className="gf-hint">
         This window is read as {step ? meansText(step) : 'means'} of the readings, not the readings themselves. A mean can sit inside {bandText(NARROW)} while readings in its {period} went outside, so
-        no time outside is counted from them. Choose 7 days or fewer to count every reading.
+        no time outside is counted from them. A {period} next to a gap may hold only some of its readings; its mean is over those, and it counts here as held. Choose 7 days or fewer to count every
+        reading.
       </p>
       <div className="gf-days sf-whole">
         <table>

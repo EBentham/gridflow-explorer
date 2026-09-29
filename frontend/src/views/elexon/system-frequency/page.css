@@ -21,3 +21,10 @@
 .sf-gaps li {
   padding: 2px 0;
 }
+/* The key's band swatch: the chart's wash, drawn band-shaped with hairline edges so it shows on the panel as it does on the chart. */
+.sf-key .gf-swatch {
+  width: 22px;
+  height: 10px;
+  border-radius: 0;
+  box-shadow: inset 0 1px 0 var(--chart-grid-strong), inset 0 -1px 0 var(--chart-grid-strong);
+}

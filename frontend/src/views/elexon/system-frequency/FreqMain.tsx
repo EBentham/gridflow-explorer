@@ -19,7 +19,7 @@ import { SeriesBody } from '../../_template/SeriesBody'
 import { extremesOf, type WideRow } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { BAND_FILL, FREQ_COLOR, NARROW, NOMINAL_HZ, STATUTORY, bandText, freqDef, heldPoints, meanNoun, measuredStep, periodNoun, spanText } from './figures'
+import { BAND_EDGE, BAND_FILL, FREQ_COLOR, NARROW, NOMINAL_HZ, STATUTORY, bandText, freqDef, heldPoints, meanNoun, measuredStep, periodNoun, spanText } from './figures'
 
 const HEIGHT = 420
 
@@ -113,6 +113,8 @@ export function FreqMain({ ctx }: { ctx: PageContext }) {
           <ReferenceLine y={STATUTORY[1]} stroke="var(--chart-axis)" strokeWidth={1.25} ifOverflow="hidden" label={<LineLabel text={`Statutory limit ${fmtN(STATUTORY[1], 1)} Hz`} />} />
           <ReferenceLine y={STATUTORY[0]} stroke="var(--chart-axis)" strokeWidth={1.25} ifOverflow="hidden" label={<LineLabel text={`Statutory limit ${fmtN(STATUTORY[0], 1)} Hz`} below />} />
           <ReferenceArea y1={NARROW[0]} y2={NARROW[1]} fill={BAND_FILL} fillOpacity={1} stroke="none" ifOverflow="hidden" />
+          <ReferenceLine y={NARROW[1]} stroke={BAND_EDGE} strokeWidth={1} ifOverflow="hidden" />
+          <ReferenceLine y={NARROW[0]} stroke={BAND_EDGE} strokeWidth={1} ifOverflow="hidden" />
           <ReferenceLine y={NOMINAL_HZ} stroke="var(--chart-axis)" strokeWidth={1} ifOverflow="hidden" />
           <Line dataKey={def.field} {...lineProps(FREQ_COLOR, { fixture: ctx.fixture })} strokeWidth={bucketed ? CHART.line : 1} />
           {ex && <Extreme x={ex.high.t} y={ex.high.v} anchor={extremeAnchor(ex.high.t, domain)} color={FREQ_COLOR} text={`${def.unit.format(ex.high.v)}, highest ${what}, ${when(ex.high.t)}`} />}
@@ -125,8 +127,8 @@ export function FreqMain({ ctx }: { ctx: PageContext }) {
         {bucketed ? (
           <>
             Each point is the mean of the readings in its {period}, as the window is read as {model.stepMs ? meansText(model.stepMs) : 'means'}. A mean flattens the swings inside its {period}:
-            readings can cross {fmtN(NARROW[0], 1)} or {fmtN(NARROW[1], 1)} Hz while every mean stays inside, so the highest and lowest here are means, not readings. Choose 7 days or fewer to draw
-            every reading.
+            readings can cross {fmtN(NARROW[0], 1)} or {fmtN(NARROW[1], 1)} Hz while every mean stays inside, so the highest and lowest here are means, not readings. A {period} next to a gap may hold
+            only some of its readings; its mean is over those. Choose 7 days or fewer to draw every reading.
           </>
         ) : (
           <>

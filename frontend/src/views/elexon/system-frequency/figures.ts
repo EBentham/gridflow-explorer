@@ -13,6 +13,8 @@ export const VALUE = 'frequency_hz'
 export const FREQ_COLOR = 'var(--chart-price)'
 /** The narrower band's wash: the grid's own ink, so it reads as a reference, not as data. */
 export const BAND_FILL = 'var(--chart-grid)'
+/** Its edges, on the chart and on the key's swatch (page.css). */
+export const BAND_EDGE = 'var(--chart-grid-strong)'
 
 /** The nominal frequency. */
 export const NOMINAL_HZ = 50
