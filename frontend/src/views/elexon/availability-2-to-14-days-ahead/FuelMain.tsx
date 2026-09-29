@@ -32,7 +32,7 @@ function FuelTable({ ctx }: { ctx: PageContext }) {
       rows={rows}
       rowKey={(r, i) => `${r.date}:${r.code ?? i}`}
       caption={`${rows.length.toLocaleString('en-GB')} rows, one per delivery day and fuel code, as read. Select a column heading to sort.`}
-      maxHeight={520}
+      maxHeight={600}
     />
   )
 }

@@ -38,7 +38,7 @@ function UnitsTable({ ctx }: { ctx: PageContext }) {
       rowKey={(r, i) => `${r.date}:${unitKey(r)}:${i}`}
       initialSort={{ key: 'date', dir: 'asc' }}
       caption={`${rows.length.toLocaleString('en-GB')} rows, one per delivery day${one ? '' : ' and unit'}, as read. Select a column heading to sort.`}
-      maxHeight={520}
+      maxHeight={600}
     />
   )
 }

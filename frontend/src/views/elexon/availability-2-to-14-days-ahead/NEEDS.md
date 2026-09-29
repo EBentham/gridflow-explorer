@@ -46,3 +46,7 @@ around each gap inside its folder.
    into `figures.ts`. One map in `design/fuels.ts` would keep every Elexon page alike.
 8. **No neutral data token for an unknown category.** A fuel code the page doesn't know would
    be drawn in `--chart-tick`, as the physical notifications page does (its NEEDS item 9).
+9. **A line held at zero all window gets a −1 to 1 axis.** `SeriesChart` scales a flat zero
+   series around zero, so a unit forecast at 0 MW every day (`T_PEHE-1`, 23–29 Sep 2026) draws
+   on an axis running below zero, which availability never does. The key says the unit held
+   one figure every day. Asked for: a floor at zero when a panel's values never go below it.

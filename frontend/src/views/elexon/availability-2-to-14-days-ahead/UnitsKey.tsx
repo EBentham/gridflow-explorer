@@ -52,7 +52,7 @@ function OneKey({ ctx, unit, days }: { ctx: PageContext; unit: UnitInfo; days: D
   const issued = [...new Set(figures.map((f) => f.v?.issued).filter((t): t is number => typeof t === 'number'))].sort((a, b) => a - b)
   return (
     <>
-      <KeyList items={[{ key: unit.key, mark: { kind: 'line', color: unit.band.color, dashed: ctx.fixture }, label: <span><code>{unit.id}</code>, {unitFuel(unit).toLowerCase()}</span> }]} />
+      <KeyList items={[{ key: unit.key, mark: { kind: 'line', color: unit.band.color, dashed: ctx.fixture }, label: <span><code>{unit.id}</code>, {unitFuel(unit)}</span> }]} />
       <dl className="gf-stats">
         {unit.ng && <Stat label="National Grid id" value={<code>{unit.ng}</code>} />}
         {unit.code && <Stat label="Fuel code" value={<code>{unit.code}</code>} />}
