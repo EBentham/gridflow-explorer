@@ -5,11 +5,12 @@
  * energy the held quarter-hours add up to. Every figure is read from the
  * rows; a quarter-hour not held counts for nothing, never as 0 MW.
  */
+import { listText } from '../../../design/format'
 import { SeriesKey } from '../../_template/panels'
 import { periodName } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { allFigures, mwText, mwh, mwhText, zoneName } from './figures'
+import { allFigures, mwText, mwh, mwhText, zoneList, zoneName } from './figures'
 
 export function RedispatchKey({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
@@ -23,6 +24,8 @@ export function RedispatchKey({ ctx }: { ctx: PageContext }) {
     )
   }
   const figures = allFigures(ctx).filter((f) => f.held > 0)
+  // A zone with no quarter-hour held in the window has no series to key, so it is named here instead.
+  const missing = zoneList(model).filter((z) => !figures.some((f) => f.zone === z.def))
   const step = model.stepMs ?? 0
   return (
     <>
@@ -59,6 +62,11 @@ export function RedispatchKey({ ctx }: { ctx: PageContext }) {
           </dl>
         </div>
       ))}
+      {missing.length > 0 && (
+        <p className="gf-hint">
+          {listText(missing.map((z) => zoneName(z.group)))}: no quarter-hour held in {ctx.windowText}.
+        </p>
+      )}
       <p className="gf-hint">Energy is each quarter-hour’s MW times a quarter of an hour, added up over the quarter-hours held. It covers those quarter-hours only: what happened in a quarter-hour not held is unknown, not 0 MW.</p>
     </>
   )
