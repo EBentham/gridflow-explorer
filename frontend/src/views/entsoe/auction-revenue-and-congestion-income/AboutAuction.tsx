@@ -9,19 +9,25 @@ import { CONGESTION } from './figures'
 
 export function AboutAuction({ ctx }: { ctx: PageContext }) {
   const congestion = ctx.family.datasets.find((d) => d.id === CONGESTION)
+  const onCongestion = ctx.dataset.id === CONGESTION
+  const revenue = (
+    <p className="gf-hint">
+      Auction revenue is what ENTSO-E reports as raised each hour by the explicit auctions of capacity on a border. The rows held name GB as the in area and the
+      Netherlands or Belgium as the out area, and carry no currency of their own: the amounts are read as euros from the column’s name and gridflow’s research.
+    </p>
+  )
+  const notHeld = congestion && !congestion.held && (
+    <p className="gf-hint">
+      {onCongestion ? 'Congestion income isn’t held.' : 'Congestion income, the family’s other dataset, isn’t held.'} gridflow asked ENTSO-E for the congestion income of
+      implicit and flow-based allocation, and every answer was empty. GB’s borders are allocated by explicit auction, so gridflow’s research expected nothing for them.
+    </p>
+  )
+  // On the congestion income view, why it isn't held comes first; auction revenue follows as the family's held dataset.
   return (
     <>
       <About ctx={ctx} />
-      <p className="gf-hint">
-        Auction revenue is what ENTSO-E reports as raised each hour by the explicit auctions of capacity on a border. The rows held name GB as the in area and the
-        Netherlands or Belgium as the out area, and carry no currency of their own: the amounts are read as euros from the column’s name and gridflow’s research.
-      </p>
-      {congestion && !congestion.held && (
-        <p className="gf-hint">
-          Congestion income, the family’s other dataset, isn’t held. gridflow asked ENTSO-E for the congestion income of implicit and flow-based allocation, and every
-          answer was empty. GB’s borders are allocated by explicit auction, so gridflow’s research expected nothing for them.
-        </p>
-      )}
+      {onCongestion ? notHeld : revenue}
+      {onCongestion ? revenue : notHeld}
     </>
   )
 }
