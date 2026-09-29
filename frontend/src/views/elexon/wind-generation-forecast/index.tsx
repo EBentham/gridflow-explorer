@@ -56,11 +56,15 @@ const view = defineView({
           src: (ctx) => (
             <SourceLine
               ctx={ctx}
-              columns={[FORECAST, ISSUED]}
+              columns={[FORECAST]}
               filters={ctx.response?.filters}
               unit="GW"
               also={meteredPart(ctx, false)}
-              what="the latest hour, highest and lowest, which issues the hours come from, and metered less forecast in MW"
+              what={
+                <>
+                  the latest hour, highest and lowest, which issue each hour comes from (<code>{ISSUED}</code>), and metered less forecast in MW
+                </>
+              }
             />
           ),
           Body: ForecastKey,
@@ -70,14 +74,14 @@ const view = defineView({
           src: (ctx) => (
             <SourceLine
               ctx={ctx}
-              columns={[FORECAST, ISSUED]}
+              columns={[FORECAST]}
               filters={ctx.response?.filters}
               unit="GW"
               also={meteredPart(ctx, true)}
               what={
                 ctx.mode === 'chart'
-                  ? 'the forecast and the metered mean per hour, metered less forecast in MW, and hours issued before the hour; then each UK day'
-                  : 'each UK day: the issues drawn, the forecast and metered means, and metered less forecast in MW'
+                  ? <>the forecast and the metered mean per hour, metered less forecast in MW, and hours issued before the hour (from <code>{ISSUED}</code>); then each UK day</>
+                  : <>each UK day: the issues drawn (<code>{ISSUED}</code>), the forecast and metered means, and metered less forecast in MW</>
               }
             />
           ),

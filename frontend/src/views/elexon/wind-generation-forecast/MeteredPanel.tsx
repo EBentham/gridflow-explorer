@@ -102,6 +102,13 @@ export function MeteredPanel({ ctx }: { ctx: PageContext }) {
   const gw = (v: number | null) => (v === null ? dash : unit.plain(v))
   const count = (held: number, expected: number | null) => (expected !== null && held < expected ? `${held} of ${expected}` : String(held))
   const meteredTo = join.meteredTo !== null && mModel ? periodName(join.meteredTo, mModel.stepMs, mModel.settlement) : null
+  // The days at the end of the window with forecast and no metered output: the ones a scrolled box hides.
+  const forecastOnly: DayRow[] = []
+  if (hasMetered) {
+    for (let i = shown.length - 1; i >= 0 && shown[i].held > 0 && shown[i].mHeld === 0; i -= 1) forecastOnly.unshift(shown[i])
+  }
+  const forecastOnlyText =
+    forecastOnly.length === 1 ? dayLabel(forecastOnly[0].start) : forecastOnly.length ? `${dayLabel(forecastOnly[0].start)} to ${dayLabel(forecastOnly[forecastOnly.length - 1].start)}` : ''
   const lastForecast = [...join.rows].reverse().find((r) => typeof r.f === 'number')?.t ?? null
 
   return (
@@ -206,7 +213,12 @@ export function MeteredPanel({ ctx }: { ctx: PageContext }) {
           </tbody>
         </table>
       </div>
-      {shown.length > 5 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
+      {shown.length > 5 && (
+        <p className="gf-hint">
+          {plural(days.length, 'day', 'days')}, oldest first.
+          {forecastOnly.length ? ` ${forecastOnlyText} at the foot of the table ${forecastOnly.length === 1 ? 'has' : 'have'} a forecast only, with no metered output held yet: scroll the table to reach ${forecastOnly.length === 1 ? 'it' : 'them'}.` : ' Scroll the table for the rest.'}
+        </p>
+      )}
       <p className="gf-hint">
         Hours counts the {noun} of forecast held, and a mean over a day held in part is a mean of that part. Issued names each issue drawn that day on the UK clock, and whether it was made before or after the hours it gives.
         {hasMetered
