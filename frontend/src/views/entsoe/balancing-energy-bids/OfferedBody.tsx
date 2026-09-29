@@ -33,10 +33,10 @@ export function CutOffNote({ ctx }: { ctx: PageContext }) {
 /** Label the highest and lowest only when there are two different values to tell apart. */
 const spread = (d: SeriesDef) => (d.count > 1 && d.min !== d.max ? d : null)
 
-function MeansWords({ book }: { book: Book }) {
+function MeansWords({ book, table = false }: { book: Book; table?: boolean }) {
   return (
     <p className="gf-hint">
-      This window is read as each bid’s {stepsText(book)}, and a sum of those means isn’t the MW offered: a bid offered for part of a step would count as if offered for all of it. So the chart counts the bids offered at some point in each{' '}
+      This window is read as each bid’s {stepsText(book)}, and a sum of those means isn’t the MW offered: a bid offered for part of a step would count as if offered for all of it. So the {table ? 'table' : 'chart'} counts the bids offered at some point in each{' '}
       {oneStep(book)} and adds up no MW. A shorter window reads the MW offered.
     </p>
   )
@@ -91,9 +91,10 @@ function StepTable({ book }: { book: Book }) {
     <>
       <WindowedTable columns={cols} rows={book.heldRows} caption={book.bucketed ? `Bids offered per ${oneStep(book)}` : `MW offered and bids per ${oneStep(book)}`} initialSort={{ key: 't', dir: 'asc' }} rowKey={(r) => r.t} />
       <p className="gf-hint">
-        {stepCount(book, book.held)} {book.held === 1 ? 'holds' : 'hold'} a bid{missing > 0 ? `; ${n(missing)} more in the window hold none and are left out of the table, as gaps, not zeros` : ''}. The largest bid is the one offering the most MW at that step; where two offer the same, the table names one.
+        {stepCount(book, book.held)} {book.held === 1 ? 'holds' : 'hold'} a bid{missing > 0 ? `; ${n(missing)} more in the window hold none and are left out of the table, as gaps, not zeros` : ''}.
+        {book.bucketed ? '' : ' The largest bid is the one offering the most MW at that step; where two offer the same, the table names one.'}
       </p>
-      {book.bucketed && <MeansWords book={book} />}
+      {book.bucketed && <MeansWords book={book} table />}
     </>
   )
 }

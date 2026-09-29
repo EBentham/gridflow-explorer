@@ -81,10 +81,12 @@ const view = defineView({
               columns={[QUANTITY]}
               by={BID}
               filters={filtersOf(ctx)}
-              unit={bucketed(ctx) && ctx.mode === 'chart' ? 'bids' : 'MW'}
+              unit={bucketed(ctx) ? 'bids' : 'MW'}
               what={
                 ctx.mode === 'table'
-                  ? 'the bids added up, one row per step held'
+                  ? bucketed(ctx)
+                    ? 'offered per step, one row per step held, no MW added up'
+                    : 'the bids added up, one row per step held'
                   : bucketed(ctx)
                     ? 'offered per step, no MW added up'
                     : 'the bids added up per quarter-hour'
