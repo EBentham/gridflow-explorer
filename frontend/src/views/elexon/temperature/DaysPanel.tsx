@@ -39,13 +39,13 @@ export function DaysPanel({ ctx }: { ctx: PageContext }) {
                 Temperature, unit unconfirmed
               </th>
               <th scope="col" className="is-num">
-                National demand, {noun} held
+                {demand ? `National demand, ${noun} held` : 'National demand'}
               </th>
               <th scope="col" className="is-num">
-                Mean, {unit}
+                {demand ? `Mean, ${unit}` : 'Mean'}
               </th>
               <th scope="col" className="is-num">
-                Peak, {unit}
+                {demand ? `Peak, ${unit}` : 'Peak'}
               </th>
             </tr>
           </thead>

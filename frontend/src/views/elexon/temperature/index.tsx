@@ -58,7 +58,12 @@ const view = defineView({
         },
         key: {
           title: 'Key',
-          src: (ctx) => <SourceLine ctx={ctx} columns={[TEMP]} unit={null} what="the latest day held, the 7 days to it, the warmest and coolest days, and the days held" />,
+          src: (ctx) => {
+            const t = seriesOf(ctx.series, TEMP)
+            // One day held gives no mean and no range, so the line names only what the key shows.
+            const what = t && t.count < 2 ? 'the latest day held, and the days held' : 'the latest day held, the 7 days to it, the warmest and coolest days, and the days held'
+            return <SourceLine ctx={ctx} columns={[TEMP]} unit={null} what={what} />
+          },
           Body: TempKey,
         },
         working: {
