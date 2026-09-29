@@ -50,7 +50,7 @@ export function RevenueDays({ ctx }: { ctx: PageContext }) {
                   Total, {unit.label}
                 </th>,
                 <th key={`${def.key}:x`} scope="col" className="is-num">
-                  Highest hour
+                  Highest hour, {unit.label}
                 </th>,
               ])}
             </tr>
