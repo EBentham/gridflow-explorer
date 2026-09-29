@@ -32,6 +32,11 @@
 
 /* ---------------------------------------------------------------- key */
 
+/* a figure's label stays on one line; the time under the figure wraps instead */
+.gf-pn-stats dt {
+  white-space: nowrap;
+}
+
 /* a fuel's name over its units, as the wind sites key heads its regions */
 .gf-pn-fuel > .gf-hint {
   margin: 10px 0 2px;

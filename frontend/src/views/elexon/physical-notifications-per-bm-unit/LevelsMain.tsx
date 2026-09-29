@@ -26,12 +26,14 @@ export function LevelsMain({ ctx }: { ctx: PageContext }) {
   const flat = flatLevel(alone)
   const period = model.bucketed ? 'period' : 'half-hour'
   const flatText = flat === null ? '' : `${MW.format(flat)} in every ${period} it holds`
-  // The stack's key lists every unit under its fuel, so the stack takes the height to stand beside it.
-  // A level that never moves gets a panel under 200px, which asks the axis for 3 ticks: whole MW, not a made-up 0.5 MW scale.
-  const top = alone ? linePanel(model, alone, flat === null ? 380 : 150) : stackPanel(model, lines, 620)
+  // Without `?unit=` the key lists every unit under its fuel, so the chart takes the height to stand beside it, and a unit
+  // selected there keeps that height, so the page doesn't jump. A level that never moves gets a panel under 200px, which
+  // asks the axis for 3 ticks: whole MW, not a made-up 0.5 MW scale.
+  const tall = !one
+  const top = alone ? linePanel(model, alone, flat !== null ? 150 : tall ? 620 : 380) : stackPanel(model, lines, 620)
   const price = priceSeries(ctx)
   const rel = ctx.related[PRICE_KEY]
-  const panels = price ? [top, pricePanel(price, alone ? 170 : 200)] : [top]
+  const panels = price ? [top, pricePanel(price, tall ? 200 : 170)] : [top]
   const means = model.bucketed && model.stepMs ? ` Each point is a mean of the start levels in its period, as the window is read as ${meansText(model.stepMs)}.` : ''
   const banded = price && price.def.min !== null && price.def.min < 0
   // A price held for part of the window is said in words: its line simply stops.

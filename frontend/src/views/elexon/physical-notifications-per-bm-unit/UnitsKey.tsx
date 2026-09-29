@@ -86,7 +86,7 @@ function TopKey({ ctx, model }: { ctx: PageContext; model: SeriesModel }) {
   return (
     <>
       {full ? (
-        <dl className="gf-stats">
+        <dl className="gf-stats gf-pn-stats">
           <div>
             <dt>{`Sum of ${n}`}</dt>
             <dd>
@@ -175,7 +175,7 @@ function UnitKey({ ctx, model, id }: { ctx: PageContext; model: SeriesModel; id:
           },
         ]}
       />
-      <dl className="gf-stats">
+      <dl className="gf-stats gf-pn-stats">
         {latest && stat(model.bucketed ? 'Latest mean' : 'Latest level', MW.format(latest.v), latest.t)}
         {/* A level held flat all window has no highest, lowest or mean apart from it. */}
         {ex && ex.low.v === ex.high.v && stat(model.bucketed ? 'Mean in every period' : 'Level in every half-hour', MW.format(ex.low.v))}
@@ -196,7 +196,7 @@ function UnitKey({ ctx, model, id }: { ctx: PageContext; model: SeriesModel; id:
       <PriceItem ctx={ctx} price={price} at={latest?.t} />
       {split.length > 0 && paired && (
         <>
-          <dl className="gf-stats">{split.map((s) => stat(`Mean price, ${s.label.toLowerCase()}`, price.def.unit.format(s.mean)))}</dl>
+          <dl className="gf-stats gf-pn-stats">{split.map((s) => stat(`Mean price, ${s.label.toLowerCase()}`, price.def.unit.format(s.mean)))}</dl>
           <p className="gf-hint">
             The market index price, averaged over the {plural(pairs.length, noun === 'half-hours' ? 'half-hour' : noun, noun)} holding both figures, split by where the start level sat: {split.map((s) => `${s.label.toLowerCase()} ${s.n.toLocaleString('en-GB')}`).join(', ')}. Each counts the same.
           </p>
