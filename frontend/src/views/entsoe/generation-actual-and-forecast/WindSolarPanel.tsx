@@ -43,6 +43,9 @@ export function WindSolarPanel({ ctx }: { ctx: PageContext }) {
   const pair = ws.pair
   const both = pair?.both ?? []
   const noun = stepWords(pair?.step ?? null, ws.bucketed)
+  // The forecast types the zone holds, in words: `wind and solar`, or `onshore wind` alone.
+  const heldNames = ws.types.filter((x) => x.track).map((x) => x.type.prose)
+  const heldWords = ws.missing.length === 0 ? 'wind and solar' : heldNames.length > 1 ? `${heldNames.slice(0, -1).join(', ')} and ${heldNames.at(-1)}` : heldNames[0]
 
   let lead: ReactNode = null
   if (failed) {
@@ -52,7 +55,7 @@ export function WindSolarPanel({ ctx }: { ctx: PageContext }) {
       </p>
     )
   } else if (!ws.total) {
-    lead = <p className="gf-hint">No total generation forecast is held for {zone.prose} in this window, so the days below give wind and solar alone.</p>
+    lead = <p className="gf-hint">No total generation forecast is held for {zone.prose} in this window, so the days below give {heldWords} alone.</p>
   } else if (!pair) {
     lead = <p className="gf-hint">The total and the wind and solar forecast come on clocks that don’t nest in this window, so they are not set against each other. Choose a shorter window.</p>
   } else if (!both.length) {
@@ -218,7 +221,7 @@ export function WindSolarPanel({ ctx }: { ctx: PageContext }) {
       </div>
       {shown.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
-        Every figure in a day’s row is read over the same {stepWords(baseStep, ws.bucketed)}, which Held counts: those with a forecast for every type {zone.prose} holds{useJoin ? ', and for the total' : ''}. A day held in part is summarised in part, and its Held count says so. {zone.label}’s wind and solar come {perText(ws.sum?.step ?? null, ws.bucketed)}
+        Every figure in a day’s row is read over the same {stepWords(baseStep, ws.bucketed)}, which Held counts: those with a forecast for every type {zone.prose} holds{useJoin ? ', and for the total' : ''}. A day held in part is summarised in part, and its Held count says so. {zone.label}’s {heldWords} {ws.held.length > 1 ? 'come' : 'comes'} {perText(ws.sum?.step ?? null, ws.bucketed)}
         {ws.total ? `, its total ${perText(ws.total.step, ws.bucketed)}` : ''}.{ws.total && ws.sum && ws.total.step !== ws.sum.step ? ` ${AVG}` : ''}
         {ws.total ? ' The total is a separate ENTSO-E forecast, and the rows don’t say whether it counts the same wind and solar, so the difference is not a forecast of any other kind of plant.' : ''}
         {ctx.mode === 'chart' ? ' Select a day to mark it on every chart.' : ' Select a day to mark it.'}
