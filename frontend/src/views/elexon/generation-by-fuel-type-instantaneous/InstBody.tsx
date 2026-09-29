@@ -48,7 +48,7 @@ export function InstBody({ ctx }: { ctx: PageContext }) {
       <p className="gf-hint">
         {means
           ? `Each point is a mean of the readings stamped in its period, as the window is read as ${means}.`
-          : 'Each point is one reading, drawn at its stamp: five minutes after the start of the five minutes it covers.'}{' '}
+          : 'Each point is one reading, drawn at its stamp: five minutes after the start time Elexon gives it.'}{' '}
         OCGT, coal and oil make up peaking; every interconnector makes up net imports, which sit below zero when GB exports, as pumped storage does while it pumps.
         {unknown.length > 0 && (
           <>

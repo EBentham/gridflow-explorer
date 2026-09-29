@@ -38,7 +38,7 @@ const view = defineView({
       title: 'Generation by fuel, every five minutes',
       caveats: [
         'Instantaneous means one reading every five minutes, not a mean. FUELHH, which the Generation mix screen draws, gives one figure per half-hour; the panel below sets the two side by side.',
-        'Each reading is stamped with the time Elexon published it, which in every file held is five minutes after the start of the five minutes it covers. So the reading stamped 00:00 covers the last five minutes of the day before. The page draws and names readings by their stamp.',
+        'Each reading is stamped with the time Elexon published it, which in every file held is five minutes after the start time Elexon gives the reading, and Elexon puts each reading in the settlement period its start time falls in. So the reading stamped 00:00 is the last of the day before. The page draws and names readings by their stamp.',
         'The chart folds Elexon’s twenty fuel codes into the Generation mix screen’s nine bands: OCGT, coal and oil into peaking, and every interconnector into net imports, which is below zero when GB exports, as pumped storage is while it pumps. The key lists the folded codes, and the table has a column for each code. There is no solar code in these rows.',
         'The reading at each day’s boundary is in two of Elexon’s files; the copies are identical, and the page reads it once.',
       ],

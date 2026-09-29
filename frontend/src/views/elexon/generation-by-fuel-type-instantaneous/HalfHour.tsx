@@ -110,7 +110,7 @@ export function HalfHour({ ctx }: { ctx: PageContext }) {
         ]}
       />
       <p className="gf-hint">
-        A half-hour’s six readings are those stamped five to thirty minutes after it starts. {ctx.window.start !== ctx.window.end ? 'Click a day on the chart above to read another.' : ''}
+        A half-hour’s six readings are those stamped five to thirty minutes after it starts, the six Elexon puts in its settlement period. {ctx.window.start !== ctx.window.end && ctx.mode === 'chart' ? 'Click a day on the chart above to read another.' : ''}
       </p>
       {hhFailed && (
         <p className="gf-hint">
