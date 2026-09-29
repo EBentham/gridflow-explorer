@@ -1,0 +1,24 @@
+/* The key's figures table: a stats table in the 272px key, set off from the series list like a stats list. */
+.nci-key-table {
+  margin-top: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--rule);
+  max-height: none;
+}
+
+/* The grades: the strip's wash as a band-shaped swatch, a name, and the half-hours held. */
+.nci-grades {
+  margin-top: 10px;
+}
+.nci-grade-swatch {
+  flex: none;
+  width: 22px;
+  height: 12px;
+}
+.nci-grade-name {
+  flex: 1;
+}
+.nci-grade-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
