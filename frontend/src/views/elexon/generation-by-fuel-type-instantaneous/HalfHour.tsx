@@ -27,11 +27,13 @@ import { bandLines, dayName, dayRows, halfHourView, hhFolded, pairsFor, summaris
 import { AXIS_WIDTH, HH_KEY, TOTAL_FIELD, bandField, focusedBand, seriesFor } from './fuels'
 
 const MW = displayUnit('MW', 'MW')
-// The axis ink: apart from every fuel, and from the total's neutral ink in both themes (the actual-line ink sits too close to it in dark).
-const HH_COLOR = 'var(--chart-axis)'
+// FUELHH's line: beside the total's neutral ink, the axis ink (the actual-line ink sits too close to it in dark);
+// beside a fuel's colour, the actual-line ink, as the axis ink sits close to several fuels.
+const HH_COLOR_TOTAL = 'var(--chart-axis)'
+const HH_COLOR_FUEL = 'var(--chart-actual)'
 /** Total generation's readings: not a fuel, so the chart's neutral ink, which no fuel band uses. */
 const TOTAL_COLOR = 'var(--chart-tick)'
-/** A gap to FUELHH past this many MW is far off the few-tenths typical of these rows, and gets a note. */
+/** A gap to FUELHH past this many MW gets a note. */
 const WIDE_GAP_MW = 5
 
 function lineDef(field: string, label: string, color: string, unit: SeriesDef['unit']): SeriesDef {
@@ -41,7 +43,7 @@ function lineDef(field: string, label: string, color: string, unit: SeriesDef['u
 const mw = (gw: number, unit: SeriesDef['unit']) => gw / unit.factor
 
 /** What the summary says of one series' day, in sentences. */
-function summaryText(name: string, s: PairSummary, day: Day, unit: SeriesDef['unit'], hhHeld: boolean, wideFuels: number): string[] {
+function summaryText(name: string, s: PairSummary, day: Day, unit: SeriesDef['unit'], hhHeld: boolean, wide: { n: number; of: number; other: boolean }): string[] {
   const out: string[] = []
   out.push(`All six readings are held for ${s.whole} of ${dayName(day)}’s half-hours.`)
   if (hhHeld && s.matched > 0 && s.gap && s.typical !== null) {
@@ -49,8 +51,8 @@ function summaryText(name: string, s: PairSummary, day: Day, unit: SeriesDef['un
       `In the ${s.matched} of those FUELHH holds too, the mean of the six sits a median ${fmtN(mw(s.typical, unit), 1)} MW from FUELHH’s figure; the largest gap is ${fmtN(mw(s.gap.v, unit), 1)} MW, in ${halfHourWindow(s.gap.t)}.`,
     )
     if (Math.abs(mw(s.gap.v, unit)) > WIDE_GAP_MW) {
-      const also = wideFuels > 1 ? `, and ${wideFuels} of the nine fuels differ by more than ${WIDE_GAP_MW} MW in that half-hour too` : ''
-      out.push(`That half-hour is far off the median${also}. Why the two datasets differ there is not known.`)
+      const fuels = wide.n > 0 ? `, as do ${wide.n} of the ${wide.other ? 'other ' : ''}${wide.of} fuels` : ''
+      out.push(`In that half-hour it differs from FUELHH by more than ${WIDE_GAP_MW} MW${fuels}. Why the two datasets differ there is not known.`)
     }
   } else if (hhHeld) {
     out.push('FUELHH holds none of those half-hours, so there is nothing to set them against.')
@@ -86,16 +88,18 @@ export function HalfHour({ ctx }: { ctx: PageContext }) {
   const field = band ? bandField(band.key) : TOTAL_FIELD
   const name = def.label
   const color = band ? def.color : TOTAL_COLOR
+  const hhColor = band ? HH_COLOR_FUEL : HH_COLOR_TOTAL
   const unit = folded.unit
   const pairs = pairsFor(folded, hh, field, day.start, day.end)
   const summary = summarise(pairs)
   const lines = bandLines(folded, hh, day)
   // How many fuels are also far off FUELHH in the selected series' widest-gap half-hour: a note, not a cause.
   const gapT = summary.gap?.t
+  const others = FUEL_BANDS.filter((b) => b.key !== band?.key)
   const wideFuels =
     gapT === undefined
       ? 0
-      : FUEL_BANDS.filter((b) => {
+      : others.filter((b) => {
           const p = pairsFor(folded, hh, bandField(b.key), gapT, gapT + HALF_HOUR)[0]
           return p?.hh != null && Math.abs(mw(p.mean - p.hh, unit)) > WIDE_GAP_MW
         }).length
@@ -107,7 +111,7 @@ export function HalfHour({ ctx }: { ctx: PageContext }) {
         panels={[
           {
             rows: dayRows(folded, hh, field, day),
-            series: [lineDef('reading', `${name}, each reading`, color, unit), ...(hh ? [lineDef('hh', `${name}, FUELHH half-hour`, HH_COLOR, unit)] : [])],
+            series: [lineDef('reading', `${name}, each reading`, color, unit), ...(hh ? [lineDef('hh', `${name}, FUELHH half-hour`, hhColor, unit)] : [])],
             mark: 'line',
             unit,
             stepMs: null,
@@ -123,7 +127,7 @@ export function HalfHour({ ctx }: { ctx: PageContext }) {
       <KeyList
         items={[
           { key: 'reading', mark: { kind: 'line', color }, label: `${name}, each five-minute reading` },
-          ...(hh ? [{ key: 'hh', mark: { kind: 'line' as const, color: HH_COLOR }, label: 'FUELHH’s half-hour figure, held flat across its six readings' }] : []),
+          ...(hh ? [{ key: 'hh', mark: { kind: 'line' as const, color: hhColor }, label: 'FUELHH’s half-hour figure, held flat across its six readings' }] : []),
         ]}
       />
       <p className="gf-hint">
@@ -135,7 +139,7 @@ export function HalfHour({ ctx }: { ctx: PageContext }) {
         </p>
       )}
       {!hh && !hhFailed && <p className="gf-hint">FUELHH holds no rows for this window, so only the readings are drawn.</p>}
-      <p className="gf-hint">{summaryText(name, summary, day, unit, Boolean(hh), wideFuels).join(' ')}</p>
+      <p className="gf-hint">{summaryText(name, summary, day, unit, Boolean(hh), { n: wideFuels, of: others.length, other: Boolean(band) }).join(' ')}</p>
       <div className="gf-days fi-whole">
         <table>
           <thead>
