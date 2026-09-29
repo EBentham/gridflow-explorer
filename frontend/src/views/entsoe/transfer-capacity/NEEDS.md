@@ -54,6 +54,10 @@ template fix would serve both pages.
    measures beside each other under the same in and out area codes, and works out no
    ratio: whether the three datasets count the same direction the same way isn't
    confirmed.
+   - The rows give a reason for caution: nominated capacity passes the net transfer
+     capacity on the same border and hour at times (GB–France 3,042 MW nominated against
+     3,028 MW at 02:00 BST on 16 Sep; GB–Netherlands 1,346 MW against 1,016 MW at 16:00 BST on 21 Sep;
+     67 GB-border hours in all of the rows held on 29 Sep), so a share would read over 100%.
 
 8. **The three offered-capacity datasets and the use of transfer capacity.** All four came
    back empty. For the three offered-capacity datasets ENTSO-E's reply named its implicit-

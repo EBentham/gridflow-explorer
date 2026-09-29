@@ -47,13 +47,13 @@ export interface Measure {
   whenSet?: boolean
 }
 
-// The capacity in the page's lead colour; allocated and nominated in two
+// The capacity in the page's lead colour; allocated, nominated and the limit in
 // colours no other measure uses, apart from each other and from it in both themes.
 export const MEASURES: Record<string, Measure> = {
   [NTC]: { key: 'ntc', dataset: NTC, column: 'ntc_mw', label: 'Net transfer capacity', words: 'net transfer capacity', short: 'Net transfer capacity', color: 'var(--chart-price)' },
   [ALLOCATED]: { key: 'allocated', dataset: ALLOCATED, column: 'quantity_mw', label: 'Capacity allocated', words: 'capacity allocated', short: 'Allocated', color: 'var(--fuel-pumped_storage)' },
   [NOMINATED]: { key: 'nominated', dataset: NOMINATED, column: 'quantity_mw', label: 'Capacity nominated', words: 'capacity nominated', short: 'Nominated', color: 'var(--chart-price-2)' },
-  [DC_LIMITS]: { key: 'limit', dataset: DC_LIMITS, column: 'quantity_mw', label: 'Intraday limit', words: 'intraday limit', short: 'Intraday limit', color: 'var(--fuel-wind)', whenSet: true },
+  [DC_LIMITS]: { key: 'limit', dataset: DC_LIMITS, column: 'quantity_mw', label: 'Intraday limit', words: 'intraday limit', short: 'Intraday limit', color: 'var(--fuel-peaking)', whenSet: true },
 }
 
 /** What each dataset's page draws beside its own measure, on GB's borders. */

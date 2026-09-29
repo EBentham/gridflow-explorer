@@ -70,7 +70,7 @@ export function BorderDays({ ctx }: { ctx: PageContext }) {
               }
               const on = d.start === ctx.picked
               return (
-                <tr key={d.day} className={on ? 'is-on' : isPartial(d) || d.held === 0 ? 'is-partial' : undefined}>
+                <tr key={d.day} className={on ? 'is-on' : !own.whenSet && (isPartial(d) || d.held === 0) ? 'is-partial' : undefined}>
                   <th scope="row">
                     <button type="button" aria-pressed={on} onClick={() => ctx.pick(on ? undefined : d.start)}>
                       {dayLabel(d.start)}
