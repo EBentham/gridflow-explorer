@@ -52,7 +52,7 @@ export function FamilySide({ ctx }: { ctx: PageContext }) {
             <div>
               <dt>Held, not drawn</dt>
               <dd>
-                <Ids ds={held} /> ask NESO for the same half-hours another way: one half-hour, one day, the 24 or 48 hours after a moment, or the 24 hours before one. They hold {rangeText(first, last)} only, and where their half-hours overlap this dataset’s the figures match.
+                <Ids ds={held} /> ask NESO for the same half-hours another way: one half-hour, one day, the 24 or 48 hours after a moment, or the 24 hours before one. They hold {rangeText(first, last)} only, and where their half-hours overlap this dataset’s, the forecast and the estimate were the same when checked on 29 Sep 2026.
                 {earlier.length > 0 && ownFirst && (
                   <>
                     {' '}

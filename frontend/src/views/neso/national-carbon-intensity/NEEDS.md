@@ -11,6 +11,12 @@ What this page lacks, why it matters, and what it does meanwhile.
    NESO grades the forecast or the estimated actual. The vault's 2024 sample is graded
    "moderate" at 239 to 248 gCO₂/kWh, and 2026 rows are graded "high" from 170, so the
    boundaries look to change over time and can't be read off the rows.
+   - **A lead in the rows:** the half-hour starting 2026-09-21T19:30Z (Mon 21 Sep,
+     20:30 BST) holds a forecast of 38 and an estimated actual of 203, and is graded "high".
+     Its neighbours are forecast at 204 to 210 and graded high, while half-hours under about
+     80 gCO₂/kWh elsewhere in the week are graded "low". So the published grade does not
+     follow the forecast held here. It may follow the estimated actual, or a forecast from
+     an earlier fetch that gridflow's re-fetch replaced. One row doesn't settle it.
    - **Why it matters:** with the boundaries held, per period of validity, the main chart
      could shade the grades on its value axis, as the card's sketch asks. A model could
      then use the grade as a feature knowing what it measures.

@@ -25,6 +25,13 @@ import { IntensityMain } from './IntensityMain'
 
 const UNIT = 'gCO₂/kWh'
 
+/** The index is a grade in words, not a gCO₂/kWh figure: named after the unit, never under it. */
+const GRADE = (
+  <>
+    <code>{INDEX}</code>, NESO’s grade in words,
+  </>
+)
+
 const view = defineView({
   title: 'National carbon intensity',
   sub: 'How much CO₂ each kWh of GB electricity carried, half-hour by half-hour: NESO’s forecast, its estimate of what it was, and its index grade for each half-hour.',
@@ -53,17 +60,17 @@ const view = defineView({
           src: (ctx) => (
             <SourceLine
               ctx={ctx}
-              columns={[ACTUAL, FORECAST, INDEX]}
+              columns={[ACTUAL, FORECAST]}
               filters={ctx.response?.filters}
               unit={UNIT}
-              what={ctx.mode === 'chart' ? 'each half-hour: the estimate and the forecast, NESO’s grade in the strip above' : 'every half-hour held, with NESO’s grade'}
+              what={<>{GRADE} {ctx.mode === 'chart' ? 'in the strip above; each half-hour’s estimate and forecast' : 'with every half-hour held'}</>}
             />
           ),
           Body: IntensityMain,
         },
         key: {
           title: 'Key',
-          src: (ctx) => <SourceLine ctx={ctx} columns={[ACTUAL, FORECAST, INDEX]} unit={UNIT} what="the latest half-hour held, the window’s range and means, and the grades held" />,
+          src: (ctx) => <SourceLine ctx={ctx} columns={[ACTUAL, FORECAST]} unit={UNIT} what={<>{GRADE} counted; the latest half-hour held, and the window’s range and means</>} />,
           Body: IntensityKey,
         },
         working: {
@@ -71,9 +78,9 @@ const view = defineView({
           src: (ctx) => (
             <SourceLine
               ctx={ctx}
-              columns={[ACTUAL, FORECAST, INDEX]}
+              columns={[ACTUAL, FORECAST]}
               unit={UNIT}
-              what={ctx.mode === 'chart' ? 'estimate less forecast per half-hour, then each UK day’s means, difference and grades' : 'each UK day’s means, difference and grades'}
+              what={<>{GRADE} counted per day; {ctx.mode === 'chart' ? 'estimate less forecast per half-hour, then each UK day’s means and difference' : 'each UK day’s means and difference'}</>}
             />
           ),
           Body: DaysPanel,
