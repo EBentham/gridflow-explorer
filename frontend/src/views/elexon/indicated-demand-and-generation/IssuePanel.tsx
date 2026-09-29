@@ -34,7 +34,7 @@ export function IssuePanel({ ctx }: { ctx: PageContext }) {
   const noun = pair.bucketed && pair.stepMs ? meansText(pair.stepMs) : stepNoun(pair.stepMs)
   const own = pair.ownIsDemand ? 'demand' : 'generation'
   const unit = (pair.gen ?? pair.dem)?.unit
-  const gw = (x: { v: number } | null) => (x && unit ? unit.plain(x.v) : dash)
+  const range = (lo: { v: number } | null, hi: { v: number } | null) => (lo && hi && unit ? `${unit.plain(lo.v)} to ${unit.plain(hi.v)}` : dash)
   const heldDays = days.filter((d) => d.gHeld > 0 || d.dHeld > 0)
   const firstHeld = days.findIndex((d) => d.gHeld > 0 || d.dHeld > 0)
   const lead = firstHeld === -1 ? 0 : firstHeld
@@ -47,7 +47,7 @@ export function IssuePanel({ ctx }: { ctx: PageContext }) {
     const count = (n: number) => (d.expected !== null && n < d.expected ? `${n} of ${d.expected}` : String(n))
     return d.gHeld === d.dHeld || !pair.gen || !pair.dem ? count(Math.max(d.gHeld, d.dHeld)) : `${count(d.gHeld)} and ${count(d.dHeld)}`
   }
-  const cols = 7
+  const cols = 5
   // A run of days opening in part: the day before, whose issue gives a day's first half-hours, holds nothing.
   const first = firstHeld > 0 ? days[firstHeld] : null
   const firstRow = first ? pair.rows.find((r) => r.t >= first.start && (typeof r.g === 'number' || typeof r.d === 'number')) : undefined
@@ -93,16 +93,10 @@ export function IssuePanel({ ctx }: { ctx: PageContext }) {
                 Held
               </th>
               <th scope="col" className="is-num">
-                Generation highest, GW
+                Generation, lowest to highest, GW
               </th>
               <th scope="col" className="is-num">
-                Generation lowest, GW
-              </th>
-              <th scope="col" className="is-num">
-                Demand highest, flipped, GW
-              </th>
-              <th scope="col" className="is-num">
-                Demand lowest, flipped, GW
+                Demand flipped, lowest to highest, GW
               </th>
               <th scope="col">Issued</th>
             </tr>
@@ -137,10 +131,8 @@ export function IssuePanel({ ctx }: { ctx: PageContext }) {
                     </button>
                   </th>
                   <td className="is-num">{held(d)}</td>
-                  <td className="is-num">{gw(d.gHigh)}</td>
-                  <td className="is-num">{gw(d.gLow)}</td>
-                  <td className="is-num">{gw(d.dHigh)}</td>
-                  <td className="is-num">{gw(d.dLow)}</td>
+                  <td className="is-num">{range(d.gLow, d.gHigh)}</td>
+                  <td className="is-num">{range(d.dLow, d.dHigh)}</td>
                   <td>{d.issues.length ? d.issues.map((x) => issueWords(d, x.at, x.n, d.issues.length > 1)).join('; ') : dash}</td>
                 </tr>
               )
@@ -150,7 +142,7 @@ export function IssuePanel({ ctx }: { ctx: PageContext }) {
       </div>
       {shown.length > 8 && <p className="gf-hint">{plural(days.length, 'day', 'days')}, oldest first. Scroll the table for the rest.</p>}
       <p className="gf-hint">
-        {boundaryName(pair.boundary).replace(/^b/, 'B')}. Held counts the {noun} held{pair.gen && pair.dem ? ', one figure for both when they agree' : ''}; a day held in part is summarised in part. Demand is the held figure with its sign flipped, so its highest is the half-hour of most demand. Issued names the issue each
+        {boundaryName(pair.boundary).replace(/^b/, 'B')}. Held counts the {noun} held{pair.gen && pair.dem ? ', one figure for both when they agree' : ''}; a day held in part is summarised in part. Demand is the held figure with its sign flipped, so its highest is the half-hour of most demand; each range runs over the half-hours held that day. Issued names the issue each
         day’s {own} figures come from, with how many {noun} each gives when there is more than one.
         {first && openingGap > 0
           ? ` ${dayLabel(first.start)} lacks its first ${plural(openingGap, noun.replace(/s$/, ''), noun)}, and the day before holds none: in the rows held, a day’s first three come from the issue made the day before.`

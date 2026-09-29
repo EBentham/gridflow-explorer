@@ -41,9 +41,9 @@ function PairTable({ ctx, pair }: { ctx: PageContext; pair: Pair }) {
   }
   const cols: TableCol<PairRow>[] = [
     { key: 't', label: pair.bucketed ? 'Period (means)' : 'Half-hour', render: (r) => periodLabel(r.t, pair.stepMs), sortValue: (r) => r.t },
+    // The half-hour names its UK day; the SP is the backend's, never derived.
     ...(pair.settlement
       ? [
-          { key: 'sd', label: 'Settlement date', render: (r: PairRow) => pair.settlement?.get(r.t)?.date ?? dash, sortValue: (r: PairRow) => pair.settlement?.get(r.t)?.date ?? null },
           { key: 'sp', label: 'SP', num: true, render: (r: PairRow) => pair.settlement?.get(r.t)?.period ?? dash, sortValue: (r: PairRow) => pair.settlement?.get(r.t)?.period ?? null },
         ]
       : []),
