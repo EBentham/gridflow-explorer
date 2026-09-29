@@ -16,6 +16,8 @@
  *   from the local rows on 29 Sep 2026: Belgium and France both, Germany /
  *   Luxembourg A02 only. Without that, Germany / Luxembourg and A01 would
  *   read an empty window and say only that nothing is held.
+ * - Belgium also offers one product at a time (`?product=a05|a07`), all of
+ *   them by default.
  */
 import type { QuerySpec } from '../../define'
 
@@ -24,8 +26,11 @@ export const DIRECTION = 'direction'
 export const BID = 'bid_mrid'
 export const QUANTITY = 'quantity_mw'
 
+export const PRODUCT = 'standard_market_product'
+
 export const ZONE_PARAM = 'zone'
 export const DIR_PARAM = 'dir'
+export const PRODUCT_PARAM = 'product'
 
 export interface Direction {
   /** As ENTSO-E codes it and the rows hold it. */
@@ -53,6 +58,13 @@ export interface Zone {
   /** The direction codes held for it. */
   directions: string[]
   /**
+   * The product codes a reader can pick one of, when there is a choice.
+   * Belgium's bids carry A05 or A07, and one bid id can carry both in a
+   * window, so a window read as means must pin one. France's are mostly
+   * blank, which a filter can't match, so it gets no choice.
+   */
+  products: string[]
+  /**
    * ENTSO-E's paged reply for this zone may have been cut off when gridflow
    * fetched it (the research card's finding): what is held is not complete.
    */
@@ -60,9 +72,9 @@ export interface Zone {
 }
 
 export const ZONES: Zone[] = [
-  { param: 'be', code: '10YBE----------2', name: 'Belgium', short: 'Belgium', directions: ['A01', 'A02'], cutOff: false },
-  { param: 'fr', code: '10YFR-RTE------C', name: 'France', short: 'France', directions: ['A01', 'A02'], cutOff: true },
-  { param: 'de-lu', code: '10Y1001A1001A82H', name: 'Germany / Luxembourg', short: 'Germany/Luxembourg', directions: ['A02'], cutOff: true },
+  { param: 'be', code: '10YBE----------2', name: 'Belgium', short: 'Belgium', directions: ['A01', 'A02'], products: ['A05', 'A07'], cutOff: false },
+  { param: 'fr', code: '10YFR-RTE------C', name: 'France', short: 'France', directions: ['A01', 'A02'], products: [], cutOff: true },
+  { param: 'de-lu', code: '10Y1001A1001A82H', name: 'Germany / Luxembourg', short: 'Germany/Luxembourg', directions: ['A02'], products: [], cutOff: true },
 ]
 
 /** The zone for the parameter's value; Belgium when it is absent or unknown. */
@@ -78,17 +90,34 @@ export function directionOf(zone: Zone, param: string | null): Direction {
   return held.find((d) => d.code === code) ?? held[0]
 }
 
-/** One zone, one direction, split by bid. */
+/** The product picked, among those the zone offers a choice of; null for all of them. */
+export function productOf(zone: Zone, param: string | null): string | null {
+  const code = param?.toUpperCase() ?? null
+  return code !== null && zone.products.includes(code) ? code : null
+}
+
+/** One zone, one direction, and one product or all of them, split by bid. */
 export function bidsQuery(params: URLSearchParams): QuerySpec {
   const zone = zoneOf(params.get(ZONE_PARAM))
   const dir = directionOf(zone, params.get(DIR_PARAM))
-  return { group: BID, filters: { [AREA]: zone.code, [DIRECTION]: dir.code } }
+  const product = productOf(zone, params.get(PRODUCT_PARAM))
+  return { group: BID, filters: { [AREA]: zone.code, [DIRECTION]: dir.code, ...(product ? { [PRODUCT]: product } : {}) } }
 }
 
 /** What the page shows, from the rows' filters when they are read, else from the parameters. */
-export function selectionOf(filters: Record<string, unknown> | null | undefined, param: (name: string) => string | null): { zone: Zone; dir: Direction } {
-  const byRows = zoneByCode(typeof filters?.[AREA] === 'string' ? (filters[AREA] as string) : null)
-  const zone = byRows ?? zoneOf(param(ZONE_PARAM))
-  const rowsDir = typeof filters?.[DIRECTION] === 'string' ? (filters[DIRECTION] as string) : null
-  return { zone, dir: directionOf(zone, rowsDir ?? param(DIR_PARAM)) }
+export function selectionOf(filters: Record<string, unknown> | null | undefined, param: (name: string) => string | null): Selection {
+  const text = (column: string) => (typeof filters?.[column] === 'string' ? (filters[column] as string) : null)
+  const zone = zoneByCode(text(AREA)) ?? zoneOf(param(ZONE_PARAM))
+  const product = filters ? productOf(zone, text(PRODUCT)) : productOf(zone, param(PRODUCT_PARAM))
+  return { zone, dir: directionOf(zone, text(DIRECTION) ?? param(DIR_PARAM)), product }
 }
+
+export interface Selection {
+  zone: Zone
+  dir: Direction
+  /** The product picked; null for all of them. */
+  product: string | null
+}
+
+/** `Belgium, A01 (up)`, with the product when one is picked. */
+export const selectionText = (s: Selection) => `${s.zone.name}, ${s.dir.label}${s.product ? `, product ${s.product}` : ''}`

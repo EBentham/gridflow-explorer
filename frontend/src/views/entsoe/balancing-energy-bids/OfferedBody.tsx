@@ -34,7 +34,7 @@ function MeansWords({ book }: { book: Book }) {
   return (
     <p className="gf-hint">
       This window is read as each bid’s {stepsText(book)}, and a sum of those means isn’t the MW offered: a bid offered for part of a step would count as if offered for all of it. So the chart counts the bids offered at some point in each{' '}
-      {oneStep(book)} and adds up no MW. Choose 7 days or fewer for the MW offered.
+      {oneStep(book)} and adds up no MW. A shorter window reads the MW offered.
     </p>
   )
 }
@@ -75,7 +75,7 @@ function StepTable({ book }: { book: Book }) {
           },
           {
             key: 'topBid',
-            label: 'Its bid id',
+            label: 'Largest bid’s id',
             render: (r: WideRow) => {
               const top = book.tops.get(r.t)
               return top ? <code>{top.bid}</code> : '–'
@@ -86,7 +86,7 @@ function StepTable({ book }: { book: Book }) {
   const missing = book.rows.length - book.held
   return (
     <>
-      <WindowedTable columns={cols} rows={book.heldRows} caption={`${book.total.label}, per ${oneStep(book)}`} initialSort={{ key: 't', dir: 'asc' }} rowKey={(r) => r.t} />
+      <WindowedTable columns={cols} rows={book.heldRows} caption={book.bucketed ? `Bids offered per ${oneStep(book)}` : `MW offered and bids per ${oneStep(book)}`} initialSort={{ key: 't', dir: 'asc' }} rowKey={(r) => r.t} />
       <p className="gf-hint">
         {n(book.held)} {stepsText(book)} hold a bid{missing > 0 ? `; ${n(missing)} more in the window hold none and are left out of the table, as gaps, not zeros` : ''}. The largest bid is the one offering the most MW at that step; where two offer the same, the table names one.
       </p>

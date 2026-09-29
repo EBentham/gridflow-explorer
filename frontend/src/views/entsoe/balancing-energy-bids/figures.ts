@@ -20,7 +20,7 @@ import type { SeriesRowsResponse } from '../../contract'
 import type { PageContext } from '../../define'
 import type { SeriesDef, WideRow } from '../../_template/seriesModel'
 import { displayUnit, type DisplayUnit } from '../../_template/units'
-import { BID, QUANTITY, selectionOf, type Direction, type Zone } from './zones'
+import { BID, QUANTITY, selectionOf, type Direction, type Selection } from './zones'
 
 /** The main chart and the working panel's chart take this value-axis width, so their clocks line up. */
 export const AXIS_WIDTH = 60
@@ -256,9 +256,9 @@ export function dayFigures(response: SeriesRowsResponse, book: Book, window: Dat
 export const n = (x: number) => x.toLocaleString('en-GB')
 
 /** The zone and direction shown, and their bids added up once the rows are read. */
-export function pageBook(ctx: PageContext): { zone: Zone; dir: Direction; book: Book | null } {
-  const { zone, dir } = selectionOf(ctx.response?.filters, ctx.param)
+export function pageBook(ctx: PageContext): Selection & { book: Book | null } {
+  const sel = selectionOf(ctx.response?.filters, ctx.param)
   const response = ctx.response
-  const book = response && response.kind === 'series' ? bookOf(response, dir, ctx.window) : null
-  return { zone, dir, book }
+  const book = response && response.kind === 'series' ? bookOf(response, sel.dir, ctx.window) : null
+  return { ...sel, book }
 }

@@ -11,10 +11,12 @@ import { extremesOf } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
 import { n, pageBook } from './figures'
 import { oneStep, stepsText } from './words'
+import { selectionText } from './zones'
 
 export function BookKey({ ctx }: { ctx: PageContext }) {
-  const { zone, dir, book } = pageBook(ctx)
-  if (!book || !book.held) return <p className="gf-hint">No bid is held in this window for {zone.name}, {dir.label}, so there is nothing to key.</p>
+  const sel = pageBook(ctx)
+  const { zone, book } = sel
+  if (!book || !book.held) return <p className="gf-hint">No bid is held in this window for {selectionText(sel)}, so there is nothing to key.</p>
   const when = (t: number) => periodLabel(t, book.stepMs)
   const latest = book.heldRows[book.heldRows.length - 1]
   const drawn = book.bucketed ? book.bids : book.total
@@ -23,7 +25,7 @@ export function BookKey({ ctx }: { ctx: PageContext }) {
     {
       key: drawn.key,
       mark: ctx.mode === 'chart' ? (bars ? { kind: 'bars', color: drawn.color, shape: 'rise' } : { kind: 'swatch', color: drawn.color }) : { kind: 'swatch', color: drawn.color },
-      label: book.bucketed ? `Bids offered per ${oneStep(book)}, ${zone.name}, ${dir.label}` : `MW offered, ${zone.name}, ${dir.label}`,
+      label: book.bucketed ? `Bids offered per ${oneStep(book)}, ${selectionText(sel)}` : `MW offered, ${selectionText(sel)}`,
     },
   ]
   const ex = extremesOf(book.rows, book.bucketed ? book.bids : book.total)

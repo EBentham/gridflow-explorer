@@ -13,12 +13,14 @@ import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import type { PageContext } from '../../define'
 import { AXIS_WIDTH, dayFigures, n, pageBook } from './figures'
 import { stepsText } from './words'
+import { selectionText } from './zones'
 
 export function BookDays({ ctx }: { ctx: PageContext }) {
-  const { zone, dir, book } = pageBook(ctx)
+  const sel = pageBook(ctx)
+  const { zone, book } = sel
   const response = ctx.response
   if (!book || !book.held || !ctx.window || response?.kind !== 'series') {
-    return <p className="gf-hint">No bid is held in this window for {zone.name}, {dir.label}, so there are no bids to count or days to summarise.</p>
+    return <p className="gf-hint">No bid is held in this window for {selectionText(sel)}, so there are no bids to count or days to summarise.</p>
   }
   const days = dayFigures(response, book, ctx.window)
   const summed = !book.bucketed
@@ -110,7 +112,7 @@ export function BookDays({ ctx }: { ctx: PageContext }) {
         Held counts the {noun} some bid holds; bids counts the different bids offered in the day.{' '}
         {summed ? 'Mean, lowest and highest are of the MW offered in those steps, so a day held in part reads in part.' : `The window is read as ${noun}, so no MW is given per day, and a step counts in the UK day it starts in.`}
         {zone.cutOff ? ` ${zone.name}’s days are not complete: its download may have been cut off.` : ''}
-        {ctx.mode === 'chart' ? (summed ? ' Select a day to mark it on both charts.' : ' Select a day to mark it on the chart.') : ' Select a day to mark it.'}
+        {days.length < 2 ? '' : ctx.mode === 'chart' ? (summed ? ' Select a day to mark it on both charts.' : ' Select a day to mark it on the chart.') : ' Select a day to mark it.'}
       </p>
     </>
   )

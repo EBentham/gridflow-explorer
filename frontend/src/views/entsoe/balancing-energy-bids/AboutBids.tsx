@@ -8,7 +8,7 @@ import type { PageContext } from '../../define'
 import { pageBook } from './figures'
 
 export function AboutBids({ ctx }: { ctx: PageContext }) {
-  const { zone, dir } = pageBook(ctx)
+  const { zone, dir, product } = pageBook(ctx)
   return (
     <>
       <About ctx={ctx} />
@@ -34,7 +34,14 @@ export function AboutBids({ ctx }: { ctx: PageContext }) {
         <div>
           <dt>Products</dt>
           <dd>
-            Each bid carries a product code (<code>standard_market_product</code>). gridflow gives no words for these codes, and the page adds every product’s bids together.
+            Each bid carries a product code (<code>standard_market_product</code>), and gridflow gives no words for these codes.{' '}
+            {product ? (
+              <>
+                This read keeps <code>{product}</code> only.
+              </>
+            ) : (
+              'This read adds every product’s bids together.'
+            )}
           </dd>
         </div>
       </dl>

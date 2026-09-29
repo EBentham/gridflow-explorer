@@ -13,10 +13,10 @@ export function stepsText(book: Book): string {
   return book.bucketed && book.stepMs ? meansText(book.stepMs) : stepNoun(book.stepMs)
 }
 
-/** `quarter-hour`, `2-hour step`: one step, in a sentence. */
+/** `quarter-hour`, `hour`, `2-hour step`: one step, in a sentence. */
 export function oneStep(book: Book): string {
   const s = stepNoun(book.stepMs)
-  if (book.bucketed) return `${s.replace(/ periods$/, '').replace(/s$/, '')} step`
+  if (s.endsWith(' periods')) return `${s.replace(/ periods$/, '')} step`
   return s.replace(/s$/, '')
 }
 

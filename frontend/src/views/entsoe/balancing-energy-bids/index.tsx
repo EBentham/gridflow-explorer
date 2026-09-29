@@ -27,14 +27,14 @@ import { BookDays } from './BookDays'
 import { BookKey } from './BookKey'
 import { AXIS_WIDTH, pageBook } from './figures'
 import { OfferedBody } from './OfferedBody'
-import { AREA, BID, DIRECTION, QUANTITY, bidsQuery, DIR_PARAM, ZONE_PARAM } from './zones'
+import { AREA, BID, DIRECTION, QUANTITY, bidsQuery, DIR_PARAM, PRODUCT_PARAM, selectionText, ZONE_PARAM } from './zones'
 import { oneStep, stepsText } from './words'
 
 /** The filters the rows carry: as they came back, else as the parameters ask. */
 function filtersOf(ctx: PageContext) {
   if (ctx.response?.filters) return ctx.response.filters
   const params = new URLSearchParams()
-  for (const name of [ZONE_PARAM, DIR_PARAM]) {
+  for (const name of [ZONE_PARAM, DIR_PARAM, PRODUCT_PARAM]) {
     const v = ctx.param(name)
     if (v) params.set(name, v)
   }
@@ -44,9 +44,9 @@ function filtersOf(ctx: PageContext) {
 const bucketed = (ctx: PageContext) => pageBook(ctx).book?.bucketed ?? false
 
 function title(ctx: PageContext): string {
-  const { zone, dir, book } = pageBook(ctx)
-  if (book?.bucketed && ctx.mode === 'chart') return `Bids offered per ${oneStep(book)}, ${zone.name}, ${dir.label}`
-  return `Balancing energy offered, ${zone.name}, ${dir.label}`
+  const sel = pageBook(ctx)
+  if (sel.book?.bucketed && ctx.mode === 'chart') return `Bids offered per ${oneStep(sel.book)}, ${selectionText(sel)}`
+  return `Balancing energy offered, ${selectionText(sel)}`
 }
 
 const view = defineView({
@@ -56,7 +56,7 @@ const view = defineView({
     'Each row is one bid’s offered MW for one quarter-hour. The page adds up the bids offered at each quarter-hour; gridflow holds no price for them, and none of GB’s balancing.',
     'Direction is held as ENTSO-E codes it, A01 or A02. The page reads A01 as up and A02 as down, as ENTSO-E’s code list and gridflow’s activated-balancing tables do; this table itself keeps the codes.',
     'For France and Germany / Luxembourg, gridflow’s download may have stopped at ENTSO-E’s page limit: it holds one quarter-hour a day for each. Their bids, counts and totals are not complete. Belgium is held through the day. Germany / Luxembourg holds A02 bids only.',
-    'Bids of every product are added together.',
+    'Belgium’s bids carry a product code, A05 or A07; gridflow gives no words for them. The page adds every product together unless one is picked. A window read as means needs one picked, as one bid id can carry both.',
   ],
   datasets: [
     {
