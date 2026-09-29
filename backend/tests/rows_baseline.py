@@ -1,3 +1,6 @@
+# Frozen deterministic baseline D: O plus the reviewed ordering and ordered-average changes.
+# Permitted production imports: app.sources._required_columns and app.sources_spec.SOURCES.
+# No app.rows imports, reuse helpers, resource policy, columns, or deadlines.
 """Registry-backed, read-only rows selection for the source catalogue."""
 
 from __future__ import annotations
@@ -6,14 +9,12 @@ import math
 import re
 import threading
 import time
-import uuid
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from enum import StrEnum
 from typing import Any
 from zoneinfo import ZoneInfo
 
-import duckdb
 import polars as pl
 
 from app.sources import _required_columns
@@ -230,73 +231,6 @@ _cache: dict[tuple[str, str, str], tuple[float, Metadata]] = {}
 _cache_lock = threading.Lock()
 
 
-class _TempOperations:
-    """Allow only request-owned TEMP DDL and interruption on the client's connection."""
-
-    def __init__(self, connection: duckdb.DuckDBPyConnection, prefix: str) -> None:
-        self._connection = connection
-        self._prefix = prefix
-
-    def create(self, name: str, selection: str) -> None:
-        if not name.startswith(self._prefix) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
-            raise ValueError("TEMP name is not owned by this rows request")
-        self._connection.execute(f"CREATE TEMP TABLE {_quote(name)} AS {selection}")
-
-    def drop(self, name: str) -> None:
-        if not name.startswith(self._prefix) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
-            raise ValueError("TEMP name is not owned by this rows request")
-        self._connection.execute(f"DROP TABLE IF EXISTS temp.main.{_quote(name)}")
-
-    def interrupt(self) -> None:
-        self._connection.interrupt()
-
-
-def _temp_operations(client: Any, prefix: str) -> _TempOperations:
-    """Confine private installed-client access to this adapter factory."""
-    return _TempOperations(client._require_con(), prefix)
-
-
-class _SelectionScope:
-    """Own reusable selections for one rows execution and clean them on exit."""
-
-    def __init__(self, client: Any) -> None:
-        self.client = client
-        self.prefix = "__rows_" + uuid.uuid4().hex + "_"
-        self.owned: list[str] = []
-        self.semantic: str | None = None
-        self.operations = _temp_operations(client, self.prefix)
-
-    def query(self, sql: str) -> pl.DataFrame:
-        return self.client.query(sql)
-
-    def get_tables(self) -> list[str]:
-        return self.client.get_tables()
-
-    def stage(self, sql: str) -> str:
-        name = f"{self.prefix}{len(self.owned)}"
-        self.owned.append(name)
-        try:
-            self.operations.create(name, sql)
-        except duckdb.OutOfMemoryException:
-            self.operations.drop(name)
-            self.owned.pop()
-            return sql
-        return f"SELECT * FROM temp.main.{_quote(name)}"
-
-    def selection(self, relation: str, dataset: dict[str, Any]) -> str:
-        if self.semantic is None:
-            selected = _selected_sql(relation, dataset)
-            dedup = dataset["dedup"]
-            if (dedup and dedup["order_by"]) or dataset["row_filter"] or dataset["snapshot_column"]:
-                selected = self.stage(selected)
-            self.semantic = selected
-        return self.semantic
-
-    def close(self) -> None:
-        for name in reversed(self.owned):
-            self.operations.drop(name)
-
-
 def _cache_key(request: Request, config: str) -> tuple[str, str, str]:
     return (config, request.source, request.dataset["id"])
 
@@ -387,11 +321,7 @@ def _metadata(client: Any, request: Request, config: str) -> Metadata:
     if relation not in tables or missing or unsupported:
         meta = Metadata(None, types, None, None, None, 0, "missing-in-catalogue")
     else:
-        selected = (
-            client.selection(relation, dataset)
-            if isinstance(client, _SelectionScope)
-            else _selected_sql(relation, dataset)
-        )
+        selected = _selected_sql(relation, dataset)
         clock = _clock_column(dataset)
         day_sql = _uk_day(clock, types) if clock else "CAST(NULL AS DATE)"
         result = client.query(
@@ -610,14 +540,7 @@ def _native_collision_check(
         removed = int(count) - len(signatures)
     else:
         removed = 0
-    if not count:
-        distinct = f"SELECT {', '.join(_quote(c) for c in projection)} FROM ({sql}) AS checked"
-    else:
-        distinct = (
-            f"SELECT DISTINCT {', '.join(_quote(c) for c in projection)} FROM ({sql}) AS checked"
-        )
-        if isinstance(client, _SelectionScope):
-            distinct = client.stage(distinct)
+    distinct = f"SELECT DISTINCT {', '.join(_quote(c) for c in projection)} FROM ({sql}) AS checked"
     return removed, distinct
 
 
@@ -809,20 +732,6 @@ def _varying_ancillary_columns(
 
 
 def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
-    """Execute one rows request with instance resource policy and owned TEMP stages."""
-    client.query(
-        "SET temp_directory=''; SET memory_limit='8GiB'; "
-        "SELECT current_setting('temp_directory') AS temp_directory, "
-        "current_setting('memory_limit') AS memory_limit"
-    )
-    scope = _SelectionScope(client)
-    try:
-        return _execute_selected(scope, request, config)
-    finally:
-        scope.close()
-
-
-def _execute_selected(client: Any, request: Request, config: str) -> dict[str, Any]:
     dataset = request.dataset
     meta = _metadata(client, request, config)
     if meta.cause:
@@ -836,7 +745,7 @@ def _execute_selected(client: Any, request: Request, config: str) -> dict[str, A
     window = _window(request, meta)
     clock = _clock_column(dataset)
     projection = _projection(dataset)
-    selected = client.selection(meta.relation, dataset)
+    selected = _selected_sql(meta.relation, dataset)
     if request.filters:
         selected = (
             f"SELECT * FROM ({selected}) AS filtered "
@@ -847,11 +756,10 @@ def _execute_selected(client: Any, request: Request, config: str) -> dict[str, A
     if window and clock:
         predicate = _window_predicate(window, clock, meta.types)
         selected = f"SELECT * FROM ({selected}) AS windowed WHERE {predicate}"
-        selected = client.stage(selected)
     before_defaults = None
     reasons: list[dict[str, Any]] = []
     if request.use_defaults and dataset["default_filter"]:
-        unfiltered = client.selection(meta.relation, dataset)
+        unfiltered = _selected_sql(meta.relation, dataset)
         predicate = _window_predicate(window, clock, meta.types) if window and clock else "TRUE"
         before_defaults = client.query(
             f"SELECT count(*) AS n FROM ({unfiltered}) AS before_defaults WHERE {predicate}"
@@ -877,7 +785,6 @@ def _execute_selected(client: Any, request: Request, config: str) -> dict[str, A
                 )
             else:
                 selected = f"SELECT * FROM ({selected}) AS top_units WHERE {unit_filter}"
-                selected = client.stage(selected)
             if total > kept:
                 reasons.append(
                     {
