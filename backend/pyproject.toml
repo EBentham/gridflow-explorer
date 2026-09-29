@@ -8,6 +8,7 @@ dependencies = [
     "uvicorn[standard]",
     "polars",
     "pydantic-settings",
+    "anyio",
     # duckdb is also a transitive dependency of gridflow, but we declare it directly:
     # deps.py imports it for the lock-classified exception catch, and jobs.py (P3)
     # imports it for the try_start preflight probe. A direct import is a declared
