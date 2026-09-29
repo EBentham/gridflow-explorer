@@ -10,7 +10,7 @@ import { periodLabel } from '../../../design/time'
 import { extremesOf } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
 import { n, pageBook } from './figures'
-import { oneStep, stepsText } from './words'
+import { oneStep, stepCount, stepsText } from './words'
 import { selectionText } from './zones'
 
 export function BookKey({ ctx }: { ctx: PageContext }) {
@@ -73,7 +73,7 @@ export function BookKey({ ctx }: { ctx: PageContext }) {
             </div>
           </>
         )}
-        {!book.bucketed && book.total.mean !== null && (
+        {!book.bucketed && book.held > 1 && book.total.mean !== null && (
           <div>
             <dt>Mean total</dt>
             <dd>{mw.format(book.total.mean)}</dd>
@@ -109,8 +109,8 @@ export function BookKey({ ctx }: { ctx: PageContext }) {
       </dl>
       {zone.cutOff && <p className="gf-hint">Not complete: gridflow’s download of {zone.name}’s bids may have been cut off. The main panel says what it holds.</p>}
       <p className="gf-hint">
-        In {book.bucketed ? 'bids' : 'MW, as published'}, over the {n(book.held)} {stepsText(book)} held in {ctx.windowText}.{' '}
-        {book.bucketed ? 'A bid counts in a step when it was offered at some point in it.' : 'The mean is of those steps; steps with no bid held are gaps, and count in neither.'}
+        In {book.bucketed ? 'bids' : 'MW, as published'}, over the {stepCount(book, book.held)} held in {ctx.windowText}.{' '}
+        {book.bucketed ? 'A bid counts in a step when it was offered at some point in it.' : `${book.held > 1 ? 'The mean is of those steps; s' : 'S'}teps with no bid held are gaps, not zeros.`}
       </p>
     </>
   )

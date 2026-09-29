@@ -16,7 +16,7 @@ import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
 import type { WideRow } from '../../_template/seriesModel'
 import { AXIS_WIDTH, n, pageBook, type Book } from './figures'
-import { cutOffText, dailyHoleText, oneStep, stepsText } from './words'
+import { cutOffText, dailyHoleText, oneStep, stepCount, stepsText } from './words'
 
 /** A cut-off zone's line, set as a caveat over the chart or table. */
 export function CutOffNote({ ctx }: { ctx: PageContext }) {
@@ -88,7 +88,7 @@ function StepTable({ book }: { book: Book }) {
     <>
       <WindowedTable columns={cols} rows={book.heldRows} caption={book.bucketed ? `Bids offered per ${oneStep(book)}` : `MW offered and bids per ${oneStep(book)}`} initialSort={{ key: 't', dir: 'asc' }} rowKey={(r) => r.t} />
       <p className="gf-hint">
-        {n(book.held)} {stepsText(book)} hold a bid{missing > 0 ? `; ${n(missing)} more in the window hold none and are left out of the table, as gaps, not zeros` : ''}. The largest bid is the one offering the most MW at that step; where two offer the same, the table names one.
+        {stepCount(book, book.held)} {book.held === 1 ? 'holds' : 'hold'} a bid{missing > 0 ? `; ${n(missing)} more in the window hold none and are left out of the table, as gaps, not zeros` : ''}. The largest bid is the one offering the most MW at that step; where two offer the same, the table names one.
       </p>
       {book.bucketed && <MeansWords book={book} />}
     </>

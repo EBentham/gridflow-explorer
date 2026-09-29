@@ -9,6 +9,9 @@
  * quarter-hour. Belgium and A01 by default, the one zone held through the
  * day.
  *
+ * Values stay in MW: one bid runs from 1 to about 1,000 MW and a zone's
+ * total from a few MW to a few thousand, which GW would flatten.
+ *
  * Main: the MW offered per quarter-hour (`OfferedBody`). Key: the latest
  * quarter-hour, extremes, bids and the largest one bid (`BookKey`).
  * Working: the bids per quarter-hour on the same clock, then the days
@@ -45,7 +48,7 @@ const bucketed = (ctx: PageContext) => pageBook(ctx).book?.bucketed ?? false
 
 function title(ctx: PageContext): string {
   const sel = pageBook(ctx)
-  if (sel.book?.bucketed && ctx.mode === 'chart') return `Bids offered per ${oneStep(sel.book)}, ${selectionText(sel)}`
+  if (sel.book?.bucketed) return `Bids offered per ${oneStep(sel.book)}, ${selectionText(sel)}`
   return `Balancing energy offered, ${selectionText(sel)}`
 }
 
@@ -55,7 +58,7 @@ const view = defineView({
   caveats: [
     'Each row is one bid’s offered MW for one quarter-hour. The page adds up the bids offered at each quarter-hour; gridflow holds no price for them, and none of GB’s balancing.',
     'Direction is held as ENTSO-E codes it, A01 or A02. The page reads A01 as up and A02 as down, as ENTSO-E’s code list and gridflow’s activated-balancing tables do; this table itself keeps the codes.',
-    'For France and Germany / Luxembourg, gridflow’s download may have stopped at ENTSO-E’s page limit: it holds one quarter-hour a day for each. Their bids, counts and totals are not complete. Belgium is held through the day. Germany / Luxembourg holds A02 bids only.',
+    'ENTSO-E sends these bids in pages, and gridflow’s downloader stops after a set number of pages. For France and Germany / Luxembourg it may have been cut off there: gridflow holds one quarter-hour a day for each, so their bids, counts and totals are not complete. Belgium is held through the day. Germany / Luxembourg holds A02 bids only.',
     'Belgium’s bids carry a product code, A05 or A07; gridflow gives no words for them. The page adds every product together unless one is picked. A window read as means needs one picked, as one bid id can carry both.',
   ],
   datasets: [

@@ -11,9 +11,16 @@ does meanwhile.
    - Why the page needs it: to draw one total a read has to bring back every bid's row at every
      step of the window, with nulls where a bid isn't offered. The default, Belgium A01 over
      7 days, is 74 bids × 672 quarter-hours = 49,728 rows (6.4 MB) against a 50,000-row cap:
-     one more bid in the week and it comes back as 30-minute means. A 30-day window always
-     does. A sum of per-bid means isn't the MW offered, so such a window gets a count of bids
-     per step and no MW.
+     one more bid in the week and it comes back as 30-minute means, and the headline becomes a
+     count of bids. A 30-day window of one product comes back as hourly means. A sum of per-bid
+     means isn't the MW offered, so such a window gets a count of bids per step and no MW.
+   - A 30-day window of every product (Belgium's default) is refused: 413 `mixed_identity`, as one
+     bid id carries A05 at one time and A07 at another, so its means would mix two series. The
+     template's error says "Choose a shorter window". The page can't add that picking one
+     product also works: on an error the main body doesn't render and the key and working
+     panels show the pending line. It says so in the toolbar, beside the product control,
+     which is the one place it can. Wanted: a page hook into the error state (a sentence of its
+     own under the template's), or the sum in the next bullet.
    - What the page does instead: reads one zone and one direction split by `bid_mrid`, and adds
      the bids up in `figures.ts` (`bookOf`). On means it draws the bids per step and says why.
    - Wanted: a `sum` aggregation (and a count of contributing rows) across a dim that isn't the

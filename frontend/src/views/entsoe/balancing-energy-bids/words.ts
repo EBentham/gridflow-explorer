@@ -13,6 +13,12 @@ export function stepsText(book: Book): string {
   return book.bucketed && book.stepMs ? meansText(book.stepMs) : stepNoun(book.stepMs)
 }
 
+/** `1 quarter-hour`, `616 quarter-hours`, `7 2-hour means`: a count of steps. */
+export function stepCount(book: Book, k: number): string {
+  const noun = stepsText(book)
+  return k === 1 ? `1 ${noun.replace(/s$/, '')}` : `${n(k)} ${noun}`
+}
+
 /** `quarter-hour`, `hour`, `2-hour step`: one step, in a sentence. */
 export function oneStep(book: Book): string {
   const s = stepNoun(book.stepMs)
@@ -27,7 +33,7 @@ export function oneStep(book: Book): string {
  */
 export function cutOffText(zone: Zone, book: Book | null): string | null {
   if (!zone.cutOff) return null
-  const why = `ENTSO-E sends these bids in pages, and gridflow’s download for ${zone.name} may have stopped at its page limit, so the bids, counts and totals shown for ${zone.name} are not complete.`
+  const why = `ENTSO-E sends these bids in pages, and gridflow’s downloader stops after a set number of pages; its download for ${zone.name} may have been cut off there, so the bids, counts and totals shown for ${zone.name} are not complete.`
   if (!book || !book.held) return why
   const times = new Set(book.heldRows.map((r) => clock(r.t)))
   const at = times.size === 1 && !book.bucketed ? `, ${clock(book.heldRows[0].t)} ${zoneAbbrev(book.heldRows[0].t)}` : ''
@@ -77,10 +83,11 @@ export function dailyHoleText(book: Book, window: DateRange): string | null {
     } else if (sig !== shared) return null
   }
   if (days < 2 || !shared) return null
-  const parts = runs.map((r) => {
-    const to = clock(r.to) === '00:00' ? 'midnight' : clock(r.to)
-    return clock(r.from) > clock(r.to) && to !== 'midnight' ? `${clock(r.from)} to ${to}, across midnight` : `${clock(r.from)} to ${to}`
-  })
   const zone = zoneAbbrev(book.heldRows[0].t)
-  return `Every day held here lacks the same ${parts.length === 1 ? 'stretch' : 'stretches'}, ${parts.join(' and ')} ${zone}: not held locally, so gaps, not zeros.`
+  const parts = runs.map((r) => {
+    const to = clock(r.to) === '00:00' ? 'midnight' : `${clock(r.to)} ${zone}`
+    const across = clock(r.from) > clock(r.to) && to !== 'midnight' ? ', across midnight' : ''
+    return `${clock(r.from)} to ${to}${across}`
+  })
+  return `Every day held here lacks the same ${parts.length === 1 ? 'stretch' : 'stretches'}, ${parts.join(' and ')}: not held locally, so gaps, not zeros.`
 }
