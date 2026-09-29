@@ -32,7 +32,7 @@ export function cadenceSentence(items: Named[]): string {
 }
 
 /** `Tue 15 Sep, Fri 18 Sep and 2 more days`: at most four days named. */
-function daysText(starts: number[]): string {
+export function daysText(starts: number[]): string {
   const named = starts.slice(0, 4).map(dayLabel)
   return starts.length > 4 ? `${named.join(', ')} and ${plural(starts.length - 4, 'more day', 'more days')}` : listText(named)
 }
@@ -119,6 +119,17 @@ export function figureText(unit: Pick<DisplayUnit, 'format' | 'plain'>, v: numbe
   const print = cell ? unit.plain : unit.format
   if (v === 0 || unit.plain(Math.abs(v)) !== unit.plain(0)) return print(v)
   return v > 0 ? `under ${print(1)}` : `between ${print(-1)} and ${cell ? print(0) : 'zero'}`
+}
+
+/**
+ * `The capacity nominated holds nothing on Tue 8 Sep, Wed 9 Sep and 4 more
+ * days that the net transfer capacity holds.`: the days a measure read
+ * beside is empty on every border while the page's own measure holds values,
+ * so a line starting late reads as not held rather than as a zero.
+ */
+export function besideMissingSentence(besideWords: string, ownWords: string, ownDays: Set<number>, besideDays: Set<number>): string {
+  const missing = [...ownDays].filter((d) => !besideDays.has(d)).sort((a, b) => a - b)
+  return missing.length ? `The ${besideWords} holds nothing on ${daysText(missing)} that the ${ownWords} holds.` : ''
 }
 
 export const cap = (s: string) => `${s[0].toUpperCase()}${s.slice(1)}`

@@ -16,7 +16,8 @@ import type { PageContext } from '../../define'
 import { areaPhrase } from './areas'
 import { BorderTable } from './BorderTable'
 import { aloneIn, besideOf, besideState, borderPanel, bordersOf, measureOf } from './model'
-import { aloneSentence, cadenceSentence, missingSentence } from './words'
+import { heldDayStarts } from './figures'
+import { aloneSentence, besideMissingSentence, cadenceSentence, missingSentence } from './words'
 
 export function BorderCharts({ ctx }: { ctx: PageContext }) {
   if (ctx.mode === 'table') return <BorderTable ctx={ctx} />
@@ -32,6 +33,12 @@ export function BorderCharts({ ctx }: { ctx: PageContext }) {
   const besides = besideOf(ctx)
   const otherArea = besides.filter((m) => besideState(ctx, m) === 'other-area')
   const failed = besides.filter((m) => besideState(ctx, m) === 'error')
+  // Days a measure drawn beside holds nothing on, on any border, while the page's own holds values.
+  const ownDays = heldDayStarts(borders.map((b) => b.own.points))
+  const besideGaps = besides
+    .filter((m) => besideState(ctx, m) === 'drawn')
+    .map((m) => besideMissingSentence(m.words, own.words, ownDays, heldDayStarts(borders.flatMap((b) => b.beside.filter((x) => x.measure.key === m.key).map((x) => x.line.points)))))
+    .filter(Boolean)
   return (
     <>
       <SeriesChart panels={panels} domain={windowDomain(w.start, w.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
@@ -46,6 +53,7 @@ export function BorderCharts({ ctx }: { ctx: PageContext }) {
           {alone ? ` ${alone}` : ''}
         </p>
       )}
+      {besideGaps.length > 0 && <p className="gf-hint">{besideGaps.join(' ')}</p>}
       {otherArea.length > 0 && (
         <p className="gf-hint">
           The {listText(otherArea.map((m) => m.words))} {otherArea.length > 1 ? 'are' : 'is'} read for GB’s borders only, so none is drawn beside the borders with{' '}

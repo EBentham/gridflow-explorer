@@ -147,14 +147,15 @@ function border(dataset: string, extra: Pick<SeriesView, 'label' | 'title' | 'su
   }
 }
 
-const BESIDE_GB = 'Read for GB’s borders only.'
+/** Nominated can pass the net transfer capacity in the same hour: said wherever the two are drawn together. */
+const NO_SHARE = 'Nominated can exceed the net transfer capacity in the same hour; whether the datasets count a direction the same way isn’t confirmed, so no share is worked out.'
 
 const view = defineView({
   title: 'Transfer capacity',
   sub: 'How much capacity ENTSO-E reports on GB’s borders with France, the Netherlands, Belgium and Ireland (SEM), and on some borders on the continent: the day-ahead net transfer capacity, the capacity allocated and nominated, and the intraday limits on the GB–Netherlands link, one direction per border.',
   caveats: [
     'ENTSO-E reports a border’s capacity one direction at a time, naming an in area and an out area, and gridflow holds one direction per border. The page names both areas, in area first, and doesn’t say which way the capacity runs.',
-    'Of the four datasets not held, the three offered-capacity ones each brought back ENTSO-E’s implicit-allocation answer, so the explicit and continuous ones may not have been asked for as intended.',
+    'For each of the three offered-capacity datasets not held, ENTSO-E’s empty reply named its implicit-allocation data, so the explicit and continuous ones may not have been asked for as intended.',
   ],
   datasets: [
     border(NTC, {
@@ -162,23 +163,28 @@ const view = defineView({
       title: 'Net transfer capacity',
       sub: 'The day-ahead net transfer capacity ENTSO-E publishes for each border, one direction per border, with the capacity allocated and nominated beside it on GB’s borders.',
       caveats: [
-        'Hourly. On GB’s borders it moves in steps and can hold one value for days; a flat run and a zero are as published.',
-        `Allocated and nominated are drawn beside it under the same in and out area codes. ${BESIDE_GB}`,
+        'The net transfer capacity is hourly. On GB’s borders it moves in steps and can hold one value for days; a flat run and a zero are as published.',
+        'Allocated and nominated are read for GB’s borders only, and drawn beside the net transfer capacity under the same in and out area codes.',
+        NO_SHARE,
       ],
     }),
     border(ALLOCATED, {
       label: 'Capacity allocated',
       title: 'Capacity allocated',
       sub: 'The capacity ENTSO-E reports as already allocated on each border in earlier auctions, one direction per border, with the net transfer capacity beside it on GB’s borders.',
-      caveats: ['Hourly; a flat run and a zero are as published.', `The net transfer capacity is drawn beside it under the same in and out area codes. ${BESIDE_GB}`],
+      caveats: [
+        'The capacity allocated is hourly; a flat run and a zero are as published.',
+        'The net transfer capacity is read for GB’s borders only, and drawn beside the capacity allocated under the same in and out area codes.',
+      ],
     }),
     border(NOMINATED, {
       label: 'Capacity nominated',
       title: 'Capacity nominated',
       sub: 'The total capacity ENTSO-E reports as nominated on each border, one direction per border, with the net transfer capacity beside it on GB’s borders.',
       caveats: [
-        'Hourly on GB’s borders and every 15 minutes between France and Germany / Luxembourg, as published.',
-        `The net transfer capacity is drawn beside it under the same in and out area codes. ${BESIDE_GB}`,
+        'The capacity nominated is hourly on GB’s borders and every 15 minutes between France and Germany / Luxembourg, as published.',
+        'The net transfer capacity is read for GB’s borders only, and drawn beside the capacity nominated under the same in and out area codes.',
+        NO_SHARE,
       ],
     }),
     border(DC_LIMITS, {
@@ -186,7 +192,7 @@ const view = defineView({
       title: 'Intraday limit on the GB–Netherlands link',
       sub: 'The intraday transfer limit ENTSO-E publishes for the GB–Netherlands DC link when one is set, over that border’s net transfer capacity.',
       caveats: [
-        'Published only when a limit is set, and held for GB–Netherlands only.',
+        'The limit is published only when one is set, and held for GB–Netherlands only.',
         'The net transfer capacity is drawn beside the limit under the same in and out area codes.',
       ],
     }),
