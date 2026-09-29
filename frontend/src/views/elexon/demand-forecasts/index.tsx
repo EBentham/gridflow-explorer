@@ -217,6 +217,7 @@ const view = defineView({
       caveats: [
         DAILY_CAVEATS.issue,
         'The figure is in MW, one per day. As with the national figure, whether it stands for the day’s peak or its mean isn’t confirmed here; the working panel sets transmission demand outturn’s daily peak and mean beside it, for comparison only.',
+        'gridflow keeps only one issue of this forecast per delivery day from each fetch, and doesn’t choose it by issue time, so a later issue from the same fetch can be missing. The working panel names the issue behind each figure held.',
         'Its rows are stamped at midnight UTC, an hour after the national figure’s UK midnight in summer. The two are lined up on the delivery date, never on the stamp.',
         DAILY_CAVEATS.ahead,
       ],

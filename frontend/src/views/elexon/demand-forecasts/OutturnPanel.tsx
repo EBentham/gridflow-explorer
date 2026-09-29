@@ -40,7 +40,8 @@ function def(base: SeriesDef, key: string, field: string, label: string, color: 
   return { ...base, key, field, label, color, from: key, unit }
 }
 
-function ErrorCells({ s }: { s: ErrorStats | undefined }) {
+/** The miss cells; `over` names the steps they're read over when the outturn holds only part of the day. */
+function ErrorCells({ s, over }: { s: ErrorStats | undefined; over?: string }) {
   if (!s || !s.count) {
     return (
       <>
@@ -52,7 +53,10 @@ function ErrorCells({ s }: { s: ErrorStats | undefined }) {
   }
   return (
     <>
-      <td className="is-num">{signedMw(s.sum / s.count)}</td>
+      <td className="is-num">
+        {signedMw(s.sum / s.count)}
+        {over ? `, over ${plural(s.count, over.replace(/s$/, ''), over)}` : ''}
+      </td>
       <td className="is-num">{ERROR_UNIT.plain(s.sumAbs / s.count)}</td>
       <td className="is-num">{s.sumOutturn > 0 ? pct(s.sumAbs / s.sumOutturn) : dash}</td>
     </>
@@ -139,7 +143,7 @@ export function OutturnPanel({ ctx }: { ctx: PageContext }) {
           {join.stats.below ? `${join.stats.above ? 'furthest' : 'Outturn ran furthest'} below it at ${periodName(join.stats.below.t, model.stepMs, model.settlement)}, by ${signedMw(join.stats.below.v)} MW` : ''}.
         </p>
       )}
-      {!comparable && <p className="gf-hint">Boundary {boundary} has no outturn held to set beside it: transmission demand outturn is national, which is boundary N. Choose boundary N to compare the two.</p>}
+      {!comparable && <p className="gf-hint">Boundary {boundary} has no outturn to set beside it. Transmission demand outturn is still read beside the page, as the notes above and About say, but it is national, so it is compared at boundary N only. Choose boundary N to compare the two.</p>}
       {relFailed && (
         <p className="gf-hint">
           The outturn could not be read beside it, so there is no miss to show: <ErrorWords error={rel.error} />
@@ -215,7 +219,7 @@ export function OutturnPanel({ ctx }: { ctx: PageContext }) {
                   {comparable && (
                     <>
                       <td className="is-num">{!o || o.held === 0 ? 'not held' : o.expected !== null && o.held < o.expected ? `${o.held} of ${o.expected} held` : fmt(o.high)}</td>
-                      <ErrorCells s={errDays?.get(d.start)} />
+                      <ErrorCells s={errDays?.get(d.start)} over={o && o.expected !== null && o.held > 0 && o.held < o.expected ? noun : undefined} />
                     </>
                   )}
                 </tr>
@@ -228,7 +232,7 @@ export function OutturnPanel({ ctx }: { ctx: PageContext }) {
       <p className="gf-hint">
         Held counts the {noun} of forecast held, so a day held in part is summarised in part; a peak is the highest {noun.replace(/s$/, '')} held that day{comparable ? ', and the outturn’s is given only on a day holding all of its own' : ''}.
         {comparable
-          ? ` The miss is ${outturnName} less the forecast, read over the ${noun} both hold, and a dash where they hold none in common: above zero, GB drew more than forecast. The share is the absolute misses summed over the outturn summed.`
+          ? ` The miss is ${outturnName} less the forecast, read over the ${noun} both hold, and a dash where they hold none in common: above zero, GB drew more than forecast. The share is the absolute misses summed over the outturn summed; on a day the outturn holds in part, the mean miss says how many ${noun} it is read over.`
           : ''}
         {model.bucketed ? ` This window is read as ${noun}, so the misses are between means and can only read smaller than they would per half-hour.` : ''}
         {ctx.mode === 'chart' ? ' Select a day to mark it on every chart.' : ' Select a day to mark it.'}
