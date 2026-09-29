@@ -832,7 +832,14 @@ def _memory_bytes(value: str) -> Decimal:
 
 
 def _configure_resources(client: Any) -> None:
-    """Disable spill and cap memory without raising an existing lower limit."""
+    """Disable spill and cap memory without raising an existing lower limit.
+
+    DuckDB applies temp_directory and memory_limit to the shared instance, not
+    just this rows request. Other callers using that instance (including
+    /api/sources, dataset transforms, and GridflowClient users) observe the
+    no-spill and capped-memory settings even after this request's connection
+    closes, until those settings are changed.
+    """
     current = client.query("SELECT current_setting('memory_limit') AS memory_limit").to_dicts()[0][
         "memory_limit"
     ]
