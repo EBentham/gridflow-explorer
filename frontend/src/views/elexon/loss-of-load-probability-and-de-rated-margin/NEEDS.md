@@ -6,7 +6,15 @@
   zero. What the page does instead: reads the probability from the rows as held, prints it
   to seven decimal places at least (`figures.ts`, `lolpText`) with a "4.1 in a million"
   gloss, and draws it per million on its own axis. A `probability` rule in `units.ts`
-  would let the defaults do it.
+  would let the defaults do it. The template's About panel still lists the probability as
+  "unit unconfirmed", while the key says it runs from 0 to 1 as the source list and gridflow
+  describe it; the same rule would settle both.
+- **A tall chart panel that isn't the lowest loses its zero tick.** In `SeriesChart`, the
+  margin's 0 went unlabelled when its 300px panel sat above the probability's (seen in the
+  screenshot; likely the 2px bottom margin with Recharts' tick thinning, which panels under
+  200px turn off). What the
+  page does instead: draws the probability (a short panel, which shows every tick) on top and
+  the margin, which carries the clock, below it.
 - **The table view has no issue time per row.** The template's table leaves `published_at`
   out, and which issue a half-hour's figures come from is what says what they are (the same
   item as the two indicated pages' NEEDS). What the page does instead: its own table, with

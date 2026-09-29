@@ -2,7 +2,7 @@
  * Elexon's loss of load probability and de-rated margin (`lolpdrm`): one
  * issue's figures per half-hour, each with the time that issue was made.
  *
- * - Main (`MarginBody`): the de-rated margin in GW, and below it the
+ * - Main (`MarginBody`): the de-rated margin in GW, and above it the
  *   probability per million where any half-hour is above zero; Table: a row
  *   per half-hour, margin in MW, the probability as held, and its issue.
  * - Key (`MarginKey`): the margin's latest, highest and lowest; the
@@ -23,7 +23,7 @@ const columns = [MARGIN, LOLP, ISSUED]
 
 const panels: PanelSlots = {
   main: {
-    title: (ctx) => (ctx.mode === 'table' ? 'Every half-hour, both figures' : 'De-rated margin, with the loss of load probability below'),
+    title: (ctx) => (ctx.mode === 'table' ? 'Every half-hour, both figures' : 'De-rated margin, with the loss of load probability above it'),
     src: (ctx) => (
       <SourceLine
         ctx={ctx}

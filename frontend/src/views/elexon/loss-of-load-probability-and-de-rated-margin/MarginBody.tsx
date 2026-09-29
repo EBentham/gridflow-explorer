@@ -1,6 +1,6 @@
 /**
  * The main panel. Chart: the de-rated margin in GW, zero on the axis, with
- * its highest and lowest half-hour labelled; below it, on the same clock,
+ * its highest and lowest half-hour labelled; above it, on the same clock,
  * the loss of load probability as bars per million, drawn only when some
  * half-hour in the window holds one above zero (all zeros would be a flat
  * line). Table: a row per half-hour, the margin in MW, the probability as
@@ -88,9 +88,10 @@ export function MarginBody({ ctx }: { ctx: PageContext }) {
   const lolp = lolpStats(model)
   const drawLolp = Boolean(model.lolp && lolp.above > 0)
   const base = { rows: model.rows, stepMs: model.stepMs, bucketed: model.bucketed, settlement: model.settlement, axisWidth: AXIS_WIDTH }
+  // The probability sits above the margin: the lowest panel carries the clock, and a taller panel above it would lose its zero tick.
   const panels: ChartPanel[] = [
+    ...(drawLolp && model.lolp ? [{ ...base, series: [model.lolp], mark: 'bars' as const, unit: model.lolp.unit, height: 130, zero: true }] : []),
     { ...base, series: [model.margin], mark: 'line', unit: model.margin.unit, height: drawLolp ? 300 : 340, extremes: model.margin, zero: true },
-    ...(drawLolp && model.lolp ? [{ ...base, series: [model.lolp], mark: 'bars' as const, unit: model.lolp.unit, height: 140, zero: true }] : []),
   ]
   const means = model.bucketed && model.stepMs ? meansText(model.stepMs) : null
   const n = (v: number) => v.toLocaleString('en-GB')
@@ -100,7 +101,7 @@ export function MarginBody({ ctx }: { ctx: PageContext }) {
       <p className="gf-hint">
         {means ? `As ${means}` : 'One figure per half-hour'}: the de-rated margin, with its highest and lowest labelled and zero on the axis.{' '}
         {drawLolp
-          ? `Below it, on the same clock, the loss of load probability per million, which is above zero at ${n(lolp.above)} of the ${n(lolp.held)} ${model.bucketed ? 'periods' : 'half-hours'} held; a bar is one of those, and no bar is a 0 as held.`
+          ? `Above it, on the same clock, the loss of load probability per million, which is above zero at ${n(lolp.above)} of the ${n(lolp.held)} ${model.bucketed ? 'periods' : 'half-hours'} held; no bar is a 0 as held, and the smallest bars may be too short to see, so the key and the days table count them.`
           : lolp.held > 0
             ? `The loss of load probability is held as 0 at all ${plural(lolp.held, model.bucketed ? 'period' : 'half-hour', model.bucketed ? 'periods' : 'half-hours')} in this window, so it isn’t drawn as a flat line; the key and the table give it.`
             : 'No loss of load probability is held in this window.'}{' '}
