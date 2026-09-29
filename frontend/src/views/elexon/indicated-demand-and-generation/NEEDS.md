@@ -31,13 +31,14 @@
 - **Vintage (for the gridflow backlog).** gridflow keeps only the earliest issue from each
   day's fetch of both datasets, so the page can't show the issue made closest to each
   half-hour. It is bronze-checked for `inddem` only; `indgen` is expected to match.
-- **The far end of each issue reads low (for the gridflow backlog, with the vintage item).**
-  In the rows held (checked 29 Sep 2026), the figures each issue made at about 01:17 BST
-  gives for its last half-hours (that day's last two and the next day's first three) read
-  several GW below those before them, for both datasets, so both lines drop each night from
-  about 23:00 to 01:30 BST. The drop follows the issue, not the clock: on 22 Sep the
-  21 Sep 00:17 UTC issue runs on to SP 10 and both figures lift at SP 11, where the
-  10:47 UTC issue takes over. Whether later issues, which gridflow doesn't keep, revise
-  these half-hours, and why the far end reads low, isn't known here. What the page does
-  instead: a caveat states what the rows show, names no cause, and warns that the key's
-  lowest figures can fall in these half-hours.
+- **Both figures step down at 23:00 BST inside every issue (for the gridflow backlog, with
+  the vintage item).** At boundary N, in every issue held (1 to 6 Aug and 13 to 23 Sep 2026,
+  the two 10:47 UTC issues included; checked 29 Sep 2026), demand and generation step down
+  at 23:00 BST on the last evening the issue covers, by different amounts on different
+  nights: demand by 1.2 to 6.3 GW, generation by 0.6 to 9.7 GW. They stay down to the end of
+  that issue's figures and step back up only where a newer issue takes over, usually at
+  01:30 BST (05:00 BST on 22 Sep; not at all on 23 Sep, where the rows end). So the fall
+  follows the clock and the recovery follows the issue. Whether later issues, which gridflow
+  doesn't keep, revise these half-hours, and why the figures step down, isn't known here.
+  What the page does instead: a caveat states what the rows show, names no cause, and warns
+  that the key's latest and lowest figures and the days' ranges can fall in these half-hours.
