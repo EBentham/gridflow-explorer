@@ -11,7 +11,7 @@ import { KeyList } from '../../../design/charts'
 import { plural } from '../../../design/format'
 import { fmtDay, instantLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
-import { DIFF_COLOR, FUEL_KEY, GW, MW, bandId, bandsIn, daysAhead, daysOf, issuedRange, keyDay, signedMw, unitFuel, unitShown, type Day, type UnitInfo } from './figures'
+import { DIFF_COLOR, FUEL_KEY, GW, MW, bandId, bandsIn, daysAhead, daysOf, heldShape, issuedRange, keyDay, signedMw, unitFuel, unitShown, type Day, type UnitInfo } from './figures'
 
 const gw = (mw: number) => GW.format(mw * GW.factor)
 
@@ -108,7 +108,7 @@ function AllKey({ ctx, days }: { ctx: PageContext; days: Day[] }) {
         )}
         {fuelDay && fuelDay.total !== null && day.total !== null && <Stat label="Units less by-fuel" value={signedMw(day.total - fuelDay.total)} />}
       </dl>
-      {fuelDay && fuelDay.total !== null && day.total !== null && ctx.mode === 'chart' && (
+      {fuelDay && fuelDay.total !== null && day.total !== null && ctx.mode === 'chart' && heldShape(days).held > 1 && (
         <KeyList items={[{ key: 'diff', mark: { kind: 'bars', color: DIFF_COLOR, shape: day.total - fuelDay.total < 0 ? 'fall' : 'rise' }, label: 'Units’ total less the by-fuel total, MW: the bars under the chart, one per day' }]} />
       )}
       <p className="gf-hint">
