@@ -38,8 +38,13 @@ class SourcesDuckDBClient:
     def __init__(self) -> None:
         self.con = duckdb.connect()
         self.calls: list[str] = []
+        self.config_calls: list[str] = []
         self.table_calls = 0
         self.closed = False
+
+    def _require_con(self) -> duckdb.DuckDBPyConnection:
+        """Expose the installed client's TEMP and interrupt interface to rows tests."""
+        return self.con
 
     def get_tables(self) -> list[str]:
         self.table_calls += 1
@@ -52,7 +57,10 @@ class SourcesDuckDBClient:
         )
 
     def query(self, sql: str) -> pl.DataFrame:
-        self.calls.append(sql)
+        if sql.startswith("SET temp_directory=") or sql.startswith("SELECT current_setting("):
+            self.config_calls.append(sql)
+        else:
+            self.calls.append(sql)
         return self.con.sql(sql).pl()
 
     def close(self) -> None:

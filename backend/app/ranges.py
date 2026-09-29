@@ -18,9 +18,7 @@ from app.errors import BadRange
 MAX_RANGE_DAYS = 400
 
 
-def resolve_range(
-    start: str | None, end: str | None, default_range_days: int
-) -> tuple[date, date]:
+def resolve_range(start: str | None, end: str | None, default_range_days: int) -> tuple[date, date]:
     """Parse and default a `[start, end]` range, raising `BadRange` on failure.
 
     Args:

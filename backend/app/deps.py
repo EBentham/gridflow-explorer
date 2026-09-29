@@ -76,9 +76,7 @@ def client_ctx() -> Generator[GridflowClient, None, None]:
         raise CatalogueMissing(str(exc)) from exc
     except duckdb.IOException as exc:
         if is_lock_error(str(exc)):
-            raise RefreshInProgress(
-                "A dataset refresh is in progress. Try again shortly."
-            ) from exc
+            raise RefreshInProgress("A dataset refresh is in progress. Try again shortly.") from exc
         raise
 
     try:

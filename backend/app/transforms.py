@@ -111,9 +111,7 @@ def load_generation_mix(client: GridflowClient, start: date, end: date) -> list[
     # or add a fuelhh latest-view spec) before it can be vintage-collapsed
     # here.
     if raw.height:
-        raw = raw.unique(
-            subset=["settlement_date", "settlement_period", "fuel_type"], keep="any"
-        )
+        raw = raw.unique(subset=["settlement_date", "settlement_period", "fuel_type"], keep="any")
 
     fuel_codes = set(raw["fuel_type"].unique().to_list()) if raw.height else set()
     unknown = {

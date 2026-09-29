@@ -228,9 +228,7 @@ def test_preflight_raising_propagates_with_no_job_and_no_thread(
         raise RefreshInProgress("a writer is live")
 
     with pytest.raises(RefreshInProgress):
-        JOBS.try_start(
-            "generation-mix", target=lambda _job: None, preflight=raising_preflight
-        )
+        JOBS.try_start("generation-mix", target=lambda _job: None, preflight=raising_preflight)
 
     assert JOBS.current() is before
     assert thread_calls == []

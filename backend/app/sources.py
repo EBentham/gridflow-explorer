@@ -40,6 +40,7 @@ async def get_rows(
 
     query = request.query_params
     filters = query.getlist("filter") if "filter" in query else None
+    columns = query.getlist("columns") if "columns" in query else None
     try:
         parsed = rows.validate(
             source_key,
@@ -48,6 +49,7 @@ async def get_rows(
             query.get("end"),
             query.get("group"),
             filters,
+            columns,
         )
         config = str(get_settings().duckdb_path)
         status = rows.cached_status(parsed, config)
