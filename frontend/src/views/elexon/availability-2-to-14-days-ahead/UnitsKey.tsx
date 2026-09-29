@@ -80,6 +80,8 @@ function AllKey({ ctx, days }: { ctx: PageContext; days: Day[] }) {
   const rel = ctx.related[FUEL_KEY]
   const fuelDay = daysOf(rel?.response, ctx.window, 'code').find((d) => d.date === day.date)
   const picked = day.start === ctx.picked
+  // One held day draws no chart, so the key offers nothing to draw.
+  const drawn = heldShape(days).held > 1
   return (
     <>
       <p className="gf-hint">
@@ -112,7 +114,7 @@ function AllKey({ ctx, days }: { ctx: PageContext; days: Day[] }) {
         <KeyList items={[{ key: 'diff', mark: { kind: 'bars', color: DIFF_COLOR, shape: day.total - fuelDay.total < 0 ? 'fall' : 'rise' }, label: 'Units’ total less the by-fuel total, MW: the bars under the chart, one per day' }]} />
       )}
       <p className="gf-hint">
-        Listed as they stack, top first, each fuel with the units listing it. {ctx.mode === 'chart' ? (focus ? 'Select it again to draw every fuel.' : 'Select a fuel to draw it alone.') : 'Select a fuel to draw it alone in the Chart view.'} The by-fuel total is Elexon’s own figure for the same day, from its by-fuel forecast; the side panel sets the two apart fuel by fuel.
+        Listed as they stack, top first, each fuel with the units listing it. {drawn ? (ctx.mode === 'chart' ? (focus ? 'Select it again to draw every fuel.' : 'Select a fuel to draw it alone.') : 'Select a fuel to draw it alone in the Chart view.') : ''} The by-fuel total is Elexon’s own figure for the same day, from its by-fuel forecast; the side panel sets the two apart fuel by fuel.
       </p>
       {rel && rel.state !== 'error' && rel.state !== 'refreshing' && !fuelDay?.total && <p className="gf-hint">Elexon’s by-fuel forecast holds nothing for this day, so there is no total to set the units against.</p>}
     </>

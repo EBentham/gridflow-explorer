@@ -11,7 +11,7 @@ import type { Day } from './figures'
 export function OneDayWords({ day, where }: { day: Day | undefined; where: string }) {
   return (
     <p className="gf-state">
-      This window holds one delivery day{day ? `, ${fmtDay(day.date)}` : ''}. The chart draws each fuel as a band from one day to the next, so a single day has no band to draw. The key gives its figures fuel by fuel, and {where} and the Table view list them; a window of 7 days or more draws the days as bands.
+      This window holds one delivery day{day ? `, ${fmtDay(day.date)}` : ''}. The chart draws each fuel as a band from one day to the next, so a single day has no band to draw. The key gives its figures fuel by fuel, and {where} and the Table view list them. A window holding neighbouring days draws them as bands.
     </p>
   )
 }

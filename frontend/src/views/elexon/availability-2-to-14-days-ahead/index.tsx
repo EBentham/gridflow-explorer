@@ -24,7 +24,7 @@ import { FuelCodes } from './FuelCodes'
 import { FuelDays } from './FuelDays'
 import { FuelKey } from './FuelKey'
 import { FuelMain } from './FuelMain'
-import { FOU, FUEL, FUEL_KEY, ISSUED, NG_UNIT, UNIT, VALUE, unitShown } from './figures'
+import { FOU, FUEL, FUEL_KEY, ISSUED, NG_UNIT, UNIT, VALUE, daysOf, heldShape, unitShown } from './figures'
 import { HorizonControl } from './HorizonControl'
 import { UnitControl } from './UnitControl'
 import { UnitsCompare } from './UnitsCompare'
@@ -34,6 +34,9 @@ import { UnitsWorking } from './UnitsWorking'
 import './page.css'
 
 const filters = (ctx: PageContext) => ctx.response?.filters
+
+/** The window holds one delivery day, so the main panel draws no chart (`OneDay.tsx`). */
+const oneDay = (ctx: PageContext, by: 'code' | 'unit') => heldShape(daysOf(ctx.response, ctx.window, by)).held === 1
 
 /** The by-fuel forecast read beside the by-unit one, in a source line. */
 const fuelPart = (ctx: PageContext, unit = 'GW') => ({ source: ctx.related[FUEL_KEY]?.source ?? null, dataset: FOU, columns: [VALUE, ISSUED], by: FUEL, unit })
@@ -65,7 +68,7 @@ const view = defineView({
             ctx.mode === 'table' ? (
               <SourceLine ctx={ctx} columns={[VALUE, ISSUED]} by={FUEL} filters={filters(ctx)} unit="MW" what="one row per delivery day and fuel code, the latest issue held" />
             ) : (
-              <SourceLine ctx={ctx} columns={[VALUE]} by={FUEL} filters={filters(ctx)} unit="GW" what="the latest issue held for each delivery day, fuel codes summed into fuels and stacked" />
+              <SourceLine ctx={ctx} columns={[VALUE]} by={FUEL} filters={filters(ctx)} unit="GW" what={oneDay(ctx, 'code') ? 'the latest issue held for the one delivery day in the window; no chart' : 'the latest issue held for each delivery day, fuel codes summed into fuels and stacked'} />
             ),
           Body: FuelMain,
         },
@@ -124,7 +127,7 @@ const view = defineView({
             const one = unitShown(ctx)
             if (ctx.mode === 'table') return <SourceLine ctx={ctx} columns={[VALUE, ISSUED, FUEL, NG_UNIT]} by={UNIT} filters={filters(ctx)} unit="MW" what={one ? `${one.id}’s rows, one per delivery day` : 'one row per delivery day and unit, the newest issue held'} />
             if (one) return <SourceLine ctx={ctx} columns={[VALUE]} by={UNIT} filters={filters(ctx)} unit="MW" what={`${one.id}’s figure for each delivery day`} />
-            return <SourceLine ctx={ctx} columns={[VALUE, FUEL]} by={UNIT} filters={filters(ctx)} unit="GW, the difference in MW" also={[fuelPart(ctx)]} what="units summed by the fuel each lists, stacked; under it the units’ total less the by-fuel total" />
+            return <SourceLine ctx={ctx} columns={[VALUE, FUEL]} by={UNIT} filters={filters(ctx)} unit="GW, the difference in MW" also={[fuelPart(ctx)]} what={oneDay(ctx, 'unit') ? 'units summed by the fuel each lists, for the one delivery day held; no chart' : 'units summed by the fuel each lists, stacked; under it the units’ total less the by-fuel total'} />
           },
           Body: UnitsMain,
         },
