@@ -30,7 +30,7 @@ const view = defineView({
       body: 'series',
       label: 'System frequency',
       caveats: [
-        'The rows held are one reading every 15 seconds, 5,760 to a full day. gridflow’s notes on this dataset say Elexon samples about every 2 seconds and publishes one-minute figures, which is not what is held. Whether each reading is a single sample or an average over its 15 seconds isn’t confirmed, so time outside a band is counted at 15 seconds a reading, and anything shorter between two readings isn’t seen.',
+        'The rows held are one reading every 15 seconds, 5,760 to a full day (checked 29 Sep 2026). gridflow’s notes on this dataset say Elexon samples about every 2 seconds and publishes one-minute figures, which is not what is held. Whether each reading is a single sample or an average over its 15 seconds isn’t confirmed, so time outside a band is counted at 15 seconds a reading, and anything shorter between two readings isn’t seen.',
         `The statutory limits, ${bandText(STATUTORY)}, are the range gridflow’s notes on this dataset give as statutory. The ${bandText(NARROW)} band is the one this page was asked to count; no source held here says who sets it, so it isn’t called a limit.`,
         'Past about eight days the window is read as means over 15 minutes or longer. A mean flattens the swings inside its period, so the page then draws the means, calls its highest and lowest means, and counts no time outside.',
         'A reading at the boundary of two of gridflow’s fetches can be held twice; the copies are identical, and the page reads it once.',
