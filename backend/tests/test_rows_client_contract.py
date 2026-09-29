@@ -26,6 +26,7 @@ def test_installed_client_read_only_temp_and_closure(tmp_path):
         assert client.query("SELECT n FROM temp.main.__rows_contract_0")["n"][0] == 7
         with pytest.raises(duckdb.Error):
             client.query("CREATE TABLE persistent_write (n INTEGER)")
+    assert client._con is None
     with GridflowClient(str(catalogue)) as reopened:
         assert (
             reopened.query(

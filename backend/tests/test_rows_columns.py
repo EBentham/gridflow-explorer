@@ -75,3 +75,26 @@ def test_columns_parameter_order_keeps_declared_row_order(monkeypatch, sources_d
     subset = client.get(url + "?columns=value,timestamp_utc").json()
     expected = [key for key in full["rows"][0] if key in {"value", "timestamp_utc", "unit", "ts"}]
     assert list(subset["rows"][0]) == expected
+
+
+def test_columns_filter_two_value_descriptors_in_dataset_order(monkeypatch, sources_db):
+    stamp = datetime(2026, 9, 22, tzinfo=UTC)
+    _seed(sources_db, [(stamp, "A", 1.0, stamp)])
+    sources_db.con.execute("ALTER TABLE silver_test_sample ADD COLUMN second_value DOUBLE")
+    sources_db.con.execute("UPDATE silver_test_sample SET second_value = 2.0")
+    spec = _spec()
+    second = {"column": "second_value", "unit": "MW", "label": "Second value"}
+    spec["values"].append(second)
+    client, url = _route(monkeypatch, sources_db, spec)
+
+    only_second = client.get(url + "?columns=second_value")
+    assert only_second.status_code == 200
+    assert only_second.json()["columns"] == [second]
+
+    neither = client.get(url + "?columns=timestamp_utc")
+    assert neither.status_code == 200
+    assert neither.json()["columns"] == []
+
+    reversed_request = client.get(url + "?columns=second_value,value")
+    assert reversed_request.status_code == 200
+    assert reversed_request.json()["columns"] == spec["values"]
