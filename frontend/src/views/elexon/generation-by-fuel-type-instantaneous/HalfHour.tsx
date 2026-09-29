@@ -14,7 +14,8 @@
  */
 import { KeyList } from '../../../design/charts'
 import { fmtN } from '../../../design/format'
-import { clock, halfHourWindow } from '../../../design/time'
+import { FUEL_BANDS } from '../../../design/fuels'
+import { HALF_HOUR, clock, halfHourWindow } from '../../../design/time'
 import { SeriesChart } from '../../_template/SeriesChart'
 import { ErrorWords } from '../../_template/panels'
 import type { SeriesDef } from '../../_template/seriesModel'
@@ -26,9 +27,12 @@ import { bandLines, dayName, dayRows, halfHourView, hhFolded, pairsFor, summaris
 import { AXIS_WIDTH, HH_KEY, TOTAL_FIELD, bandField, focusedBand, seriesFor } from './fuels'
 
 const MW = displayUnit('MW', 'MW')
-const HH_COLOR = 'var(--chart-actual)'
-/** Total generation's readings: not a fuel, so a series colour that stands apart from FUELHH's ink line in both themes. */
-const TOTAL_COLOR = 'var(--chart-price-2)'
+// The axis ink: apart from every fuel, and from the total's neutral ink in both themes (the actual-line ink sits too close to it in dark).
+const HH_COLOR = 'var(--chart-axis)'
+/** Total generation's readings: not a fuel, so the chart's neutral ink, which no fuel band uses. */
+const TOTAL_COLOR = 'var(--chart-tick)'
+/** A gap to FUELHH past this many MW is far off the few-tenths typical of these rows, and gets a note. */
+const WIDE_GAP_MW = 5
 
 function lineDef(field: string, label: string, color: string, unit: SeriesDef['unit']): SeriesDef {
   return { key: field, field, column: field, group: null, label, color, unit, from: 'self', count: 0, mean: null, min: null, max: null, signed: false }
@@ -37,13 +41,17 @@ function lineDef(field: string, label: string, color: string, unit: SeriesDef['u
 const mw = (gw: number, unit: SeriesDef['unit']) => gw / unit.factor
 
 /** What the summary says of one series' day, in sentences. */
-function summaryText(name: string, s: PairSummary, day: Day, unit: SeriesDef['unit'], hhHeld: boolean): string[] {
+function summaryText(name: string, s: PairSummary, day: Day, unit: SeriesDef['unit'], hhHeld: boolean, wideFuels: number): string[] {
   const out: string[] = []
   out.push(`All six readings are held for ${s.whole} of ${dayName(day)}’s half-hours.`)
   if (hhHeld && s.matched > 0 && s.gap && s.typical !== null) {
     out.push(
       `In the ${s.matched} of those FUELHH holds too, the mean of the six sits a median ${fmtN(mw(s.typical, unit), 1)} MW from FUELHH’s figure; the largest gap is ${fmtN(mw(s.gap.v, unit), 1)} MW, in ${halfHourWindow(s.gap.t)}.`,
     )
+    if (Math.abs(mw(s.gap.v, unit)) > WIDE_GAP_MW) {
+      const also = wideFuels > 1 ? `, and ${wideFuels} of the nine fuels differ by more than ${WIDE_GAP_MW} MW in that half-hour too` : ''
+      out.push(`That half-hour is far off the median${also}. Why the two datasets differ there is not known.`)
+    }
   } else if (hhHeld) {
     out.push('FUELHH holds none of those half-hours, so there is nothing to set them against.')
   }
@@ -82,6 +90,15 @@ export function HalfHour({ ctx }: { ctx: PageContext }) {
   const pairs = pairsFor(folded, hh, field, day.start, day.end)
   const summary = summarise(pairs)
   const lines = bandLines(folded, hh, day)
+  // How many fuels are also far off FUELHH in the selected series' widest-gap half-hour: a note, not a cause.
+  const gapT = summary.gap?.t
+  const wideFuels =
+    gapT === undefined
+      ? 0
+      : FUEL_BANDS.filter((b) => {
+          const p = pairsFor(folded, hh, bandField(b.key), gapT, gapT + HALF_HOUR)[0]
+          return p?.hh != null && Math.abs(mw(p.mean - p.hh, unit)) > WIDE_GAP_MW
+        }).length
   const hhFailed = rel && (rel.state === 'error' || rel.state === 'refreshing')
 
   return (
@@ -118,7 +135,7 @@ export function HalfHour({ ctx }: { ctx: PageContext }) {
         </p>
       )}
       {!hh && !hhFailed && <p className="gf-hint">FUELHH holds no rows for this window, so only the readings are drawn.</p>}
-      <p className="gf-hint">{summaryText(name, summary, day, unit, Boolean(hh)).join(' ')}</p>
+      <p className="gf-hint">{summaryText(name, summary, day, unit, Boolean(hh), wideFuels).join(' ')}</p>
       <div className="gf-days fi-whole">
         <table>
           <thead>
@@ -153,7 +170,7 @@ export function HalfHour({ ctx }: { ctx: PageContext }) {
                   </th>
                   <td className="is-num">{s.whole}</td>
                   <td className="is-num">{spread === null ? '–' : MW.plain(spread)}</td>
-                  <td>{s.move && spread ? halfHourWindow(s.move.t).replace(/^\w+ \d+ \w+, /, '') : '–'}</td>
+                  <td>{s.move && spread !== null ? (spread === 0 ? 'no movement' : halfHourWindow(s.move.t).replace(/^\w+ \d+ \w+, /, '')) : '–'}</td>
                   <td className="is-num">{s.typical === null ? '–' : fmtN(mw(s.typical, unit), 1)}</td>
                   <td className="is-num">{s.gap ? fmtN(mw(s.gap.v, unit), 1) : '–'}</td>
                 </tr>

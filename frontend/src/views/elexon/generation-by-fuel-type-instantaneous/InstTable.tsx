@@ -54,8 +54,14 @@ export function InstTable({ ctx }: { ctx: PageContext }) {
       }
     }),
   ]
-  const noun = bucketed && model.stepMs ? meansText(model.stepMs) : 'readings'
-  const caption = `Generation by fuel code, ${ctx.windowText}: ${model.rows.length.toLocaleString('en-GB')} ${noun}, a column per code as Elexon sends it, interconnectors signed (below zero is GB exporting). Select a column heading to sort.`
+  // The backend sends a row for every step of the window, held or not: count the rows holding a value.
+  const fields = [...defs.values()].map((d) => d.field)
+  const held = model.rows.filter((r) => fields.some((f) => typeof r[f] === 'number')).length
+  const counted =
+    bucketed && model.stepMs
+      ? `${held.toLocaleString('en-GB')} ${meansText(model.stepMs)} held over ${model.rows.length.toLocaleString('en-GB')} periods`
+      : `${held.toLocaleString('en-GB')} readings held over ${model.rows.length.toLocaleString('en-GB')} five-minute steps`
+  const caption = `Generation by fuel code, ${ctx.windowText}: ${counted}, a column per code as Elexon sends it, interconnectors signed (below zero is GB exporting). Select a column heading to sort.`
   // Taller than the template's default, so the table stands as tall as the key beside it.
   return <WindowedTable columns={columns} rows={model.rows} caption={caption} initialSort={{ key: 't', dir: 'asc' }} rowKey={(r) => r.t} maxHeight={820} />
 }

@@ -52,8 +52,8 @@ around each gap inside its folder.
    the sources inside a band. Here the tooltip gives the bands only; the key lists the folded
    codes at the latest reading and the table has a column per code.
 7. **Periods are named from the start of a row.** `periodLabel` names a five-minute row
-   stamped 00:00 as 00:00–00:05. The readings here cover the five minutes before their
-   stamp, so the page passes `stepMs: null` to its charts, which name each reading by its
+   stamped 00:00 as 00:00–00:05. The readings here are stamped five minutes after the start
+   time Elexon gives them, so the page passes `stepMs: null` to its charts, which name each reading by its
    stamp as an instant, and its table does the same. A clock option saying rows are stamped
    at the end of their period would let the template name them itself.
 8. **Key focus isn't in the URL** (as the physical notifications page's item 11). The
