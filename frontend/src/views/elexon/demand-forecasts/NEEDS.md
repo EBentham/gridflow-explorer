@@ -21,3 +21,8 @@
   page parameter, but the related transmission demand outturn is read whatever the
   boundary, though only boundary N is set against it. The page reads it anyway and says
   that other boundaries have no outturn to compare.
+- **The table view has no issue time per row.** The template's half-hourly table lists the
+  period, settlement date and period, and the value, but not `published_at`, and for `ndf`
+  and `tsdf` the issue time is what says which forecast a row is. What the page does
+  instead: the key gives the shortest, median and longest lead and the newest issue for the
+  window, and the daily forecasts' working panel lists the issue for each delivery day.
