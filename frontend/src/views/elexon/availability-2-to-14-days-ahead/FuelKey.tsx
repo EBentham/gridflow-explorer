@@ -10,7 +10,7 @@ import { KeyList } from '../../../design/charts'
 import { plural } from '../../../design/format'
 import { fmtDay, instantLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
-import { GW, bandId, bandsIn, daysAhead, daysOf, issuedRange, keyDay, newestIssue, newestIssueDays, type Day } from './figures'
+import { GW, bandId, bandsIn, daysAhead, daysOf, heldShape, issuedRange, keyDay, newestIssue, newestIssueDays, type Day } from './figures'
 
 const gw = (mw: number) => GW.format(mw * GW.factor)
 
@@ -46,6 +46,8 @@ export function FuelKey({ ctx }: { ctx: PageContext }) {
   const newest = newestIssue(days)
   const newestDays = newestIssueDays(days)
   const picked = day.start === ctx.picked
+  // One held day draws no chart, so the key offers nothing to draw.
+  const drawn = heldShape(days).held > 1
   return (
     <>
       <p className="gf-hint">
@@ -71,7 +73,7 @@ export function FuelKey({ ctx }: { ctx: PageContext }) {
         <Stat label="Issued" value={issuedRange(day.issued, instantLabel)} when={aheadText(day)} />
       </dl>
       <p className="gf-hint">
-        Listed as they stack, top first. {ctx.mode === 'chart' ? (focus ? 'Select it again to draw every fuel.' : 'Select a fuel to draw it alone.') : 'Select a fuel to draw it alone in the Chart view.'} Days ahead counts whole UK days from the issue to the delivery day.
+        Listed as they stack, top first. {drawn ? (ctx.mode === 'chart' ? (focus ? 'Select it again to draw every fuel.' : 'Select a fuel to draw it alone.') : 'Select a fuel to draw it alone in the Chart view.') : ''} Days ahead counts whole UK days from the issue to the delivery day.
       </p>
       {held.length > 1 && (
         <dl className="gf-stats">

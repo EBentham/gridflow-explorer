@@ -7,7 +7,7 @@
 import { plural } from '../../../design/format'
 import { fmtDay, instantLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
-import { GW, bandsIn, daysAhead, daysOf } from './figures'
+import { GW, bandsIn, daysAhead, daysOf, heldShape } from './figures'
 
 const dash = '–'
 const gw = (mw: number | null | undefined) => (mw === null || mw === undefined ? dash : GW.plain(mw * GW.factor))
@@ -76,7 +76,7 @@ export function FuelDays({ ctx }: { ctx: PageContext }) {
       <p className="gf-hint">
         Each fuel in GW, summed over its codes held that day. Issued is the issue behind the day on the UK clock, and ahead counts whole UK days from it to the delivery day. {counts
           ? `Codes counts the fuel codes held; ${plural(thin, 'day holds', 'days hold')} fewer than the window’s fullest day, in bold, and ${thin === 1 ? 'its' : 'their'} totals leave the missing codes out.`
-          : `Every day holding a forecast holds all ${most} fuel codes.`} {ctx.mode === 'chart' ? 'Select a day to mark it on the chart and read it in the key.' : 'Select a day to read it in the key.'}
+          : `Every day holding a forecast holds all ${most} fuel codes.`} {heldShape(days).held <= 1 ? '' : ctx.mode === 'chart' ? 'Select a day to mark it on the chart and read it in the key.' : 'Select a day to read it in the key.'}
       </p>
     </>
   )
