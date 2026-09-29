@@ -51,7 +51,7 @@ export const BOUNDARY_WORDS = 'boundary N, the whole system'
  * lead from wrapping mid-figure.
  */
 export function leadText(ms: number): string {
-  return leadWords(ms).replace(/ /g, ' ')
+  return leadWords(ms).replace(/ /g, '\u00a0')
 }
 
 function leadWords(ms: number): string {

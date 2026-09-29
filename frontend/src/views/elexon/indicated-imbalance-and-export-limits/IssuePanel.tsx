@@ -55,6 +55,18 @@ export function IssuePanel({ ctx }: { ctx: PageContext }) {
   const openingGap = first && firstRow && pair.stepMs ? Math.round((firstRow.t - first.start) / pair.stepMs) : 0
   const imbCell = (d: PairDay) => (pair.imb ? <td className="is-num">{range(d.iLow, d.iHigh)}</td> : null)
   const marCell = (d: PairDay) => (pair.mar ? <td className="is-num">{range(d.mLow, d.mHigh)}</td> : null)
+  // The page's own figure's range comes first, as in the main table.
+  const imbHead = pair.imb ? (
+    <th key="i" scope="col" className="is-num">
+      Imbalance, lowest to highest, GW
+    </th>
+  ) : null
+  const marHead = pair.mar ? (
+    <th key="m" scope="col" className="is-num">
+      Margin, lowest to highest, GW
+    </th>
+  ) : null
+  const rangeHeads = pair.ownIsImbalance ? [imbHead, marHead] : [marHead, imbHead]
 
   return (
     <>
@@ -95,16 +107,7 @@ export function IssuePanel({ ctx }: { ctx: PageContext }) {
               <th scope="col" className="is-num">
                 Held
               </th>
-              {pair.imb && (
-                <th scope="col" className="is-num">
-                  Imbalance, lowest to highest, GW
-                </th>
-              )}
-              {pair.mar && (
-                <th scope="col" className="is-num">
-                  Margin, lowest to highest, GW
-                </th>
-              )}
+              {rangeHeads}
               <th scope="col">Issued</th>
             </tr>
           </thead>
@@ -138,8 +141,8 @@ export function IssuePanel({ ctx }: { ctx: PageContext }) {
                     </button>
                   </th>
                   <td className="is-num">{held(d)}</td>
-                  {imbCell(d)}
-                  {marCell(d)}
+                  {pair.ownIsImbalance ? imbCell(d) : marCell(d)}
+                  {pair.ownIsImbalance ? marCell(d) : imbCell(d)}
                   <td>{d.issues.length ? d.issues.map((x) => issueWords(d, x.at, x.n, d.issues.length > 1)).join('; ') : dash}</td>
                 </tr>
               )
