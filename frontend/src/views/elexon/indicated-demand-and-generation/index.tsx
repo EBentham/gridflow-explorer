@@ -105,7 +105,7 @@ const view = defineView({
   caveats: [
     'These are forecasts, and Elexon issues them more than once a day. Each half-hour shows the latest issue held for it, but gridflow keeps only the earliest issue from each day’s fetch (a known fault in gridflow, not yet fixed), so the issues made closer to each half-hour aren’t held. In the rows held (checked 29 Sep 2026), a past day’s figures come from an issue made at about 01:17 BST that day, its first three half-hours from the one made the day before: early half-hours were issued minutes ahead, evening ones most of a day ahead. The key and the working panel read the issue behind each figure.',
     'Indicated demand is held as a negative figure. This page turns its sign for display only, so that demand reads above zero beside generation; it is named “sign flipped” wherever it is drawn, and the table gives the figure as held beside it.',
-    'Boundary N is the whole system and opens by default; B1 to B17 are named by their codes, as the rows don’t say what area each bounds. They are not parts of N: at a half-hour checked on 18 Sep 2026, B1 to B17 added up to more than four times N.',
+    'Boundary N is the whole system and opens by default; B1 to B17 are named by their codes, as the rows don’t say what area each bounds. They are not parts of N: at a half-hour checked on 18 Sep 2026 (checked 29 Sep 2026), B1 to B17 added up to about twice N for demand and more than four times N for generation.',
     'The gap between the two lines is not Elexon’s indicated imbalance, published separately: generation plus demand as held matches none of its 96 half-hours on 18 and 19 Sep 2026 (checked 29 Sep 2026). What each figure counts isn’t set out in the rows held.',
   ],
   datasets: [
