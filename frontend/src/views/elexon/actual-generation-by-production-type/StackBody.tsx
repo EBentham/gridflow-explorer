@@ -3,7 +3,7 @@
  * stacked in the Generation mix screen's order, in GW, offshore wind and oil
  * hatched; a type selected in the key is drawn alone with its highest and
  * lowest half-hour labelled. Table: the template's table, a column per type
- * in MW, with the settlement day and period the rows carry.
+ * in GW, with the settlement day and period the rows carry.
  */
 import { Fragment } from 'react'
 import { instantLabel, windowDomain } from '../../../design/time'
@@ -20,7 +20,14 @@ const listWords = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', 
 export function StackBody({ ctx, height }: { ctx: PageContext; height: number }) {
   const model = ctx.series
   if (!model || !ctx.window) return null
-  if (ctx.mode === 'table') return <SeriesBody ctx={ctx} />
+  // The page's one copy of the hatch patterns: the working panel's charts use them too.
+  if (ctx.mode === 'table')
+    return (
+      <>
+        <Hatch />
+        <SeriesBody ctx={ctx} />
+      </>
+    )
   const held = heldTypes(model)
   if (!held.length) return <p className="gf-state">Rows are held for this window, but none holds a figure to draw. The table lists them.</p>
   const focus = focusedDef(model, ctx.focus)

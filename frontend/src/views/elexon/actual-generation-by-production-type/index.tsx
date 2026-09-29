@@ -7,7 +7,7 @@
  * - Main (`StackBody`): the types stacked in the Generation mix screen's
  *   order, in its fuel colours where a type plainly is one of its fuels,
  *   solar in `--fuel-solar`, offshore wind and oil hatched. Table: the
- *   template's, a column per type in MW.
+ *   template's, a column per type in GW.
  * - Key (`StackKey`): each type at the latest half-hour, selectable, and the
  *   types added together, at their highest and lowest.
  * - Working: for agpt (`Compare`), agpt set against FUELHH and agws, pairing
@@ -37,7 +37,8 @@ const view = defineView({
       label: 'All production types',
       title: 'Generation by production type',
       caveats: [
-        'At the start of each run of days held, every type but wind and solar holds exactly zero for a day or more: 31 Jul to 4 Aug and 12 to 13 Sep 2026 (checked 29 Sep 2026), while FUELHH shows those fuels running. The rows don’t say why. The main panel names such half-hours in its window and draws them as held.',
+        'At the start of each run of days held, every type but wind and solar holds exactly zero: from 31 Jul SP 47 to 4 Aug SP 18, and from 12 Sep SP 47 to 13 Sep SP 18, 2026 (checked 29 Sep 2026), while FUELHH shows those fuels running. The rows don’t say why. The main panel names such half-hours in its window and draws them as held.',
+        'From 16:30 BST on 17 Sep to 16:30 BST on 18 Sep 2026, offshore wind reads 0.1 to 0.3 GW, while FUELHH’s wind runs near 16 GW at times in that day (checked 29 Sep 2026); agws holds the same figures. The rows don’t say why; the chart draws it as held.',
         'The panel below pairs FUELHH’s codes with these types by name where one plainly matches the other, which doesn’t show that they count the same plant.',
         'Hydro pumped storage is below zero in none of the rows held (checked 29 Sep 2026), so pumping doesn’t show here as it does in FUELHH, where pumped storage is below zero while it pumps. The rows don’t say why.',
         'Fossil hard coal and fossil oil are zero in every row held (checked 29 Sep 2026). The key names them, and they are in the stack and the table at zero.',
@@ -55,7 +56,7 @@ const view = defineView({
       panels: {
         main: {
           title: (ctx) => (ctx.mode === 'table' ? 'Every half-hour, by production type' : 'Generation by production type'),
-          src: (ctx) => <SourceLine ctx={ctx} columns={[VALUE]} by={PSR} unit={ctx.mode === 'table' ? 'MW' : 'GW'} what={ctx.mode === 'table' ? 'a row per half-hour, a column per type' : 'stacked by type'} />,
+          src: (ctx) => <SourceLine ctx={ctx} columns={[VALUE]} by={PSR} unit="GW" what={ctx.mode === 'table' ? 'a row per half-hour, a column per type' : 'stacked by type'} />,
           Body: AgptBody,
         },
         key: {
@@ -102,7 +103,7 @@ const view = defineView({
       panels: {
         main: {
           title: (ctx) => (ctx.mode === 'table' ? 'Every half-hour, by type' : 'Wind and solar generation'),
-          src: (ctx) => <SourceLine ctx={ctx} columns={[VALUE]} by={PSR} unit={ctx.mode === 'table' ? 'MW' : 'GW'} what={ctx.mode === 'table' ? 'a row per half-hour, a column per type' : 'stacked by type'} />,
+          src: (ctx) => <SourceLine ctx={ctx} columns={[VALUE]} by={PSR} unit="GW" what={ctx.mode === 'table' ? 'a row per half-hour, a column per type' : 'stacked by type'} />,
           Body: AgwsBody,
         },
         key: {

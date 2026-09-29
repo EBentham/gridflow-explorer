@@ -122,7 +122,11 @@ export function Compare({ ctx }: { ctx: PageContext }) {
           <KeyList
             items={[
               { key: 'a', mark: { kind: 'line', color }, label: `agpt, ${selected.label.toLowerCase()}` },
-              { key: 'b', mark: { kind: 'line', color: OTHER_COLOR }, label: <OtherSide p={selected} /> },
+              { key: 'b', mark: { kind: 'line', color: OTHER_COLOR }, label: (
+                  <span>
+                    <OtherSide p={selected} />
+                  </span>
+                ) },
               { key: 'gap', mark: { kind: 'bars', color: GAP_COLOR, shape: 'fall' }, label: `The gap, agpt less ${NAME[selected.against]}, in MW (lower chart)` },
             ]}
           />

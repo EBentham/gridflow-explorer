@@ -1,7 +1,7 @@
 /**
  * agws's working panel: each UK day's energy by type, in GWh. The chart
  * draws the days every type holds whole, a bar per type (offshore wind
- * hatched); a day held in part is left off the chart, where its sum would
+ * hatched, with the patterns the main panel draws); a day held in part is left off the chart, where its sum would
  * read as a still or dull day, and listed in the table with the half-hours it
  * holds. Then the windiest and stillest whole day, and the sunniest.
  */
@@ -14,7 +14,6 @@ import { displayUnit } from '../../_template/units'
 import type { PageContext } from '../../define'
 import { energyDays, wholeSum, type EnergyDay } from './energy'
 import { halfHourly } from './figures'
-import { Hatch } from './Hatch'
 import { AXIS_WIDTH, fillOf, heldTypes, swatchOf } from './types'
 
 const GWH = displayUnit('GWh')
@@ -71,7 +70,6 @@ export function DailyEnergy({ ctx }: { ctx: PageContext }) {
     <>
       {whole.length > 0 ? (
         <>
-          <Hatch />
           <SeriesChart
             panels={[{ rows, series, mark: 'bars', unit: GWH, stepMs: DAY_MS, height: 220, zero: true, axisWidth: AXIS_WIDTH }]}
             domain={windowDomain(ctx.window.start, ctx.window.end)}
