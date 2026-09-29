@@ -81,7 +81,7 @@ export function FuelKey({ ctx }: { ctx: PageContext }) {
             <Stat
               label="Newest issue held"
               value={instantLabel(newest)}
-              when={newestDays.length > 1 ? `for ${fmtDay(newestDays[0].date)} to ${fmtDay(newestDays[newestDays.length - 1].date)} here` : newestDays.length ? `for ${fmtDay(newestDays[0].date)} here` : undefined}
+              when={newestDays.length > 1 ? `for ${fmtDay(newestDays[0].date)} to ${fmtDay(newestDays[newestDays.length - 1].date)} in this window` : newestDays.length ? `for ${fmtDay(newestDays[0].date)} in this window` : undefined}
             />
           )}
         </dl>

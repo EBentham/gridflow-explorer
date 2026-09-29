@@ -27,6 +27,12 @@ around each gap inside its folder.
    toolbar that the forecast is a week old. What the page does: the key names the newest issue
    held and the days it covers.
 
+3a. **Rows naming no BM unit are deduplicated together.** The by-unit read keeps the newest
+   issue per (`settlement_date`, `bm_unit_id`), so every row with no `bm_unit_id` on one day
+   falls in one partition: two id-less units from different issues would keep only the newer.
+   Today one such unit is listed (National Grid id `WTGRW-1`). Asked for: `national_grid_bm_unit`
+   in the dedup key where `bm_unit_id` is null.
+
 ## Template
 
 4. **The window can't run past the latest local day.** These forecasts run up to two weeks
