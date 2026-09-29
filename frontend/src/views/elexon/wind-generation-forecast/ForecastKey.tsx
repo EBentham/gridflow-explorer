@@ -127,8 +127,8 @@ export function ForecastKey({ ctx }: { ctx: PageContext }) {
       {join.all.count > 0 && (
         <>
           <dl className="gf-stats">
-            {join.after.count > 0 && <DiffStat label="Metered less forecast, issued after" s={join.after} noun={noun} />}
             {join.ahead.count > 0 && <DiffStat label="Metered less forecast, issued before" s={join.ahead} noun={noun} />}
+            {join.after.count > 0 && <DiffStat label="Metered less forecast, issued after" s={join.after} noun={noun} />}
             {join.ahead.count + join.after.count < join.all.count && <DiffStat label="Metered less forecast" s={join.all} noun={noun} />}
           </dl>
           <p className="gf-hint">

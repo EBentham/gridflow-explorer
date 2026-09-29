@@ -37,21 +37,26 @@ export const AXIS_WIDTH = 52
 /** Differences print in MW: a few hundred MW would read as 0.3 GW. */
 export const MW_UNIT = displayUnit('MW', 'MW')
 
-/** Hours before the hour an issue was made; below zero, after it. Not a unit the template knows, so it is set out here. */
+/**
+ * Hours before the hour an issue was made; below zero, after it. Not a unit
+ * the template knows, so it is set out here. Issues land on the half-hour and
+ * hours on the hour, so a lead is never whole: the tooltip gives it exactly
+ * (`27 h 30 min after`), and figures elsewhere keep one decimal.
+ */
 export const LEAD_UNIT: DisplayUnit = {
   label: 'h',
   source: 'h',
   factor: 1,
   numeric: true,
-  format: (v) => `${signed(Math.round(v))} h`,
-  plain: (v) => signed(Math.round(v)),
+  format: (v) => (v === 0 ? 'at the hour' : `${leadText(v * HOUR_MS)} ${v > 0 ? 'before' : 'after'}`),
+  plain: (v) => signed(v),
   caption: 'Hours issued before the hour',
 }
 
-function signed(n: number): string {
-  if (n > 0) return `+${n}`
-  if (n < 0) return `−${-n}`
-  return '0'
+function signed(v: number): string {
+  const text = Math.abs(v).toFixed(1)
+  if (text === '0.0') return '0'
+  return v > 0 ? `+${text}` : `−${text}`
 }
 
 /** A signed MW figure: `+431`, with a true minus below zero. */
