@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import itertools
 from datetime import date
 
+import polars as pl
 import pytest
-from conftest import ForecastStubClient
+from conftest import ForecastStubClient, forecast_metrics_rows_frame
 
 from app.errors import UnknownVariant
 from app.forecasts import (
@@ -405,3 +407,19 @@ def test_variant_metrics_pathological_variant_key_yields_no_rows_not_500(
     huge_int = "9" * 5000
     for hostile_key in (deeply_nested, huge_int):
         assert variant_metrics(forecast_stub_client, [hostile_key]) == []
+
+
+@pytest.mark.parametrize("order", list(itertools.permutations(["aaa", "mmm", "zzz"])))
+def test_newest_run_tie_on_written_at_breaks_on_run_id_in_any_input_order(
+    order: tuple[str, ...],
+) -> None:
+    """Runs written at the same instant resolve to the largest run_id, as supersession does."""
+    base = forecast_metrics_rows_frame().filter(pl.col("run_id") == "run-new")
+    tied = pl.concat(
+        [base.with_columns(run_id=pl.lit(r), gates_passed=pl.lit(r == "zzz")) for r in order]
+    )
+    client = ForecastStubClient(metrics=tied)
+    [record] = variant_metrics(client, [V1_ROLLING])
+    assert record["run_id"] == "zzz"
+    v1 = next(v for v in list_variants(client) if v["model_id"] == "day_ahead.lgbm_demand.v1")
+    assert (v1["run_id"], v1["gates_passed"]) == ("zzz", True)

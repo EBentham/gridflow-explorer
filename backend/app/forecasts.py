@@ -503,7 +503,7 @@ def list_variants(client: GridflowClient) -> list[dict[str, Any]]:
     ]
     if metrics.height:
         newest_run = (
-            metrics.sort("written_at", descending=True)
+            metrics.sort(["written_at", "run_id"], descending=True)
             .unique(subset=list(_VARIANT_KEY), keep="first", maintain_order=True)
             .select(metrics_cols)
         )
@@ -649,7 +649,7 @@ def variant_metrics(
         return []
 
     newest_run_ids = (
-        metrics.sort("written_at", descending=True)
+        metrics.sort(["written_at", "run_id"], descending=True)
         .unique(subset=list(_VARIANT_KEY), keep="first", maintain_order=True)
         .select([*_VARIANT_KEY, "run_id"])
     )
