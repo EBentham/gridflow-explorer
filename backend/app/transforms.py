@@ -68,9 +68,9 @@ def load_generation_mix(client: GridflowClient, start: date, end: date) -> list[
     """Load and reshape `generation-mix` records for the given window.
 
     Pipeline (P1-PLAN.md "generation-mix", exact order):
-        0. Drop exact duplicate `(settlement_date, settlement_period,
-           fuel_type)` rows (see WHY comment below on the vintage-collapse
-           gap this does NOT cover).
+        0. Drop exact duplicate rows, and warn on any `(settlement_date,
+           settlement_period, fuel_type)` key that still carries differing
+           captures (see WHY comment below).
         1. Map `fuel_type` -> `series_key`, vectorized: `INT*` prefix ->
            "imports"; else `FUEL_TO_SERIES` lookup, defaulting to "other".
         2. Warn once (not drop) on any unrecognised, non-`INT*` code.
@@ -94,24 +94,24 @@ def load_generation_mix(client: GridflowClient, start: date, end: date) -> list[
     raw = client.get_fuel_generation(start, end)
 
     # WHY: silver_elexon_fuelhh is APPEND_ONLY and carries exact duplicate
-    # rows at backfill chunk boundaries (same settlement_date/period/
-    # fuel_type, same generation_mw) — without dropping them the group_by
+    # rows at backfill chunk boundaries — without dropping them the group_by
     # sum below double-counts, showing as ~2x needle spikes on the chart.
-    # Correctness is guaranteed only for the observed exact-duplicate case:
-    # `unique(keep="any")` on the settlement key would also discard one of
-    # two DIFFERING vintages arbitrarily, because no vintage discriminator
-    # reaches this frame to pick the latest —
-    # GridflowClient.get_fuel_generation() (client.py,
-    # `_present_bitemporal_exclude_clause` with no `retain=`) strips the
-    # `available_at` vintage column before this frame ever arrives here, and
-    # there is no `silver_elexon_fuelhh_latest` view (unlike system_prices,
-    # `("elexon", "fuelhh")` has no LATEST_VIEW_SPECS entry). A future
-    # re-publication with a different generation_mw for the same key would
-    # still need an upstream fix (retain `available_at` on the client call,
-    # or add a fuelhh latest-view spec) before it can be vintage-collapsed
-    # here.
+    # Only rows equal on every column used here are dropped (provenance such
+    # as `ingested_at` may differ between copies). No vintage discriminator
+    # reaches this frame (get_fuel_generation() strips `available_at`, and
+    # there is no silver_elexon_fuelhh_latest view), so two DIFFERING
+    # captures of one key cannot be told apart. They stay in the sum and are
+    # warned about, rather than one being kept arbitrarily by input order.
     if raw.height:
-        raw = raw.unique(subset=["settlement_date", "settlement_period", "fuel_type"], keep="any")
+        key = ["settlement_date", "settlement_period", "fuel_type"]
+        raw = raw.unique(subset=[*key, "timestamp_utc", "generation_mw"], keep="any")
+        conflicts = raw.filter(pl.len().over(key) > 1).select(key).unique()
+        if conflicts.height:
+            logger.warning(
+                "%d fuelhh keys carry differing generation_mw captures, e.g. %s",
+                conflicts.height,
+                conflicts.row(0),
+            )
 
     fuel_codes = set(raw["fuel_type"].unique().to_list()) if raw.height else set()
     unknown = {
