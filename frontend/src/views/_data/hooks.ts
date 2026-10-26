@@ -68,7 +68,8 @@ export function useManifest(ds: DataSource): Load<Manifest> {
 /**
  * Rows for every request in `requests`, in parallel, in the same order. The
  * list is compared by value, so a fresh array with the same requests doesn't
- * fetch again. A result for an earlier list reads as loading.
+ * fetch again. A result for an earlier list reads as loading; a retry of the
+ * same list keeps reading as refreshing until it is answered.
  */
 export function useRowsList(ds: DataSource, requests: RowsRequest[]): Load<RowsResponse>[] {
   const key = JSON.stringify(requests)
@@ -79,7 +80,7 @@ export function useRowsList(ds: DataSource, requests: RowsRequest[]): Load<RowsR
     const list = JSON.parse(key) as RowsRequest[]
     if (!list.length) return undefined
     const controller = new AbortController()
-    setHeld({ key, loads: list.map(() => LOADING) })
+    setHeld((prev) => ({ key, loads: list.map((_, i) => (prev.key === key && prev.loads[i]?.state === 'refreshing' ? prev.loads[i] : LOADING)) }))
     list.forEach((req, i) => {
       const put = (load: Load<RowsResponse>) =>
         setHeld((prev) => (prev.key === key ? { key, loads: prev.loads.map((l, j) => (j === i ? load : l)) } : prev))
@@ -95,11 +96,12 @@ export function useRowsList(ds: DataSource, requests: RowsRequest[]): Load<RowsR
 
   const current = held.key === key ? held.loads : null
   const refreshing = current?.some((l) => l.state === 'refreshing') ?? false
+  // Keyed on the loads too: `refreshing` stays true across a retry, and each answer re-arms the wait.
   useEffect(() => {
     if (!refreshing) return undefined
     const timer = window.setTimeout(() => setTick((n) => n + 1), REFRESH_RETRY_MS)
     return () => window.clearTimeout(timer)
-  }, [refreshing])
+  }, [refreshing, current])
 
   return current ?? requests.map(() => LOADING)
 }

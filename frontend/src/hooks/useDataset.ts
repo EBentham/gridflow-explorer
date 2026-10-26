@@ -31,11 +31,15 @@ export function useDataset(datasetId: string, range: DateRange | null): UseDatas
     if (!start || !end) return undefined
     const controller = new AbortController()
     setLoading(true)
-    setError(null)
+    // A retry while gridflow holds the store keeps saying so until it answers.
+    setError((prev) => (prev?.code === 'refresh_in_progress' ? prev : null))
 
     const path = `/api/datasets/${datasetId}/data?start=${start}&end=${end}`
     fetchJson<DataRecord[]>(path, controller.signal)
-      .then(setData)
+      .then((rows) => {
+        setData(rows)
+        setError(null)
+      })
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === 'AbortError') return
         setError(err instanceof ApiError ? err : new ApiError('unknown_error', String(err)))
