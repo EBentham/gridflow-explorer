@@ -244,8 +244,8 @@ export interface ViewConfig {
   sub: string
   /** The datasets, in the order of the toolbar's switch. The first held one opens by default. */
   datasets: DatasetView[]
-  /** Caveats for the whole family, shown with each dataset's own. */
-  caveats?: string[]
+  /** Caveats for the whole family, shown with each dataset's own. A caveat that reads the page (its coverage, say) is a function. */
+  caveats?: (string | ((ctx: PageContext) => string))[]
   /** Read the dev fixture whatever the app's adapter is. Fixture pages carry the Fixture tag on every panel. */
   adapter?: 'fixture'
 }

@@ -18,6 +18,13 @@ import type { PageContext, QuerySpec } from '../../define'
 export const POLICY = 'vintage_policy_id'
 /** The published headline run. gridflow also holds an earlier version of it for the same half-hours. */
 export const HEADLINE = 'smp_headline_perfect_prog_v2'
+/**
+ * The page's caveat on the run after `HEADLINE`. Change the two together:
+ * gridflow_models has still to rule whether the next headline run gets a new
+ * policy id or reuses this one, and either way this sentence goes stale.
+ */
+export const NEXT_RUN_CAVEAT =
+  'A run for the week from 14 Sep 2026 failed its check before publishing, so that week isn’t shown: the actual price fell inside none of its 50, 80 or 90% ranges, and its average error was £157.7/MWh.'
 /** One row per half-hour: the headline run, pinned, so its split is one value and the columns are the series. */
 export const RUN_QUERY: QuerySpec = { group: POLICY, filters: { [POLICY]: HEADLINE } }
 

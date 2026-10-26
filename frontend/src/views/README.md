@@ -82,7 +82,7 @@ Folders starting with `_` belong to the template. The registry skips them.
 | `title` | The H1: the family as a reader would say it. |
 | `sub` | One sentence under the H1: what this is and what it shows. |
 | `datasets` | The family's datasets on this page, in the order of the toolbar's switch. The first held one opens by default. |
-| `caveats` | Plain-words caveats for the whole family, shown in the main panel with each dataset's own. |
+| `caveats` | Plain-words caveats for the whole family, shown in the main panel with each dataset's own. A caveat that reads the page (its coverage, say) is a function of the page context. |
 | `adapter` | `'fixture'` reads the dev fixture. Only the demo uses it. |
 
 ### Every dataset (`DatasetView`)
