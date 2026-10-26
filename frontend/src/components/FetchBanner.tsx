@@ -54,7 +54,7 @@ export function FetchBanner({ datasetId, source, range, onComplete }: FetchBanne
   if (error && job?.state === 'running') {
     return (
       <div className="gf-coverage is-failed" role="alert">
-        Lost touch with gridflow while the fetch ran, so it may still finish: reload the page to see. The last poll said: {error.message}
+        Lost touch with gridflow while the fetch ran, so it may still finish: reload the page to see.
       </div>
     )
   }
