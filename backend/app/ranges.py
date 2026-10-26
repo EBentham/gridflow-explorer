@@ -31,15 +31,18 @@ def resolve_range(start: str | None, end: str | None, default_range_days: int) -
         The resolved `(start_date, end_date)` pair.
 
     Raises:
-        BadRange: Either bound is unparseable, `start > end`, or the span
-            exceeds `MAX_RANGE_DAYS`.
+        BadRange: Either bound is unparseable, the default window overflows
+            supported dates, `start > end`, or the span exceeds `MAX_RANGE_DAYS`.
     """
     end_date = parse_date(end) if end is not None else datetime.now(UTC).date()
-    start_date = (
-        parse_date(start)
-        if start is not None
-        else end_date - timedelta(days=default_range_days - 1)
-    )
+    try:
+        start_date = (
+            parse_date(start)
+            if start is not None
+            else end_date - timedelta(days=default_range_days - 1)
+        )
+    except OverflowError as exc:
+        raise BadRange(f"the default window before {end_date} overflows supported dates.") from exc
     if start_date > end_date:
         raise BadRange(f"start ({start_date}) is after end ({end_date}).")
     span_days = (end_date - start_date).days

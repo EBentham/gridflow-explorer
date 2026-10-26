@@ -12,6 +12,7 @@ as `client_ctx` does for the read path.
 
 from __future__ import annotations
 
+from datetime import date
 from functools import partial
 from typing import Any
 
@@ -19,7 +20,7 @@ from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 
 from app.catalogue import get_dataset
-from app.errors import ErrorCode, RefreshInProgress, error_envelope
+from app.errors import BadRange, ErrorCode, RefreshInProgress, error_envelope
 from app.fetch import probe_writer_lock, run_fetch_job
 from app.jobs import JOBS, to_job_payload
 from app.ranges import resolve_range
@@ -61,6 +62,9 @@ def post_fetch(
     """
     spec = get_dataset(dataset_id)
     start_date, end_date = resolve_range(start, end, spec.default_range_days)
+    if end_date == date.max:
+        # `build_command` passes the CLI the day after `end`, which `date` cannot hold.
+        raise BadRange(f"end must be before {date.max} for a fetch.")
 
     try:
         job = JOBS.try_start(
