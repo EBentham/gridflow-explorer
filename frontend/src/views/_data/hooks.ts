@@ -75,6 +75,7 @@ export function useRowsList(ds: DataSource, requests: RowsRequest[]): Load<RowsR
   const key = JSON.stringify(requests)
   const [held, setHeld] = useState<{ key: string; loads: Load<RowsResponse>[] }>({ key: '', loads: [] })
   const [tick, setTick] = useState(0)
+  const [answers, setAnswers] = useState(0)
 
   useEffect(() => {
     const list = JSON.parse(key) as RowsRequest[]
@@ -82,8 +83,10 @@ export function useRowsList(ds: DataSource, requests: RowsRequest[]): Load<RowsR
     const controller = new AbortController()
     setHeld((prev) => ({ key, loads: list.map((_, i) => (prev.key === key && prev.loads[i]?.state === 'refreshing' ? prev.loads[i] : LOADING)) }))
     list.forEach((req, i) => {
-      const put = (load: Load<RowsResponse>) =>
+      const put = (load: Load<RowsResponse>) => {
         setHeld((prev) => (prev.key === key ? { key, loads: prev.loads.map((l, j) => (j === i ? load : l)) } : prev))
+        setAnswers((n) => n + 1)
+      }
       ds.rows(req, controller.signal).then(
         (value) => put({ state: 'data', value, error: null }),
         (err: unknown) => {
@@ -96,12 +99,12 @@ export function useRowsList(ds: DataSource, requests: RowsRequest[]): Load<RowsR
 
   const current = held.key === key ? held.loads : null
   const refreshing = current?.some((l) => l.state === 'refreshing') ?? false
-  // Keyed on the loads too: `refreshing` stays true across a retry, and each answer re-arms the wait.
+  // `refreshing` stays true across a retry, so each answer re-arms the wait; a slow retry is never cut short.
   useEffect(() => {
     if (!refreshing) return undefined
     const timer = window.setTimeout(() => setTick((n) => n + 1), REFRESH_RETRY_MS)
     return () => window.clearTimeout(timer)
-  }, [refreshing, current])
+  }, [refreshing, answers])
 
   return current ?? requests.map(() => LOADING)
 }
