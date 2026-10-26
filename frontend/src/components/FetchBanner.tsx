@@ -50,6 +50,15 @@ export function FetchBanner({ datasetId, source, range, onComplete }: FetchBanne
     prevStateRef.current = job?.state
   }, [job?.state, onComplete, refetchCoverage])
 
+  // Polling gave up: the job was last seen running, so its outcome is unknown.
+  if (error && job?.state === 'running') {
+    return (
+      <div className="gf-coverage is-failed" role="alert">
+        Lost touch with gridflow while the fetch ran, so it may still finish: reload the page to see. The last poll said: {error.message}
+      </div>
+    )
+  }
+
   if (starting || job?.state === 'running') {
     return (
       <div className="gf-coverage" role="status">
