@@ -97,11 +97,12 @@ def load_generation_mix(client: GridflowClient, start: date, end: date) -> list[
     # rows at backfill chunk boundaries — without dropping them the group_by
     # sum below double-counts, showing as ~2x needle spikes on the chart.
     # Only rows equal on every column used here are dropped (provenance such
-    # as `ingested_at` may differ between copies). No vintage discriminator
-    # reaches this frame (get_fuel_generation() strips `available_at`, and
-    # there is no silver_elexon_fuelhh_latest view), so two DIFFERING
-    # captures of one key cannot be told apart. They stay in the sum and are
-    # warned about, rather than one being kept arbitrarily by input order.
+    # as `ingested_at` may differ between copies). The vintage column
+    # `available_at` is stripped by get_fuel_generation() and there is no
+    # silver_elexon_fuelhh_latest view, so there is no supported rule for
+    # choosing between two DIFFERING captures of one key. Both stay in the
+    # sum (a visible spike) and are warned about, rather than one being kept
+    # arbitrarily by input order.
     if raw.height:
         key = ["settlement_date", "settlement_period", "fuel_type"]
         raw = raw.unique(subset=[*key, "timestamp_utc", "generation_mw"], keep="any")

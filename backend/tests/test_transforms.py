@@ -58,6 +58,7 @@ def test_differing_measurements_for_one_key_are_order_independent_and_warned(
         forward = load_generation_mix(StubClient(conflicting), WINDOW_START, WINDOW_END)
         backward = load_generation_mix(StubClient(conflicting.reverse()), WINDOW_START, WINDOW_END)
     assert forward == backward
+    assert forward[0]["wind"] == 2000.0 + 2500.0
     assert "differing generation_mw" in caplog.text
 
 
