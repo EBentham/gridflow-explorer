@@ -718,6 +718,33 @@ def test_events_use_publication_clock_and_descending_order(monkeypatch, sources_
     assert any("publication time" in note for note in result["notes"])
 
 
+@pytest.mark.parametrize("kind", ["events", "reference"])
+def test_tied_exact_copies_collapse_and_distinct_ties_survive(monkeypatch, sources_db, kind):
+    """Tied captures identical over the projection are served once; distinct ties all stay."""
+    spec = _spec()
+    anchor = "published_at" if kind == "events" else None
+    spec.update(
+        kind=kind,
+        clock=None,
+        latest_day_rule={"mode": "max" if anchor else "reference", "column": anchor},
+    )
+    stamp = datetime(2026, 9, 22, 10, tzinfo=UTC)
+    _seed(
+        sources_db,
+        spec,
+        [
+            (stamp, "A", 1.0, stamp, stamp),
+            (stamp, "A", 1.0, stamp, stamp + timedelta(hours=1)),
+            (stamp, "A", 2.0, stamp, stamp),
+        ],
+    )
+    window = {} if anchor else {"start": None, "end": None}
+    result = _run(monkeypatch, sources_db, spec, **window)
+    assert sorted(row["value"] for row in result["rows"]) == [1.0, 2.0]
+    assert result["row_count"] == 2
+    assert result["truncation"]["reasons"] == [{"type": "exact_duplicate_rows", "removed_rows": 1}]
+
+
 def test_event_without_clock_uses_declared_event_anchor(monkeypatch, sources_db):
     """A clockless event descriptor still resolves its publication day."""
     spec = _spec()
