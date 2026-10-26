@@ -10,9 +10,7 @@
  * with the chart surface so it can't be read as part of the
  * transmission-connected band under it: the pattern `WindHatch.tsx` draws in
  * the charts, and a matching stripe for the swatches, which are CSS. Solar
- * has no fuel token in the locked palette (NEEDS.md): it borrows
- * `--chart-tick`, the token furthest from all nine fuel colours, in both
- * themes, that still reads as a line on the chart surface.
+ * takes `--fuel-solar`, as on every other page that draws it (DESIGN §3).
  */
 import type { SeriesDef, SeriesModel } from '../../_template/seriesModel'
 import type { DisplayUnit } from '../../_template/units'
@@ -44,7 +42,7 @@ export const FUELS: Fuel[] = [
   solid('biomass', 'Biomass', 'biomass', 'var(--fuel-biomass)'),
   solid('wind', 'Wind, transmission', 'transmission-connected wind', 'var(--fuel-wind)'),
   { column: 'wind_emb', label: 'Wind, embedded', prose: 'embedded wind', color: 'var(--fuel-wind)', fill: `url(#${WIND_HATCH_ID})`, swatch: WIND_STRIPE },
-  solid('solar', 'Solar', 'solar', 'var(--chart-tick)'),
+  solid('solar', 'Solar', 'solar', 'var(--fuel-solar)'),
   solid('gas', 'Gas', 'gas', 'var(--fuel-gas)'),
   solid('coal', 'Coal', 'coal', 'var(--fuel-peaking)'),
   solid('other', 'Other', '“other”', 'var(--fuel-other)'),
