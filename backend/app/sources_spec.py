@@ -6534,8 +6534,9 @@ FAMILY_DEFAULTS: dict[str, Any] = {"route": None, "notes": []}
 def _fill() -> None:
     """Fill left-out keys with fresh values and derive each dataset's relation names.
 
-    The base relation is gridflow's view name. Readers probe the ``_latest`` name and
-    fall back to the base when the catalogue lacks it.
+    A silver dataset reads gridflow's view, preferring its ``_latest`` view when the
+    catalogue has one. A gold name is used as given: gridflow builds ``_latest`` views
+    for silver only.
     """
     for source in SOURCES:
         for family in source["families"]:
@@ -6546,13 +6547,12 @@ def _fill() -> None:
                     dataset.setdefault(key, copy.copy(default))
                 if dataset["clock"]:
                     dataset["clock"].setdefault("settlement_cols", [])
-                base = (
-                    dataset["id"]
-                    if source["key"] == "gold"
-                    else f"silver_{source['key']}_{dataset['id']}"
-                )
-                dataset["base_relation"] = base
-                dataset["latest_relation"] = f"{base}_latest"
+                if source["key"] == "gold":
+                    dataset["base_relation"] = dataset["latest_relation"] = dataset["id"]
+                else:
+                    base = f"silver_{source['key']}_{dataset['id']}"
+                    dataset["base_relation"] = base
+                    dataset["latest_relation"] = f"{base}_latest"
 
 
 _fill()

@@ -319,6 +319,22 @@ def test_daily_vintage_keys_match_held_relation(
     assert card["coverage"]["rows"] == 2
 
 
+def test_gold_name_is_read_as_given_beside_a_latest_view(
+    monkeypatch: pytest.MonkeyPatch, sources_db
+) -> None:
+    """A gold dataset has no `_latest` candidate, so a same-named view cannot replace it."""
+    dataset = _committed("gold_gb_day_ahead_benchmark")
+    _seed_committed_relation(sources_db, dataset, [{}])
+    sources_db.con.execute(
+        "CREATE TABLE gold_gb_day_ahead_benchmark_latest AS SELECT * FROM "
+        "gold_gb_day_ahead_benchmark UNION ALL SELECT * FROM gold_gb_day_ahead_benchmark"
+    )
+    monkeypatch.setattr(sources, "SOURCES", _spec(dataset))
+    card = _one(sources.build_manifest(sources_db))
+    assert card["relation"] == "gold_gb_day_ahead_benchmark"
+    assert card["coverage"]["rows"] == 1
+
+
 def test_declared_not_held_relation_warns_but_stays_unheld(
     monkeypatch: pytest.MonkeyPatch, sources_db, caplog
 ) -> None:
