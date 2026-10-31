@@ -222,34 +222,6 @@ _cache: dict[tuple[str, str, str], tuple[float, Metadata]] = {}
 _cache_lock = threading.Lock()
 
 
-class _TempOperations:
-    """Allow only request-owned TEMP DDL and interruption on the client's connection."""
-
-    def __init__(self, connection: duckdb.DuckDBPyConnection, prefix: str) -> None:
-        self._connection = connection
-        self._prefix = prefix
-
-    def create(self, name: str, selection: str) -> None:
-        if not name.startswith(self._prefix) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
-            raise ValueError("TEMP name is not owned by this rows request")
-        if not selection.lstrip().upper().startswith(("SELECT ", "WITH ")) or ";" in selection:
-            raise ValueError("TEMP creation requires one generated selection")
-        self._connection.execute(f"CREATE TEMP TABLE {_quote(name)} AS {selection}")
-
-    def drop(self, name: str) -> None:
-        if not name.startswith(self._prefix) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
-            raise ValueError("TEMP name is not owned by this rows request")
-        self._connection.execute(f"DROP TABLE IF EXISTS temp.main.{_quote(name)}")
-
-    def interrupt(self) -> None:
-        self._connection.interrupt()
-
-
-def _temp_operations(client: Any, prefix: str) -> _TempOperations:
-    """Confine private installed-client access to this adapter factory."""
-    return _TempOperations(client._require_con(), prefix)
-
-
 def _query_timeout() -> RowsError:
     return RowsError(ErrorCode.QUERY_TIMEOUT, "Rows query exceeded its time limit.")
 
@@ -260,8 +232,8 @@ class _DeadlineClient:
     def __init__(self, client: Any, deadline: float) -> None:
         self.client = client
         self.deadline = deadline
-        self.prefix = "__rows_" + uuid.uuid4().hex + "_"
-        self.operations = _temp_operations(client, self.prefix)
+        # The installed client has no public interrupt or TEMP DDL.
+        self.connection: duckdb.DuckDBPyConnection = client._require_con()
 
     def check(self) -> None:
         if time.monotonic() >= self.deadline:
@@ -284,7 +256,7 @@ class _DeadlineClient:
                     return
                 expired = True
             while not stop.is_set():
-                self.operations.interrupt()
+                self.connection.interrupt()
                 stop.wait(0.05)
 
         timer = threading.Timer(timeout, interrupt)
@@ -316,28 +288,23 @@ class _DeadlineClient:
         return self.run(self.client.get_tables)
 
     def create(self, name: str, sql: str) -> None:
-        self.run(lambda: self.operations.create(name, sql))
+        self.run(lambda: self.connection.execute(f"CREATE TEMP TABLE {_quote(name)} AS {sql}"))
 
     def drop(self, name: str, *, cleanup_budget: float | None = None) -> None:
-        self.run(lambda: self.operations.drop(name), cleanup_budget=cleanup_budget)
+        self.run(
+            lambda: self.connection.execute(f"DROP TABLE IF EXISTS temp.main.{_quote(name)}"),
+            cleanup_budget=cleanup_budget,
+        )
 
 
 class _SelectionScope:
     """Own reusable selections for one rows execution and clean them on exit."""
 
-    def __init__(self, client: Any) -> None:
+    def __init__(self, client: _DeadlineClient) -> None:
         self.client = client
-        self.prefix = (
-            client.prefix
-            if isinstance(client, _DeadlineClient)
-            else "__rows_" + uuid.uuid4().hex + "_"
-        )
+        self.prefix = "__rows_" + uuid.uuid4().hex + "_"
         self.owned: list[str] = []
         self.semantic: str | None = None
-        self.semantic_key: tuple[str, dict[str, Any]] | None = None
-        self.operations = (
-            client if isinstance(client, _DeadlineClient) else _temp_operations(client, self.prefix)
-        )
 
     def query(self, sql: str) -> pl.DataFrame:
         return self.client.query(sql)
@@ -349,9 +316,9 @@ class _SelectionScope:
         name = f"{self.prefix}{len(self.owned)}"
         self.owned.append(name)
         try:
-            self.operations.create(name, sql)
+            self.client.create(name, sql)
         except duckdb.OutOfMemoryException:
-            self.operations.drop(name)
+            self.client.drop(name)
             self.owned.pop()
             return sql
         return f"SELECT * FROM temp.main.{_quote(name)}"
@@ -363,9 +330,6 @@ class _SelectionScope:
             if (dedup and dedup["order_by"]) or dataset["row_filter"] or dataset["snapshot_column"]:
                 selected = self.stage(selected)
             self.semantic = selected
-            self.semantic_key = (relation, dataset)
-        elif self.semantic_key != (relation, dataset):
-            raise ValueError("Rows selection reused with a different relation or dataset")
         return self.semantic
 
     def close(self, primary: BaseException | None = None) -> None:
@@ -374,10 +338,7 @@ class _SelectionScope:
         names = list(reversed(self.owned))
         for index, name in enumerate(names):
             try:
-                if isinstance(self.operations, _DeadlineClient):
-                    self.operations.drop(name, cleanup_budget=cleanup_deadline - time.monotonic())
-                else:
-                    self.operations.drop(name)
+                self.client.drop(name, cleanup_budget=cleanup_deadline - time.monotonic())
             except RowsError:
                 LOG.warning(
                     "Rows TEMP cleanup budget exhausted; leaving %s for connection close",
@@ -459,11 +420,7 @@ def _metadata(client: Any, request: Request, config: str) -> Metadata:
     if relation not in tables or missing or unsupported:
         meta = Metadata(None, types, None, None, None, 0, "missing-in-catalogue")
     else:
-        selected = (
-            client.selection(relation, dataset)
-            if isinstance(client, _SelectionScope)
-            else _selected_sql(relation, dataset)
-        )
+        selected = client.selection(relation, dataset)
         clock = _clock_column(dataset)
         day_sql = _uk_day(clock, types) if clock else "CAST(NULL AS DATE)"
         result = client.query(
@@ -665,11 +622,7 @@ def _native_collision_check(
         for index, (values, raw) in enumerate(
             zip(frame.select(keys).iter_rows(), byte_rows, strict=True)
         ):
-            if (
-                index % 256 == 0
-                and isinstance(client, _SelectionScope)
-                and isinstance(client.client, _DeadlineClient)
-            ):
+            if index % 256 == 0:
                 client.client.check()
             if values in signatures and signatures[values][0] != raw:
                 previous = signatures[values][1]
@@ -687,11 +640,9 @@ def _native_collision_check(
     if not count:
         distinct = f"SELECT {', '.join(_quote(c) for c in projection)} FROM ({sql}) AS checked"
     else:
-        distinct = (
+        distinct = client.stage(
             f"SELECT DISTINCT {', '.join(_quote(c) for c in projection)} FROM ({sql}) AS checked"
         )
-        if isinstance(client, _SelectionScope):
-            distinct = client.stage(distinct)
     return removed, distinct
 
 

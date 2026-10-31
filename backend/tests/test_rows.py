@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import math
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -1031,7 +1032,11 @@ def test_declared_difference_is_not_a_capture_duplicate(sources_db, field):
     request = rows.Request("test", spec, None, None, None, (), False)
     with pytest.raises(rows.RowsError) as caught:
         rows._native_collision_check(
-            sources_db, request, "SELECT * FROM captures", "timestamp_utc", rows._projection(spec)
+            rows._SelectionScope(rows._DeadlineClient(sources_db, math.inf)),
+            request,
+            "SELECT * FROM captures",
+            "timestamp_utc",
+            rows._projection(spec),
         )
     assert caught.value.code == ErrorCode.AMBIGUOUS_SERIES
     assert field in caught.value.details["varying_columns"]
@@ -1256,11 +1261,12 @@ def test_metadata_cache_reuses_checks_and_expires(monkeypatch, sources_db):
     tick = [1000.0]
     monkeypatch.setattr(rows.time, "monotonic", lambda: tick[0])
     key = f"cache-{id(sources_db)}"
-    assert rows._metadata(sources_db, request, key).rows == 1
-    assert rows._metadata(sources_db, request, key).rows == 1
+    scope = rows._SelectionScope(rows._DeadlineClient(sources_db, math.inf))
+    assert rows._metadata(scope, request, key).rows == 1
+    assert rows._metadata(scope, request, key).rows == 1
     assert sources_db.table_calls == 1
-    rows._metadata(sources_db, request, key + "-other")
+    rows._metadata(scope, request, key + "-other")
     assert sources_db.table_calls == 2
     tick[0] += rows.TTL_SECONDS + 1
-    rows._metadata(sources_db, request, key)
+    rows._metadata(scope, request, key)
     assert sources_db.table_calls == 3
