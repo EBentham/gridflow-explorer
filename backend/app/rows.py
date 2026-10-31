@@ -11,12 +11,12 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
-from enum import StrEnum
 from typing import Any
 
 import duckdb
 import polars as pl
 
+from app.errors import ApiError, ErrorCode
 from app.sources import (
     LONDON,
     TTL_SECONDS,
@@ -70,42 +70,17 @@ FILTER_VALUE = re.compile(r"[A-Za-z0-9 _.\-/:]{1,64}\Z")
 DATE_VALUE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}\Z")
 
 
-class RowsErrorCode(StrEnum):
-    UNKNOWN_DATASET = "unknown_dataset"
-    BAD_RANGE = "bad_range"
-    BAD_FILTER = "bad_filter"
-    BAD_GROUP = "bad_group"
-    BAD_COLUMNS = "bad_columns"
-    QUERY_TIMEOUT = "query_timeout"
-    WINDOW_UNAVAILABLE = "window_unavailable"
-    AMBIGUOUS_SERIES = "ambiguous_series"
-    RESULT_TOO_LARGE = "result_too_large"
+class RowsError(ApiError):
+    """A rows error whose HTTP status follows its code."""
 
-
-class RowsError(Exception):
-    def __init__(
-        self, code: RowsErrorCode, message: str, *, details: dict[str, Any] | None = None
-    ) -> None:
-        super().__init__(message)
+    def __init__(self, code: ErrorCode, message: str, **details: Any) -> None:
+        super().__init__(message, details)
         self.code = code
-        self.message = message
-        self.details = details or {}
-        self.http_status = (
-            404
-            if code == RowsErrorCode.UNKNOWN_DATASET
-            else 413
-            if code == RowsErrorCode.RESULT_TOO_LARGE
-            else 503
-            if code == RowsErrorCode.QUERY_TIMEOUT
-            else 422
-        )
-
-    def envelope(self) -> dict[str, Any]:
-        return {"error": {"code": self.code, "message": self.message, **self.details}}
-
-
-def _error(code: RowsErrorCode, message: str, **details: Any) -> RowsError:
-    return RowsError(code, message, details=details)
+        self.http_status = {
+            ErrorCode.UNKNOWN_DATASET: 404,
+            ErrorCode.RESULT_TOO_LARGE: 413,
+            ErrorCode.QUERY_TIMEOUT: 503,
+        }.get(code, 422)
 
 
 def _registry() -> dict[tuple[str, str], dict[str, Any]]:
@@ -135,11 +110,11 @@ def _parse_date(value: str | None) -> date | None:
     if value is None:
         return None
     if not DATE_VALUE.fullmatch(value):
-        raise _error(RowsErrorCode.BAD_RANGE, "Date must be YYYY-MM-DD.")
+        raise RowsError(ErrorCode.BAD_RANGE, "Date must be YYYY-MM-DD.")
     try:
         return date.fromisoformat(value)
     except ValueError as exc:
-        raise _error(RowsErrorCode.BAD_RANGE, "Date is invalid.") from exc
+        raise RowsError(ErrorCode.BAD_RANGE, "Date is invalid.") from exc
 
 
 @dataclass(frozen=True)
@@ -165,24 +140,24 @@ def validate(
 ) -> Request:
     dataset = REGISTRY.get((source, dataset_id))
     if dataset is None:
-        raise _error(RowsErrorCode.UNKNOWN_DATASET, "Unknown source or dataset.")
+        raise RowsError(ErrorCode.UNKNOWN_DATASET, "Unknown source or dataset.")
     if dataset["not_held_cause"]:
-        raise _error(
-            RowsErrorCode.UNKNOWN_DATASET,
+        raise RowsError(
+            ErrorCode.UNKNOWN_DATASET,
             "Dataset is not held.",
             not_held_cause=dataset["not_held_cause"],
         )
     first = _parse_date(start)
     last = _parse_date(end)
     if dataset["kind"] == "reference" and (first or last):
-        raise _error(RowsErrorCode.BAD_RANGE, "Reference records have no date window.")
+        raise RowsError(ErrorCode.BAD_RANGE, "Reference records have no date window.")
     if first and last and first > last:
-        raise _error(RowsErrorCode.BAD_RANGE, "start is after end.")
+        raise RowsError(ErrorCode.BAD_RANGE, "start is after end.")
     if last == date.max:
-        raise _error(RowsErrorCode.BAD_RANGE, "End date exceeds supported bounds.")
+        raise RowsError(ErrorCode.BAD_RANGE, "End date exceeds supported bounds.")
     dims = {dim["column"] for dim in dataset["dims"]}
     if group is not None and group not in dims:
-        raise _error(RowsErrorCode.BAD_GROUP, "Group must be a declared dimension.")
+        raise RowsError(ErrorCode.BAD_GROUP, "Group must be a declared dimension.")
     if group is None and dataset["kind"] == "series":
         group = next(
             (dim["column"] for dim in dataset["dims"] if dim["role"] == "series"),
@@ -197,14 +172,14 @@ def validate(
         parsed = {}
     else:
         if "" in filters:
-            raise _error(RowsErrorCode.BAD_FILTER, "Empty filter cannot be combined.")
+            raise RowsError(ErrorCode.BAD_FILTER, "Empty filter cannot be combined.")
         parsed = {}
         for item in filters:
             if ":" not in item:
-                raise _error(RowsErrorCode.BAD_FILTER, "Filter needs column:value.")
+                raise RowsError(ErrorCode.BAD_FILTER, "Filter needs column:value.")
             column, value = item.split(":", 1)
             if column not in dims or not FILTER_VALUE.fullmatch(value) or column in parsed:
-                raise _error(RowsErrorCode.BAD_FILTER, "Invalid or duplicate dimension filter.")
+                raise RowsError(ErrorCode.BAD_FILTER, "Invalid or duplicate dimension filter.")
             parsed[column] = value
     selected_columns = None
     if columns is not None:
@@ -215,8 +190,8 @@ def validate(
             or len(set(names)) != len(names)
             or any(name not in _projection(dataset) for name in names)
         ):
-            raise _error(
-                RowsErrorCode.BAD_COLUMNS,
+            raise RowsError(
+                ErrorCode.BAD_COLUMNS,
                 "Columns must be a non-empty, unique subset of the declared projection.",
             )
         selected_columns = names
@@ -276,7 +251,7 @@ def _temp_operations(client: Any, prefix: str) -> _TempOperations:
 
 
 def _query_timeout() -> RowsError:
-    return _error(RowsErrorCode.QUERY_TIMEOUT, "Rows query exceeded its time limit.")
+    return RowsError(ErrorCode.QUERY_TIMEOUT, "Rows query exceeded its time limit.")
 
 
 class _DeadlineClient:
@@ -519,7 +494,7 @@ def _window(request: Request, meta: Metadata) -> tuple[date, date, datetime, dat
         anchor = anchor.date()
     if request.end is None:
         if anchor is None:
-            raise _error(RowsErrorCode.WINDOW_UNAVAILABLE, "Latest-day anchor is unavailable.")
+            raise RowsError(ErrorCode.WINDOW_UNAVAILABLE, "Latest-day anchor is unavailable.")
         end = min(anchor, datetime.now(UTC).astimezone(LONDON).date())
     else:
         end = request.end
@@ -527,17 +502,17 @@ def _window(request: Request, meta: Metadata) -> tuple[date, date, datetime, dat
         start = request.start or end - timedelta(days=6)
         upper_day = end + timedelta(days=1)
     except OverflowError as exc:
-        raise _error(RowsErrorCode.BAD_RANGE, "Default window overflows supported dates.") from exc
+        raise RowsError(ErrorCode.BAD_RANGE, "Default window overflows supported dates.") from exc
     if start > end:
-        raise _error(RowsErrorCode.BAD_RANGE, "start is after resolved end.")
+        raise RowsError(ErrorCode.BAD_RANGE, "start is after resolved end.")
     elapsed = (end - start).days
     if elapsed > 400:
         if request.dataset["kind"] == "events":
-            raise _error(RowsErrorCode.BAD_RANGE, "Event range exceeds 400 elapsed days.")
+            raise RowsError(ErrorCode.BAD_RANGE, "Event range exceeds 400 elapsed days.")
         if meta.first_day is None or meta.last_day is None:
-            raise _error(RowsErrorCode.WINDOW_UNAVAILABLE, "Local clock depth is unavailable.")
+            raise RowsError(ErrorCode.WINDOW_UNAVAILABLE, "Local clock depth is unavailable.")
         if start < meta.first_day or end > meta.last_day:
-            raise _error(RowsErrorCode.BAD_RANGE, "Deep window exceeds local clock depth.")
+            raise RowsError(ErrorCode.BAD_RANGE, "Deep window exceeds local clock depth.")
     lower = datetime.combine(start, datetime.min.time(), LONDON).astimezone(UTC)
     upper = datetime.combine(upper_day, datetime.min.time(), LONDON).astimezone(UTC)
     return start, end, lower, upper
@@ -601,8 +576,8 @@ def _ambiguity(
             hint += f"&filter={request.group}:{observed_group}"
     elif observation:
         hint = "Try a clean date window; no declared filter resolves this instant."
-    return _error(
-        RowsErrorCode.AMBIGUOUS_SERIES,
+    return RowsError(
+        ErrorCode.AMBIGUOUS_SERIES,
         "Selected records do not identify one series.",
         group=request.group,
         varying_dimensions=varying_dims,
@@ -659,8 +634,8 @@ def _native_collision_check(
         f"SELECT coalesce(sum(copies),0) AS n FROM ({repeated}) AS repeated"
     ).to_dicts()[0]["n"]
     if count > MAX_DUPLICATE_PROOF:
-        raise _error(
-            RowsErrorCode.RESULT_TOO_LARGE,
+        raise RowsError(
+            ErrorCode.RESULT_TOO_LARGE,
             "Too many duplicate candidates to verify.",
             reason="duplicate_verification_limit",
             hint="Narrow the date window or filter a dimension.",
@@ -798,8 +773,8 @@ def _numeric_kind(kind: str) -> bool:
 
 
 def _limit(reason: str, hint: str) -> RowsError:
-    return _error(
-        RowsErrorCode.RESULT_TOO_LARGE,
+    return RowsError(
+        ErrorCode.RESULT_TOO_LARGE,
         "Selected records have conflicting cadence or identity."
         if reason == "unsupported_cadence"
         else "Result exceeds the safe row limit.",
@@ -962,8 +937,8 @@ def _execute_selected(client: Any, request: Request, config: str) -> dict[str, A
     dataset = request.dataset
     meta = _metadata(client, request, config)
     if meta.cause:
-        raise _error(
-            RowsErrorCode.UNKNOWN_DATASET,
+        raise RowsError(
+            ErrorCode.UNKNOWN_DATASET,
             "Dataset schema is unavailable.",
             not_held_cause=meta.cause,
         )

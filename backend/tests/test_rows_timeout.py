@@ -9,6 +9,7 @@ import duckdb
 from test_rows_api import _route, _seed, _spec
 
 from app import rows, sources
+from app.errors import ErrorCode
 
 
 def test_post_return_timeout_returns_503_and_releases_limiter(monkeypatch, sources_db):
@@ -43,7 +44,7 @@ def test_real_duckdb_interrupt_is_translated_and_connection_recovers(monkeypatch
     try:
         bounded.query("SELECT sum(sin(i)) FROM range(10000000000) t(i)")
     except rows.RowsError as exc:
-        assert exc.code == rows.RowsErrorCode.QUERY_TIMEOUT
+        assert exc.code == ErrorCode.QUERY_TIMEOUT
     else:
         raise AssertionError("long query was not interrupted")
     assert sources_db.query("SELECT 42 AS answer")["answer"][0] == 42
@@ -63,7 +64,7 @@ def test_interrupt_retries_after_bind_before_execution(monkeypatch, sources_db):
     try:
         bounded.query("SELECT sum(sin(i)) FROM range(400000000) t(i)")
     except rows.RowsError as exc:
-        assert exc.code == rows.RowsErrorCode.QUERY_TIMEOUT
+        assert exc.code == ErrorCode.QUERY_TIMEOUT
     else:
         raise AssertionError("long query was not interrupted")
     assert time.monotonic() - started < 1
@@ -96,7 +97,7 @@ def test_request_deadline_is_shared_across_operations(monkeypatch, sources_db):
     try:
         bounded.query("SELECT 2 AS n")
     except rows.RowsError as exc:
-        assert exc.code == rows.RowsErrorCode.QUERY_TIMEOUT
+        assert exc.code == ErrorCode.QUERY_TIMEOUT
     else:
         raise AssertionError("operation reset the request deadline")
 

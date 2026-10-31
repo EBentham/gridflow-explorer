@@ -16,7 +16,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from app.deps import client_ctx
-from app.errors import RefreshInProgress
+from app.errors import ErrorCode, RefreshInProgress
 from app.sources_spec import SOURCES
 
 router = APIRouter()
@@ -42,45 +42,42 @@ async def get_rows(
     query = request.query_params
     filters = query.getlist("filter") if "filter" in query else None
     columns = query.getlist("columns") if "columns" in query else None
-    try:
-        parsed = rows.validate(
-            source_key,
-            dataset_id,
-            query.get("start"),
-            query.get("end"),
-            query.get("group"),
-            filters,
-            columns,
+    parsed = rows.validate(
+        source_key,
+        dataset_id,
+        query.get("start"),
+        query.get("end"),
+        query.get("group"),
+        filters,
+        columns,
+    )
+    config = str(get_settings().duckdb_path)
+    status = rows.cached_status(parsed, config)
+    if status and status.cause:
+        raise rows.RowsError(
+            ErrorCode.UNKNOWN_DATASET,
+            "Dataset schema is unavailable.",
+            not_held_cause=status.cause,
         )
-        config = str(get_settings().duckdb_path)
-        status = rows.cached_status(parsed, config)
-        if status and status.cause:
-            raise rows.RowsError(
-                rows.RowsErrorCode.UNKNOWN_DATASET,
-                "Dataset schema is unavailable.",
-                details={"not_held_cause": status.cause},
+
+    def execute_rows() -> dict[str, Any]:
+        with client_ctx() as client:
+            return rows.execute(client, parsed, config)
+
+    async with _ROWS_LIMITER:
+        if await request.is_disconnected():
+            # uvicorn drops the response of a gone client before its access log line.
+            LOG.info("rows skipped, client gone: %s/%s", source_key, dataset_id)
+            return JSONResponse(
+                status_code=499,
+                content={
+                    "error": {
+                        "code": "client_closed",
+                        "message": "Client closed the request.",
+                    }
+                },
             )
-
-        def execute_rows() -> dict[str, Any]:
-            with client_ctx() as client:
-                return rows.execute(client, parsed, config)
-
-        async with _ROWS_LIMITER:
-            if await request.is_disconnected():
-                # uvicorn drops the response of a gone client before its access log line.
-                LOG.info("rows skipped, client gone: %s/%s", source_key, dataset_id)
-                return JSONResponse(
-                    status_code=499,
-                    content={
-                        "error": {
-                            "code": "client_closed",
-                            "message": "Client closed the request.",
-                        }
-                    },
-                )
-            return await anyio.to_thread.run_sync(execute_rows)
-    except rows.RowsError as exc:
-        return JSONResponse(status_code=exc.http_status, content=exc.envelope())
+        return await anyio.to_thread.run_sync(execute_rows)
 
 
 _PUBLIC_DATASET = (

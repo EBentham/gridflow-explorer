@@ -20,6 +20,7 @@ from fastapi.testclient import TestClient
 
 from app import rows as N  # noqa: N812 - new implementation arm
 from app import sources
+from app.errors import error_envelope
 from app.main import app
 
 STAMP = datetime(2026, 9, 22, tzinfo=UTC)
@@ -117,8 +118,11 @@ def _outcome(
     try:
         payload = module.execute(db, request, f"equivalence-{id(db)}")
     except module.RowsError as exc:
-        status = JSONResponse(status_code=exc.http_status, content=exc.envelope()).status_code
-        return status, json.dumps(exc.envelope(), sort_keys=False).encode("utf-8")
+        envelope = (
+            exc.envelope() if module is D else error_envelope(exc.code, exc.message, exc.details)
+        )
+        status = JSONResponse(status_code=exc.http_status, content=envelope).status_code
+        return status, json.dumps(envelope, sort_keys=False).encode("utf-8")
     return 200, json.dumps(payload, sort_keys=False).encode("utf-8")
 
 

@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from app import rows
+from app.errors import ErrorCode
 
 
 @pytest.fixture(autouse=True)
@@ -139,7 +140,7 @@ def test_ordered_top_tie_with_different_declared_values_refuses_in_either_input_
     _seed(sources_db, _spec(), entries[::-1] if reverse else entries)
     with pytest.raises(rows.RowsError) as caught:
         _run(monkeypatch, sources_db, _spec())
-    assert caught.value.code == rows.RowsErrorCode.AMBIGUOUS_SERIES
+    assert caught.value.code == ErrorCode.AMBIGUOUS_SERIES
     assert "value" in caught.value.details["varying_columns"]
 
 
@@ -218,7 +219,7 @@ def test_declared_projection_includes_unrendered_anchor(monkeypatch, sources_db)
     )
     with pytest.raises(rows.RowsError) as caught:
         _run(monkeypatch, sources_db, spec)
-    assert caught.value.code == rows.RowsErrorCode.AMBIGUOUS_SERIES
+    assert caught.value.code == ErrorCode.AMBIGUOUS_SERIES
     assert "published_at" in caught.value.details["varying_columns"]
 
 
@@ -232,7 +233,7 @@ def test_signed_zero_declared_values_refuse(monkeypatch, sources_db):
     )
     with pytest.raises(rows.RowsError) as caught:
         _run(monkeypatch, sources_db, _spec(ordered=False))
-    assert caught.value.code == rows.RowsErrorCode.AMBIGUOUS_SERIES
+    assert caught.value.code == ErrorCode.AMBIGUOUS_SERIES
     assert caught.value.details["varying_columns"] == ["value"]
 
 
@@ -592,7 +593,7 @@ def test_empty_order_differing_values_refuse(monkeypatch, sources_db, reverse):
     _seed(sources_db, _spec(ordered=False), data[::-1] if reverse else data)
     with pytest.raises(rows.RowsError) as caught:
         _run(monkeypatch, sources_db, _spec(ordered=False))
-    assert caught.value.code == rows.RowsErrorCode.AMBIGUOUS_SERIES
+    assert caught.value.code == ErrorCode.AMBIGUOUS_SERIES
     assert "value" in caught.value.details["varying_columns"]
 
 
@@ -911,7 +912,7 @@ def test_entity_identity_check_precedes_window(monkeypatch, sources_db):
     )
     with pytest.raises(rows.RowsError) as caught:
         _run(monkeypatch, sources_db, spec)
-    assert caught.value.code == rows.RowsErrorCode.AMBIGUOUS_SERIES
+    assert caught.value.code == ErrorCode.AMBIGUOUS_SERIES
     assert "region" in caught.value.details["varying_dimensions"]
 
 
@@ -928,7 +929,7 @@ def test_dimensionless_observation_conflict_is_window_scoped(monkeypatch, source
     assert _run(monkeypatch, sources_db, spec)["rows"][1]["value"] == 3.0
     with pytest.raises(rows.RowsError) as caught:
         _run(monkeypatch, sources_db, spec, start="2026-09-21", end="2026-09-21")
-    assert caught.value.code == rows.RowsErrorCode.AMBIGUOUS_SERIES
+    assert caught.value.code == ErrorCode.AMBIGUOUS_SERIES
 
 
 def test_stack_unit_collision_refuses_even_with_equal_provenance(monkeypatch, sources_db):
@@ -949,7 +950,7 @@ def test_stack_unit_collision_refuses_even_with_equal_provenance(monkeypatch, so
     )
     with pytest.raises(rows.RowsError) as caught:
         _run(monkeypatch, sources_db, spec)
-    assert caught.value.code == rows.RowsErrorCode.AMBIGUOUS_SERIES
+    assert caught.value.code == ErrorCode.AMBIGUOUS_SERIES
     assert "unit" in caught.value.details["varying_dimensions"]
 
 
@@ -1032,7 +1033,7 @@ def test_declared_difference_is_not_a_capture_duplicate(sources_db, field):
         rows._native_collision_check(
             sources_db, request, "SELECT * FROM captures", "timestamp_utc", rows._projection(spec)
         )
-    assert caught.value.code == rows.RowsErrorCode.AMBIGUOUS_SERIES
+    assert caught.value.code == ErrorCode.AMBIGUOUS_SERIES
     assert field in caught.value.details["varying_columns"]
 
 
@@ -1045,7 +1046,7 @@ def test_submillisecond_output_collision_refuses(monkeypatch, sources_db):
     _seed(sources_db, spec, [(first, None, 1.0, first, first), (second, None, 2.0, second, second)])
     with pytest.raises(rows.RowsError) as caught:
         _run(monkeypatch, sources_db, spec)
-    assert caught.value.code == rows.RowsErrorCode.AMBIGUOUS_SERIES
+    assert caught.value.code == ErrorCode.AMBIGUOUS_SERIES
 
 
 def test_staggered_identities_cannot_share_bucket(monkeypatch, sources_db):
@@ -1154,7 +1155,7 @@ def test_deep_range_is_bounded_by_local_depth(monkeypatch, sources_db):
     ):
         with pytest.raises(rows.RowsError) as caught:
             _run(monkeypatch, sources_db, _spec(), start=start, end=end)
-        assert caught.value.code == rows.RowsErrorCode.BAD_RANGE
+        assert caught.value.code == ErrorCode.BAD_RANGE
 
 
 def test_all_null_bucket_stays_null(sources_db):

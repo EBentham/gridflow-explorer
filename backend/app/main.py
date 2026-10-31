@@ -2,10 +2,10 @@
 
 Mounts the dataset router, the P4 forecasts router, and the P3 jobs router,
 and registers the single `ApiError` exception handler that implements the
-API's authoritative error envelope (`{"error": {"code", "message"}}`,
-P1-PLAN.md "Error shape"), built by `errors.error_envelope` — the same
-helper the `/fetch` route's 409 path uses, so there remains exactly one
-definition of the envelope shape.
+API's authoritative error envelope (`{"error": {"code", "message"}}` plus
+any details, P1-PLAN.md "Error shape"), built by `errors.error_envelope` —
+the same helper the `/fetch` route's 409 path uses, so there remains exactly
+one definition of the envelope shape.
 Deliberately **no** catch-all handler is registered: any exception that is
 not an `ApiError` must still surface as a genuine 500 rather than being
 disguised as a coded error.
@@ -41,9 +41,11 @@ def handle_api_error(request: Request, exc: ApiError) -> JSONResponse:
 
     Returns:
         A `JSONResponse` with the mapped status and
-        `{"error": {"code", "message"}}` body.
+        `{"error": {"code", "message", **details}}` body.
     """
-    return JSONResponse(status_code=exc.http_status, content=error_envelope(exc.code, exc.message))
+    return JSONResponse(
+        status_code=exc.http_status, content=error_envelope(exc.code, exc.message, exc.details)
+    )
 
 
 @app.get("/api/health")
