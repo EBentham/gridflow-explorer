@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import math
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
@@ -467,17 +466,17 @@ def test_cleanup_preserves_primary_and_attempts_every_drop(
     monkeypatch: pytest.MonkeyPatch, sources_db: SourcesDuckDBClient
 ) -> None:
     """Pre-fix close masks the primary error and skips drops after a DROP failure."""
-    scope = N._SelectionScope(N._DeadlineClient(sources_db, math.inf))
+    scope = N._SelectionScope(N._DeadlineClient(sources_db))
     scope.stage("SELECT 1 AS n")
     scope.stage("SELECT 2 AS n")
     attempted: list[str] = []
     original = scope.client.drop
 
-    def failing_drop(name: str, *, cleanup_budget: float | None = None) -> None:
+    def failing_drop(name: str) -> None:
         attempted.append(name)
         if name == scope.owned[-1]:
             raise duckdb.Error("injected DROP failure")
-        original(name, cleanup_budget=cleanup_budget)
+        original(name)
 
     monkeypatch.setattr(scope.client, "drop", failing_drop)
     with pytest.raises(ValueError, match="primary"):
@@ -495,10 +494,10 @@ def test_cleanup_without_primary_raises_drop_error_in_unrelated_handler(
     monkeypatch: pytest.MonkeyPatch, sources_db: SourcesDuckDBClient
 ) -> None:
     """An unrelated handled exception cannot suppress a successful request's cleanup error."""
-    scope = N._SelectionScope(N._DeadlineClient(sources_db, math.inf))
+    scope = N._SelectionScope(N._DeadlineClient(sources_db))
     scope.stage("SELECT 1 AS n")
 
-    def failing_drop(name: str, *, cleanup_budget: float | None = None) -> None:
+    def failing_drop(name: str) -> None:
         raise duckdb.Error("injected DROP failure")
 
     monkeypatch.setattr(scope.client, "drop", failing_drop)
@@ -516,7 +515,7 @@ def test_selection_memoization(
     """One rows execution compiles its semantic selection once."""
     spec = _spec()
     _seed(sources_db, [_record()])
-    scope = N._SelectionScope(N._DeadlineClient(sources_db, math.inf))
+    scope = N._SelectionScope(N._DeadlineClient(sources_db))
     original = N._selected_sql
     calls = 0
 

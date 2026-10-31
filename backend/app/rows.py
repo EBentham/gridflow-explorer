@@ -8,6 +8,8 @@ import re
 import threading
 import time
 import uuid
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
@@ -32,9 +34,7 @@ from app.sources_spec import SOURCES
 MAX_RESPONSE_ROWS = 50_000
 MAX_DUPLICATE_PROOF = 50_000
 _ROWS_MEMORY_CEILING = "8GiB"
-ROWS_OPERATION_TIMEOUT_SECONDS = 30
 ROWS_REQUEST_TIMEOUT_SECONDS = 30
-MIN_OPERATION_SECONDS = 0.05
 LOG = logging.getLogger(__name__)
 GRAINS = {
     "15s": 15_000,
@@ -227,58 +227,57 @@ def _query_timeout() -> RowsError:
 
 
 class _DeadlineClient:
-    """Bound each database call by the shared monotonic request deadline."""
+    """Run each database call on the client's connection under the active deadline."""
 
-    def __init__(self, client: Any, deadline: float) -> None:
+    def __init__(self, client: Any) -> None:
         self.client = client
-        self.deadline = deadline
         # The installed client has no public interrupt or TEMP DDL.
         self.connection: duckdb.DuckDBPyConnection = client._require_con()
+        self.deadline = math.inf
+        self.expired = False
+
+    @contextmanager
+    def watchdog(self, deadline: float) -> Iterator[None]:
+        """Interrupt the connection from ``deadline`` until the block exits.
+
+        One thread covers every call in the block. It repeats the interrupt, because one
+        that lands between bind and execution is lost, and it is joined on exit, so it
+        never reaches a later call such as TEMP cleanup.
+        """
+        self.deadline = deadline
+        self.expired = False
+        stop = threading.Event()
+
+        def interrupt() -> None:
+            if stop.wait(max(0.0, deadline - time.monotonic())):
+                return
+            self.expired = True
+            while not stop.is_set():
+                self.connection.interrupt()
+                stop.wait(0.05)
+
+        thread = threading.Thread(target=interrupt, daemon=True)
+        thread.start()
+        try:
+            yield
+        finally:
+            stop.set()
+            thread.join()
 
     def check(self) -> None:
         if time.monotonic() >= self.deadline:
             raise _query_timeout()
 
-    def run(self, operation: Any, *, cleanup_budget: float | None = None) -> Any:
-        remaining = self.deadline - time.monotonic() if cleanup_budget is None else cleanup_budget
-        if remaining <= MIN_OPERATION_SECONDS:
-            raise _query_timeout()
-        timeout = min(ROWS_OPERATION_TIMEOUT_SECONDS, remaining)
-        lock = threading.Lock()
-        active = True
-        expired = False
-        stop = threading.Event()
-
-        def interrupt() -> None:
-            nonlocal expired
-            with lock:
-                if not active:
-                    return
-                expired = True
-            while not stop.is_set():
-                self.connection.interrupt()
-                stop.wait(0.05)
-
-        timer = threading.Timer(timeout, interrupt)
-        timer.start()
+    def run(self, operation: Callable[[], Any]) -> Any:
+        self.check()
         try:
-            try:
-                result = operation()
-            except duckdb.InterruptException as exc:
-                with lock:
-                    timed_out = expired
-                if timed_out:
-                    raise _query_timeout() from exc
-                raise
-        finally:
-            with lock:
-                active = False
-                timed_out = expired
-            stop.set()
-            timer.cancel()
-            timer.join()
-        if timed_out or (cleanup_budget is None and time.monotonic() >= self.deadline):
-            raise _query_timeout()
+            result = operation()
+        except duckdb.InterruptException as exc:
+            # An interrupt the watchdog did not send is not a timeout.
+            if self.expired:
+                raise _query_timeout() from exc
+            raise
+        self.check()
         return result
 
     def query(self, sql: str) -> pl.DataFrame:
@@ -290,11 +289,8 @@ class _DeadlineClient:
     def create(self, name: str, sql: str) -> None:
         self.run(lambda: self.connection.execute(f"CREATE TEMP TABLE {_quote(name)} AS {sql}"))
 
-    def drop(self, name: str, *, cleanup_budget: float | None = None) -> None:
-        self.run(
-            lambda: self.connection.execute(f"DROP TABLE IF EXISTS temp.main.{_quote(name)}"),
-            cleanup_budget=cleanup_budget,
-        )
+    def drop(self, name: str) -> None:
+        self.run(lambda: self.connection.execute(f"DROP TABLE IF EXISTS temp.main.{_quote(name)}"))
 
 
 class _SelectionScope:
@@ -333,22 +329,23 @@ class _SelectionScope:
         return self.semantic
 
     def close(self, primary: BaseException | None = None) -> None:
+        """Drop every owned TEMP table within a fresh one-second budget."""
         first_drop_error: duckdb.Error | None = None
-        cleanup_deadline = time.monotonic() + 1
         names = list(reversed(self.owned))
-        for index, name in enumerate(names):
-            try:
-                self.client.drop(name, cleanup_budget=cleanup_deadline - time.monotonic())
-            except RowsError:
-                LOG.warning(
-                    "Rows TEMP cleanup budget exhausted; leaving %s for connection close",
-                    names[index:],
-                )
-                break
-            except duckdb.Error as exc:
-                LOG.exception("Failed to drop rows TEMP table %s", name)
-                if first_drop_error is None:
-                    first_drop_error = exc
+        with self.client.watchdog(time.monotonic() + 1):
+            for index, name in enumerate(names):
+                try:
+                    self.client.drop(name)
+                except RowsError:
+                    LOG.warning(
+                        "Rows TEMP cleanup budget exhausted; leaving %s for connection close",
+                        names[index:],
+                    )
+                    break
+                except duckdb.Error as exc:
+                    LOG.exception("Failed to drop rows TEMP table %s", name)
+                    if first_drop_error is None:
+                        first_drop_error = exc
         if primary is None and first_drop_error is not None:
             raise first_drop_error
 
@@ -870,18 +867,18 @@ def _configure_resources(client: Any) -> None:
 
 def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
     """Execute one rows request with instance resource policy and owned TEMP stages."""
-    bounded = _DeadlineClient(client, time.monotonic() + ROWS_REQUEST_TIMEOUT_SECONDS)
-    _configure_resources(bounded)
+    bounded = _DeadlineClient(client)
     scope = _SelectionScope(bounded)
     try:
-        result = _execute_selected(scope, request, config)
-        bounded.check()
+        with bounded.watchdog(time.monotonic() + ROWS_REQUEST_TIMEOUT_SECONDS):
+            _configure_resources(bounded)
+            result = _execute_selected(scope, request, config)
+            bounded.check()
     except BaseException as primary:
         scope.close(primary)
         raise
-    else:
-        scope.close(None)
-        return result
+    scope.close(None)
+    return result
 
 
 def _execute_selected(client: Any, request: Request, config: str) -> dict[str, Any]:

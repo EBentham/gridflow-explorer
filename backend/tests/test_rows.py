@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import copy
-import math
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -1032,7 +1031,7 @@ def test_declared_difference_is_not_a_capture_duplicate(sources_db, field):
     request = rows.Request("test", spec, None, None, None, (), False)
     with pytest.raises(rows.RowsError) as caught:
         rows._native_collision_check(
-            rows._SelectionScope(rows._DeadlineClient(sources_db, math.inf)),
+            rows._SelectionScope(rows._DeadlineClient(sources_db)),
             request,
             "SELECT * FROM captures",
             "timestamp_utc",
@@ -1261,7 +1260,7 @@ def test_metadata_cache_reuses_checks_and_expires(monkeypatch, sources_db):
     tick = [1000.0]
     monkeypatch.setattr(rows.time, "monotonic", lambda: tick[0])
     key = f"cache-{id(sources_db)}"
-    scope = rows._SelectionScope(rows._DeadlineClient(sources_db, math.inf))
+    scope = rows._SelectionScope(rows._DeadlineClient(sources_db))
     assert rows._metadata(scope, request, key).rows == 1
     assert rows._metadata(scope, request, key).rows == 1
     assert sources_db.table_calls == 1
