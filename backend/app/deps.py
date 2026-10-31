@@ -36,6 +36,32 @@ from app.jobs import JOBS, is_lock_error
 from app.settings import get_settings
 
 
+def open_client() -> GridflowClient:
+    """Open a read-only `GridflowClient`, classifying the two expected failures.
+
+    Shared by `client_ctx` and the fetch preflight, which must not read job
+    state (it runs under the job manager's lock).
+
+    Raises:
+        CatalogueMissing: The DuckDB catalogue file does not exist.
+        RefreshInProgress: DuckDB reports a lock-classified error opening it.
+        duckdb.Error: Any non-lock-classified duckdb error, propagated
+            unchanged as a genuine bug.
+    """
+    try:
+        return GridflowClient(get_settings().duckdb_path)
+    except FileNotFoundError as exc:
+        # str(exc) already carries the path GridflowClient actually resolved
+        # to (its own message includes "Run 'gridflow init'"), which is more
+        # accurate than settings.duckdb_path — that field is often None,
+        # deferring to gridflow's own resolution (see settings.py).
+        raise CatalogueMissing(str(exc)) from exc
+    except duckdb.IOException as exc:
+        if is_lock_error(str(exc)):
+            raise RefreshInProgress("A dataset refresh is in progress. Try again shortly.") from exc
+        raise
+
+
 @contextmanager
 def client_ctx() -> Generator[GridflowClient, None, None]:
     """Acquire a short-lived, read-only `GridflowClient` under the write guard.
@@ -43,11 +69,8 @@ def client_ctx() -> Generator[GridflowClient, None, None]:
     Order of checks:
         1. `JOBS.is_running()` — before constructing any client, so during a
            fetch job there is genuinely no connect attempt.
-        2. Construct the client inside `try`:
-           - `FileNotFoundError` -> `CatalogueMissing`.
-           - `duckdb.IOException` for which `is_lock_error` is true ->
-             `RefreshInProgress`.
-           - every other duckdb error propagates unchanged.
+        2. `open_client()`, which classifies a missing catalogue and a
+           writer's lock and lets every other duckdb error propagate.
         3. Yield the client; `close()` in `finally`, covering the case
            where the loader raises mid-query, so the read handle is never
            leaked back to a waiting writer.
@@ -65,20 +88,7 @@ def client_ctx() -> Generator[GridflowClient, None, None]:
     if JOBS.is_running():
         raise RefreshInProgress("A dataset refresh is in progress. Try again shortly.")
 
-    settings = get_settings()
-    try:
-        client = GridflowClient(settings.duckdb_path)
-    except FileNotFoundError as exc:
-        # str(exc) already carries the path GridflowClient actually resolved
-        # to (its own message includes "Run 'gridflow init'"), which is more
-        # accurate than settings.duckdb_path — that field is often None,
-        # deferring to gridflow's own resolution (see settings.py).
-        raise CatalogueMissing(str(exc)) from exc
-    except duckdb.IOException as exc:
-        if is_lock_error(str(exc)):
-            raise RefreshInProgress("A dataset refresh is in progress. Try again shortly.") from exc
-        raise
-
+    client = open_client()
     try:
         yield client
     finally:

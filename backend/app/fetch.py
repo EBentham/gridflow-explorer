@@ -26,10 +26,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import duckdb
-from gridflow.serving.client import GridflowClient
-
-from app.errors import CatalogueMissing, RefreshInProgress
+from app.deps import open_client
 from app.jobs import JOBS, JobState, is_lock_error
 from app.settings import get_settings
 
@@ -57,37 +54,22 @@ _SUBPROCESS_TIMEOUT_SECONDS = 900
 def probe_writer_lock() -> None:
     """Preflight: raise if a read-write writer currently holds the catalogue.
 
-    Constructs a real `GridflowClient(get_settings().duckdb_path)` and
-    closes it in `finally` — reusing the exact path resolution the read path
-    uses, which yields lock-classified `duckdb.IOException` ->
-    `RefreshInProgress` and `FileNotFoundError` -> `CatalogueMissing` for
-    free, with no separate classification logic to keep in sync.
+    Opens and closes a client through `open_client`, the read path's own
+    open-and-classify step.
 
     **Deliberately NOT `client_ctx()`.** `client_ctx` reads job state
     (`JOBS.is_running()`) while `try_start` holds the manager lock. That
     does not deadlock today only because `is_running()` happens to be
     lockless — a fragility that must not become load-bearing (P3-PLAN.md
-    "The probe"). This function talks to `GridflowClient` directly instead.
+    "The probe").
 
     Raises:
-        RefreshInProgress: A lock-classified `duckdb.IOException` was
-            raised while constructing the client (a writer holds the file).
+        RefreshInProgress: A writer holds the file.
         CatalogueMissing: The DuckDB catalogue file does not exist.
         duckdb.Error: Any non-lock-classified duckdb error, propagated
-            unchanged — mirrors `client_ctx`'s narrow-catch philosophy.
+            unchanged.
     """
-    client: GridflowClient | None = None
-    try:
-        client = GridflowClient(get_settings().duckdb_path)
-    except FileNotFoundError as exc:
-        raise CatalogueMissing(str(exc)) from exc
-    except duckdb.IOException as exc:
-        if is_lock_error(str(exc)):
-            raise RefreshInProgress("A dataset refresh is in progress. Try again shortly.") from exc
-        raise
-    finally:
-        if client is not None:
-            client.close()
+    open_client().close()
 
 
 def build_command(spec: DatasetSpec, start: date, end: date) -> list[str]:
