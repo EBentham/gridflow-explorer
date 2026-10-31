@@ -13,18 +13,24 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from enum import StrEnum
 from typing import Any
-from zoneinfo import ZoneInfo
 
 import duckdb
 import polars as pl
 
-from app.sources import _required_columns
+from app.sources import (
+    LONDON,
+    TTL_SECONDS,
+    _clock_kind,
+    _instant,
+    _literal,
+    _quote,
+    _required_columns,
+    _uk_day,
+)
 from app.sources_spec import SOURCES
 
-LONDON = ZoneInfo("Europe/London")
 MAX_RESPONSE_ROWS = 50_000
 MAX_DUPLICATE_PROOF = 50_000
-TTL_SECONDS = 600
 _ROWS_MEMORY_CEILING = "8GiB"
 ROWS_OPERATION_TIMEOUT_SECONDS = 30
 ROWS_REQUEST_TIMEOUT_SECONDS = 30
@@ -100,20 +106,6 @@ class RowsError(Exception):
 
 def _error(code: RowsErrorCode, message: str, **details: Any) -> RowsError:
     return RowsError(code, message, details=details)
-
-
-def _quote(value: str) -> str:
-    return '"' + value.replace('"', '""') + '"'
-
-
-def _literal(value: Any) -> str:
-    if value is None:
-        return "NULL"
-    if isinstance(value, bool):
-        return "TRUE" if value else "FALSE"
-    if isinstance(value, (int, float)):
-        return str(value)
-    return "'" + str(value).replace("'", "''") + "'"
 
 
 def _registry() -> dict[tuple[str, str], dict[str, Any]]:
@@ -435,29 +427,6 @@ def cached_status(request: Request, config: str) -> Metadata | None:
         if hit and time.monotonic() - hit[0] < TTL_SECONDS:
             return hit[1]
     return None
-
-
-def _clock_kind(column: str, types: dict[str, str]) -> str | None:
-    kind = types[column].upper()
-    if kind == "DATE":
-        return "date"
-    if kind == "TIMESTAMPTZ" or "WITH TIME ZONE" in kind:
-        return "aware"
-    if kind.startswith("TIMESTAMP") and column.endswith("_utc"):
-        return "naive_utc"
-    return None
-
-
-def _instant(column: str, types: dict[str, str]) -> str:
-    name = _quote(column)
-    return f"timezone('UTC', {name})" if _clock_kind(column, types) == "naive_utc" else name
-
-
-def _uk_day(column: str, types: dict[str, str]) -> str:
-    name = _instant(column, types)
-    if _clock_kind(column, types) == "date":
-        return name
-    return f"CAST(timezone('Europe/London', {name}) AS DATE)"
 
 
 def _selected_sql(relation: str, dataset: dict[str, Any]) -> str:

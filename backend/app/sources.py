@@ -180,19 +180,30 @@ def _required_columns(dataset: dict[str, Any]) -> set[str]:
     return columns
 
 
-def _uk_date(column: str, types: dict[str, str]) -> str:
-    quoted = _quote(column)
+def _clock_kind(column: str, types: dict[str, str]) -> str | None:
     kind = types[column].upper()
     if kind == "DATE":
-        return quoted
-    if "WITH TIME ZONE" in kind or kind == "TIMESTAMPTZ":
-        return f"CAST(timezone('Europe/London', {quoted}) AS DATE)"
-    if kind.startswith("TIMESTAMP"):
-        # Naive timestamps are accepted only for the committed UTC-named clock.
-        if not column.endswith("_utc"):
-            raise ValueError(f"Naive timestamp has no verified UTC encoding: {column}")
-        return f"CAST(timezone('Europe/London', timezone('UTC', {quoted})) AS DATE)"
-    raise ValueError(f"Unsupported date column type: {column} {kind}")
+        return "date"
+    if kind == "TIMESTAMPTZ" or "WITH TIME ZONE" in kind:
+        return "aware"
+    # Naive timestamps are accepted only for the committed UTC-named clock.
+    if kind.startswith("TIMESTAMP") and column.endswith("_utc"):
+        return "naive_utc"
+    return None
+
+
+def _instant(column: str, types: dict[str, str]) -> str:
+    name = _quote(column)
+    return f"timezone('UTC', {name})" if _clock_kind(column, types) == "naive_utc" else name
+
+
+def _uk_day(column: str, types: dict[str, str]) -> str:
+    kind = _clock_kind(column, types)
+    if kind is None:
+        raise ValueError(f"Unsupported or unverified date column type: {column} {types[column]}")
+    if kind == "date":
+        return _quote(column)
+    return f"CAST(timezone('Europe/London', {_instant(column, types)}) AS DATE)"
 
 
 def _selected_sql(relation: str, dataset: dict[str, Any]) -> str:
@@ -231,13 +242,13 @@ def _coverage_sql(relation: str, dataset: dict[str, Any], types: dict[str, str])
     reference = dataset["kind"] == "reference"
     clock = dataset["clock"]
     day = (
-        _uk_date(clock["column"], types)
+        _uk_day(clock["column"], types)
         if not reference and clock and clock["column"]
         else "CAST(NULL AS DATE)"
     )
     rule = dataset["latest_day_rule"]
     anchor = (
-        _uk_date(rule["column"], types)
+        _uk_day(rule["column"], types)
         if not reference and rule["mode"] == "max"
         else "CAST(NULL AS DATE)"
     )
@@ -342,7 +353,7 @@ def build_manifest(client: Any, *, generated_at: datetime | None = None) -> dict
                                 date_columns.append(rule["column"])
                         for column in set(date_columns) - missing:
                             try:
-                                _uk_date(column, types)
+                                _uk_day(column, types)
                             except ValueError as exc:
                                 invalid_dates.append(str(exc))
                     if selected not in tables or missing or invalid_dates:
