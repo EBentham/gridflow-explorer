@@ -7,7 +7,7 @@ from collections import Counter
 from pathlib import Path
 
 from app.sources import validate_spec
-from app.sources_spec import SOURCES
+from app.sources_spec import DATASET_DEFAULTS, SOURCES
 
 
 def _datasets():
@@ -96,3 +96,11 @@ def test_spec_uses_literal_columns_and_null_unknown_units() -> None:
         for key in ("default_filter", "row_filter"):
             rule = dataset[key]
             assert rule is None or set(rule) == {"column", "equals"}
+
+
+def test_left_out_keys_are_filled_with_fresh_values() -> None:
+    """Every reader indexes the full key set; one shared default list would leak notes."""
+    datasets = [d for _, _, d in _datasets()]
+    assert all(set(DATASET_DEFAULTS) <= set(d) for d in datasets)
+    assert len({id(d["notes"]) for d in datasets}) == len(datasets)
+    assert all(d["clock"] is None or "settlement_cols" in d["clock"] for d in datasets)

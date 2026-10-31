@@ -311,7 +311,7 @@ def build_manifest(client: Any, *, generated_at: datetime | None = None) -> dict
                 candidate = dataset["base_relation"]
                 latest = dataset["latest_relation"]
                 if cause:
-                    if (candidate and candidate in tables) or (latest and latest in tables):
+                    if candidate in tables or latest in tables:
                         LOG.warning(
                             "Declared not held but catalogue relation exists: %s/%s (%s)",
                             source["key"],
@@ -320,7 +320,7 @@ def build_manifest(client: Any, *, generated_at: datetime | None = None) -> dict
                         )
                     public.update(held=False, relation=None, not_held_cause=cause, coverage=None)
                 else:
-                    selected = latest if latest and latest in tables else candidate
+                    selected = latest if latest in tables else candidate
                     types = columns.get(selected, {})
                     missing = _required_columns(dataset) - set(types)
                     invalid_dates = []

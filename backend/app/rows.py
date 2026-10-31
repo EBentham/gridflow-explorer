@@ -507,7 +507,7 @@ def _metadata(client: Any, request: Request, config: str) -> Metadata:
     dataset = request.dataset
     tables = set(client.get_tables())
     relation = dataset["latest_relation"]
-    if not relation or relation not in tables:
+    if relation not in tables:
         relation = dataset["base_relation"]
     types: dict[str, str] = {}
     if relation in tables:

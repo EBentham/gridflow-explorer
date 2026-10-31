@@ -1,11 +1,15 @@
 # ruff: noqa: E501
-"""Committed source and dataset specifications (v1).
+"""Committed source and dataset specifications.
 
-Generated from the P3 seed, SCOPE, fixture metadata and gridflow schedules.
-No runtime file reads. Long literals preserve canonical dataset identifiers.
+Hand-maintained; no runtime file reads. Long literals preserve canonical dataset
+identifiers. A key whose value would be None or an empty list is left out and filled
+from the defaults at the end of this module, and relation names follow gridflow's view
+naming, so neither is spelled out per dataset.
 """
 
-FORMAT_VERSION = 1
+import copy
+from typing import Any
+
 SOURCES = [
     {
         "key": "elexon",
@@ -22,16 +26,12 @@ SOURCES = [
                 "kind": "series",
                 "page": "pinned",
                 "route": "/datasets/generation-mix",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "fuelhh",
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_fuelhh",
-                        "latest_relation": "silver_elexon_fuelhh_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -48,10 +48,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "fuel_type", "role": "series", "cardinality": 21}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "local hole: 2026-09-06 holds 40 rows (2 periods), "
@@ -79,16 +75,12 @@ SOURCES = [
                 "kind": "series",
                 "page": "pinned",
                 "route": "/datasets/system-prices",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "system_prices",
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_system_prices",
-                        "latest_relation": "silver_elexon_system_prices_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -115,10 +107,6 @@ SOURCES = [
                         "dims": [
                             {"column": "price_derivation_code", "role": "filter", "cardinality": 3}
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "base relation is APPEND_ONLY: 96,313 rows vs 88,456 in "
@@ -148,21 +136,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/elexon/generation-by-fuel-type-instantaneous",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "fuelinst",
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_fuelinst",
-                        "latest_relation": "silver_elexon_fuelinst_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "5min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "5min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -172,10 +152,7 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "fuel_type", "role": "series", "cardinality": 20}],
-                        "default_filter": None,
                         "dedup": {"keys": ["timestamp_utc", "fuel_type"], "order_by": []},
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "medium",
                         "notes": [
                             "80 duplicate (timestamp_utc, fuel_type) rows (28,900 rows "
@@ -194,16 +171,12 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/elexon/actual-generation-by-production-type",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "agpt",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_agpt",
-                        "latest_relation": "silver_elexon_agpt_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -221,10 +194,6 @@ SOURCES = [
                             {"column": "psr_type", "role": "series", "cardinality": 11},
                             {"column": "business_type", "role": "filter", "cardinality": 3},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "psr_type holds human-readable labels ('Fossil Gas', 'Wind "
@@ -240,9 +209,6 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_agws",
-                        "latest_relation": "silver_elexon_agws_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -260,10 +226,6 @@ SOURCES = [
                             {"column": "psr_type", "role": "series", "cardinality": 3},
                             {"column": "business_type", "role": "filter", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "Solar is present and material (about 12.7 GW midday peak, "
@@ -280,16 +242,12 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/elexon/market-index-price",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "mid",
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_mid",
-                        "latest_relation": "silver_elexon_mid_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -312,9 +270,6 @@ SOURCES = [
                             {"column": "data_provider_id", "role": "series", "cardinality": 2}
                         ],
                         "default_filter": {"column": "data_provider_id", "equals": "APXMIDP"},
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "N2EXMIDP is almost always empty: 87,351 of 87,547 rows "
@@ -350,16 +305,12 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/elexon/market-depth",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "market_depth",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_market_depth",
-                        "latest_relation": "silver_elexon_market_depth_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -395,11 +346,6 @@ SOURCES = [
                                 "label": "priced accepted bid volume",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "non-contiguous local days: 1-5 Aug, then 1, 17 and 21 Sep only",
@@ -424,26 +370,17 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/elexon/system-frequency",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "freq",
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_freq",
-                        "latest_relation": "silver_elexon_freq_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "15s", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "15s"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {"column": "frequency_hz", "unit": "Hz", "label": "system frequency"}
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "medium",
                         "notes": [
                             "4 duplicate instants (28,805 rows vs 28,801 keys), at "
@@ -466,16 +403,12 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/elexon/demand-outturn",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "indo",
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_indo",
-                        "latest_relation": "silver_elexon_indo_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -489,11 +422,6 @@ SOURCES = [
                                 "label": "initial national demand outturn",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "first-publish outturn, revised later (vault)",
@@ -509,9 +437,6 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_itsdo",
-                        "latest_relation": "silver_elexon_itsdo_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -525,11 +450,6 @@ SOURCES = [
                                 "label": "initial transmission system demand outturn",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "ITSDO runs above INDO by about 2,375 MW (vault)",
@@ -544,9 +464,6 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_indod",
-                        "latest_relation": "silver_elexon_indod_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "1d",
@@ -560,11 +477,6 @@ SOURCES = [
                                 "label": "initial national demand outturn, daily total",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "unit unsettled: the column is named _mw, but values run "
@@ -585,9 +497,6 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_atl",
-                        "latest_relation": "silver_elexon_atl_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -601,11 +510,6 @@ SOURCES = [
                                 "label": "actual total load per bidding zone (B0610)",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "thin: 26-33 of 48 periods per day (142 of about 240 "
@@ -624,16 +528,12 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/elexon/demand-forecasts",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "ndf",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_ndf",
-                        "latest_relation": "silver_elexon_ndf_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -648,15 +548,12 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "forecast_type", "role": "filter", "cardinality": 1}],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["settlement_date", "settlement_period"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "medium",
                         "notes": [
                             "every vintage is kept (published_at is in the key): "
@@ -679,9 +576,6 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_tsdf",
-                        "latest_relation": "silver_elexon_tsdf_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -697,15 +591,12 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "boundary", "role": "filter", "cardinality": 18}],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["settlement_date", "settlement_period", "boundary"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "medium",
                         "notes": [
                             "vintage inversion: the API returns newest-first, and "
@@ -733,9 +624,6 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_ndfd",
-                        "latest_relation": "silver_elexon_ndfd_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "1d",
@@ -752,15 +640,12 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "forecast_type", "role": "filter", "cardinality": 1}],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["settlement_date"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "settlement_period is a placeholder 1, so join on the date (vault)",
@@ -783,10 +668,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_tsdfd",
-                        "latest_relation": "silver_elexon_tsdfd_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "forecast_date", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "forecast_date", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
                             {
@@ -796,16 +678,12 @@ SOURCES = [
                                 "ahead, one figure per delivery day",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["forecast_date"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "the key is (forecast_date) only, but 39 rows / 17 dates "
@@ -826,16 +704,12 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/elexon/indicated-demand-and-generation",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "inddem",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_inddem",
-                        "latest_relation": "silver_elexon_inddem_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -852,15 +726,12 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "boundary", "role": "filter", "cardinality": 18}],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["settlement_date", "settlement_period", "boundary"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "medium",
                         "notes": [
                             "same vintage inversion as tsdf: keep='last' keeps the "
@@ -879,9 +750,6 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_indgen",
-                        "latest_relation": "silver_elexon_indgen_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -896,15 +764,12 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "boundary", "role": "filter", "cardinality": 18}],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["settlement_date", "settlement_period", "boundary"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "medium",
                         "notes": [
                             "same transformer shape as inddem (indgen.py:117), so the "
@@ -923,16 +788,12 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/elexon/indicated-imbalance-and-export-limits",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "imbalngc",
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_imbalngc",
-                        "latest_relation": "silver_elexon_imbalngc_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -947,16 +808,12 @@ SOURCES = [
                                 "system short, positive = long)",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["settlement_date", "settlement_period"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "boundary dropped: bronze carries 18 boundaries (N, "
@@ -984,9 +841,6 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_melngc",
-                        "latest_relation": "silver_elexon_melngc_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -1002,16 +856,12 @@ SOURCES = [
                                 "locally",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["settlement_date", "settlement_period"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "identical defect to imbalngc: 18 boundaries in bronze, "
@@ -1034,16 +884,12 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/elexon/loss-of-load-probability-and-de-rated-margin",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "lolpdrm",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_lolpdrm",
-                        "latest_relation": "silver_elexon_lolpdrm_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -1062,16 +908,12 @@ SOURCES = [
                                 "label": "de-rated margin",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["settlement_date", "settlement_period"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "loss_of_load_probability is 0.0 on all 510 rows "
@@ -1098,17 +940,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/elexon/wind-generation-forecast",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "windfor",
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_windfor",
-                        "latest_relation": "silver_elexon_windfor_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1h", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1h"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
                             {
@@ -1117,16 +955,12 @@ SOURCES = [
                                 "label": "wind generation forecast",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["timestamp_utc"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "every vintage kept (key timestamp_utc + published_at): "
@@ -1148,16 +982,12 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/elexon/availability-2-to-14-days-ahead",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "fou2t14d",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_fou2t14d",
-                        "latest_relation": "silver_elexon_fou2t14d_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "1d",
@@ -1172,10 +1002,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "fuel_type", "role": "series", "cardinality": 19}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "APPEND_ONLY: base 29,887 rows (about 41,800 per 7 publish "
@@ -1198,9 +1024,6 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_uou2t14d",
-                        "latest_relation": "silver_elexon_uou2t14d_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "1d",
@@ -1223,15 +1046,12 @@ SOURCES = [
                                 "cardinality": 465,
                             },
                         ],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["settlement_date", "bm_unit_id"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "medium",
                         "notes": [
                             "no _latest view: base 32,382 rows / 8,358 keys, up to 5 "
@@ -1261,21 +1081,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/elexon/temperature",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "temp",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_temp",
-                        "latest_relation": "silver_elexon_temp_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "measurement_date",
-                            "grain": "1d",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "measurement_date", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "measurement_date"},
                         "values": [
                             {
@@ -1284,11 +1096,6 @@ SOURCES = [
                                 "label": "measured GB temperature (vault: Celsius)",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "timestamp_utc is the publish instant (16:45 local each "
@@ -1305,17 +1112,12 @@ SOURCES = [
                 "label": "Non-BM STOR",
                 "kind": "series",
                 "page": "not-built",
-                "route": None,
-                "notes": [],
                 "datasets": [
                     {
                         "id": "nonbm",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "broken",
-                        "base_relation": "silver_elexon_nonbm",
-                        "latest_relation": "silver_elexon_nonbm_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -1329,11 +1131,6 @@ SOURCES = [
                                 "label": "non-BM STOR generation",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "5 identical rows: 2026-04-01 SP22, 0.0 MW, published "
@@ -1359,16 +1156,12 @@ SOURCES = [
                 "kind": "series",
                 "page": "table-only",
                 "route": "/sources/elexon/net-balancing-services-adjustment",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "netbsad",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_netbsad",
-                        "latest_relation": "silver_elexon_netbsad_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -1417,11 +1210,6 @@ SOURCES = [
                                 "label": "price adjustment to sell price",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "4 duplicate keys (SP3 on 2-5 Aug; 245 rows / 241 keys) "
@@ -1464,16 +1252,12 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/elexon/physical-notifications-per-bm-unit",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "pn",
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_elexon_pn",
-                        "latest_relation": "silver_elexon_pn_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -1493,10 +1277,6 @@ SOURCES = [
                             },
                         ],
                         "dims": [{"column": "bm_unit_id", "role": "filter", "cardinality": 2490}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "large",
                         "notes": [
                             "non-contiguous: 1-5 Aug are full (48 SPs x 2,465 units = "
@@ -1521,16 +1301,12 @@ SOURCES = [
                 "kind": "events",
                 "page": "build",
                 "route": "/sources/elexon/bid-offer-acceptances",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "boal",
                         "schedule": "hourly",
                         "kind": "events",
                         "verdict": "events-table",
-                        "base_relation": "silver_elexon_boal",
-                        "latest_relation": "silver_elexon_boal_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -1554,10 +1330,6 @@ SOURCES = [
                             {"column": "bm_unit_id", "role": "filter", "cardinality": 386},
                             {"column": "so_flag", "role": "filter", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "medium",
                         "notes": [
                             "132 duplicate keys (58,981 rows vs 58,849 on date, SP, "
@@ -1581,16 +1353,12 @@ SOURCES = [
                 "kind": "events",
                 "page": "build",
                 "route": "/sources/elexon/disaggregated-balancing-services-adjustments",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "disbsad",
                         "schedule": "daily",
                         "kind": "events",
                         "verdict": "events-table",
-                        "base_relation": "silver_elexon_disbsad",
-                        "latest_relation": "silver_elexon_disbsad_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -1614,10 +1382,6 @@ SOURCES = [
                                 "cardinality": 121,
                             },
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "component null on 2.4% of rows (values Energy, System, "
@@ -1635,21 +1399,13 @@ SOURCES = [
                 "kind": "events",
                 "page": "build",
                 "route": "/sources/elexon/remit-outage-messages",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "remit",
                         "schedule": "daily",
                         "kind": "events",
                         "verdict": "events-table",
-                        "base_relation": "silver_elexon_remit",
-                        "latest_relation": "silver_elexon_remit_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "event",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "event"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -1674,10 +1430,6 @@ SOURCES = [
                             {"column": "event_status", "role": "filter", "cardinality": 3},
                             {"column": "participant_id", "role": "filter", "cardinality": 41},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "APPEND_ONLY: base 890 rows vs _latest 370 (one per mrid)",
@@ -1703,16 +1455,12 @@ SOURCES = [
                 "kind": "events",
                 "page": "build",
                 "route": "/sources/elexon/system-operator-to-system-operator-trades",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "soso",
                         "schedule": "daily",
                         "kind": "events",
                         "verdict": "events-table",
-                        "base_relation": "silver_elexon_soso",
-                        "latest_relation": "silver_elexon_soso_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "1h",
@@ -1736,10 +1484,6 @@ SOURCES = [
                             {"column": "trade_direction", "role": "filter", "cardinality": 2},
                             {"column": "resource_provider", "role": "filter", "cardinality": 4},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "medium",
                         "notes": [
                             "end_time is 100% null",
@@ -1758,17 +1502,13 @@ SOURCES = [
                 "kind": "reference",
                 "page": "table-only",
                 "route": "/sources/elexon/bm-unit-register",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "bmunits_reference",
                         "schedule": "weekly",
                         "kind": "reference",
                         "verdict": "reference-table",
-                        "base_relation": "silver_elexon_bmunits_reference",
-                        "latest_relation": "silver_elexon_bmunits_reference_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": None, "grain": "snapshot", "settlement_cols": []},
+                        "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
                             {
@@ -1782,10 +1522,6 @@ SOURCES = [
                             {"column": "gsp_group_id", "role": "filter", "cardinality": 14},
                             {"column": "company_name", "role": "filter", "cardinality": 376},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "fuel_type null on 83.4% of rows; gsp_group_id null on 60.7%",
@@ -1820,21 +1556,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/entsoe/load-actual-and-forecast",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "actual_load",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_actual_load",
-                        "latest_relation": "silver_entsoe_actual_load_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "15min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "15min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -1844,10 +1572,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "area_code", "role": "series", "cardinality": 4}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "no GB and no IE-SEM rows: areas are FR, BE, NL, DE-LU. GB "
@@ -1864,14 +1588,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_load_forecast",
-                        "latest_relation": "silver_entsoe_load_forecast_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "15min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "15min"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
                             {
@@ -1881,10 +1598,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "area_code", "role": "series", "cardinality": 4}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "no GB/IE rows (FR, BE, NL, DE-LU)",
@@ -1898,10 +1611,7 @@ SOURCES = [
                         "schedule": "weekly",
                         "kind": "series",
                         "verdict": "broken",
-                        "base_relation": "silver_entsoe_load_forecast_weekly",
-                        "latest_relation": "silver_entsoe_load_forecast_weekly_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
                             {
@@ -1913,10 +1623,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "area_code", "role": "series", "cardinality": 4}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "SILVER BUG: bronze carries two series per zone "
@@ -1936,10 +1642,7 @@ SOURCES = [
                         "schedule": "monthly",
                         "kind": "series",
                         "verdict": "broken",
-                        "base_relation": "silver_entsoe_load_forecast_monthly",
-                        "latest_relation": "silver_entsoe_load_forecast_monthly_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "7d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "7d"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
                             {
@@ -1950,10 +1653,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "area_code", "role": "series", "cardinality": 4}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "SILVER BUG: min/max collapse, as in load_forecast_weekly "
@@ -1969,10 +1668,7 @@ SOURCES = [
                         "schedule": "yearly",
                         "kind": "series",
                         "verdict": "broken",
-                        "base_relation": "silver_entsoe_load_forecast_yearly",
-                        "latest_relation": "silver_entsoe_load_forecast_yearly_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "7d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "7d"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
                             {
@@ -1982,10 +1678,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "area_code", "role": "series", "cardinality": 4}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "SILVER BUG: bronze has A60 + A61 per zone at P7D; silver keeps one",
@@ -2002,17 +1694,13 @@ SOURCES = [
                 "kind": "reference",
                 "page": "table-only",
                 "route": "/sources/entsoe/installed-capacity-yearly",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "forecast_margin",
                         "schedule": "yearly",
                         "kind": "reference",
                         "verdict": "reference-table",
-                        "base_relation": "silver_entsoe_forecast_margin",
-                        "latest_relation": "silver_entsoe_forecast_margin_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1y", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1y"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
                             {
@@ -2022,15 +1710,12 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "area_code", "role": "series", "cardinality": 4}],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["timestamp_utc", "area_code"],
                             "order_by": [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "48 rows = 4 distinct keys x12 identical copies (one per fetched day)",
@@ -2045,10 +1730,7 @@ SOURCES = [
                         "schedule": "weekly",
                         "kind": "reference",
                         "verdict": "reference-table",
-                        "base_relation": "silver_entsoe_installed_capacity",
-                        "latest_relation": "silver_entsoe_installed_capacity_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1y", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1y"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
                             {
@@ -2062,15 +1744,12 @@ SOURCES = [
                             {"column": "area_code", "role": "filter", "cardinality": 4},
                             {"column": "production_type", "role": "series", "cardinality": 21},
                         ],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["timestamp_utc", "area_code", "production_type"],
                             "order_by": [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "804 rows = 67 distinct keys x12 identical copies (one per "
@@ -2084,10 +1763,7 @@ SOURCES = [
                         "schedule": "yearly",
                         "kind": "reference",
                         "verdict": "reference-table",
-                        "base_relation": "silver_entsoe_installed_capacity_units",
-                        "latest_relation": "silver_entsoe_installed_capacity_units_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1y", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1y"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
                             {
@@ -2101,15 +1777,12 @@ SOURCES = [
                             {"column": "production_type", "role": "filter", "cardinality": 18},
                             {"column": "unit_mrid", "role": "filter", "cardinality": 639},
                         ],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["timestamp_utc", "area_code", "unit_mrid"],
                             "order_by": [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "7,668 rows = 639 distinct keys x12 copies; 1 key has "
@@ -2128,20 +1801,15 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/entsoe/generation-actual-and-forecast",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "actual_generation",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "broken",
-                        "base_relation": "silver_entsoe_actual_generation",
-                        "latest_relation": "silver_entsoe_actual_generation_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "mixed (PT15M FR/NL/DE-LU, PT60M BE, PT30M IE-SEM)",
-                            "settlement_cols": [],
                         },
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -2157,10 +1825,6 @@ SOURCES = [
                             {"column": "area_code", "role": "filter", "cardinality": 5},
                             {"column": "production_type", "role": "series", "cardinality": 19},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "medium",
                         "notes": [
                             "SILVER BUG: the parser maps both inBiddingZone "
@@ -2187,14 +1851,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_generation_forecast",
-                        "latest_relation": "silver_entsoe_generation_forecast_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "mixed (PT15M, PT60M BE)",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "mixed (PT15M, PT60M BE)"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
                             {
@@ -2205,10 +1862,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "area_code", "role": "series", "cardinality": 4}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "production_type is '' on every row. The vault says it's "
@@ -2225,14 +1878,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_wind_solar_forecast",
-                        "latest_relation": "silver_entsoe_wind_solar_forecast_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "mixed (PT15M, PT60M)",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "mixed (PT15M, PT60M)"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
                             {
@@ -2245,10 +1891,6 @@ SOURCES = [
                             {"column": "area_code", "role": "filter", "cardinality": 5},
                             {"column": "production_type", "role": "series", "cardinality": 3},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "production_type B16 solar, B18 wind offshore, B19 wind "
@@ -2264,14 +1906,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_actual_generation_units",
-                        "latest_relation": "silver_entsoe_actual_generation_units_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "mixed (PT15M, PT60M)",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "mixed (PT15M, PT60M)"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -2285,10 +1920,6 @@ SOURCES = [
                             {"column": "production_type", "role": "filter", "cardinality": 11},
                             {"column": "unit_mrid", "role": "series", "cardinality": 175},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "medium",
                         "notes": [
                             "unit_name is '' on every row (1 distinct value). Names "
@@ -2309,20 +1940,15 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/entsoe/day-ahead-prices",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "day_ahead_prices",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_day_ahead_prices",
-                        "latest_relation": "silver_entsoe_day_ahead_prices_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "mixed (PT15M continental, PT60M IE-SEM)",
-                            "settlement_cols": [],
                         },
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -2336,10 +1962,6 @@ SOURCES = [
                             {"column": "area_code", "role": "series", "cardinality": 5},
                             {"column": "currency", "role": "filter", "cardinality": 1},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "no GB rows: DE-LU, FR, BE, NL, IE-SEM. GB day-ahead is on "
@@ -2359,17 +1981,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "table-only",
                 "route": "/sources/entsoe/hydro-reservoirs",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "water_reservoirs",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_water_reservoirs",
-                        "latest_relation": "silver_entsoe_water_reservoirs_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "7d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "7d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -2379,15 +1997,12 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "area_code", "role": "series", "cardinality": 1}],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["timestamp_utc", "area_code"],
                             "order_by": [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "FR only; 11 rows, 3 distinct weekly points (x3.7 "
@@ -2405,21 +2020,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/entsoe/cross-border-flows-and-schedules",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "cross_border_flows",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_cross_border_flows",
-                        "latest_relation": "silver_entsoe_cross_border_flows_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "mixed (PT15M, PT60M)",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "mixed (PT15M, PT60M)"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -2433,10 +2040,6 @@ SOURCES = [
                             {"column": "in_area_code", "role": "series", "cardinality": 3},
                             {"column": "out_area_code", "role": "series", "cardinality": 5},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "8 pairs (client.py _FLOW_PAIRS). GB>FR has only 432 rows "
@@ -2453,13 +2056,9 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_commercial_schedules",
-                        "latest_relation": "silver_entsoe_commercial_schedules_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "mixed (PT15M, PT60M GB pairs)",
-                            "settlement_cols": [],
                         },
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -2475,10 +2074,6 @@ SOURCES = [
                             {"column": "out_area_code", "role": "series", "cardinality": 5},
                             {"column": "business_type", "role": "filter", "cardinality": 1},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "8 pairs, including GB>FR, GB>NL, GB>BE and GB>IE-SEM; 0 "
@@ -2491,14 +2086,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_net_positions",
-                        "latest_relation": "silver_entsoe_net_positions_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "15min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "15min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -2513,10 +2101,6 @@ SOURCES = [
                             {"column": "in_area_code", "role": "series", "cardinality": 5},
                             {"column": "out_area_code", "role": "series", "cardinality": 4},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "one side of every row is the literal placeholder "
@@ -2540,21 +2124,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/entsoe/transfer-capacity",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "net_transfer_capacity",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_net_transfer_capacity",
-                        "latest_relation": "silver_entsoe_net_transfer_capacity_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "60min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "60min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -2568,10 +2144,6 @@ SOURCES = [
                             {"column": "in_area_code", "role": "series", "cardinality": 2},
                             {"column": "out_area_code", "role": "series", "cardinality": 5},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "6 pairs: GB>NL, GB>FR, GB>BE, GB>IE-SEM, NL>BE, NL>DE-LU; "
@@ -2584,14 +2156,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_dc_link_intraday_transfer_limits",
-                        "latest_relation": "silver_entsoe_dc_link_intraday_transfer_limits_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "60min (sparse)",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "60min (sparse)"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -2604,10 +2169,6 @@ SOURCES = [
                             {"column": "in_area_code", "role": "series", "cardinality": 1},
                             {"column": "out_area_code", "role": "series", "cardinality": 1},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "GB>NL only; 24 rows (22 on 1 Aug, 1 each on 5 and 6 Aug). "
@@ -2621,11 +2182,8 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsoe_offered_transfer_capacity_continuous",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty:OFFERED_TRANSFER_CAPACITIES_IMPLICIT "
                         "[11.1]",
-                        "clock": None,
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2635,12 +2193,6 @@ SOURCES = [
                                 "per transformer",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
-                        "volume_class": None,
                         "notes": [
                             "request sends Auction.Type=A01 like the implicit variant; "
                             "the vendor ack names OFFERED_TRANSFER_CAPACITIES_IMPLICIT "
@@ -2657,11 +2209,8 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsoe_offered_transfer_capacity_implicit",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty:OFFERED_TRANSFER_CAPACITIES_IMPLICIT "
                         "[11.1]",
-                        "clock": None,
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2670,12 +2219,6 @@ SOURCES = [
                                 "label": "offered capacity, implicit allocation (A31)",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
-                        "volume_class": None,
                         "notes": [
                             "GB borders have no implicit day-ahead allocation "
                             "post-Brexit, so empty is expected for GB pairs. "
@@ -2687,11 +2230,8 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsoe_offered_transfer_capacity_explicit",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty:OFFERED_TRANSFER_CAPACITIES_IMPLICIT "
                         "[11.1]",
-                        "clock": None,
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2700,12 +2240,6 @@ SOURCES = [
                                 "label": "offered capacity, explicit allocation (A31)",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
-                        "volume_class": None,
                         "notes": [
                             "request sends auction.Type=A01 plus auction.Category=A01; "
                             "the vendor ack names the IMPLICIT data item",
@@ -2721,10 +2255,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsoe_transfer_capacity_use",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty:USE_OF_TRANSFER_CAPACITY [12.1.A]",
-                        "clock": None,
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2733,26 +2264,15 @@ SOURCES = [
                                 "label": "use of transfer capacity (A25)",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
-                        "volume_class": None,
-                        "notes": [],
                     },
                     {
                         "id": "total_nominated_capacity",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_total_nominated_capacity",
-                        "latest_relation": "silver_entsoe_total_nominated_capacity_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "mixed (PT15M FR-DE, PT60M GB pairs)",
-                            "settlement_cols": [],
                         },
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -2766,10 +2286,6 @@ SOURCES = [
                             {"column": "in_area_code", "role": "series", "cardinality": 2},
                             {"column": "out_area_code", "role": "series", "cardinality": 4},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "pairs GB>NL, GB>BE, GB>FR, FR>DE-LU; 0 duplicates",
@@ -2781,14 +2297,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_total_capacity_allocated",
-                        "latest_relation": "silver_entsoe_total_capacity_allocated_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "60min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "60min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -2802,10 +2311,6 @@ SOURCES = [
                             {"column": "in_area_code", "role": "series", "cardinality": 3},
                             {"column": "out_area_code", "role": "series", "cardinality": 3},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "pairs GB>NL, GB>BE, FR>DE-LU, FR>BE, NL>DE-LU, NL>BE; 0 duplicates",
@@ -2820,21 +2325,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/entsoe/auction-revenue-and-congestion-income",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "auction_revenue",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_auction_revenue",
-                        "latest_relation": "silver_entsoe_auction_revenue_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "60min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "60min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -2849,7 +2346,6 @@ SOURCES = [
                             {"column": "in_area_code", "role": "series", "cardinality": 1},
                             {"column": "out_area_code", "role": "series", "cardinality": 2},
                         ],
-                        "default_filter": None,
                         "dedup": {
                             "keys": [
                                 "timestamp_utc",
@@ -2861,8 +2357,6 @@ SOURCES = [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "432 rows, 264 distinct keys: x1.64 duplicates (identical "
@@ -2879,11 +2373,8 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsoe_congestion_income",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty:IMPL_ALLOC_CONG_INCOME_FLOW_BASED "
                         "[12.1.E]",
-                        "clock": None,
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2892,12 +2383,6 @@ SOURCES = [
                                 "label": "congestion income (A25)",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
-                        "volume_class": None,
                         "notes": [
                             "The request asks for the implicit/flow-based data item. "
                             "GB borders are explicit, so empty is expected for "
@@ -2911,18 +2396,13 @@ SOURCES = [
                 "label": "Imbalance prices and volumes",
                 "kind": "series",
                 "page": "not-built",
-                "route": None,
-                "notes": [],
                 "datasets": [
                     {
                         "id": "imbalance_prices",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsoe_imbalance_prices",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty:IMBALANCE_PRICES_R3 [17.1.G]",
-                        "clock": None,
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2931,12 +2411,6 @@ SOURCES = [
                                 "label": "imbalance price long/short (A85)",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
-                        "volume_class": None,
                         "notes": [
                             "As configured it can never land: GB is the only control "
                             "area requested. GB imbalance is Elexon system_prices."
@@ -2947,10 +2421,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsoe_imbalance_volume",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty:TOTAL_IMBALANCE_VOLUMES_R3 [17.1.H]",
-                        "clock": None,
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2959,12 +2430,6 @@ SOURCES = [
                                 "label": "imbalance volume long/short (A86/A19)",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
-                        "volume_class": None,
                         "notes": ["GB equivalent: Elexon system_prices NIV."],
                     },
                     {
@@ -2972,13 +2437,9 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "broken",
-                        "base_relation": "silver_entsoe_current_balancing_state",
-                        "latest_relation": "silver_entsoe_current_balancing_state_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "irregular (PT1M A03 curve, change points)",
-                            "settlement_cols": [],
                         },
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -2990,10 +2451,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "area_code", "role": "series", "cardinality": 1}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "SILVER BUG: area_code is '' on all 9,414 rows. The XML "
@@ -3020,19 +2477,14 @@ SOURCES = [
                 "label": "Balancing energy and reserves",
                 "kind": "series",
                 "page": "not-built",
-                "route": None,
-                "notes": [],
                 "datasets": [
                     {
                         "id": "activated_balancing_prices",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsoe_activated_balancing_prices",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty:PRICES_OF_ACTIVATED_BALANCING_ENERGY_R3 "
                         "[TR 17.1.F]",
-                        "clock": None,
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -3041,24 +2493,14 @@ SOURCES = [
                                 "label": "activated balancing energy price (A84/A16, aFRR)",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
-                        "volume_class": None,
-                        "notes": [],
                     },
                     {
                         "id": "aggregated_balancing_energy_bids",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsoe_aggregated_balancing_energy_bids",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty:AGGREGATED_BALANCING_ENERGY_BIDS_R3 "
                         "[12.3.E]",
-                        "clock": None,
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -3067,12 +2509,6 @@ SOURCES = [
                                 "label": "aggregated balancing energy bids (A24/A51)",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
-                        "volume_class": None,
                         "notes": [
                             "Even if it landed, it shares the h8 root-level "
                             "area_Domain parser gap (area_columns=('area_domain',))."
@@ -3083,10 +2519,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsoe_contracted_reserves",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty:AMOUNT_AND_PRICES_PAID_OF_BALANCING_RESERVES_UNDER_CONTRACT",
-                        "clock": None,
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -3095,27 +2528,13 @@ SOURCES = [
                                 "label": "contracted reserves (A81/A52)",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
-                        "volume_class": None,
-                        "notes": [],
                     },
                     {
                         "id": "procured_balancing_capacity",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "broken",
-                        "base_relation": "silver_entsoe_procured_balancing_capacity",
-                        "latest_relation": "silver_entsoe_procured_balancing_capacity_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "15min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "15min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -3128,10 +2547,6 @@ SOURCES = [
                             {"column": "area_code", "role": "series", "cardinality": 1},
                             {"column": "market_agreement_type", "role": "filter", "cardinality": 1},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "SILVER BUG: area_code '' and market_agreement_type '' on "
@@ -3148,11 +2563,8 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsoe_cross_zonal_balancing_capacity",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty:ALLOCATION_AND_USE_CROSS_ZONAL_CAPACITY "
                         "[GL EB 12.3.H]",
-                        "clock": None,
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -3162,24 +2574,14 @@ SOURCES = [
                                 "capacity (A38/A51)",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
-                        "volume_class": None,
-                        "notes": [],
                     },
                     {
                         "id": "balancing_financial_expenses_income",
                         "schedule": "monthly",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsoe_balancing_financial_expenses_income",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty:FINANCIAL_EXPENSES_AND_INCOME_FOR_BALANCING_R3 "
                         "[17.1.I]",
-                        "clock": None,
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -3189,12 +2591,6 @@ SOURCES = [
                                 "(A87), monthly",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
-                        "volume_class": None,
                         "notes": [
                             "Monthly publication: a mid-month week window couldn't "
                             "hold a point even for a publishing zone."
@@ -3208,21 +2604,16 @@ SOURCES = [
                 "kind": "events",
                 "page": "build",
                 "route": "/sources/entsoe/outages-unavailable-capacity-per-interval",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "outages_generation",
                         "schedule": "daily",
                         "kind": "events",
                         "verdict": "events-table",
-                        "base_relation": "silver_entsoe_outages_generation",
-                        "latest_relation": "silver_entsoe_outages_generation_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "irregular: start of an availability block (A03 "
                             "curve, PT1M); the block END is not in silver",
-                            "settlement_cols": [],
                         },
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
@@ -3241,7 +2632,6 @@ SOURCES = [
                             {"column": "unit_name", "role": "filter", "cardinality": 219},
                             {"column": "outage_type", "role": "filter", "cardinality": 1},
                         ],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["timestamp_utc", "unit_mrid"],
                             "order_by": [
@@ -3249,8 +2639,6 @@ SOURCES = [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"},
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "11,011 rows but 1,574 distinct (timestamp_utc, "
@@ -3290,13 +2678,9 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "events",
                         "verdict": "events-table",
-                        "base_relation": "silver_entsoe_outages_production",
-                        "latest_relation": "silver_entsoe_outages_production_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "irregular: availability-block start (A03, PT1M)",
-                            "settlement_cols": [],
                         },
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
@@ -3313,7 +2697,6 @@ SOURCES = [
                             {"column": "production_type", "role": "filter", "cardinality": 6},
                             {"column": "document_status", "role": "filter", "cardinality": 2},
                         ],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["timestamp_utc", "area_code", "unit_mrid", "timeseries_mrid"],
                             "order_by": [
@@ -3321,8 +2704,6 @@ SOURCES = [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"},
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "3,551 rows, 972 distinct (timestamp_utc, unit_mrid, "
@@ -3341,14 +2722,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "events",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_outages_consumption",
-                        "latest_relation": "silver_entsoe_outages_consumption_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "15min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "15min"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
                             {
@@ -3358,7 +2732,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "area_code", "role": "series", "cardinality": 2}],
-                        "default_filter": None,
                         "dedup": {
                             "keys": [
                                 "timestamp_utc",
@@ -3371,8 +2744,6 @@ SOURCES = [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"},
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "almost all DE-LU (1,728 rows), NL 10; constant values "
@@ -3387,13 +2758,9 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "events",
                         "verdict": "events-table",
-                        "base_relation": "silver_entsoe_outages_transmission",
-                        "latest_relation": "silver_entsoe_outages_transmission_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "irregular: availability-block start (A03, PT1M)",
-                            "settlement_cols": [],
                         },
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
@@ -3411,7 +2778,6 @@ SOURCES = [
                             {"column": "asset_mrid", "role": "series", "cardinality": 28},
                             {"column": "document_status", "role": "filter", "cardinality": 2},
                         ],
-                        "default_filter": None,
                         "dedup": {
                             "keys": [
                                 "timestamp_utc",
@@ -3425,8 +2791,6 @@ SOURCES = [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"},
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "3,981 rows, 418 distinct keys: about x9.5 copies",
@@ -3443,10 +2807,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "events",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsoe_outages_offshore_grid",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty:UNAVAILABILITY_OF_OFFSHORE_GRID [10.1.C]",
-                        "clock": None,
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -3455,8 +2816,6 @@ SOURCES = [
                                 "label": "offshore grid unavailability (A79)",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["timestamp_utc", "area_code", "asset_mrid", "timeseries_mrid"],
                             "order_by": [
@@ -3464,9 +2823,6 @@ SOURCES = [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"},
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
-                        "volume_class": None,
                         "notes": [
                             "Kind follows the sibling outage relations (block-start events)."
                         ],
@@ -3479,17 +2835,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/entsoe/redispatch-and-countertrading",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "redispatching_cross_border",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsoe_redispatching_cross_border",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty:REDISPATCHING_CROSS_BORDER_R3 [13.1.A]",
-                        "clock": None,
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -3498,27 +2850,13 @@ SOURCES = [
                                 "label": "cross-border redispatching (A63)",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
-                        "volume_class": None,
-                        "notes": [],
                     },
                     {
                         "id": "redispatching_internal",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_redispatching_internal",
-                        "latest_relation": "silver_entsoe_redispatching_internal_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "15min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "15min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -3528,10 +2866,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "in_area_code", "role": "series", "cardinality": 2}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "in_area_code = out_area_code on every row (NL 1,056, BE 148); no GB",
@@ -3544,32 +2878,19 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsoe_countertrading",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty:COUNTERTRADING_R3 [13.1.B]",
-                        "clock": None,
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {"column": "quantity_mw", "unit": "MW", "label": "countertrading (A91)"}
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
-                        "volume_class": None,
-                        "notes": [],
                     },
                     {
                         "id": "congestion_management_costs",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsoe_congestion_management_costs",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty:COSTS_OF_CONGESTION_MANAGEMENT_R3 "
                         "[13.1.C]",
-                        "clock": None,
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -3578,12 +2899,6 @@ SOURCES = [
                                 "label": "costs of congestion management (A92)",
                             }
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
-                        "volume_class": None,
                         "notes": ["P1M cadence: a week window rarely holds a point."],
                     },
                 ],
@@ -3594,21 +2909,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/entsoe/balancing-energy-bids",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "balancing_energy_bids",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsoe_balancing_energy_bids",
-                        "latest_relation": "silver_entsoe_balancing_energy_bids_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "15min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "15min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -3627,10 +2934,6 @@ SOURCES = [
                             },
                             {"column": "bid_mrid", "role": "filter", "cardinality": 1082},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "medium",
                         "notes": [
                             "BE 30,335 rows; FR and DE-LU 500 each. The "
@@ -3651,32 +2954,23 @@ SOURCES = [
                 "kind": "reference",
                 "page": "table-only",
                 "route": "/sources/entsoe/generation-unit-register",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "generation_units_master_data",
                         "schedule": "weekly",
                         "kind": "reference",
                         "verdict": "reference-table",
-                        "base_relation": "silver_entsoe_generation_units_master_data",
-                        "latest_relation": "silver_entsoe_generation_units_master_data_latest",
-                        "not_held_cause": None,
-                        "clock": None,
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "values": [],
                         "dims": [
                             {"column": "area_code", "role": "filter", "cardinality": 6},
                             {"column": "production_type", "role": "filter", "cardinality": 18},
                         ],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["area_code", "unit_mrid"],
                             "order_by": [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "1,317 rows = 660 distinct (area_code, unit_mrid) x2 "
@@ -3704,21 +2998,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/neso/national-carbon-intensity",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "carbon_intensity",
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_carbon_intensity",
-                        "latest_relation": "silver_neso_carbon_intensity_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -3739,11 +3025,6 @@ SOURCES = [
                                 "label": "very low | low | moderate | high | very high band",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "timestamp_utc is the API 'from' (period start); a range "
@@ -3775,19 +3056,13 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_neso_intensity_current",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched: no bronze/neso/intensity_current "
                         "dir; a transformer IS registered "
                         "(GF/silver/neso/carbon_intensity.py:272-280 "
                         "registers every ENDPOINTS key), so nothing is "
                         "folded; the endpoint is current-only "
                         "(requires_window=False)",
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -3801,11 +3076,6 @@ SOURCES = [
                                 "label": "current half-hour estimated actual",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "A --start 2026-09-13 run would write the fetch-time "
@@ -3819,14 +3089,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_intensity_period",
-                        "latest_relation": "silver_neso_intensity_period_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -3845,11 +3108,6 @@ SOURCES = [
                                 "label": "index band",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "same series as carbon_intensity fetched one SP per "
@@ -3863,14 +3121,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "reference-table",
-                        "base_relation": "silver_neso_intensity_at",
-                        "latest_relation": "silver_neso_intensity_at_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -3884,11 +3135,6 @@ SOURCES = [
                                 "label": "estimated actual",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "one row per request; the request is anchored at --start, "
@@ -3903,14 +3149,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_intensity_fw24h",
-                        "latest_relation": "silver_neso_intensity_fw24h_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
                             {
@@ -3924,11 +3163,6 @@ SOURCES = [
                                 "label": "estimated actual where already published",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "one request per 14-day chunk, anchored at --start: 49 "
@@ -3946,14 +3180,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_intensity_fw48h",
-                        "latest_relation": "silver_neso_intensity_fw48h_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
                             {
@@ -3967,11 +3194,6 @@ SOURCES = [
                                 "label": "estimated actual",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "anchored at --start: 97 rows over 48h per run",
@@ -3983,14 +3205,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_intensity_pt24h",
-                        "latest_relation": "silver_neso_intensity_pt24h_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
                             {
@@ -4004,11 +3219,6 @@ SOURCES = [
                                 "label": "estimated actual",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "anchored at --start and looks BACK 24h: the runbook "
@@ -4022,17 +3232,11 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_neso_intensity_today",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched: no bronze/neso/intensity_today "
                         "dir; own transformer registered; /intensity/date "
                         "serves the current date only "
                         "(requires_window=False)",
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -4046,11 +3250,6 @@ SOURCES = [
                                 "label": "estimated actual",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": ["intensity_date covers any past date with the same shape."],
                     },
@@ -4059,14 +3258,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_intensity_date",
-                        "latest_relation": "silver_neso_intensity_date_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -4085,11 +3277,6 @@ SOURCES = [
                                 "label": "index band",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "rows align to UK-local days (first row "
@@ -4106,21 +3293,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "table-only",
                 "route": "/sources/neso/intensity-statistics",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "intensity_stats",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "reference-table",
-                        "base_relation": "silver_neso_intensity_stats",
-                        "latest_relation": "silver_neso_intensity_stats_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "request-window",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "request-window"},
                         "latest_day_rule": {"mode": "max", "column": "period_end_utc"},
                         "values": [
                             {
@@ -4144,11 +3323,6 @@ SOURCES = [
                                 "label": "index of the average",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "one summary row per ≤14-day request chunk; its span is "
@@ -4163,10 +3337,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_intensity_stats_block",
-                        "latest_relation": "silver_neso_intensity_stats_block_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "24h", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "24h"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -4185,11 +3356,6 @@ SOURCES = [
                                 "label": "min per block",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "blocks are 24h from --start in UTC (block=24 default), not UK days"
@@ -4203,21 +3369,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/neso/generation-mix-per-cent",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "generation",
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_generation",
-                        "latest_relation": "silver_neso_generation_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -4227,10 +3385,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "fuel", "role": "series", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "measured P1-3: shares sum to 99.8–100.2 per half-hour "
@@ -4252,16 +3406,10 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_neso_generation_current",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched: no bronze/neso/generation_current "
                         "dir; own transformer registered; /generation is "
                         "current-only (requires_window=False)",
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -4271,10 +3419,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "fuel", "role": "series", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": ["A subset of generation."],
                     },
@@ -4283,14 +3427,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_generation_pt24h",
-                        "latest_relation": "silver_neso_generation_pt24h_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
                             {
@@ -4300,10 +3437,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "fuel", "role": "series", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "anchored at --start, looks back 24h: the runbook command "
@@ -4318,24 +3451,16 @@ SOURCES = [
                 "label": "Regional intensity",
                 "kind": "series",
                 "page": "not-built",
-                "route": None,
-                "notes": [],
                 "datasets": [
                     {
                         "id": "regional_current",
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_neso_regional_current",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched: no bronze/neso/regional_current "
                         "dir; own transformer registered; /regional is "
                         "current-only",
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -4353,10 +3478,6 @@ SOURCES = [
                             {"column": "regionid", "role": "series", "cardinality": 18},
                             {"column": "fuel", "role": "filter", "cardinality": 9},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": ["A subset of regional_intensity."],
                     },
@@ -4365,15 +3486,9 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_neso_regional_england",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched: no bronze/neso/regional_england "
                         "dir; own transformer registered; current-only",
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -4383,10 +3498,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": ["England is regionid 15 inside regional_intensity (measured)."],
                     },
@@ -4395,15 +3506,9 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_neso_regional_scotland",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched: no bronze/neso/regional_scotland "
                         "dir; own transformer registered; current-only",
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -4413,10 +3518,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": ["Scotland is regionid 16 inside regional_intensity."],
                     },
@@ -4425,15 +3526,9 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_neso_regional_wales",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched: no bronze/neso/regional_wales dir; "
                         "own transformer registered; current-only",
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -4443,10 +3538,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": ["Wales is regionid 17 inside regional_intensity."],
                     },
@@ -4455,16 +3546,10 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_neso_regional_postcode",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched: no bronze/neso/regional_postcode "
                         "dir; own transformer registered; current-only "
                         "(default postcode RG10)",
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -4474,28 +3559,17 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
-                        "notes": [],
                     },
                     {
                         "id": "regional_regionid",
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": "silver_neso_regional_regionid",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched: no bronze/neso/regional_regionid "
                         "dir; own transformer registered; current-only "
                         "(DEFAULT_REGION_ID=13)",
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -4505,12 +3579,7 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
-                        "notes": [],
                     },
                 ],
             },
@@ -4520,21 +3589,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/neso/regional-intensity-windows",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "regional_intensity",
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_regional_intensity",
-                        "latest_relation": "silver_neso_regional_intensity_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -4558,10 +3619,6 @@ SOURCES = [
                             {"column": "regionid", "role": "series", "cardinality": 18},
                             {"column": "fuel", "role": "filter", "cardinality": 9},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "medium",
                         "notes": [
                             "measured P1-3: actual_gco2_kwh is 100% null (vault says "
@@ -4589,14 +3646,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_regional_intensity_postcode",
-                        "latest_relation": "silver_neso_regional_intensity_postcode_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -4608,10 +3658,6 @@ SOURCES = [
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
                         "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "actual_gco2_kwh 100% null",
@@ -4624,14 +3670,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_regional_intensity_regionid",
-                        "latest_relation": "silver_neso_regional_intensity_regionid_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -4642,10 +3681,6 @@ SOURCES = [
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
                         "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "actual_gco2_kwh 100% null",
@@ -4658,14 +3693,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_regional_intensity_fw24h",
-                        "latest_relation": "silver_neso_regional_intensity_fw24h_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
                             {
@@ -4679,10 +3707,6 @@ SOURCES = [
                             {"column": "regionid", "role": "series", "cardinality": 18},
                             {"column": "fuel", "role": "filter", "cardinality": 9},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "actual_gco2_kwh 100% null",
@@ -4696,14 +3720,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_regional_intensity_fw24h_postcode",
-                        "latest_relation": "silver_neso_regional_intensity_fw24h_postcode_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
                             {
@@ -4714,10 +3731,6 @@ SOURCES = [
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
                         "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "actual_gco2_kwh 100% null",
@@ -4730,14 +3743,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_regional_intensity_fw24h_regionid",
-                        "latest_relation": "silver_neso_regional_intensity_fw24h_regionid_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
                             {
@@ -4748,10 +3754,6 @@ SOURCES = [
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
                         "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "actual_gco2_kwh 100% null",
@@ -4764,14 +3766,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_regional_intensity_fw48h",
-                        "latest_relation": "silver_neso_regional_intensity_fw48h_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
                             {
@@ -4785,10 +3780,6 @@ SOURCES = [
                             {"column": "regionid", "role": "series", "cardinality": 18},
                             {"column": "fuel", "role": "filter", "cardinality": 9},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "medium",
                         "notes": [
                             "actual_gco2_kwh 100% null",
@@ -4802,14 +3793,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_regional_intensity_fw48h_postcode",
-                        "latest_relation": "silver_neso_regional_intensity_fw48h_postcode_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
                             {
@@ -4820,10 +3804,6 @@ SOURCES = [
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
                         "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "actual_gco2_kwh 100% null",
@@ -4836,14 +3816,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_regional_intensity_fw48h_regionid",
-                        "latest_relation": "silver_neso_regional_intensity_fw48h_regionid_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
                             {
@@ -4854,10 +3827,6 @@ SOURCES = [
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
                         "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "actual_gco2_kwh 100% null",
@@ -4870,14 +3839,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_regional_intensity_pt24h",
-                        "latest_relation": "silver_neso_regional_intensity_pt24h_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
                             {
@@ -4891,10 +3853,6 @@ SOURCES = [
                             {"column": "regionid", "role": "series", "cardinality": 18},
                             {"column": "fuel", "role": "filter", "cardinality": 9},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "actual_gco2_kwh 100% null",
@@ -4908,14 +3866,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_regional_intensity_pt24h_postcode",
-                        "latest_relation": "silver_neso_regional_intensity_pt24h_postcode_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
                             {
@@ -4926,10 +3877,6 @@ SOURCES = [
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
                         "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "actual_gco2_kwh 100% null",
@@ -4942,14 +3889,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_regional_intensity_pt24h_regionid",
-                        "latest_relation": "silver_neso_regional_intensity_pt24h_regionid_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
                             {
@@ -4960,10 +3900,6 @@ SOURCES = [
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
                         "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "actual_gco2_kwh 100% null",
@@ -4979,17 +3915,13 @@ SOURCES = [
                 "kind": "reference",
                 "page": "table-only",
                 "route": "/sources/neso/emission-factors-by-fuel",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "intensity_factors",
                         "schedule": "weekly",
                         "kind": "reference",
                         "verdict": "reference-table",
-                        "base_relation": "silver_neso_intensity_factors",
-                        "latest_relation": None,
-                        "not_held_cause": None,
-                        "clock": {"column": "ingested_at", "grain": "none", "settlement_cols": []},
+                        "clock": {"column": "ingested_at", "grain": "none"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
                             {
@@ -4999,10 +3931,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "fuel", "role": "series", "cardinality": "unknown"}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "Not window-bound: any run fetches the current static "
@@ -5033,21 +3961,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/neso_data_portal/historic-generation-mix",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "historic_generation_mix",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_data_portal_historic_generation_mix",
-                        "latest_relation": "silver_neso_data_portal_historic_generation_mix_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "30min",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -5196,11 +4116,6 @@ SOURCES = [
                                 "label": "vendor-published shares, carried not recomputed",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "APPEND_ONLY whole-history captures: base 619,092 rows = 2 "
@@ -5231,16 +4146,12 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/neso_data_portal/embedded-wind-and-solar-forecast",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "embedded_wind_solar_forecast",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_data_portal_embedded_wind_solar_forecast",
-                        "latest_relation": "silver_neso_data_portal_embedded_wind_solar_forecast_latest",
-                        "not_held_cause": None,
                         "clock": {
                             "column": "event_time",
                             "grain": "30min",
@@ -5269,11 +4180,6 @@ SOURCES = [
                                 "label": "embedded solar capacity assumed",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "one issue only locally: issue_time 2026-08-20 21:25Z "
@@ -5295,21 +4201,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/neso_data_portal/wind-availability-per-bm-unit",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "daily_wind_availability",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_neso_data_portal_daily_wind_availability",
-                        "latest_relation": "silver_neso_data_portal_daily_wind_availability_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "availability_date",
-                            "grain": "1d",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "availability_date", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
                             {
@@ -5320,10 +4218,6 @@ SOURCES = [
                             }
                         ],
                         "dims": [{"column": "bmu_id", "role": "series", "cardinality": 276}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "measured P1-3: 1 all-null row (bmu_id, date and MW all "
@@ -5355,17 +4249,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/open_meteo/weather-at-demand-centres",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "historical_demand",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_open_meteo_historical_demand",
-                        "latest_relation": "silver_open_meteo_historical_demand_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1h", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1h"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -5421,10 +4311,6 @@ SOURCES = [
                             },
                         ],
                         "dims": [{"column": "location", "role": "series", "cardinality": 7}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "ERA5 archive lags ~5 days (vault; not vendor-guaranteed)",
@@ -5443,10 +4329,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_open_meteo_forecast_demand",
-                        "latest_relation": "silver_open_meteo_forecast_demand_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1h", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1h"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
                             {
@@ -5459,10 +4342,6 @@ SOURCES = [
                             {"column": "wind_speed_10m_mps", "unit": "m/s", "label": "10 m wind"},
                         ],
                         "dims": [{"column": "location", "role": "series", "cardinality": 7}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "vintages overwritten: dedup (timestamp_utc, location) "
@@ -5483,17 +4362,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/open_meteo/weather-at-wind-sites",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "historical_wind",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_open_meteo_historical_wind",
-                        "latest_relation": "silver_open_meteo_historical_wind_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1h", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1h"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -5544,10 +4419,6 @@ SOURCES = [
                             },
                         ],
                         "dims": [{"column": "location", "role": "series", "cardinality": 12}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "80/120/180 m columns in the schema are absent from the "
@@ -5560,10 +4431,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_open_meteo_forecast_wind",
-                        "latest_relation": "silver_open_meteo_forecast_wind_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1h", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1h"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
                             {
@@ -5599,10 +4467,6 @@ SOURCES = [
                             {"column": "wind_gusts_10m_mps", "unit": "m/s", "label": "gusts"},
                         ],
                         "dims": [{"column": "location", "role": "series", "cardinality": 12}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "vintages overwritten; a past-dated fetch is a hindcast",
@@ -5617,17 +4481,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/open_meteo/weather-at-solar-sites",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "historical_solar",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_open_meteo_historical_solar",
-                        "latest_relation": "silver_open_meteo_historical_solar_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1h", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1h"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -5672,10 +4532,6 @@ SOURCES = [
                             {"column": "snow_depth_m", "unit": "mixed", "label": "secondary"},
                         ],
                         "dims": [{"column": "location", "role": "series", "cardinality": 6}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": ["ERA5 lag ~5 days"],
                     },
@@ -5684,10 +4540,7 @@ SOURCES = [
                         "schedule": "hourly",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_open_meteo_forecast_solar",
-                        "latest_relation": "silver_open_meteo_forecast_solar_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1h", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1h"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
                             {
@@ -5702,10 +4555,6 @@ SOURCES = [
                             },
                         ],
                         "dims": [{"column": "location", "role": "series", "cardinality": 6}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": ["vintages overwritten; a past-dated fetch is a hindcast"],
                     },
@@ -5727,16 +4576,11 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/gold/power-stack-clearing",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "gold_stack_clearing",
-                        "schedule": None,
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "gold_stack_clearing",
-                        "latest_relation": None,
-                        "not_held_cause": None,
                         "clock": {
                             "column": "event_time",
                             "grain": "30min",
@@ -5779,13 +4623,10 @@ SOURCES = [
                             {"column": "marginal_bm_unit_id", "role": "filter", "cardinality": 91},
                             {"column": "run_id", "role": "filter", "cardinality": 28},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
                         "row_filter": {
                             "column": "vintage_policy_id",
                             "equals": "smp_headline_perfect_prog_v2",
                         },
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "measured P1-3: 36,672 rows = 18,336 (event_time, as_of) "
@@ -5823,12 +4664,8 @@ SOURCES = [
                     },
                     {
                         "id": "gold_stack_residual_demand",
-                        "schedule": None,
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "gold_stack_residual_demand",
-                        "latest_relation": None,
-                        "not_held_cause": None,
                         "clock": {
                             "column": "event_time",
                             "grain": "30min",
@@ -5960,12 +4797,10 @@ SOURCES = [
                             "column": "vintage_policy_id",
                             "equals": "smp_headline_perfect_prog_v2",
                         },
-                        "dedup": None,
                         "row_filter": {
                             "column": "vintage_policy_id",
                             "equals": "smp_headline_perfect_prog_v2",
                         },
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "same v1/v2 duplication as clearing",
@@ -5980,12 +4815,8 @@ SOURCES = [
                     },
                     {
                         "id": "gold_stack_supply_curve_points",
-                        "schedule": None,
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "gold_stack_supply_curve_points",
-                        "latest_relation": None,
-                        "not_held_cause": None,
                         "clock": {
                             "column": "event_time",
                             "grain": "30min",
@@ -6025,13 +4856,10 @@ SOURCES = [
                             {"column": "fuel_type", "role": "series", "cardinality": 5},
                             {"column": "vintage_policy_id", "role": "filter", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
                         "row_filter": {
                             "column": "vintage_policy_id",
                             "equals": "smp_headline_perfect_prog_v2",
                         },
-                        "snapshot_column": None,
                         "volume_class": "medium",
                         "notes": [
                             "only the two headline runs carry points (v1 88,542 rows; "
@@ -6056,16 +4884,11 @@ SOURCES = [
                 "kind": "series",
                 "page": "external",
                 "route": "/forecasts",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "gold_forecasts",
-                        "schedule": None,
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "gold_forecasts",
-                        "latest_relation": None,
-                        "not_held_cause": None,
                         "clock": {
                             "column": "delivery_time",
                             "grain": "30min",
@@ -6126,7 +4949,6 @@ SOURCES = [
                             {"column": "vintage_policy_id", "role": "series", "cardinality": None},
                             {"column": "run_id", "role": "filter", "cardinality": 6},
                         ],
-                        "default_filter": None,
                         "dedup": {
                             "keys": [
                                 "model_id",
@@ -6140,8 +4962,6 @@ SOURCES = [
                                 {"column": "run_id", "direction": "desc", "nulls": "last"},
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "the raw view applies no supersession: re-issues coexist "
@@ -6167,13 +4987,9 @@ SOURCES = [
                     },
                     {
                         "id": "gold_forecast_metrics",
-                        "schedule": None,
                         "kind": "reference",
                         "verdict": "reference-table",
-                        "base_relation": "gold_forecast_metrics",
-                        "latest_relation": None,
-                        "not_held_cause": None,
-                        "clock": {"column": "written_at", "grain": "none", "settlement_cols": []},
+                        "clock": {"column": "written_at", "grain": "none"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
                             {
@@ -6189,10 +5005,6 @@ SOURCES = [
                             {"column": "run_id", "role": "filter", "cardinality": 5},
                             {"column": "fold", "role": "filter", "cardinality": 12},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "gate_* columns null on the 96% of rows that are fold "
@@ -6208,16 +5020,11 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/gold/system-prices-joined-with-carbon-intensity",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "gold_uk_imbalance_context",
-                        "schedule": None,
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "gold_uk_imbalance_context",
-                        "latest_relation": None,
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -6251,10 +5058,6 @@ SOURCES = [
                         "dims": [
                             {"column": "price_derivation_code", "role": "filter", "cardinality": 3}
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "measured P1-3: carbon columns 99.73% null; non-null only "
@@ -6275,16 +5078,11 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/gold/gb-day-ahead-benchmark-from-the-market-index-price",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "gold_gb_day_ahead_benchmark",
-                        "schedule": None,
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "gold_gb_day_ahead_benchmark",
-                        "latest_relation": None,
-                        "not_held_cause": None,
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -6303,11 +5101,6 @@ SOURCES = [
                                 "label": "APXMIDP volume",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "one row per SP via QUALIFY on available_at",
@@ -6323,18 +5116,12 @@ SOURCES = [
                 "label": "Gas storage by country",
                 "kind": "series",
                 "page": "not-built",
-                "route": None,
-                "notes": [],
                 "datasets": [
                     {
                         "id": "gold_eu_gas_storage",
-                        "schedule": None,
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "gold_eu_gas_storage",
-                        "latest_relation": None,
-                        "not_held_cause": None,
-                        "clock": {"column": "gas_day", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "gas_day", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "gas_day"},
                         "values": [
                             {
@@ -6352,10 +5139,6 @@ SOURCES = [
                             {"column": "storage_pct_full", "unit": "%", "label": "fullness"},
                         ],
                         "dims": [{"column": "country_code", "role": "series", "cardinality": 9}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "measured P1-3: GB rows (5 of 45) have every value null",
@@ -6370,16 +5153,11 @@ SOURCES = [
                 "label": "System prices with spread and calendar features",
                 "kind": "series",
                 "page": "not-built",
-                "route": None,
-                "notes": [],
                 "datasets": [
                     {
                         "id": "system_marginal_price",
-                        "schedule": None,
                         "kind": "series",
                         "verdict": "not-held",
-                        "base_relation": None,
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched: builder registered "
                         "(GF/gold/system_marginal_price.py:71) but never "
                         "built; no "
@@ -6416,11 +5194,6 @@ SOURCES = [
                                 "label": "ISO weekday 1=Mon (differs from gridflow models' 0=Mon)",
                             },
                         ],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "Enum stretched: 'never-built' is the literal cause. It "
@@ -6447,17 +5220,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/entsog/physical-flows",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "physical_flows",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsog_physical_flows",
-                        "latest_relation": "silver_entsog_physical_flows_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -6473,10 +5242,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 620},
                             {"column": "direction_key", "role": "series", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "Full-Europe fetch (connector omits pointDirection for "
@@ -6515,10 +5280,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsog_aggregated_physical_flows",
-                        "latest_relation": "silver_entsog_aggregated_physical_flows_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -6531,10 +5293,6 @@ SOURCES = [
                             {"column": "adjacent_systems_key", "role": "series", "cardinality": 3},
                             {"column": "direction_key", "role": "filter", "cardinality": 1},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "Only 3 of the 5 configured "
@@ -6556,17 +5314,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/entsog/nominations-and-allocations",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "nominations",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsog_nominations",
-                        "latest_relation": "silver_entsog_nominations_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -6581,10 +5335,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 4},
                             {"column": "direction_key", "role": "series", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "value null on 29% of rows (Moffat IE exit and GB Moffat "
@@ -6599,10 +5349,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsog_renominations",
-                        "latest_relation": "silver_entsog_renominations_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -6617,10 +5364,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 4},
                             {"column": "direction_key", "role": "series", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "value null on 14% of rows",
@@ -6633,10 +5376,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsog_allocations",
-                        "latest_relation": "silver_entsog_allocations_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -6651,10 +5391,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 4},
                             {"column": "direction_key", "role": "series", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "value null on 43% of rows",
@@ -6674,17 +5410,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/entsog/firm-and-interruptible-capacity",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "firm_available",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsog_firm_available",
-                        "latest_relation": "silver_entsog_firm_available_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -6699,10 +5431,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 4},
                             {"column": "direction_key", "role": "series", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "value null on 68% of rows (15/22); only Moffat IE entry "
@@ -6716,10 +5444,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsog_firm_booked",
-                        "latest_relation": "silver_entsog_firm_booked_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -6733,10 +5458,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 4},
                             {"column": "direction_key", "role": "series", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "value null on 68% of rows (15/22)",
@@ -6749,10 +5470,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsog_firm_technical",
-                        "latest_relation": "silver_entsog_firm_technical_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -6765,10 +5483,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 2},
                             {"column": "direction_key", "role": "series", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "value null on 100% of rows (10/10): only the two "
@@ -6787,10 +5501,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsog_interruptible_available",
-                        "latest_relation": "silver_entsog_interruptible_available_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -6803,10 +5514,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 2},
                             {"column": "direction_key", "role": "series", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "value null on 71% of rows (5/7); 2 numbers in 5 days",
@@ -6819,10 +5526,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsog_interruptible_booked",
-                        "latest_relation": "silver_entsog_interruptible_booked_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -6835,10 +5539,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 1},
                             {"column": "direction_key", "role": "series", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "value null on 83% of rows (5/6); 1 number in 5 days",
@@ -6851,10 +5551,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsog_interruptible_total",
-                        "latest_relation": "silver_entsog_interruptible_total_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -6867,10 +5564,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 2},
                             {"column": "direction_key", "role": "series", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "value null on 71% of rows (5/7)",
@@ -6886,17 +5579,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "table-only",
                 "route": "/sources/entsog/released-capacity",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "available_through_oversubscription",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "events-table",
-                        "base_relation": "silver_entsog_available_through_oversubscription",
-                        "latest_relation": "silver_entsog_available_through_oversubscription_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -6911,10 +5600,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 5},
                             {"column": "direction_key", "role": "filter", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "value null on 100% of rows (55/55); unit and period_type "
@@ -6933,10 +5618,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "events-table",
-                        "base_relation": "silver_entsog_available_through_surrender",
-                        "latest_relation": "silver_entsog_available_through_surrender_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -6951,10 +5633,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 5},
                             {"column": "direction_key", "role": "filter", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "value null on 100% of rows (55/55); every row is the default sentence",
@@ -6967,10 +5645,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "events-table",
-                        "base_relation": "silver_entsog_available_through_uioli_long_term",
-                        "latest_relation": "silver_entsog_available_through_uioli_long_term_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -6983,10 +5658,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 5},
                             {"column": "direction_key", "role": "filter", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "value null on 100% of rows (55/55)",
@@ -6999,10 +5670,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "events-table",
-                        "base_relation": "silver_entsog_available_through_uioli_short_term",
-                        "latest_relation": "silver_entsog_available_through_uioli_short_term_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -7015,10 +5683,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 5},
                             {"column": "direction_key", "role": "filter", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "value null on 100% of rows (55/55)",
@@ -7034,17 +5698,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/entsog/gas-quality",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "gcv",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsog_gcv",
-                        "latest_relation": "silver_entsog_gcv_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -7058,10 +5718,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 4},
                             {"column": "direction_key", "role": "series", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "value null on 43% of rows; Bacton IUK exit "
@@ -7076,10 +5732,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsog_wobbe_index",
-                        "latest_relation": "silver_entsog_wobbe_index_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -7093,10 +5746,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 5},
                             {"column": "direction_key", "role": "series", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "value null on 78% of rows (35/45)",
@@ -7111,10 +5760,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsog_methane_content",
-                        "latest_relation": "silver_entsog_methane_content_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {"column": "value", "unit": "% (mol/mol)", "label": "methane content"}
@@ -7123,10 +5769,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 2},
                             {"column": "direction_key", "role": "series", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "no nulls",
@@ -7139,10 +5781,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsog_hydrogen_content",
-                        "latest_relation": "silver_entsog_hydrogen_content_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {"column": "value", "unit": "% (mol/mol)", "label": "hydrogen content"}
@@ -7151,10 +5790,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 1},
                             {"column": "direction_key", "role": "series", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "no nulls; 2 distinct values",
@@ -7167,10 +5802,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_entsog_oxygen_content",
-                        "latest_relation": "silver_entsog_oxygen_content_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {"column": "value", "unit": "% (mol/mol)", "label": "oxygen content"}
@@ -7179,10 +5811,6 @@ SOURCES = [
                             {"column": "point_key", "role": "series", "cardinality": 1},
                             {"column": "direction_key", "role": "series", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "no nulls; 1 distinct value (flat line)",
@@ -7198,17 +5826,13 @@ SOURCES = [
                 "kind": "events",
                 "page": "table-only",
                 "route": "/sources/entsog/congestion-management",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "cmp_unsuccessful_requests",
                         "schedule": "daily",
                         "kind": "events",
                         "verdict": "events-table",
-                        "base_relation": "silver_entsog_cmp_unsuccessful_requests",
-                        "latest_relation": "silver_entsog_cmp_unsuccessful_requests_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "capacity_from", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "capacity_from", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "capacity_from"},
                         "values": [
                             {
@@ -7227,15 +5851,12 @@ SOURCES = [
                             {"column": "point_key", "role": "filter", "cardinality": 670},
                             {"column": "direction_key", "role": "filter", "cardinality": 3},
                         ],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["id"],
                             "order_by": [
                                 {"column": "available_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "KNOWN SILVER BUG (unmerged gridflow branch "
@@ -7268,10 +5889,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "events",
                         "verdict": "events-table",
-                        "base_relation": "silver_entsog_cmp_auction_premiums",
-                        "latest_relation": "silver_entsog_cmp_auction_premiums_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -7290,10 +5908,6 @@ SOURCES = [
                             {"column": "point_key", "role": "filter", "cardinality": 654},
                             {"column": "booking_platform_key", "role": "filter", "cardinality": 4},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "auction_premium, cleared_price, reserve_price, "
@@ -7317,17 +5931,13 @@ SOURCES = [
                 "kind": "events",
                 "page": "table-only",
                 "route": "/sources/entsog/unavailable-firm-capacity",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "cmp_unavailable_firm_capacity",
                         "schedule": "daily",
                         "kind": "events",
                         "verdict": "events-table",
-                        "base_relation": "silver_entsog_cmp_unavailable_firm_capacity",
-                        "latest_relation": "silver_entsog_cmp_unavailable_firm_capacity_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "timestamp_utc", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {
@@ -7345,10 +5955,6 @@ SOURCES = [
                             {"column": "operator_key", "role": "filter", "cardinality": 30},
                             {"column": "point_key", "role": "filter", "cardinality": 367},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "No numeric capacity column exists in silver; value null "
@@ -7371,25 +5977,15 @@ SOURCES = [
                 "label": "Interruptions and urgent market messages",
                 "kind": "events",
                 "page": "not-built",
-                "route": None,
-                "notes": [],
                 "datasets": [
                     {
                         "id": "interruptions",
                         "schedule": "daily",
                         "kind": "events",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsog_interruptions",
-                        "latest_relation": None,
                         "not_held_cause": "fetched-empty",
-                        "clock": {"column": "unknown", "grain": "event", "settlement_cols": []},
+                        "clock": {"column": "unknown", "grain": "event"},
                         "latest_day_rule": {"mode": "max", "column": "unknown"},
-                        "values": [],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "fetched-empty is outside the RUNBOOK cause list "
@@ -7406,17 +6002,9 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "events",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsog_urgent_market_messages",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched",
-                        "clock": {"column": "unknown", "grain": "event", "settlement_cols": []},
+                        "clock": {"column": "unknown", "grain": "event"},
                         "latest_day_rule": {"mode": "max", "column": "unknown"},
-                        "values": [],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "Transformer exists (generic). Would need isLatestVersion "
@@ -7433,21 +6021,13 @@ SOURCES = [
                 "kind": "reference",
                 "page": "table-only",
                 "route": "/sources/entsog/tariffs",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "tariffs",
                         "schedule": "monthly",
                         "kind": "reference",
                         "verdict": "reference-table",
-                        "base_relation": "silver_entsog_tariffs",
-                        "latest_relation": "silver_entsog_tariffs_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "product_period_from",
-                            "grain": "product",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "product_period_from", "grain": "product"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
                             {
@@ -7467,14 +6047,12 @@ SOURCES = [
                             {"column": "point_key", "role": "filter", "cardinality": 138},
                             {"column": "product_type", "role": "filter", "cardinality": 5},
                         ],
-                        "default_filter": None,
                         "dedup": {
                             "keys": ["id"],
                             "order_by": [
                                 {"column": "available_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
                         "snapshot_column": "available_at",
                         "volume_class": "medium",
                         "notes": [
@@ -7499,14 +6077,7 @@ SOURCES = [
                         "schedule": "monthly",
                         "kind": "reference",
                         "verdict": "reference-table",
-                        "base_relation": "silver_entsog_tariff_simulations",
-                        "latest_relation": "silver_entsog_tariff_simulations_latest",
-                        "not_held_cause": None,
-                        "clock": {
-                            "column": "timestamp_utc",
-                            "grain": "product",
-                            "settlement_cols": [],
-                        },
+                        "clock": {"column": "timestamp_utc", "grain": "product"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
                             {
@@ -7527,7 +6098,6 @@ SOURCES = [
                                 {"column": "available_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "row_filter": None,
                         "snapshot_column": "available_at",
                         "volume_class": "medium",
                         "notes": [
@@ -7545,25 +6115,15 @@ SOURCES = [
                 "label": "Network topology",
                 "kind": "reference",
                 "page": "not-built",
-                "route": None,
-                "notes": [],
                 "datasets": [
                     {
                         "id": "connection_points",
                         "schedule": "weekly",
                         "kind": "reference",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsog_connection_points",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched",
-                        "clock": {"column": None, "grain": "snapshot", "settlement_cols": []},
+                        "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "values": [],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "Transformer exists (generic registration). Useful as a "
@@ -7575,17 +6135,9 @@ SOURCES = [
                         "schedule": "weekly",
                         "kind": "reference",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsog_operators",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched",
-                        "clock": {"column": None, "grain": "snapshot", "settlement_cols": []},
+                        "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "values": [],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": ["Transformer exists (generic)."],
                     },
@@ -7594,17 +6146,9 @@ SOURCES = [
                         "schedule": "weekly",
                         "kind": "reference",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsog_balancing_zones",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched",
-                        "clock": {"column": None, "grain": "snapshot", "settlement_cols": []},
+                        "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "values": [],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": ["Transformer exists (generic)."],
                     },
@@ -7613,17 +6157,9 @@ SOURCES = [
                         "schedule": "weekly",
                         "kind": "reference",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsog_operator_point_directions",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched",
-                        "clock": {"column": None, "grain": "snapshot", "settlement_cols": []},
+                        "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "values": [],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "Transformer exists (generic). Vault: join key for "
@@ -7635,17 +6171,9 @@ SOURCES = [
                         "schedule": "weekly",
                         "kind": "reference",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsog_interconnections",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched",
-                        "clock": {"column": None, "grain": "snapshot", "settlement_cols": []},
+                        "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "values": [],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": ["Transformer exists (generic)."],
                     },
@@ -7654,17 +6182,9 @@ SOURCES = [
                         "schedule": "weekly",
                         "kind": "reference",
                         "verdict": "not-held",
-                        "base_relation": "silver_entsog_aggregate_interconnections",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched",
-                        "clock": {"column": None, "grain": "snapshot", "settlement_cols": []},
+                        "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "values": [],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": ["Transformer exists (generic)."],
                     },
@@ -7687,17 +6207,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/gie_agsi/storage-by-country-and-site",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "storage",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_gie_agsi_storage",
-                        "latest_relation": "silver_gie_agsi_storage_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "gas_day", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "gas_day", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "gas_day"},
                         "values": [
                             {
@@ -7727,10 +6243,6 @@ SOURCES = [
                             {"column": "country_code", "role": "series", "cardinality": 9},
                             {"column": "entity_level", "role": "filter", "cardinality": 1},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "UNIT DISAGREEMENT: code (_gwh columns) and vault say GWh, "
@@ -7770,10 +6282,7 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_gie_agsi_storage_reports",
-                        "latest_relation": "silver_gie_agsi_storage_reports_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "gas_day", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "gas_day", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "gas_day"},
                         "values": [
                             {
@@ -7790,10 +6299,6 @@ SOURCES = [
                             {"column": "withdrawal_gwh", "unit": None, "label": "EU withdrawal"},
                         ],
                         "dims": [{"column": "entity_code", "role": "filter", "cardinality": 1}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "Default scope is aggregate_type EU only (1 row per gas day)",
@@ -7818,17 +6323,12 @@ SOURCES = [
                 "kind": "events",
                 "page": "table-only",
                 "route": "/sources/gie_agsi/storage-unavailability",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "unavailability",
                         "schedule": "daily",
                         "kind": "events",
                         "verdict": "events-table",
-                        "base_relation": "silver_gie_agsi_unavailability",
-                        "latest_relation": "silver_gie_agsi_unavailability_latest",
-                        "not_held_cause": None,
-                        "clock": None,
                         "latest_day_rule": {"mode": "max", "column": "event_time"},
                         "values": [
                             {
@@ -7853,10 +6353,6 @@ SOURCES = [
                             {"column": "type", "role": "filter", "cardinality": 2},
                             {"column": "end_flag", "role": "filter", "cardinality": 2},
                         ],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "KNOWN SILVER BUG (unmerged gridflow branch "
@@ -7886,25 +6382,15 @@ SOURCES = [
                 "label": "Transparency news",
                 "kind": "events",
                 "page": "not-built",
-                "route": None,
-                "notes": [],
                 "datasets": [
                     {
                         "id": "news",
                         "schedule": "daily",
                         "kind": "events",
                         "verdict": "not-held",
-                        "base_relation": "silver_gie_agsi_news",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched",
-                        "clock": {"column": "unknown", "grain": "event", "settlement_cols": []},
+                        "clock": {"column": "unknown", "grain": "event"},
                         "latest_day_rule": {"mode": "max", "column": "gas_day"},
-                        "values": [],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "Transformer exists. Whether the listing reaches back to "
@@ -7916,19 +6402,10 @@ SOURCES = [
                         "schedule": "daily",
                         "kind": "events",
                         "verdict": "not-held",
-                        "base_relation": "silver_gie_agsi_news_item",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched",
-                        "clock": {"column": "unknown", "grain": "event", "settlement_cols": []},
+                        "clock": {"column": "unknown", "grain": "event"},
                         "latest_day_rule": {"mode": "max", "column": "gas_day"},
-                        "values": [],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
-                        "notes": [],
                     },
                 ],
             },
@@ -7937,25 +6414,15 @@ SOURCES = [
                 "label": "Facility and company listings",
                 "kind": "reference",
                 "page": "not-built",
-                "route": None,
-                "notes": [],
                 "datasets": [
                     {
                         "id": "about_summary",
                         "schedule": "weekly",
                         "kind": "reference",
                         "verdict": "not-held",
-                        "base_relation": "silver_gie_agsi_about_summary",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched",
-                        "clock": {"column": None, "grain": "snapshot", "settlement_cols": []},
+                        "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "values": [],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": ["Transformer exists."],
                     },
@@ -7964,17 +6431,9 @@ SOURCES = [
                         "schedule": "weekly",
                         "kind": "reference",
                         "verdict": "not-held",
-                        "base_relation": "silver_gie_agsi_about_listing",
-                        "latest_relation": None,
                         "not_held_cause": "never-fetched",
-                        "clock": {"column": None, "grain": "snapshot", "settlement_cols": []},
+                        "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "values": [],
-                        "dims": [],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "Transformer exists. Would unlock facility-level storage "
@@ -7999,17 +6458,13 @@ SOURCES = [
                 "kind": "series",
                 "page": "build",
                 "route": "/sources/gie_alsi/lng-inventory-and-send-out",
-                "notes": [],
                 "datasets": [
                     {
                         "id": "lng",
                         "schedule": "daily",
                         "kind": "series",
                         "verdict": "chart",
-                        "base_relation": "silver_gie_alsi_lng",
-                        "latest_relation": "silver_gie_alsi_lng_latest",
-                        "not_held_cause": None,
-                        "clock": {"column": "gas_day", "grain": "1d", "settlement_cols": []},
+                        "clock": {"column": "gas_day", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "gas_day"},
                         "values": [
                             {
@@ -8030,10 +6485,6 @@ SOURCES = [
                             },
                         ],
                         "dims": [{"column": "country_code", "role": "series", "cardinality": 8}],
-                        "default_filter": None,
-                        "dedup": None,
-                        "row_filter": None,
-                        "snapshot_column": None,
                         "volume_class": "small",
                         "notes": [
                             "NEW SILVER GAP (not on any named branch): inventory is "
@@ -8062,3 +6513,46 @@ SOURCES = [
         ],
     },
 ]
+
+
+DATASET_DEFAULTS: dict[str, Any] = {
+    "schedule": None,
+    "not_held_cause": None,
+    "clock": None,
+    "values": [],
+    "dims": [],
+    "default_filter": None,
+    "dedup": None,
+    "row_filter": None,
+    "snapshot_column": None,
+    "volume_class": None,
+    "notes": [],
+}
+FAMILY_DEFAULTS: dict[str, Any] = {"route": None, "notes": []}
+
+
+def _fill() -> None:
+    """Fill left-out keys with fresh values and derive each dataset's relation names.
+
+    The base relation is gridflow's view name. Readers probe the ``_latest`` name and
+    fall back to the base when the catalogue lacks it.
+    """
+    for source in SOURCES:
+        for family in source["families"]:
+            for key, default in FAMILY_DEFAULTS.items():
+                family.setdefault(key, copy.copy(default))
+            for dataset in family["datasets"]:
+                for key, default in DATASET_DEFAULTS.items():
+                    dataset.setdefault(key, copy.copy(default))
+                if dataset["clock"]:
+                    dataset["clock"].setdefault("settlement_cols", [])
+                base = (
+                    dataset["id"]
+                    if source["key"] == "gold"
+                    else f"silver_{source['key']}_{dataset['id']}"
+                )
+                dataset["base_relation"] = base
+                dataset["latest_relation"] = f"{base}_latest"
+
+
+_fill()
