@@ -275,29 +275,11 @@ def _forbid_acquire(monkeypatch):
     monkeypatch.setattr(sources, "client_ctx", forbidden)
 
 
-def test_unknown_relation_rejected_before_acquire(monkeypatch):
-    """Malformed relation identifiers fail validation before client creation."""
-    spec = _spec()
-    spec["base_relation"] = "unregistered; DROP TABLE x"
-    monkeypatch.setattr(rows, "REGISTRY", {("test", "sample"): spec})
+def test_undeclared_filter_column_rejected_before_acquire(monkeypatch):
+    """Filter fields outside the declared dimensions fail before client creation."""
+    monkeypatch.setattr(rows, "REGISTRY", {("test", "sample"): _spec()})
     _forbid_acquire(monkeypatch)
-    response = TestClient(app).get("/api/sources/test/sample/rows")
-    assert response.status_code == 422
-    assert response.json()["error"]["code"] == "bad_identifier"
-
-
-def test_unknown_column_rejected_before_acquire(monkeypatch):
-    """Invalid declared projection and undeclared filter fields fail early."""
-    spec = _spec()
-    spec["values"][0]["column"] = ""
-    monkeypatch.setattr(rows, "REGISTRY", {("test", "sample"): spec})
-    _forbid_acquire(monkeypatch)
-    client = TestClient(app)
-    invalid = client.get("/api/sources/test/sample/rows")
-    assert invalid.status_code == 422
-    assert invalid.json()["error"]["code"] == "bad_identifier"
-    spec["values"][0]["column"] = "value"
-    undeclared = client.get("/api/sources/test/sample/rows?filter=ingested_at:X")
+    undeclared = TestClient(app).get("/api/sources/test/sample/rows?filter=ingested_at:X")
     assert undeclared.status_code == 422
     assert undeclared.json()["error"]["code"] == "bad_filter"
 

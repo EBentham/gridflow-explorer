@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import copy
 import json
 from collections import Counter
 from pathlib import Path
 
+import pytest
+
+from app import sources
 from app.sources import validate_spec
 from app.sources_spec import DATASET_DEFAULTS, SOURCES
 
@@ -104,3 +108,21 @@ def test_left_out_keys_are_filled_with_fresh_values() -> None:
     assert all(set(DATASET_DEFAULTS) <= set(d) for d in datasets)
     assert len({id(d["notes"]) for d in datasets}) == len(datasets)
     assert all(d["clock"] is None or "settlement_cols" in d["clock"] for d in datasets)
+
+
+@pytest.mark.parametrize(
+    ("damage", "message"),
+    [
+        (lambda d: d.update(latest_relation="x; DROP TABLE y"), "not an identifier"),
+        (lambda d: d["values"][0].update(column=""), "Invalid declared column"),
+        (lambda d: d.update(default_filter={"column": "absent", "equals": "x"}), "dimension"),
+    ],
+    ids=["relation", "column", "default-filter"],
+)
+def test_validate_spec_rejects_malformed_committed_rules(monkeypatch, damage, message) -> None:
+    """Committed names, columns and default filters are checked once, not per request."""
+    damaged = copy.deepcopy(SOURCES)
+    damage(damaged[0]["families"][0]["datasets"][0])
+    monkeypatch.setattr(sources, "SOURCES", damaged)
+    with pytest.raises(ValueError, match=message):
+        validate_spec()

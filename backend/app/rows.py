@@ -66,7 +66,6 @@ DATE_VALUE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}\Z")
 
 class RowsErrorCode(StrEnum):
     UNKNOWN_DATASET = "unknown_dataset"
-    BAD_IDENTIFIER = "bad_identifier"
     BAD_RANGE = "bad_range"
     BAD_FILTER = "bad_filter"
     BAD_GROUP = "bad_group"
@@ -181,14 +180,6 @@ def validate(
             "Dataset is not held.",
             not_held_cause=dataset["not_held_cause"],
         )
-    relations = (dataset["base_relation"], dataset["latest_relation"])
-    if not dataset["base_relation"] or any(
-        value is not None and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", value)
-        for value in relations
-    ):
-        raise _error(RowsErrorCode.BAD_IDENTIFIER, "Unregistered relation identifier.")
-    if any(not column or not isinstance(column, str) for column in _projection(dataset)):
-        raise _error(RowsErrorCode.BAD_IDENTIFIER, "Invalid declared projection.")
     first = _parse_date(start)
     last = _parse_date(end)
     if dataset["kind"] == "reference" and (first or last):
@@ -223,8 +214,6 @@ def validate(
             if column not in dims or not FILTER_VALUE.fullmatch(value) or column in parsed:
                 raise _error(RowsErrorCode.BAD_FILTER, "Invalid or duplicate dimension filter.")
             parsed[column] = value
-    if any(column not in dims for column in parsed):
-        raise _error(RowsErrorCode.BAD_IDENTIFIER, "Default filter is not a dimension.")
     selected_columns = None
     if columns is not None:
         names = tuple(name.strip() for name in columns[0].split(",")) if len(columns) == 1 else ()

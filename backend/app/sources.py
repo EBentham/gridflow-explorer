@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import logging
+import re
 import threading
 import time
 from datetime import UTC, date, datetime
@@ -129,7 +130,7 @@ def _literal(value: str | int | float | bool | None) -> str:
 
 
 def validate_spec() -> None:
-    """Reject duplicate identities, routes, or malformed committed rules before acquisition."""
+    """Reject duplicate identities or routes and malformed committed rules, once at import."""
     identities: set[tuple[str, str]] = set()
     for source in SOURCES:
         slugs: set[str] = set()
@@ -147,6 +148,13 @@ def validate_spec() -> None:
                     raise ValueError(f"Invalid latest-day rule: {identity}")
                 if rule["mode"] == "max" and not rule["column"]:
                     raise ValueError(f"Missing latest-day anchor: {identity}")
+                if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", dataset["latest_relation"]):
+                    raise ValueError(f"Relation name is not an identifier: {identity}")
+                if not all(isinstance(c, str) and c for c in _required_columns(dataset)):
+                    raise ValueError(f"Invalid declared column: {identity}")
+                default = dataset["default_filter"]
+                if default and default["column"] not in {d["column"] for d in dataset["dims"]}:
+                    raise ValueError(f"Default filter is not a dimension: {identity}")
 
 
 def _required_columns(dataset: dict[str, Any]) -> set[str]:
@@ -281,7 +289,6 @@ def _coverage(
 
 def build_manifest(client: Any, *, generated_at: datetime | None = None) -> dict[str, Any]:
     """Build one complete manifest using a single GridflowClient handle."""
-    validate_spec()
     generated_at = generated_at or _utc_now()
     tables = set(client.get_tables())
     schema = client.query(
@@ -397,7 +404,6 @@ def _response(snapshot: dict[str, Any]) -> dict[str, Any]:
 def get_sources() -> dict[str, Any]:
     """Serve a fresh or stale complete snapshot, rebuilding lazily."""
     global _snapshot, _refreshed_at
-    validate_spec()
     now = time.monotonic()
     if _snapshot is not None and now - _refreshed_at < TTL_SECONDS:
         return _response(_snapshot)
@@ -420,3 +426,6 @@ def get_sources() -> dict[str, Any]:
         return _response(built)
     finally:
         _lock.release()
+
+
+validate_spec()
