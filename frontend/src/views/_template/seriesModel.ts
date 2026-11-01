@@ -37,6 +37,13 @@ export interface SeriesDef {
   max: number | null
   /** Some value is below zero: a stack draws it in its own negative stack. */
   signed: boolean
+  /**
+   * Its own step, for rows on a mixed clock (ENTSO-E's zones, some hourly and
+   * some every 15 minutes): the smallest spacing between its held times, as a
+   * gap only ever widens one; the bucket when the rows are means; null with
+   * fewer than two values. Set by `buildSeriesModel`.
+   */
+  stepMs?: number | null
 }
 
 /** One time on the window's clock: a field per series (`SeriesDef.field`), null for a gap, absent off that series' clock. */
@@ -165,11 +172,16 @@ export function buildSeriesModel(response: SeriesRowsResponse, opts: SeriesOptio
   }
   const rows = [...byT.values()].sort((a, b) => a.t - b.t)
 
+  const bucket = response.truncation?.bucket_ms ?? null
   for (const d of all) {
     let sum = 0
+    let prev: number | null = null
+    let step: number | null = null
     for (const row of rows) {
       const v = row[d.field]
       if (typeof v !== 'number') continue
+      if (prev !== null && (step === null || row.t - prev < step)) step = row.t - prev
+      prev = row.t
       d.count += 1
       sum += v
       d.min = d.min === null ? v : Math.min(d.min, v)
@@ -177,13 +189,13 @@ export function buildSeriesModel(response: SeriesRowsResponse, opts: SeriesOptio
     }
     d.mean = d.count ? sum / d.count : null
     d.signed = (d.min ?? 0) < 0
+    d.stepMs = bucket ?? step
   }
 
   const cap = opts.maxSeries ?? DEFAULT_MAX_SERIES
   const held = all.filter((d) => d.count > 0)
   const bySize = [...held].sort((a, b) => Math.abs(b.mean ?? 0) - Math.abs(a.mean ?? 0))
   const kept = new Set(bySize.slice(0, cap))
-  const bucket = response.truncation?.bucket_ms ?? null
 
   let settlement: Map<number, Settlement> | null = null
   // A bucket mean spans several periods: it names none.

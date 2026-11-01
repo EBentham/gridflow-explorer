@@ -87,15 +87,6 @@ export interface ZoneFigures {
   longestBelow: { start: number; last: number; n: number; min: number } | null
 }
 
-/** The smallest spacing between a zone's own held times: its step, as a gap only ever widens a spacing. */
-function ownStep(points: Point[]): number | null {
-  let best: number | null = null
-  for (let i = 1; i < points.length; i += 1) {
-    const d = points[i].t - points[i - 1].t
-    if (d > 0 && (best === null || d < best)) best = d
-  }
-  return best
-}
 
 /** Steps a clock of `step` has over the window's UK days (clock changes included). */
 function stepsInWindow(window: DateRange, step: number | null): number | null {
@@ -129,7 +120,7 @@ export function zoneFigures(model: SeriesModel, window: DateRange): ZoneFigures[
         if (typeof v === 'number') points.push({ t: row.t, v })
       }
     }
-    const step = model.bucketed ? model.stepMs : (ownStep(points) ?? zone?.cardStep ?? null)
+    const step = def?.stepMs ?? (model.bucketed ? model.stepMs : (zone?.cardStep ?? null))
     let sum = 0
     let low: Point | null = null
     let high: Point | null = null

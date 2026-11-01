@@ -186,7 +186,7 @@ export interface Clocked {
 
 export interface Track extends Clocked {
   def: SeriesDef
-  /** Its step: the bucket when the rows are means, else the commonest spacing of its own held times; null when unknown. */
+  /** Its step (`SeriesDef.stepMs`), else the zone's published one; null when unknown. */
   step: number | null
   /** Its held values in the window, in time order. */
   points: Point[]
@@ -201,27 +201,10 @@ export function pointsOf(rows: WideRow[], def: SeriesDef): Point[] {
   return out
 }
 
-/** The commonest spacing between consecutive held times: a gap only ever adds a longer one. */
-function ownStep(points: Point[]): number | null {
-  const counts = new Map<number, number>()
-  for (let i = 1; i < points.length; i += 1) {
-    const d = points[i].t - points[i - 1].t
-    if (d > 0) counts.set(d, (counts.get(d) ?? 0) + 1)
-  }
-  let best: number | null = null
-  let n = 0
-  for (const [d, c] of counts) {
-    if (c > n || (c === n && best !== null && d < best)) {
-      best = d
-      n = c
-    }
-  }
-  return best
-}
 
 export function trackOf(model: SeriesModel, def: SeriesDef, fallback: number | null = null): Track {
   const points = pointsOf(model.rows, def)
-  const step = model.bucketed ? model.stepMs : (ownStep(points) ?? fallback)
+  const step = def.stepMs ?? fallback
   return { def, step, points }
 }
 
