@@ -28,7 +28,7 @@ function yearOf(v: Scalar): string | null {
 const YEAR: ColumnSpec = { field: 'timestamp_utc', label: 'Year', text: yearOf }
 
 /** The four areas the per-area tables hold, as the research counted them. */
-const NO_GB = 'This table covers France, Belgium, the Netherlands and Germany-Luxembourg, by ENTSO-E’s area codes: GB isn’t among them.'
+const NO_GB = 'This table covers France, Belgium, the Netherlands and Germany / Luxembourg, by ENTSO-E’s area codes: GB isn’t among them.'
 
 const view = defineView({
   title: 'Installed capacity, yearly',

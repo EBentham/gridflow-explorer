@@ -7,7 +7,7 @@
  */
 import { autoDigits, fmt0, fmtN } from '../../../design/format'
 import { instantLabel } from '../../../design/time'
-import { productionType } from '../../_template/codes'
+import { entsoeArea, productionType } from '../../_template/codes'
 import type { EventRow, EventsRowsResponse, Scalar } from '../../contract'
 import type { ColumnSpec, PageContext } from '../../define'
 
@@ -41,24 +41,6 @@ export interface OutageShape {
   filters: string[]
 }
 
-/**
- * ENTSO-E's area codes (EIC) that the research card names for these rows, and
- * Ireland's (SEM), as gridflow's own ENTSO-E area list names it.
- * A code not listed shows as held.
- */
-const AREAS: Readonly<Record<string, string>> = {
-  '10YGB----------A': 'GB',
-  '10YFR-RTE------C': 'France',
-  '10YBE----------2': 'Belgium',
-  '10YNL----------L': 'Netherlands',
-  '10Y1001A1001A82H': 'Germany-Luxembourg',
-  '10Y1001A1001A59C': 'Ireland (SEM)',
-}
-
-export function areaWords(v: Scalar): string | null {
-  return typeof v === 'string' ? (AREAS[v] ?? null) : null
-}
-
 /** A09 is ENTSO-E's cancelled status; a blank status is a notice that states none. */
 export function statusWords(v: Scalar): string | null {
   if (v === 'A09') return 'Cancelled'
@@ -66,7 +48,8 @@ export function statusWords(v: Scalar): string | null {
   return null
 }
 
-const area = (field: string, label: string): Field => ({ field, label, id: true, words: areaWords })
+/** An area column: named as gridflow names it, a code it doesn't name shown as held. */
+const area = (field: string, label: string): Field => ({ field, label, id: true, words: entsoeArea })
 const STATUS: Field = { field: 'document_status', label: 'Status', words: statusWords }
 
 export const SHAPES: Readonly<Record<string, OutageShape>> = {

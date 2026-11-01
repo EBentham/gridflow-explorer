@@ -6,6 +6,7 @@
  * for one zone. Nothing is filled in: a quarter-hour missing from either side
  * has no error, never a zero.
  */
+import { EIC, ENTSOE_AREAS } from '../../_template/codes'
 import type { GroupSpec, PageContext, RelatedData } from '../../define'
 import { seriesId, type SeriesDef, type SeriesModel } from '../../_template/seriesModel'
 
@@ -23,7 +24,7 @@ export const GB_DEMAND_ROUTE = '/sources/elexon/demand-outturn'
 
 /** ENTSO-E's area codes (EIC) for the four zones held, largest first, as gridflow's area list names them. */
 export const ZONES: GroupSpec[] = [
-  { value: '10Y1001A1001A82H', label: 'Germany-Luxembourg', color: 'var(--chart-price)' },
+  { value: EIC.DE_LU, label: ENTSOE_AREAS[EIC.DE_LU], color: 'var(--chart-price)' },
   { value: '10YFR-RTE------C', label: 'France', color: 'var(--chart-price-2)' },
   { value: '10YNL----------L', label: 'Netherlands', color: 'var(--fuel-wind)' },
   { value: '10YBE----------2', label: 'Belgium', color: 'var(--fuel-pumped_storage)' },

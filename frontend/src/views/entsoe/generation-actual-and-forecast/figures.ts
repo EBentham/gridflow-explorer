@@ -18,6 +18,7 @@ import type { DateRange } from '../../../lib/range'
 import type { GroupSpec, PageContext } from '../../define'
 import { seriesId, type SeriesDef, type SeriesModel, type WideRow } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
+import { EIC, ENTSOE_AREAS } from '../../_template/codes'
 
 // ---------------------------------------------------------------- datasets and columns
 
@@ -61,7 +62,7 @@ export interface Zone {
   cardStep: number
 }
 
-const DE_LU: Zone = { value: '10Y1001A1001A82H', param: 'de-lu', label: 'Germany-Luxembourg', prose: 'Germany-Luxembourg', color: 'var(--chart-price)', cardStep: QUARTER_MS }
+const DE_LU: Zone = { value: EIC.DE_LU, param: 'de-lu', label: ENTSOE_AREAS[EIC.DE_LU], prose: ENTSOE_AREAS[EIC.DE_LU], color: 'var(--chart-price)', cardStep: QUARTER_MS }
 const FR: Zone = { value: '10YFR-RTE------C', param: 'fr', label: 'France', prose: 'France', color: 'var(--chart-price-2)', cardStep: QUARTER_MS }
 const NL: Zone = { value: '10YNL----------L', param: 'nl', label: 'Netherlands', prose: 'the Netherlands', color: 'var(--fuel-wind)', cardStep: QUARTER_MS }
 const BE: Zone = { value: '10YBE----------2', param: 'be', label: 'Belgium', prose: 'Belgium', color: 'var(--fuel-pumped_storage)', cardStep: HOUR_MS }

@@ -115,11 +115,11 @@ const view = defineView({
       body: 'events',
       label: 'Production units',
       title: 'Outage blocks at production units',
-      sub: 'ENTSO-E’s notices of planned outages at production units in the Netherlands, Germany-Luxembourg and France, dated by when the notice was published.',
+      sub: 'ENTSO-E’s notices of planned outages at production units in the Netherlands, Germany / Luxembourg and France, dated by when the notice was published.',
       caveats: [
         'Measured against each unit’s rated capacity, the MW figure here reads more like the capacity left than the capacity out.',
         'About two thirds of the blocks held are cancelled (status Cancelled); filter Status to leave them out. A blank status is a notice that states none.',
-        'No GB units: these rows cover the Netherlands, Germany-Luxembourg and France. For many areas ENTSO-E’s production units overlap its generation units.',
+        'No GB units: these rows cover the Netherlands, Germany / Luxembourg and France. For many areas ENTSO-E’s production units overlap its generation units.',
       ],
       ...table('outages_production'),
     },
@@ -130,7 +130,7 @@ const view = defineView({
       title: 'Outage blocks at consumption units',
       sub: 'ENTSO-E’s planned unavailability of consumption units, per area and quarter-hour, dated by when it was published.',
       caveats: [
-        'This one comes on a regular 15-minute clock, almost all Germany-Luxembourg and near flat. It is dated here by publication, so a fortnight of quarter-hours lands on the day ENTSO-E sent it; sort by Block starts to read it in order.',
+        'This one comes on a regular 15-minute clock, almost all Germany / Luxembourg and near flat. It is dated here by publication, so a fortnight of quarter-hours lands on the day ENTSO-E sent it; sort by Block starts to read it in order.',
       ],
       ...table('outages_consumption'),
     },
