@@ -16,6 +16,7 @@ import type { DateRange } from '../../../lib/range'
 import type { GroupSpec } from '../../define'
 import type { SeriesDef, SeriesModel, WideRow } from '../../_template/seriesModel'
 import { runsWhere } from '../../../design/series'
+import { daysInWindow } from '../../../design/days'
 
 export const PRICE = 'price_eur_mwh'
 export const AREA = 'area_code'
@@ -189,16 +190,7 @@ export interface ZoneDay {
 
 /** Every UK day of the window with one zone's held values: a day it holds nothing of is listed, with none held. */
 export function zoneDays(z: ZoneFigures, window: DateRange, bucketed: boolean): ZoneDay[] {
-  const byDay = new Map<number, Point[]>()
-  for (const p of z.points) {
-    const d = londonMidnight(p.t)
-    const list = byDay.get(d)
-    if (list) list.push(p)
-    else byDay.set(d, [p])
-  }
-  return datesBetween(window.start, window.end).map((day) => {
-    const start = dayStart(day)
-    const points = byDay.get(start) ?? []
+  return daysInWindow(z.points, window).map(({ day, start, rows: points }) => {
     let sum = 0
     let low: Point | null = null
     let high: Point | null = null

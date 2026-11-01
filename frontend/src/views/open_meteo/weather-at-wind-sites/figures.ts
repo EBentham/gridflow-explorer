@@ -6,10 +6,11 @@
  * of the sites, and an hour missing any of its half-hours of output has no
  * output figure, never a zero.
  */
-import { datesBetween, dayStart, londonMidnight, stepsInDay } from '../../../design/time'
+import { londonMidnight, stepsInDay } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { GroupSpec } from '../../define'
 import { seriesId, type SeriesDef, type SeriesModel, type WideRow } from '../../_template/seriesModel'
+import { daysInWindow } from '../../../design/days'
 
 export const SPEED = 'wind_speed_100m_mps'
 export const OUTPUT = 'generation_mw'
@@ -162,16 +163,8 @@ export interface DayRow {
 
 /** Every UK day of the window, held or not, with the speed's figures over its held steps. */
 export function speedByDay(model: SeriesModel, window: DateRange, points: Point[]): DayRow[] {
-  const byDay = new Map<number, Point[]>()
-  for (const p of points) {
-    const d = londonMidnight(p.t)
-    const list = byDay.get(d)
-    if (list) list.push(p)
-    else byDay.set(d, [p])
-  }
-  return datesBetween(window.start, window.end).map((day) => {
-    const start = dayStart(day)
-    return { day, start, expected: model.bucketed ? null : stepsInDay(start, model.stepMs), speed: statsOf(byDay.get(start) ?? []) }
+  return daysInWindow(points, window).map(({ day, start, rows: dayRows }) => {
+    return { day, start, expected: model.bucketed ? null : stepsInDay(start, model.stepMs), speed: statsOf(dayRows) }
   })
 }
 

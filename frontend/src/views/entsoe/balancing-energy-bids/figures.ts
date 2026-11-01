@@ -21,6 +21,7 @@ import type { PageContext } from '../../define'
 import type { SeriesDef, WideRow } from '../../_template/seriesModel'
 import { displayUnit, type DisplayUnit } from '../../_template/units'
 import { BID, QUANTITY, selectionOf, type Direction, type Selection } from './zones'
+import { daysInWindow } from '../../../design/days'
 
 /** The main chart and the working panel's chart take this value-axis width, so their clocks line up. */
 export const AXIS_WIDTH = 60
@@ -214,16 +215,7 @@ export function dayFigures(response: SeriesRowsResponse, book: Book, window: Dat
     }
     s.add(String(r[BID] ?? ''))
   }
-  const rowsByDay = new Map<number, WideRow[]>()
-  for (const r of book.heldRows) {
-    const d = londonMidnight(r.t)
-    const list = rowsByDay.get(d)
-    if (list) list.push(r)
-    else rowsByDay.set(d, [r])
-  }
-  return datesBetween(window.start, window.end).map((day) => {
-    const start = dayStart(day)
-    const rows = rowsByDay.get(start) ?? []
+  return daysInWindow(book.heldRows, window).map(({ day, start, rows }) => {
     let sum = 0
     let n = 0
     let low: DayFigures['low'] = null

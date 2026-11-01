@@ -12,8 +12,8 @@
  */
 import type { SeriesRow, SeriesRowsResponse } from '../../contract'
 import type { SeriesDef, SeriesModel, WideRow } from '../../_template/seriesModel'
-import { datesBetween, dayStart, londonMidnight } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
+import { daysInWindow } from '../../../design/days'
 
 export const FORECAST = 'forecast_gco2_kwh'
 export const ACTUAL = 'actual_gco2_kwh'
@@ -121,15 +121,7 @@ export interface DayFigures {
 
 /** Every UK day of the window, held or not, with its means and grade counts over what it holds. */
 export function dayFigures(model: SeriesModel, window: DateRange, forecast: SeriesDef, actual: SeriesDef, grades: Map<number, string>): DayFigures[] {
-  const byDay = new Map<number, WideRow[]>()
-  for (const r of model.rows) {
-    const d = londonMidnight(r.t)
-    const list = byDay.get(d)
-    if (list) list.push(r)
-    else byDay.set(d, [r])
-  }
-  return datesBetween(window.start, window.end).map((day) => {
-    const start = dayStart(day)
+  return daysInWindow(model.rows, window).map(({ day, start, rows: dayRows }) => {
     let fN = 0
     let fSum = 0
     let aN = 0
@@ -138,7 +130,7 @@ export function dayFigures(model: SeriesModel, window: DateRange, forecast: Seri
     let mSum = 0
     let mAbs = 0
     const g = new Map<string, number>()
-    for (const r of byDay.get(start) ?? []) {
+    for (const r of dayRows) {
       const f = r[forecast.field]
       const a = r[actual.field]
       if (typeof f === 'number') {

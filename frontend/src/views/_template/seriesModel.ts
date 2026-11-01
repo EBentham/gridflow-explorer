@@ -8,8 +8,9 @@
  * there at all (it is on another clock).
  */
 import { SERIES_COLORS } from '../../design/chartTheme'
+import { daysInWindow } from '../../design/days'
 import { runsWhere, type Run } from '../../design/series'
-import { datesBetween, dayStart, fmtDay, HOUR_MS, londonMidnight, periodLabel, stepsInDay, ukDate } from '../../design/time'
+import { fmtDay, periodLabel, ukDate } from '../../design/time'
 import type { DateRange } from '../../lib/range'
 import type { SeriesRowsResponse, ValueColumn } from '../contract'
 import type { GroupSpec, ValueSpec } from '../define'
@@ -283,17 +284,8 @@ export interface DaySummary {
  * is listed as missing rather than dropped.
  */
 export function daySummaries(model: SeriesModel, window: DateRange, def?: SeriesDef): DaySummary[] {
-  const byDay = new Map<number, WideRow[]>()
-  for (const row of model.rows) {
-    const d = londonMidnight(row.t)
-    const list = byDay.get(d)
-    if (list) list.push(row)
-    else byDay.set(d, [row])
-  }
   const defs = def ? [def] : model.all
-  return datesBetween(window.start, window.end).map((day) => {
-    const start = dayStart(day)
-    const rows = byDay.get(start) ?? []
+  return daysInWindow(model.rows, window, model).map(({ day, start, rows, expected }) => {
     let held = 0
     let sum = 0
     let low: DaySummary['low'] = null
@@ -312,8 +304,7 @@ export function daySummaries(model: SeriesModel, window: DateRange, def?: Series
     return {
       day,
       start,
-      // Buckets are UTC-aligned: those of an hour or less fall on UK hours, longer ones straddle UK days.
-      expected: model.bucketed && model.stepMs !== null && model.stepMs > HOUR_MS ? null : stepsInDay(start, model.stepMs),
+      expected,
       held,
       mean: def && held ? sum / held : null,
       low,

@@ -7,12 +7,13 @@
  * gridflow's model computed.
  */
 import { niceTicks, type Scale, num } from '../../../design/format'
-import { datesBetween, dayStart, londonMidnight, stepsInDay } from '../../../design/time'
+import { stepsInDay } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { Scalar, SeriesRow } from '../../contract'
 import type { PageContext, QuerySpec } from '../../define'
 import { collator } from '../../_template/seriesModel'
 import { runsWhere, type Run } from '../../../design/series'
+import { daysInWindow } from '../../../design/days'
 
 // ---------------------------------------------------------------- the run
 
@@ -337,16 +338,7 @@ export interface ClearingDay {
 }
 
 export function clearingDays(points: ClearingPoint[], window: DateRange, stepMs: number | null): ClearingDay[] {
-  const byDay = new Map<number, ClearingPoint[]>()
-  for (const p of points) {
-    const d = londonMidnight(p.t)
-    const list = byDay.get(d)
-    if (list) list.push(p)
-    else byDay.set(d, [p])
-  }
-  return datesBetween(window.start, window.end).map((day) => {
-    const start = dayStart(day)
-    const ps = byDay.get(start) ?? []
+  return daysInWindow(points, window).map(({ day, start, rows: ps }) => {
     const units = setterCounts(ps.filter((p) => p.atFloor !== true))
     return {
       day,

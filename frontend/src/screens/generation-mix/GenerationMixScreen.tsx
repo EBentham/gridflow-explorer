@@ -36,7 +36,7 @@ export function GenerationMixScreen() {
 
   const held = days.filter((d) => d.rows.length > 0)
   // Unpicked, show the latest complete day: the latest held day can be a stub of a few half-hours.
-  const complete = held.filter((d) => d.rows.length >= d.expected)
+  const complete = held.filter((d) => d.expected !== null && d.rows.length >= d.expected)
   const day = held.find((d) => d.start === picked) ?? complete.at(-1) ?? held.at(-1)
   const means = useMemo(() => meanMix(day?.rows ?? []), [day])
   const latest = rows.at(-1)
@@ -170,7 +170,7 @@ export function GenerationMixScreen() {
                       )
                     }
                     const on = d.start === day?.start
-                    const whole = d.rows.length >= d.expected
+                    const whole = d.expected !== null && d.rows.length >= d.expected
                     return (
                       <tr key={d.day} className={on ? 'is-on' : whole ? undefined : 'is-partial'}>
                         <th scope="row">

@@ -13,12 +13,13 @@
  */
 import { SERIES_COLORS } from '../../../design/chartTheme'
 import { plural } from '../../../design/format'
-import { dayStart, datesBetween, HOUR_MS, londonMidnight, MINUTE_MS, stepNoun, stepsInDay } from '../../../design/time'
+import { datesBetween, HOUR_MS, MINUTE_MS, stepNoun, stepsInDay } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { GroupSpec, PageContext } from '../../define'
 import { seriesId, type SeriesDef, type SeriesModel, type WideRow } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import { EIC, ENTSOE_AREAS } from '../../_template/codes'
+import { daysInWindow } from '../../../design/days'
 
 // ---------------------------------------------------------------- datasets and columns
 
@@ -378,16 +379,7 @@ export interface TrackDay {
 
 /** Every UK day of the window with one track's held values: a day holding none is listed too. */
 export function trackDays(points: Point[], step: number | null, window: DateRange, bucketed: boolean): TrackDay[] {
-  const byDay = new Map<number, Point[]>()
-  for (const p of points) {
-    const d = londonMidnight(p.t)
-    const list = byDay.get(d)
-    if (list) list.push(p)
-    else byDay.set(d, [p])
-  }
-  return datesBetween(window.start, window.end).map((day) => {
-    const start = dayStart(day)
-    const held = byDay.get(start) ?? []
+  return daysInWindow(points, window).map(({ day, start, rows: held }) => {
     const expected = bucketed && step !== null && step > HOUR_MS ? null : stepsInDay(start, step)
     return { day, start, expected, held: held.length, points: held }
   })
