@@ -1,0 +1,77 @@
+{
+  "dataset": "sample",
+  "source": "test",
+  "kind": "series",
+  "relation": "silver_test_sample",
+  "window": {
+    "start": "2026-09-22",
+    "end": "2026-09-22",
+    "tz": "Europe/London"
+  },
+  "grain_ms": null,
+  "columns": [
+    {
+      "column": "value",
+      "unit": "MW",
+      "label": "Value"
+    }
+  ],
+  "group": "unit",
+  "filters": {},
+  "rows": [
+    {
+      "published_at": "2026-09-22T00:00:00Z",
+      "timestamp_utc": "2026-09-22T00:00:00Z",
+      "unit": "A",
+      "value": 1.0,
+      "ts": 1790035200000
+    },
+    {
+      "published_at": "2026-09-22T00:00:00Z",
+      "timestamp_utc": "2026-09-22T00:00:00Z",
+      "unit": "B",
+      "value": 3.0,
+      "ts": 1790035200000
+    },
+    {
+      "published_at": "2026-09-22T00:00:00Z",
+      "timestamp_utc": "2026-09-22T01:00:00Z",
+      "unit": "A",
+      "value": 2.0,
+      "ts": 1790038800000
+    },
+    {
+      "published_at": "2026-09-22T00:00:00Z",
+      "timestamp_utc": "2026-09-22T01:00:00Z",
+      "unit": "B",
+      "value": 4.0,
+      "ts": 1790038800000
+    }
+  ],
+  "row_count": 4,
+  "truncated": true,
+  "truncation": {
+    "row_cap": 50000,
+    "reasons": [
+      {
+        "type": "exact_duplicate_rows",
+        "removed_rows": 1
+      }
+    ],
+    "rows_before_defaults": null,
+    "rows_after_filters": 4,
+    "returned_rows": 4,
+    "bucket_ms": null,
+    "aggregation": null
+  },
+  "coverage": {
+    "first_day": "2026-09-22",
+    "last_day": "2026-09-22",
+    "latest_local_day": "2026-09-22",
+    "days_in_window": 1
+  },
+  "notes": [
+    "Independent source and rows metadata caches can temporarily differ.",
+    "Irregular or unrecognized cadence: stored timestamps are not gap-filled."
+  ]
+}

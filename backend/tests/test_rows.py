@@ -3,14 +3,21 @@
 from __future__ import annotations
 
 import copy
+import json
+from contextlib import contextmanager
 from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 from typing import Any
 from zoneinfo import ZoneInfo
 
+import duckdb
+import polars as pl
 import pytest
+from fastapi.testclient import TestClient
 
-from app import rows
+from app import rows, sources
 from app.errors import ErrorCode
+from app.main import app
 
 
 @pytest.fixture(autouse=True)
@@ -1269,3 +1276,221 @@ def test_metadata_cache_reuses_checks_and_expires(monkeypatch, sources_db):
     tick[0] += rows.TTL_SECONDS + 1
     rows._metadata(scope, request, key)
     assert sources_db.table_calls == 3
+
+
+# --- The engine: resource policy, TEMP stages and their cleanup -----------------
+
+
+def _hourly(db, spec, hours=2):
+    first = datetime(2026, 9, 22, tzinfo=UTC)
+    _seed(db, spec, [(first + timedelta(hours=i), "A", 1.0, first, first) for i in range(hours)])
+
+
+def _memory_limit(db) -> Decimal:
+    return rows._memory_bytes(db.con.sql("SELECT current_setting('memory_limit')").fetchone()[0])
+
+
+def test_resource_ceiling_applied_once(monkeypatch, sources_db):
+    """The ceiling follows the constant and each setting is applied once per request."""
+    spec = _spec(grain="irregular")
+    _hourly(sources_db, spec)
+    monkeypatch.setattr(rows, "_ROWS_MEMORY_CEILING", "7GiB")
+    sources_db.con.execute("SET memory_limit='16GiB'")
+    assert _run(monkeypatch, sources_db, spec, start=None, end=None)["row_count"] == 2
+    assert _memory_limit(sources_db) == rows._memory_bytes("7GiB")
+    calls = sources_db.config_calls
+    assert len([sql for sql in calls if sql.startswith("SET temp_directory=")]) == 1
+    assert len([sql for sql in calls if "SET memory_limit='7GiB'" in sql]) == 1
+
+
+def test_lower_memory_limit_preserved(sources_db):
+    """A configured limit below the ceiling is not raised to it."""
+    sources_db.con.execute("SET memory_limit='1GiB'")
+    rows._configure_resources(sources_db)
+    assert _memory_limit(sources_db) == rows._memory_bytes("1GiB")
+
+
+def test_large_memory_units_and_unlimited_setting(monkeypatch, sources_db):
+    """Large normalized settings parse and still receive the rows ceiling."""
+    assert rows._memory_bytes("16383.9 PiB") == Decimal("16383.9") * 1024**5
+    assert rows._memory_bytes("1 EiB") == Decimal(1024) ** 6
+    original = sources_db.query
+
+    def unlimited_setting(sql: str) -> pl.DataFrame:
+        if sql == "SELECT current_setting('memory_limit') AS memory_limit":
+            return pl.DataFrame({"memory_limit": ["16383.9 PiB"]})
+        return original(sql)
+
+    monkeypatch.setattr(sources_db, "query", unlimited_setting)
+    rows._configure_resources(sources_db)
+    assert _memory_limit(sources_db) == rows._memory_bytes(rows._ROWS_MEMORY_CEILING)
+
+
+def test_setting_mismatch_fails_before_rows_query(monkeypatch, sources_db):
+    """A resource policy that did not take refuses before any dataset query."""
+    original = sources_db.query
+
+    def mismatched(sql: str) -> pl.DataFrame:
+        if sql.startswith("SET temp_directory="):
+            return pl.DataFrame({"temp_directory": ["C:/spill"], "memory_limit": ["8.0 GiB"]})
+        return original(sql)
+
+    monkeypatch.setattr(sources_db, "query", mismatched)
+    request = rows.Request("test", _spec(), None, None, None, (), False)
+    with pytest.raises(RuntimeError, match="resource policy"):
+        rows.execute(sources_db, request, "mismatch")
+    assert not any("final_count" in sql for sql in sources_db.calls)
+
+
+def test_setting_failure_propagates(monkeypatch, sources_db):
+    """A failed resource SET remains a visible engine failure before dataset queries."""
+    original = sources_db.query
+
+    def failing_set(sql: str) -> pl.DataFrame:
+        if sql.startswith("SET temp_directory="):
+            raise duckdb.Error("injected setting failure")
+        return original(sql)
+
+    monkeypatch.setattr(sources_db, "query", failing_set)
+    request = rows.Request("test", _spec(), None, None, None, (), False)
+    with pytest.raises(duckdb.Error, match="setting failure"):
+        rows.execute(sources_db, request, "set-fails")
+    assert not any("information_schema.columns" in sql for sql in sources_db.calls)
+
+
+def test_sources_route_after_policy(monkeypatch, sources_db):
+    """A rows resource SET must leave the shared manifest query path operational."""
+    rows._configure_resources(sources_db)
+    monkeypatch.setattr(sources, "_snapshot", None)
+    monkeypatch.setattr(sources, "_refreshed_at", 0.0)
+
+    @contextmanager
+    def acquire():
+        yield sources_db
+
+    monkeypatch.setattr(sources, "client_ctx", acquire)
+    assert TestClient(app).get("/api/sources").status_code == 200
+
+
+def _temporary_tables(db) -> set[str]:
+    """Read DuckDB's TEMP catalog, independent of the fixture query adapter."""
+    return set(
+        db.con.sql("SELECT table_name FROM duckdb_tables() WHERE temporary = true").pl()[
+            "table_name"
+        ]
+    )
+
+
+def test_real_stages_exist_during_request_and_are_dropped(monkeypatch, sources_db):
+    """An ordered dedup stages TEMP tables during the request and drops every one."""
+    spec = _spec(grain="irregular")
+    _hourly(sources_db, spec, hours=1)
+    original = rows._DeadlineClient.create
+    seen: list[set[str]] = []
+
+    def observe(self: rows._DeadlineClient, name: str, sql: str) -> None:
+        original(self, name, sql)
+        seen.append(_temporary_tables(sources_db))
+
+    monkeypatch.setattr(rows._DeadlineClient, "create", observe)
+    _run(monkeypatch, sources_db, spec, start=None, end=None)
+    assert seen and any(any(name.startswith("__rows_") for name in tables) for tables in seen)
+    assert _temporary_tables(sources_db) == set()
+
+
+def test_temp_creation_oom_uses_unmaterialised_selection(monkeypatch, sources_db):
+    """A TEMP creation OOM falls back to the unmaterialised selection with identical bytes."""
+    spec = _spec(grain="irregular")
+    _hourly(sources_db, spec)
+    expected = json.dumps(_run(monkeypatch, sources_db, spec, start=None, end=None))
+    rows._cache.clear()
+    original = rows._DeadlineClient.create
+    calls = 0
+
+    def fail_once(self: rows._DeadlineClient, name: str, sql: str) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise duckdb.OutOfMemoryException("injected TEMP creation OOM")
+        original(self, name, sql)
+
+    monkeypatch.setattr(rows._DeadlineClient, "create", fail_once)
+    assert json.dumps(_run(monkeypatch, sources_db, spec, start=None, end=None)) == expected
+    assert calls > 1
+    assert _temporary_tables(sources_db) == set()
+
+
+def test_cleanup_preserves_primary_and_attempts_every_drop(monkeypatch, sources_db):
+    """A DROP failure neither masks the primary error nor skips the remaining drops."""
+    scope = rows._SelectionScope(rows._DeadlineClient(sources_db))
+    scope.stage("SELECT 1 AS n")
+    scope.stage("SELECT 2 AS n")
+    attempted: list[str] = []
+    original = scope.client.drop
+
+    def failing_drop(name: str) -> None:
+        attempted.append(name)
+        if name == scope.owned[-1]:
+            raise duckdb.Error("injected DROP failure")
+        original(name)
+
+    monkeypatch.setattr(scope.client, "drop", failing_drop)
+    with pytest.raises(ValueError, match="primary"):
+        try:
+            raise ValueError("primary")
+        except ValueError as primary:
+            scope.close(primary)
+            raise
+    assert attempted == list(reversed(scope.owned))
+    assert scope.owned[0] not in _temporary_tables(sources_db)
+    sources_db.con.execute(f"DROP TABLE IF EXISTS temp.main.{scope.owned[-1]}")
+
+
+def test_cleanup_without_primary_raises_drop_error_in_unrelated_handler(monkeypatch, sources_db):
+    """An unrelated handled exception cannot suppress a successful request's cleanup error."""
+    scope = rows._SelectionScope(rows._DeadlineClient(sources_db))
+    scope.stage("SELECT 1 AS n")
+
+    def failing_drop(name: str) -> None:
+        raise duckdb.Error("injected DROP failure")
+
+    monkeypatch.setattr(scope.client, "drop", failing_drop)
+    try:
+        raise ValueError("unrelated caller failure")
+    except ValueError:
+        with pytest.raises(duckdb.Error, match="injected DROP failure"):
+            scope.close(None)
+    sources_db.con.execute(f"DROP TABLE IF EXISTS temp.main.{scope.owned[0]}")
+
+
+def test_selection_memoization(monkeypatch, sources_db):
+    """One rows execution compiles its semantic selection once."""
+    spec = _spec(grain="irregular")
+    _hourly(sources_db, spec, hours=1)
+    scope = rows._SelectionScope(rows._DeadlineClient(sources_db))
+    original = rows._selected_sql
+    calls = 0
+
+    def count(relation: str, dataset: dict[str, Any]) -> str:
+        nonlocal calls
+        calls += 1
+        return original(relation, dataset)
+
+    monkeypatch.setattr(rows, "_selected_sql", count)
+    selected = scope.selection("silver_test_sample", spec)
+    assert scope.selection("silver_test_sample", spec) == selected
+    assert calls == 1
+    scope.close()
+
+
+def test_collision_pair_is_reported_without_sql_sort(monkeypatch, sources_db):
+    """The collision check orders candidates in Python, so its SQL needs no ORDER BY."""
+    spec = _spec(grain="irregular")
+    spec["dedup"] = None
+    stamp = datetime(2026, 9, 22, tzinfo=UTC)
+    _seed(sources_db, spec, [(stamp, "A", value, stamp, stamp) for value in (3.0, 1.0, 2.0)])
+    with pytest.raises(rows.RowsError) as caught:
+        _run(monkeypatch, sources_db, spec, start=None, end=None)
+    assert caught.value.code == ErrorCode.AMBIGUOUS_SERIES
+    assert caught.value.details["varying_columns"] == ["value"]
+    assert not any("JOIN r ON" in sql and "ORDER BY" in sql for sql in sources_db.calls)

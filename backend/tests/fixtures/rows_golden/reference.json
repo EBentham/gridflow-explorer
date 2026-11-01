@@ -1,0 +1,49 @@
+{
+  "dataset": "sample",
+  "source": "test",
+  "kind": "reference",
+  "relation": "silver_test_sample",
+  "window": null,
+  "grain_ms": null,
+  "columns": [
+    {
+      "column": "value",
+      "unit": "MW",
+      "label": "Value"
+    }
+  ],
+  "group": null,
+  "filters": {},
+  "rows": [
+    {
+      "unit": "A",
+      "value": 1.0
+    },
+    {
+      "unit": "A",
+      "value": 2.0
+    },
+    {
+      "unit": "A",
+      "value": 5.0
+    },
+    {
+      "unit": "B",
+      "value": 1.0
+    },
+    {
+      "unit": "B",
+      "value": 2.0
+    }
+  ],
+  "row_count": 5,
+  "truncated": false,
+  "truncation": null,
+  "coverage": {
+    "first_day": null,
+    "last_day": null,
+    "latest_local_day": null,
+    "days_in_window": null
+  },
+  "notes": []
+}

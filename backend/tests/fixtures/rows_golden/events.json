@@ -1,0 +1,59 @@
+{
+  "dataset": "sample",
+  "source": "test",
+  "kind": "events",
+  "relation": "silver_test_sample",
+  "window": {
+    "start": "2026-09-22",
+    "end": "2026-09-22",
+    "tz": "Europe/London"
+  },
+  "grain_ms": null,
+  "columns": [
+    {
+      "column": "value",
+      "unit": "MW",
+      "label": "Value"
+    }
+  ],
+  "group": null,
+  "filters": {},
+  "rows": [
+    {
+      "timestamp_utc": "2026-09-22T01:00:00Z",
+      "unit": "A",
+      "value": 5.0,
+      "ts": 1790038800000
+    },
+    {
+      "timestamp_utc": "2026-09-22T01:00:00Z",
+      "unit": "B",
+      "value": 1.0,
+      "ts": 1790038800000
+    },
+    {
+      "timestamp_utc": "2026-09-22T00:00:00Z",
+      "unit": "A",
+      "value": 2.0,
+      "ts": 1790035200000
+    },
+    {
+      "timestamp_utc": "2026-09-22T00:00:00Z",
+      "unit": "B",
+      "value": 2.0,
+      "ts": 1790035200000
+    }
+  ],
+  "row_count": 4,
+  "truncated": false,
+  "truncation": null,
+  "coverage": {
+    "first_day": "2026-09-22",
+    "last_day": "2026-09-22",
+    "latest_local_day": "2026-09-22",
+    "days_in_window": 1
+  },
+  "notes": [
+    "Independent source and rows metadata caches can temporarily differ."
+  ]
+}
