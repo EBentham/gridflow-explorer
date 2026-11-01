@@ -129,7 +129,7 @@ export function PairBody({ ctx }: { ctx: PageContext }) {
   return (
     <>
       <OtherNote pair={pair} />
-      <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+      <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} />
       <p className="gf-hint">
         {pair.other ? `On top, ${top}, with its highest and lowest half-hour labelled; below it, ${below}, on the same clock with an axis of its own (the key gives its highest and lowest).` : `${top.replace(/^i/, 'I')} alone, with its highest and lowest half-hour labelled.`}{' '}
         {means ? `As ${means}` : 'One figure per half-hour'}, {BOUNDARY_WORDS}. The imbalance axis always takes in zero. A half-hour with no figure held is a gap.

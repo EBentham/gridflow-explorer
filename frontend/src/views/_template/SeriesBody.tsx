@@ -187,7 +187,7 @@ export function SeriesBody({ ctx }: { ctx: PageContext }) {
   }
   return (
     <>
-      <SeriesChart panels={plan.panels} domain={windowDomain(ctx.window.start, ctx.window.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+      <SeriesChart panels={plan.panels} domain={windowDomain(ctx.window.start, ctx.window.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} />
       {plan.missingLower && (
         <p className="gf-hint">
           {plan.missingLower.label} isn't drawn under the chart. {plan.missingLower.reason}

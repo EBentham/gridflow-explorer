@@ -92,7 +92,7 @@ export function WindSolarBody({ ctx }: { ctx: PageContext }) {
     <>
       <FuelHatch id={OFFSHORE_HATCH_ID} token="var(--fuel-wind)" />
       {notes}
-      <SeriesChart panels={lower ? [upper, lower] : [upper]} domain={domain} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+      <SeriesChart panels={lower ? [upper, lower] : [upper]} domain={domain} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} />
       {failed && (
         <p className="gf-hint">
           The total generation forecast isn’t drawn under the stack: <ErrorWords error={read.error} />

@@ -38,14 +38,14 @@ function FilterList({ filters }: { filters: [string, Scalar][] }) {
   ))
 }
 
-function Part({ part, fixture }: { part: SourcePart; fixture: boolean }) {
+function Part({ part }: { part: SourcePart }) {
   const cols = part.columns ?? []
   const filters = Object.entries(part.filters ?? {})
   // A split a filter pins to one value is named by the filter, not the split.
   const by = part.by && !filters.some(([k]) => k === part.by) ? part.by : null
   return (
     <>
-      {fixture ? 'Synthetic' : part.source ? sourceName(part.source) : 'gridflow'} <code>{part.dataset}</code>
+      {part.source ? sourceName(part.source) : 'gridflow'} <code>{part.dataset}</code>
       {cols.length > 0 && (
         <>
           ,{' '}
@@ -113,7 +113,7 @@ export function SourceLine({
       {parts.map((p, i) => (
         <Fragment key={`${p.dataset}:${i}`}>
           {i > 0 && '; '}
-          <Part part={p} fixture={ctx.fixture} />
+          <Part part={p} />
         </Fragment>
       ))}
       {what && <>, {what}</>}
@@ -742,7 +742,7 @@ export function About({ ctx }: { ctx: PageContext }) {
       <div>
         <dt>Dataset</dt>
         <dd>
-          <Id id={d.id} />, {ctx.fixture ? 'made in the browser' : `from ${sourceName(ctx.source)} (${ctx.source.host})`}
+          <Id id={d.id} />, from {sourceName(ctx.source)} ({ctx.source.host})
         </dd>
       </div>
       <div>
@@ -819,7 +819,7 @@ export function About({ ctx }: { ctx: PageContext }) {
       </div>
       <div>
         <dt>Fetched</dt>
-        <dd>{ctx.fixture ? 'Never: made in the browser' : d.schedule ? `${d.schedule[0].toUpperCase()}${d.schedule.slice(1)}, by gridflow` : 'Built by gridflow from other datasets'}</dd>
+        <dd>{d.schedule ? `${d.schedule[0].toUpperCase()}${d.schedule.slice(1)}, by gridflow` : 'Built by gridflow from other datasets'}</dd>
       </div>
     </dl>
   )

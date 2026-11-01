@@ -32,7 +32,7 @@ export function MarginKey({ ctx }: { ctx: PageContext }) {
         <ul className="gf-series-key">
           <li>
             <button type="button" disabled>
-              <KeyList items={[{ key: margin.key, mark: { kind: 'line', color: margin.color, dashed: ctx.fixture }, label: <span className="gf-series-name">De-rated margin</span> }]} />
+              <KeyList items={[{ key: margin.key, mark: { kind: 'line', color: margin.color }, label: <span className="gf-series-name">De-rated margin</span> }]} />
               <span className="gf-series-value">{latest ? margin.unit.format(latest.v) : '–'}</span>
             </button>
             {latest && <span className="gf-series-when">{when(latest.t)}</span>}

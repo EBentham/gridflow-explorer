@@ -33,7 +33,7 @@ export function PairKey({ ctx }: { ctx: PageContext }) {
           return (
             <li key={d.key}>
               <button type="button" disabled>
-                <KeyList items={[{ key: d.key, mark: { kind: 'line', color: d.color, dashed: ctx.fixture }, label: <span className="gf-series-name">{d.key === 'a' ? 'Imbalance' : 'Margin'}</span> }]} />
+                <KeyList items={[{ key: d.key, mark: { kind: 'line', color: d.color }, label: <span className="gf-series-name">{d.key === 'a' ? 'Imbalance' : 'Margin'}</span> }]} />
                 <span className="gf-series-value">{latest ? d.unit.format(latest.v) : DASH}</span>
               </button>
               {latest && <span className="gf-series-when">{when(latest.t)}</span>}

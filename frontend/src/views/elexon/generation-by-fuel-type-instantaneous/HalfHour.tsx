@@ -120,7 +120,6 @@ export function HalfHour({ ctx }: { ctx: PageContext }) {
           },
         ]}
         domain={[day.start, day.end]}
-        fixture={ctx.fixture}
         syncId="fuelinst-halfhour"
       />
       <KeyList

@@ -77,7 +77,7 @@ export function UnitsMain({ ctx }: { ctx: PageContext }) {
     const points = days.map((d) => ({ t: d.mid, v: one.byDate.get(d.date)?.mw ?? null }))
     return (
       <>
-        <SeriesChart panels={[linePanel(points, one.id ?? one.key, one.band.color, 380)]} domain={domain} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+        <SeriesChart panels={[linePanel(points, one.id ?? one.key, one.band.color, 380)]} domain={domain} picked={ctx.picked} onPick={ctx.pick} />
         <p className="gf-hint">
           The usable output forecast for <code>{one.id}</code> on each delivery day, in MW: one point per day, the lines between them only joining the days. A gap is a day the forecast doesn’t list the unit.
         </p>
@@ -95,7 +95,7 @@ export function UnitsMain({ ctx }: { ctx: PageContext }) {
   const panels = [stackPanel(days, bands, compared ? 400 : 470), ...(compared ? [barsPanel(diffs, 'Units’ total less the by-fuel total', 150)] : [])]
   return (
     <>
-      <SeriesChart panels={panels} domain={domain} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+      <SeriesChart panels={panels} domain={domain} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} />
       <p className="gf-hint">
         {focus
           ? `${focus.label} alone: the sum of its units’ forecast usable output for each delivery day, in GW. Select it again in the key to draw every fuel.`

@@ -38,9 +38,9 @@ export function HalfHourKey({ ctx }: { ctx: PageContext }) {
   const unit = own.unit
   const outturnName = national ? 'national demand outturn' : 'transmission demand outturn'
 
-  const items: KeyItem[] = [{ key: 'forecast', mark: { kind: 'line', color: own.color, dashed: ctx.fixture }, label: `${own.label}, ${unit.label ?? 'unit unconfirmed'}` }]
+  const items: KeyItem[] = [{ key: 'forecast', mark: { kind: 'line', color: own.color }, label: `${own.label}, ${unit.label ?? 'unit unconfirmed'}` }]
   if (rel && oDef && oDef.count > 0 && ctx.mode === 'chart') {
-    items.push({ key: 'outturn', mark: { kind: 'line', color: COLORS.outturn, dashed: ctx.fixture }, label: `${national ? 'National' : 'Transmission'} demand outturn, working panel` })
+    items.push({ key: 'outturn', mark: { kind: 'line', color: COLORS.outturn }, label: `${national ? 'National' : 'Transmission'} demand outturn, working panel` })
   }
 
   return (

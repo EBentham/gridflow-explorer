@@ -31,9 +31,9 @@ export function DemandKey({ ctx }: { ctx: PageContext }) {
   const gap = tModel && transmission ? gapRows(model, national, tModel, transmission) : null
   const unit = national.unit
 
-  const items: KeyItem[] = [{ key: 'national', mark: { kind: 'line', color: national.color, dashed: ctx.fixture }, label: `${national.label}, ${unit.label ?? 'unit unconfirmed'}` }]
+  const items: KeyItem[] = [{ key: 'national', mark: { kind: 'line', color: national.color }, label: `${national.label}, ${unit.label ?? 'unit unconfirmed'}` }]
   if (transmission && transmission.count > 0) {
-    items.push({ key: 'transmission', mark: { kind: 'line', color: transmission.color, dashed: ctx.fixture }, label: ctx.mode === 'chart' ? `${transmission.label}, lower chart` : transmission.label })
+    items.push({ key: 'transmission', mark: { kind: 'line', color: transmission.color }, label: ctx.mode === 'chart' ? `${transmission.label}, lower chart` : transmission.label })
   }
 
   return (

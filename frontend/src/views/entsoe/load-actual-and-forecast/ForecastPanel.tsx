@@ -184,12 +184,12 @@ export function ForecastPanel({ ctx }: { ctx: PageContext }) {
         <>
           <KeyList
             items={[
-              { key: 'a', mark: { kind: 'line', color: MEASURE.actual, dashed: ctx.fixture }, label: `${name}, actual load, GW` },
-              { key: 'f', mark: { kind: 'line', color: MEASURE.forecast, dashed: ctx.fixture }, label: `${name}, day-ahead forecast, GW` },
+              { key: 'a', mark: { kind: 'line', color: MEASURE.actual }, label: `${name}, actual load, GW` },
+              { key: 'f', mark: { kind: 'line', color: MEASURE.forecast }, label: `${name}, day-ahead forecast, GW` },
               { key: 'e', mark: { kind: 'bars', color: MEASURE.error, shape: 'rise' }, label: 'Actual less forecast, MW, lower chart' },
             ]}
           />
-          <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+          <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} />
         </>
       )}
       {ctx.mode === 'chart' && panels.length === 0 && (

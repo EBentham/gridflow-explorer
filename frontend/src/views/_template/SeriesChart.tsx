@@ -194,7 +194,6 @@ function PanelChart({
   focus,
   picked,
   onPick,
-  fixture,
   syncId,
 }: {
   panel: ChartPanel
@@ -203,7 +202,6 @@ function PanelChart({
   focus?: string
   picked?: number
   onPick?: (midnight: number) => void
-  fixture: boolean
   syncId: string
 }) {
   const { mark, unit, stepMs } = panel
@@ -254,7 +252,7 @@ function PanelChart({
       return typeof v === 'number' ? v : null
     }
     const values = order.map((d) => ({ d, v: own(d) }))
-    const tipRows: TipRow[] = values.map(({ d, v }) => ({ key: d.key, color: d.color, label: d.label, value: v === null ? 'no value' : d.unit.format(v), dashed: fixture && mark === 'line' }))
+    const tipRows: TipRow[] = values.map(({ d, v }) => ({ key: d.key, color: d.color, label: d.label, value: v === null ? 'no value' : d.unit.format(v) }))
     const held = values.filter((x) => x.v !== null)
     if (stacked && held.length > 1) {
       const total = held.reduce((s, x) => s + (x.v ?? 0), 0)
@@ -290,7 +288,7 @@ function PanelChart({
           if (mark === 'bars') return <Bar key={d.key} dataKey={key} fill={d.color} stackId={stacked ? 'bars' : undefined} isAnimationActive={false} maxBarSize={14} />
           if (mark === 'line' || !stacked) {
             if (mark === 'stacked') return <Area key={d.key} dataKey={key} {...bandProps(d.color, { focused: true })} />
-            return <Line key={d.key} dataKey={key} {...lineProps(d.color, { fixture })} dot={dots ? { r: 2.5, fill: d.color, stroke: 'none' } : false} />
+            return <Line key={d.key} dataKey={key} {...lineProps(d.color)} dot={dots ? { r: 2.5, fill: d.color, stroke: 'none' } : false} />
           }
           if (d.signed) {
             return [
@@ -323,7 +321,6 @@ export function SeriesChart({
   focus,
   picked,
   onPick,
-  fixture = false,
   syncId = 'gf-series',
 }: {
   panels: ChartPanel[]
@@ -331,14 +328,13 @@ export function SeriesChart({
   focus?: string
   picked?: number
   onPick?: (midnight: number) => void
-  fixture?: boolean
   syncId?: string
 }) {
   const shown = panels.filter((p) => p.series.length > 0)
   return (
     <div className="gf-chart-stack">
       {shown.map((p, i) => (
-        <PanelChart key={i} panel={p} domain={domain} labels={i === shown.length - 1} focus={focus} picked={picked} onPick={onPick} fixture={fixture} syncId={syncId} />
+        <PanelChart key={i} panel={p} domain={domain} labels={i === shown.length - 1} focus={focus} picked={picked} onPick={onPick} syncId={syncId} />
       ))}
     </div>
   )

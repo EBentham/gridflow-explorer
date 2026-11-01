@@ -40,7 +40,7 @@ export function BookDays({ ctx }: { ctx: PageContext }) {
   return (
     <>
       {ctx.mode === 'chart' && summed && (
-        <SeriesChart panels={[panel]} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} syncId="gf-series" />
+        <SeriesChart panels={[panel]} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} syncId="gf-series" />
       )}
       <div className="gf-days">
         <table>

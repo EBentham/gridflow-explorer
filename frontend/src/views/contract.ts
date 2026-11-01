@@ -7,9 +7,7 @@
  * - `RowsResponse` is `GET /api/sources/{source}/{dataset}/rows` (v0.4 P3-2):
  *   one held dataset's rows for a window of UK days.
  * - `DataSource` is what a page reads through: `_data/http.ts` reads the
- *   two endpoints (every page's default), and the fixture adapter
- *   (`_data/fixture.ts`), kept for the template's demo page, returns
- *   exactly the same shapes.
+ *   two endpoints.
  *
  * P3 returns shapes that map onto these types; change one only with the
  * other. Free-text fields (grain, unit, notes, causes) are typed as strings
@@ -353,11 +351,6 @@ export interface RowsRequest extends RowsQuery {
  * `not_held_cause`, `reason` or `hint`, and the envelope's other fields.
  */
 export interface DataSource {
-  /**
-   * `fixture` data is synthetic: every panel drawing it carries the
-   * dashed-ochre Fixture tag (DESIGN §9). `live` reads the local store.
-   */
-  readonly origin: 'fixture' | 'live'
   manifest(signal?: AbortSignal): Promise<Manifest>
   rows(request: RowsRequest, signal?: AbortSignal): Promise<RowsResponse>
 }

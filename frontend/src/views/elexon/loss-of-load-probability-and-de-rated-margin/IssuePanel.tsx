@@ -71,7 +71,6 @@ export function IssuePanel({ ctx }: { ctx: PageContext }) {
             domain={windowDomain(ctx.window.start, ctx.window.end)}
             picked={ctx.picked}
             onPick={ctx.pick}
-            fixture={ctx.fixture}
           />
           <p className="gf-hint">
             Each bar is one half-hour: how long before it the issue drawn for it was made. Within one issue the bars rise, as its later half-hours were forecast further ahead; a drop is where another issue takes over. The taller the bar, the

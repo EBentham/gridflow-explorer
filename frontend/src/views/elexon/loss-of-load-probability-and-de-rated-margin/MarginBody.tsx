@@ -98,7 +98,7 @@ export function MarginBody({ ctx }: { ctx: PageContext }) {
   const n = (v: number) => v.toLocaleString('en-GB')
   return (
     <>
-      <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+      <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} />
       <p className="gf-hint">
         {means ? `As ${means}` : 'One figure per half-hour'}: the de-rated margin, with its highest and lowest labelled and zero on the axis.{' '}
         {drawLolp

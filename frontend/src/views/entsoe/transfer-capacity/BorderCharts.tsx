@@ -41,7 +41,7 @@ export function BorderCharts({ ctx }: { ctx: PageContext }) {
     .filter(Boolean)
   return (
     <>
-      <SeriesChart panels={panels} domain={windowDomain(w.start, w.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+      <SeriesChart panels={panels} domain={windowDomain(w.start, w.end)} picked={ctx.picked} onPick={ctx.pick} />
       {own.whenSet ? (
         <p className="gf-hint">
           ENTSO-E publishes a limit only when one is set, so an hour with no limit held may be an hour with no limit, or one not fetched locally: the page can’t tell them

@@ -31,7 +31,7 @@ export function IntensityMain({ ctx }: { ctx: PageContext }) {
   return (
     <>
       {grades.size > 0 && <IndexStrip model={model} grades={grades} domain={domain} />}
-      <SeriesChart panels={panels} domain={domain} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+      <SeriesChart panels={panels} domain={domain} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} />
       {grades.size === 0 && model.bucketed && model.stepMs !== null && (
         <p className="gf-hint">No index strip: this window is read as {meansText(model.stepMs)}, and a mean carries no grade.</p>
       )}

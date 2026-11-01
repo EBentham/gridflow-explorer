@@ -29,7 +29,7 @@ function merged(own: SeriesModel, other: SeriesModel | null | undefined): WideRo
   return [...byT.values()].sort((a, b) => a.t - b.t)
 }
 
-function pair(ctx: PageContext, rows: WideRow[], forecast: SeriesDef, recorded: SeriesDef | undefined, color: string, name: string, model: SeriesModel) {
+function pair(rows: WideRow[], forecast: SeriesDef, recorded: SeriesDef | undefined, color: string, name: string, model: SeriesModel) {
   const fc: SeriesDef = { ...forecast, color, label: `${name}, forecast` }
   const series = recorded && recorded.count ? [{ ...recorded, label: `${name}, generation mix` }, fc] : [fc]
   const panel: ChartPanel = {
@@ -44,7 +44,7 @@ function pair(ctx: PageContext, rows: WideRow[], forecast: SeriesDef, recorded: 
     zero: true,
     axisWidth: AXIS_WIDTH,
   }
-  const items = series.map((d) => ({ key: d.key, mark: { kind: 'line' as const, color: d.color, dashed: ctx.fixture && d.from === 'self' }, label: d.label }))
+  const items = series.map((d) => ({ key: d.key, mark: { kind: 'line' as const, color: d.color }, label: d.label }))
   return { panel, items }
 }
 
@@ -64,8 +64,8 @@ export function RecordedPanel({ ctx }: { ctx: PageContext }) {
   const mixHeld = Boolean(mixWind?.count || mixSolar?.count)
   const rows = merged(model, mix)
   const domain = windowDomain(ctx.window.start, ctx.window.end)
-  const windPair = pair(ctx, rows, wind, mixWind, WIND_COLOR, 'Embedded wind', model)
-  const solarPair = pair(ctx, rows, solar, mixSolar, SOLAR_COLOR, 'Solar', model)
+  const windPair = pair(rows, wind, mixWind, WIND_COLOR, 'Embedded wind', model)
+  const solarPair = pair(rows, solar, mixSolar, SOLAR_COLOR, 'Solar', model)
 
   const fw = dayFigures(model, ctx.window, wind)
   const fs = dayFigures(model, ctx.window, solar)
@@ -97,9 +97,9 @@ export function RecordedPanel({ ctx }: { ctx: PageContext }) {
       {ctx.mode === 'chart' && (
         <>
           <KeyList items={windPair.items} />
-          <SeriesChart panels={[windPair.panel]} domain={domain} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+          <SeriesChart panels={[windPair.panel]} domain={domain} picked={ctx.picked} onPick={ctx.pick} />
           <KeyList items={solarPair.items} />
-          <SeriesChart panels={[solarPair.panel]} domain={domain} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+          <SeriesChart panels={[solarPair.panel]} domain={domain} picked={ctx.picked} onPick={ctx.pick} />
         </>
       )}
       {rel && rel.state === 'error' && (

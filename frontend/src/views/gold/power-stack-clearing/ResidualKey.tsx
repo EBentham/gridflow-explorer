@@ -35,7 +35,7 @@ export function ResidualKey({ ctx }: { ctx: PageContext }) {
           return (
             <li key={id} className={on ? 'is-focus' : ctx.focus ? 'is-muted' : undefined}>
               <button type="button" aria-pressed={on} disabled={!pickable} onClick={() => ctx.setFocus(on ? undefined : id)}>
-                <KeyList items={[{ key: id, mark: { kind: 'line', color: d.color, dashed: ctx.fixture }, label: <span className="gf-series-name">{d.label}</span> }]} />
+                <KeyList items={[{ key: id, mark: { kind: 'line', color: d.color }, label: <span className="gf-series-name">{d.label}</span> }]} />
                 <span className="gf-series-value">{latest ? d.unit.format(latest.v) : '–'}</span>
               </button>
             </li>

@@ -57,8 +57,8 @@ export function DailyPanel({ ctx }: { ctx: PageContext }) {
     <>
       {ctx.mode === 'chart' && panels.length > 0 && (
         <>
-          <KeyList items={series.map((s) => ({ key: s.key, mark: { kind: 'line' as const, color: s.color, dashed: ctx.fixture }, label: `${s.label}, GW` }))} />
-          <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} syncId="gf-daily" />
+          <KeyList items={series.map((s) => ({ key: s.key, mark: { kind: 'line' as const, color: s.color }, label: `${s.label}, GW` }))} />
+          <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} syncId="gf-daily" />
         </>
       )}
       {other && (other.state === 'error' || other.state === 'refreshing') && (

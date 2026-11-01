@@ -3,16 +3,14 @@
 Every catalogue family the Explorer draws gets one page at `/sources/<source>/<family>`. A
 page is a **view config** plus, when it needs them, a few panel components. The template
 draws everything else in the DESIGN §5 frame: the head, the toolbar, the four panels, the
-source lines, the honesty states and the Fixture tags.
+source lines and the honesty states.
 
 - `define.ts` is the typed shape of the config. This file says how to use it.
 - `contract.ts` is the data: the manifest (`GET /api/sources`) and the rows responses.
 - `frontend/DESIGN.md` is the look. It is locked; a page adds no new looks.
 - The pilot page, `elexon/market-index-price/`, is the worked example to copy from: a series
-  in the full frame, with a key and a working panel of its own. The demo family
-  (`demo/dataset-page/`) shows every state of the template on synthetic data.
-- Every page reads the local store through the HTTP adapter (`_data/http.ts`). Only the demo
-  reads the fixture.
+  in the full frame, with a key and a working panel of its own.
+- Every page reads the local store through the HTTP adapter (`_data/http.ts`).
 
 ## Folder layout
 
@@ -25,8 +23,7 @@ src/views/
   FamilyRoute.tsx        the route element: the page, or what the source list says of the address
   NEEDS.md               P4-0's gaps, for the seat to batch
   _template/             the frame, the three bodies, the default panels (template-owned)
-  _data/                 the HTTP adapter, the demo's fixture adapter, loading hooks (template-owned)
-  demo/dataset-page/     the fixture demo family: every state, on synthetic data
+  _data/                 the HTTP adapter and the loading hooks (template-owned)
   elexon/market-index-price/  the pilot page: copy from it
   <source>/<family>/     one page per family:
     index.tsx              the view config, and nothing else
@@ -83,7 +80,6 @@ Folders starting with `_` belong to the template. The registry skips them.
 | `sub` | One sentence under the H1: what this is and what it shows. |
 | `datasets` | The family's datasets on this page, in the order of the toolbar's switch. The first held one opens by default. |
 | `caveats` | Plain-words caveats for the whole family, shown in the main panel with each dataset's own. A caveat that reads the page (its coverage, say) is a function of the page context. |
-| `adapter` | `'fixture'` reads the dev fixture. Only the demo uses it. |
 
 ### Every dataset (`DatasetView`)
 
@@ -207,8 +203,6 @@ config; don't work around the check.
   The backend's own messages and hints are never printed.
 - **Settlement periods.** Where the rows carry `settlement_period`, tooltips and the key
   name the period with its number (`Tue 22 Sep, 18:00–18:30 BST, SP 37`, from `periodName`).
-- **Fixture data.** On the fixture adapter every panel gets the dashed-ochre Fixture tag,
-  the head gets a badge, and lines are dashed.
 
 ## What a page may and may not do
 
@@ -236,9 +230,8 @@ A page **may not**:
 - **leak jargon.** Never print manifest notes or `not_held_cause` text as it stands. They
   carry internal references. Words like "silver", "manifest" and "configured" stay off the
   page;
-- **use the fixture.** `adapter: 'fixture'` is for the demo only;
 - **take the template's URL parameters.** `days`, `from`, `to`, `view`, `dataset`, `q`,
-  `theme`, `fixture` and anything starting `f.` (the events filters) are the template's.
+  `theme` and anything starting `f.` (the events filters) are the template's.
 
 ## Panels
 
@@ -367,11 +360,6 @@ EXPLORER_API=http://127.0.0.1:8001 npm run shoot -- "/sources/<source>/<family>"
 
 Shoot every dataset (`?dataset=<id>`), and a long window (`?days=30`) where volume matters.
 Read every PNG, light and dark: `.shots/<route-slug>/{light,dark}-1440.png`.
-
-The demo shows each state on the fixture: `/sources/demo/dataset-page` (its related price
-cut to one market by a default filter), with `?dataset=` `demo_price`, `demo_notices`,
-`demo_units` or `demo_forecast` (not held), `&days=30` (downsampled), and
-`&fixture=error`, `refreshing`, `empty` or `toomany`.
 
 ## `NEEDS.md`
 

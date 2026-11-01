@@ -116,7 +116,7 @@ export function FreqMain({ ctx }: { ctx: PageContext }) {
           <ReferenceLine y={NARROW[1]} stroke={BAND_EDGE} strokeWidth={1} ifOverflow="hidden" />
           <ReferenceLine y={NARROW[0]} stroke={BAND_EDGE} strokeWidth={1} ifOverflow="hidden" />
           <ReferenceLine y={NOMINAL_HZ} stroke="var(--chart-axis)" strokeWidth={1} ifOverflow="hidden" />
-          <Line dataKey={def.field} {...lineProps(FREQ_COLOR, { fixture: ctx.fixture })} strokeWidth={bucketed ? CHART.line : 1} />
+          <Line dataKey={def.field} {...lineProps(FREQ_COLOR)} strokeWidth={bucketed ? CHART.line : 1} />
           {ex && <Extreme x={ex.high.t} y={ex.high.v} anchor={extremeAnchor(ex.high.t, domain)} color={FREQ_COLOR} text={`${def.unit.format(ex.high.v)}, highest ${what}, ${when(ex.high.t)}`} />}
           {ex && ex.low.t !== ex.high.t && (
             <Extreme x={ex.low.t} y={ex.low.v} anchor={extremeAnchor(ex.low.t, domain)} below color={FREQ_COLOR} text={`${def.unit.format(ex.low.v)}, lowest ${what}, ${when(ex.low.t)}`} />

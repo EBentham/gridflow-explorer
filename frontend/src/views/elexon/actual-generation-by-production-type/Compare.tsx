@@ -115,7 +115,6 @@ export function Compare({ ctx }: { ctx: PageContext }) {
               },
             ]}
             domain={domain}
-            fixture={ctx.fixture}
             syncId="agpt-compare"
           />
           <KeyList

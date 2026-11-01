@@ -43,7 +43,6 @@ export function InstBody({ ctx }: { ctx: PageContext }) {
         focus={ctx.focus ? `self/${ctx.focus}` : undefined}
         picked={ctx.picked}
         onPick={ctx.pick}
-        fixture={ctx.fixture}
       />
       <p className="gf-hint">
         {means

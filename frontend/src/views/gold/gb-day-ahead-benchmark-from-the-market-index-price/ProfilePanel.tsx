@@ -6,7 +6,6 @@
  * highest, and the volume summed over the half-hours held. Select a day to
  * mark it on the main chart and draw it on the clock-time chart.
  */
-import { CHART } from '../../../design/chartTheme'
 import { plural } from '../../../design/format'
 import { dayLabel, stepNoun } from '../../../design/time'
 import { daySummaries, seriesOf } from '../../_template/seriesModel'
@@ -46,7 +45,7 @@ export function ProfilePanel({ ctx }: { ctx: PageContext }) {
           <ul className="gf-key">
             <li>
               <svg width="22" height="10" aria-hidden="true">
-                <line x1="0" y1="5" x2="22" y2="5" stroke={price.color} strokeWidth="2" strokeDasharray={ctx.fixture ? CHART.fixtureDash : undefined} />
+                <line x1="0" y1="5" x2="22" y2="5" stroke={price.color} strokeWidth="2" />
               </svg>
               Mean at each clock time, {price.unit.label ?? 'unit unconfirmed'}
             </li>
@@ -59,7 +58,7 @@ export function ProfilePanel({ ctx }: { ctx: PageContext }) {
             {pickedLabel && (
               <li>
                 <svg width="22" height="10" aria-hidden="true">
-                  <line x1="0" y1="5" x2="22" y2="5" stroke={DAY_COLOR} strokeWidth="2" strokeDasharray={ctx.fixture ? CHART.fixtureDash : undefined} />
+                  <line x1="0" y1="5" x2="22" y2="5" stroke={DAY_COLOR} strokeWidth="2" />
                 </svg>
                 {pickedLabel}, the day selected
               </li>
@@ -72,7 +71,6 @@ export function ProfilePanel({ ctx }: { ctx: PageContext }) {
             dayColor={DAY_COLOR}
             pickedLabel={pickedLabel}
             bucketed={model.bucketed}
-            fixture={ctx.fixture}
           />
           <p className="gf-hint">
             Each clock time gathers the {noun} held at it across {plural(heldDays, 'day', 'days')}, so a day held in part adds to some times only.

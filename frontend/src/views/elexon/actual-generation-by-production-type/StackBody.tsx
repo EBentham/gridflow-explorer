@@ -68,7 +68,6 @@ export function StackBody({ ctx, height }: { ctx: PageContext; height: number })
         ]}
         domain={windowDomain(ctx.window.start, ctx.window.end)}
         focus={ctx.focus}
-        fixture={ctx.fixture}
       />
       <p className="gf-hint">
         {focus ? `${focus.label} alone` : `Stacked, bottom up: ${listWords(order)}`}, {means ? `as ${means}` : 'one figure per half-hour'}. A half-hour with no figure held is a gap.

@@ -35,7 +35,6 @@ export function ProfileChart({
   dayColor,
   pickedLabel,
   bucketed,
-  fixture,
 }: {
   slots: Slot[]
   stepMin: number
@@ -43,7 +42,6 @@ export function ProfileChart({
   dayColor: string
   pickedLabel: string | null
   bucketed: boolean
-  fixture: boolean
 }) {
   const rows: ProfileRow[] = slots.map((s) => ({
     minute: s.minute,
@@ -97,8 +95,8 @@ export function ProfileChart({
         <Tooltip content={renderTip} cursor={CURSOR} isAnimationActive={false} />
         {scale.domain[0] < 0 && <ZeroLine />}
         <Area dataKey="range" {...fanBandProps(RANGE_OPACITY)} />
-        <Line dataKey="mean" {...lineProps(price.color, { fixture })} />
-        {pickedLabel && <Line dataKey="day" {...lineProps(dayColor, { fixture })} />}
+        <Line dataKey="mean" {...lineProps(price.color)} />
+        {pickedLabel && <Line dataKey="day" {...lineProps(dayColor)} />}
         {peak && peak.mean !== null && (
           <Extreme x={peak.minute} y={peak.mean} anchor={anchor(peak.minute)} color={price.color} text={`Mean ${price.unit.format(peak.mean)}, highest, ${slotText(peak.minute, stepMin)}`} />
         )}

@@ -65,8 +65,8 @@ export function HindcastPanel({ ctx }: { ctx: PageContext }) {
     const panel: ChartPanel = { rows, series, mark: 'line', unit, stepMs: model.stepMs, bucketed: model.bucketed, height: 220 }
     chart = (
       <>
-        <KeyList items={series.map((d) => ({ key: d.key, mark: { kind: 'line' as const, color: d.color, dashed: ctx.fixture }, label: d.label }))} />
-        <SeriesChart panels={[panel]} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+        <KeyList items={series.map((d) => ({ key: d.key, mark: { kind: 'line' as const, color: d.color }, label: d.label }))} />
+        <SeriesChart panels={[panel]} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} />
       </>
     )
   }

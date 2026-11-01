@@ -72,7 +72,7 @@ export function FreqKey({ ctx }: { ctx: PageContext }) {
           items={[
             {
               key: 'f',
-              mark: { kind: 'line', color: FREQ_COLOR, dashed: ctx.fixture },
+              mark: { kind: 'line', color: FREQ_COLOR },
               label: bucketed ? `System frequency, ${noun}s` : 'System frequency, each reading',
             },
             {

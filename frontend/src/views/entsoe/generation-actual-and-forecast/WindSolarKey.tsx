@@ -69,7 +69,7 @@ export function WindSolarKey({ ctx }: { ctx: PageContext }) {
         })}
       </ul>
       {stamp !== undefined && <p className="gf-hint">Latest held: {periodLabel(stamp, ws.held[0].step)}.</p>}
-      {ws.total && ctx.mode === 'chart' && <KeyList items={[{ key: 'total', mark: { kind: 'line', color: 'var(--chart-actual)', dashed: ctx.fixture }, label: `Total generation forecast, lower chart` }]} />}
+      {ws.total && ctx.mode === 'chart' && <KeyList items={[{ key: 'total', mark: { kind: 'line', color: 'var(--chart-actual)' }, label: `Total generation forecast, lower chart` }]} />}
       {pickable && <p className="gf-hint">{ctx.focus ? 'Select it again to draw the stack.' : 'Select a type to draw it on its own.'}</p>}
       <p className="gf-hint">{ws.zone.label}, over the window:</p>
       <dl className="gf-stats">

@@ -31,7 +31,7 @@ export function BenchmarkKey({ ctx }: { ctx: PageContext }) {
     const v = r[price.field]
     return typeof v === 'number' && v < 0
   }).length
-  const items: KeyItem[] = [{ key: 'price', mark: { kind: 'line', color: price.color, dashed: ctx.fixture }, label: `${price.label}, ${price.unit.label ?? 'unit unconfirmed'}` }]
+  const items: KeyItem[] = [{ key: 'price', mark: { kind: 'line', color: price.color }, label: `${price.label}, ${price.unit.label ?? 'unit unconfirmed'}` }]
   if (volume && volume.count > 0 && ctx.mode === 'chart') {
     items.push({ key: 'volume', mark: { kind: 'bars', color: volume.color, shape: 'rise' }, label: `${volume.label}, ${volume.unit.label ?? 'unit unconfirmed'}` })
   }

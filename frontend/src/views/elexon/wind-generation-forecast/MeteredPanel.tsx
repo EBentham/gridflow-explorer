@@ -88,8 +88,8 @@ export function MeteredPanel({ ctx }: { ctx: PageContext }) {
     panels.push({ ...common, series: [def(own, 'l', 'Issued before the hour', COLORS.lead, LEAD_UNIT)], mark: 'bars', unit: LEAD_UNIT, height: 130, zero: true })
   }
   const items: KeyItem[] = [
-    { key: 'f', mark: { kind: 'line', color: own.color, dashed: ctx.fixture }, label: `${own.label}, ${unit.label}` },
-    ...(hasMetered ? [{ key: 'm', mark: { kind: 'line' as const, color: COLORS.metered, dashed: ctx.fixture }, label: `Metered wind output, mean of each hour’s half-hours, ${unit.label}` }] : []),
+    { key: 'f', mark: { kind: 'line', color: own.color }, label: `${own.label}, ${unit.label}` },
+    ...(hasMetered ? [{ key: 'm', mark: { kind: 'line' as const, color: COLORS.metered }, label: `Metered wind output, mean of each hour’s half-hours, ${unit.label}` }] : []),
     ...(hasMetered && join.all.count > 0 ? [{ key: 'e', mark: { kind: 'bars' as const, color: COLORS.difference, shape: 'rise' as const }, label: 'Metered less forecast, MW, second chart' }] : []),
     ...(hasLead ? [{ key: 'l', mark: { kind: 'bars' as const, color: COLORS.lead, shape: 'rise' as const }, label: 'Hours the issue drawn was made before the hour; below zero, after it; lowest chart' }] : []),
   ]
@@ -116,7 +116,7 @@ export function MeteredPanel({ ctx }: { ctx: PageContext }) {
       {ctx.mode === 'chart' && (
         <>
           <KeyList items={items} />
-          <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+          <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} />
         </>
       )}
       {(join.above || join.below) && (

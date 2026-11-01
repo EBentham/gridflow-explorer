@@ -52,7 +52,6 @@ function normalise(response: RowsResponse): RowsResponse {
 }
 
 export const httpAdapter: DataSource = {
-  origin: 'live',
   manifest: (signal) => fetchJson<Manifest>('/api/sources', signal).then(normaliseManifest),
   rows: (req, signal) => fetchJson<RowsResponse>(rowsPath(req), signal).then(normalise),
 }

@@ -12,7 +12,7 @@ import { Link, useParams } from 'react-router-dom'
 import { Head, Screen, type ViewState } from '../design/frame'
 import { DatasetPage } from './_template/DatasetPage'
 import { ErrorWords } from './_template/panels'
-import { DEFAULT_ADAPTER } from './_data/adapters'
+import { httpAdapter } from './_data/http'
 import { useManifest } from './_data/hooks'
 import { familyLink, viewFor } from './registry'
 
@@ -42,7 +42,7 @@ class PageBoundary extends Component<{ children: ReactNode; title: string }, { e
 
 /** An address with no page folder: what the source list says of it. */
 function NoPage({ sourceKey, familySlug }: { sourceKey: string; familySlug: string }) {
-  const manifest = useManifest(DEFAULT_ADAPTER)
+  const manifest = useManifest(httpAdapter)
   const source = manifest.value?.sources.find((s) => s.key === sourceKey)
   const family = source?.families.find((f) => f.slug === familySlug)
   const state: ViewState = manifest.state === 'data' ? 'empty' : manifest.state

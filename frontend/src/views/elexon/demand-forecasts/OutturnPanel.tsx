@@ -112,12 +112,12 @@ export function OutturnPanel({ ctx }: { ctx: PageContext }) {
         <>
           <KeyList
             items={[
-              { key: 'f', mark: { kind: 'line', color: own.color, dashed: ctx.fixture }, label: `${own.label}, ${unit.label}` },
-              { key: 'o', mark: { kind: 'line', color: COLORS.outturn, dashed: ctx.fixture }, label: `${OutturnName}, ${unit.label}` },
+              { key: 'f', mark: { kind: 'line', color: own.color }, label: `${own.label}, ${unit.label}` },
+              { key: 'o', mark: { kind: 'line', color: COLORS.outturn }, label: `${OutturnName}, ${unit.label}` },
               { key: 'e', mark: { kind: 'bars', color: COLORS.error, shape: 'rise' }, label: 'Outturn less forecast, MW, lower chart' },
             ]}
           />
-          <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+          <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} />
         </>
       )}
       {join && (join.stats.above || join.stats.below) && (

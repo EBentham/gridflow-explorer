@@ -6,7 +6,7 @@
  * the newest of them. The source list is one cached read shared app-wide.
  */
 import type { ApiError } from '../api/client'
-import { DEFAULT_ADAPTER } from '../views/_data/adapters'
+import { httpAdapter } from '../views/_data/http'
 import { useManifest } from '../views/_data/hooks'
 
 /** Each pinned screen's dataset, as gridflow's source list names it. */
@@ -22,7 +22,7 @@ export interface LatestDay {
 export type LatestDays = Record<LiveDatasetId, LatestDay>
 
 export function useLatestDays(): LatestDays {
-  const manifest = useManifest(DEFAULT_ADAPTER)
+  const manifest = useManifest(httpAdapter)
   // A failed re-read keeps the source list it had, so a known day stays known.
   const datasets = manifest.value?.sources.flatMap((s) => s.families.flatMap((f) => f.datasets))
   const latest = (id: LiveDatasetId): LatestDay => ({

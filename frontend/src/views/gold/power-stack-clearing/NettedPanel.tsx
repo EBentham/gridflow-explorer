@@ -85,7 +85,7 @@ export function NettedPanel({ ctx }: { ctx: PageContext }) {
   return (
     <>
       {ctx.mode === 'chart' && drawn.length > 0 && (
-        <SeriesChart panels={[panel]} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+        <SeriesChart panels={[panel]} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} />
       )}
       {identity.n > 0 && (
         <p className="gf-hint">

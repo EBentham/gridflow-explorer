@@ -44,7 +44,7 @@ export function BorderKey({ ctx }: { ctx: PageContext }) {
             <li key={b.id} className={on ? 'is-focus' : focused ? 'is-muted' : undefined}>
               <button type="button" aria-pressed={on} disabled={!pickable} onClick={() => ctx.setFocus(on ? undefined : b.id)}>
                 {/* A plain span, not the no-wrap name: a long border (Netherlands–Germany/Luxembourg) wraps rather than pushing its value out of the panel. */}
-                <KeyList items={[{ key: b.id, mark: { kind: 'line', color: b.color, dashed: ctx.fixture }, label: <span>{b.name}</span> }]} />
+                <KeyList items={[{ key: b.id, mark: { kind: 'line', color: b.color }, label: <span>{b.name}</span> }]} />
                 <span className="gf-series-value">{t?.latest && b.own ? figureText(b.own.def.unit, t.latest.v) : '–'}</span>
               </button>
               {t?.latest && t.latest.t !== stamp && <span className="gf-series-when">Latest for {periodLabel(t.latest.t, step)}</span>}
@@ -57,7 +57,7 @@ export function BorderKey({ ctx }: { ctx: PageContext }) {
       </ul>
       {pickable && <p className="gf-hint">{focused ? 'Select it again to draw every border.' : 'Select a border to draw it alone, with its highest and lowest labelled.'}</p>}
       {beside === 'drawn' && ctx.mode === 'chart' && (
-        <KeyList items={[{ key: 'beside', mark: { kind: 'line', color: BESIDE_COLOR, dashed: ctx.fixture }, label: `${cap(role.beside)}, on the same border` }]} />
+        <KeyList items={[{ key: 'beside', mark: { kind: 'line', color: BESIDE_COLOR }, label: `${cap(role.beside)}, on the same border` }]} />
       )}
       {sel && selTally && unit && selTally.held > 0 && (
         <>

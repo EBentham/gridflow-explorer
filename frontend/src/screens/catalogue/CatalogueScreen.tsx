@@ -12,7 +12,7 @@ import { Screen, type ViewState } from '../../design/frame'
 import { SourceSymbol } from '../../design/symbols'
 import { instantLabel } from '../../design/time'
 import { useDocumentTitle } from '../../design/title'
-import { DEFAULT_ADAPTER } from '../../views/_data/adapters'
+import { httpAdapter } from '../../views/_data/http'
 import { useManifest } from '../../views/_data/hooks'
 import type { Domain, Kind, ManifestSource } from '../../views/contract'
 import { SourceListStatus } from './SourceListStatus'
@@ -155,7 +155,7 @@ function KindKey() {
 
 export function CatalogueScreen() {
   useDocumentTitle(null)
-  const manifest = useManifest(DEFAULT_ADAPTER)
+  const manifest = useManifest(httpAdapter)
   const sources = manifest.value ? inSceneOrder(manifest.value.sources) : null
   const read = manifest.value ? Date.parse(manifest.value.generated_at) : NaN
   const state: ViewState = manifest.state === 'data' ? (sources?.length ? 'data' : 'empty') : manifest.state
