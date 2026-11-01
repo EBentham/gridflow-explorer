@@ -16,9 +16,9 @@ import { SeriesBody } from '../../_template/SeriesBody'
 import { SeriesChart, type ChartPanel, AXIS_WIDTH } from '../../_template/SeriesChart'
 import { seriesId } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { commonStep, focusedDef, markGaps, partialDaySentences, perText } from './figures'
-import { WindHatch } from './WindHatch'
+import { commonStep, focusedDef, markGaps, partialDaySentences, perText, OFFSHORE_HATCH_ID } from './figures'
 import { missingText, windSolarOf } from './windSolar'
+import { FuelHatch } from '../../../design/charts'
 
 export function WindSolarBody({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
@@ -90,7 +90,7 @@ export function WindSolarBody({ ctx }: { ctx: PageContext }) {
 
   return (
     <>
-      <WindHatch />
+      <FuelHatch id={OFFSHORE_HATCH_ID} token="var(--fuel-wind)" />
       {notes}
       <SeriesChart panels={lower ? [upper, lower] : [upper]} domain={domain} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
       {failed && (

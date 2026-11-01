@@ -8,14 +8,14 @@
  */
 import { SeriesBody } from '../../_template/SeriesBody'
 import type { PageContext } from '../../define'
-import { issuesOf, vintageText } from './figures'
-import { WindHatch } from './WindHatch'
+import { issuesOf, vintageText, WIND_HATCH_ID } from './figures'
+import { FuelHatch } from '../../../design/charts'
 
 export function ForecastBody({ ctx }: { ctx: PageContext }) {
   const issues = ctx.state === 'data' ? issuesOf(ctx.response) : null
   return (
     <>
-      <WindHatch />
+      <FuelHatch id={WIND_HATCH_ID} token="var(--fuel-wind)" />
       <SeriesBody ctx={ctx} />
       {issues && (
         <p className="gf-hint">

@@ -58,6 +58,27 @@ export function DayRules({ midnights }: { midnights: number[] }) {
   )
 }
 
+/**
+ * A second kind of a fuel, as a hatch: the fuel's colour crossed by 1.5px
+ * lines of the chart surface every 5px, at 45° the other way from the
+ * highlight band's hatch, so a selected period can't be mistaken for it
+ * (embedded wind beside transmission wind, offshore beside onshore). A chart
+ * fills its band with `url(#id)`; draw this once beside it. The tokens keep
+ * it right in both themes.
+ */
+export function FuelHatch({ id, token }: { id: string; token: string }) {
+  return (
+    <svg className="gf-defs" width="0" height="0" aria-hidden="true" focusable="false">
+      <defs>
+        <pattern id={id} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+          <rect width="5" height="5" style={{ fill: token }} />
+          <line x1="0" y1="0" x2="0" y2="5" style={{ stroke: 'var(--chart-surface)', strokeWidth: 1.5 }} />
+        </pattern>
+      </defs>
+    </svg>
+  )
+}
+
 export function ZeroLine() {
   return <ReferenceLine y={0} stroke="var(--chart-axis)" strokeWidth={1} />
 }

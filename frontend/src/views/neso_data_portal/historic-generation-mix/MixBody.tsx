@@ -16,12 +16,12 @@ import { SeriesBody } from '../../_template/SeriesBody'
 import type { SeriesModel, WideRow } from '../../_template/seriesModel'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
-import { CI, CI_LABEL, FUELS } from './fuels'
+import { CI, CI_LABEL, FUELS, WIND_HATCH_ID } from './fuels'
 import { LongChart } from './LongChart'
 import { clockOf, heldText, periodName, periodsOf, periodText, pointKindOf, rowKindOf, stepsText, type Clock, type Period } from './periods'
-import { WindHatch } from './WindHatch'
 import { seriesOf } from '../../_template/seriesModel'
 import { dashCell } from '../../_template/cells'
+import { FuelHatch } from '../../../design/charts'
 
 function LongTable({ ctx, periods, stepWords }: { ctx: PageContext; periods: Period[]; stepWords: string }) {
   const model = ctx.series as SeriesModel
@@ -115,7 +115,7 @@ export function MixBody({ ctx }: { ctx: PageContext }) {
     const extremes = ctx.series && ctx.state === 'data' && ctx.mode !== 'table' ? ciExtremesText(ctx.series) : ''
     return (
       <>
-        <WindHatch />
+        <FuelHatch id={WIND_HATCH_ID} token="var(--fuel-wind)" />
         <SeriesBody ctx={ctx} />
         {extremes && <p className="gf-hint">{extremes}</p>}
       </>
@@ -123,7 +123,7 @@ export function MixBody({ ctx }: { ctx: PageContext }) {
   }
   return (
     <>
-      <WindHatch />
+      <FuelHatch id={WIND_HATCH_ID} token="var(--fuel-wind)" />
       <LongBody ctx={ctx} window={ctx.window} clock={clock} />
     </>
   )
