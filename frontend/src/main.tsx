@@ -10,7 +10,6 @@ import './design/charts.css'
 import './design/catalogue.css'
 import App from './App.tsx'
 import { loadFonts } from './design/fonts'
-import { LatestDaysProvider } from './hooks/LatestDaysProvider'
 import { ThemeProvider } from './shell/ThemeProvider'
 import { applyTheme, readInitialTheme } from './shell/theme'
 
@@ -22,9 +21,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <ThemeProvider>
-        <LatestDaysProvider>
-          <App />
-        </LatestDaysProvider>
+        <App />
       </ThemeProvider>
     </BrowserRouter>
   </StrictMode>,

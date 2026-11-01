@@ -3,7 +3,8 @@ import type { ApiError } from '../api/client'
 import type { DataRecord } from '../api/types'
 import type { ViewState } from '../design/frame'
 import { useAnchoredRange, type RangeState } from '../design/range'
-import { REFRESH_RETRY_MS, useLatestDay, type LiveDatasetId } from './latestDays'
+import { invalidateManifest, REFRESH_RETRY_MS } from '../views/_data/hooks'
+import { useLatestDays, type LiveDatasetId } from './latestDays'
 import { useJson } from './useJson'
 
 export interface LiveDataset {
@@ -22,7 +23,7 @@ export interface LiveDataset {
  * 15 seconds.
  */
 export function useLiveDataset(id: LiveDatasetId): LiveDataset {
-  const latest = useLatestDay(id)
+  const latest = useLatestDays()[id]
   const range = useAnchoredRange(latest.day)
   // A range still waiting for its latest day reads nothing yet.
   const path = range.range ? `/api/datasets/${id}/data?start=${range.range.start}&end=${range.range.end}` : null
@@ -34,11 +35,10 @@ export function useLiveDataset(id: LiveDatasetId): LiveDataset {
     return () => window.clearTimeout(timer)
   }, [error, refetch])
 
-  const { refresh } = latest
   const reload = useCallback(() => {
     refetch()
-    refresh()
-  }, [refetch, refresh])
+    invalidateManifest()
+  }, [refetch])
 
   // A failed latest-day read only matters while no day is known.
   const failure = (latest.day === undefined ? latest.error : null) ?? error
