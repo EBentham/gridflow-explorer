@@ -11,8 +11,9 @@ import { SeriesChart } from '../../_template/SeriesChart'
 import { ErrorWords } from '../../_template/panels'
 import type { PageContext } from '../../define'
 import { aloneIn, OUT_SIDE_KEY, zonePanel, zonesOf } from './model'
-import { aloneSentence, belowZeroText, turnsSentence, zoneMissingSentence } from './words'
+import { belowZeroText, turnsSentence, zoneMissingSentence } from './words'
 import { ZoneTable } from './ZoneTable'
+import { aloneSentence } from '../../_template/lineClock'
 
 export function ZoneCharts({ ctx }: { ctx: PageContext }) {
   if (ctx.mode === 'table') return <ZoneTable ctx={ctx} />

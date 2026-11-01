@@ -11,8 +11,9 @@ import { dayLabel } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { MW, PRICE_KEY, flatLevel, pricePairs, priceSeries, sameClock, unitDays, unitLines, unitShown } from './figures'
+import { PRICE_KEY, flatLevel, pricePairs, priceSeries, sameClock, unitDays, unitLines, unitShown } from './figures'
 import { PriceScatter } from './PriceScatter'
+import { MW } from '../../_template/units'
 
 export function UnitPrice({ ctx }: { ctx: PageContext }) {
   const one = unitShown(ctx)

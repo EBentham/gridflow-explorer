@@ -12,7 +12,9 @@ import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import { instantLabel } from '../../../design/time'
 import type { Scalar } from '../../contract'
 import type { PageContext } from '../../define'
-import { MW, START, activeFilters, applyFilters, mwText, rowsOf, shapeOf, startMs, withYear, type Field } from './shape'
+import { dashCell } from '../../_template/cells'
+import { activeFilters, applyFilters } from '../../_template/filters'
+import { MW, START, mwText, rowsOf, shapeOf, startMs, withYear, type Field } from './shape'
 
 interface Unit {
   key: string
@@ -29,12 +31,10 @@ interface Unit {
   published: number
 }
 
-const MISSING = <span className="gf-cell-missing">–</span>
-
 function cell(f: Field | undefined, v: Scalar | undefined): ReactNode {
   const words = f?.words?.(v ?? null)
   if (words) return words
-  if (v === null || v === undefined || v === '') return MISSING
+  if (v === null || v === undefined || v === '') return dashCell
   return f?.id ? <code>{String(v)}</code> : String(v)
 }
 
@@ -43,7 +43,7 @@ export function UnitsPanel({ ctx }: { ctx: PageContext }) {
   const all = rowsOf(ctx)
   if (!shape) return null
   if (ctx.state === 'empty' || !all.length) return <p className="gf-hint">No outage block was published in {ctx.windowText}, so no {shape.noun[0]} is listed.</p>
-  const active = activeFilters(ctx, shape)
+  const active = activeFilters(ctx, shape.filters)
   const rows = applyFilters(all, active)
 
   const units = new Map<string, Unit>()
@@ -93,11 +93,11 @@ export function UnitsPanel({ ctx }: { ctx: PageContext }) {
       key: 'span',
       label: 'MW, lowest to highest',
       num: true,
-      render: (u) => (u.low === null || u.high === null ? MISSING : u.low === u.high ? mwText(u.low) : `${mwText(u.low)} to ${mwText(u.high)}`),
+      render: (u) => (u.low === null || u.high === null ? dashCell : u.low === u.high ? mwText(u.low) : `${mwText(u.low)} to ${mwText(u.high)}`),
       sortValue: (u) => u.high,
     },
-    { key: 'first', label: 'First block starts', render: (u) => (u.first === null ? MISSING : withYear(u.first)), sortValue: (u) => u.first },
-    { key: 'last', label: 'Last block starts', render: (u) => (u.last === null ? MISSING : withYear(u.last)), sortValue: (u) => u.last },
+    { key: 'first', label: 'First block starts', render: (u) => (u.first === null ? dashCell : withYear(u.first)), sortValue: (u) => u.first },
+    { key: 'last', label: 'Last block starts', render: (u) => (u.last === null ? dashCell : withYear(u.last)), sortValue: (u) => u.last },
     ...(shape.type ? [{ key: 'type', label: shape.type.label, render: (u: Unit) => cell(shape.type, u.type), sortValue: (u: Unit) => shape.type?.words?.(u.type ?? null) ?? (u.type == null ? null : String(u.type)) }] : []),
     { key: 'published', label: 'Last published', render: (u) => instantLabel(u.published), sortValue: (u) => u.published },
     ...(shape.name ? [whoCol] : []),

@@ -6,14 +6,11 @@
  * values held and mean beside them. A day with nothing held says so. Select
  * a day to mark it on the chart.
  */
-import { plural } from '../../../design/format'
+import { plural, cap } from '../../../design/format'
 import { dayLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
-import { daysOf, heldDayStarts, heldText, isPartial } from './figures'
 import { bordersOf, focusedBorder, roleOf } from './model'
-import { figureText, stepWords } from './words'
-
-const cap = (s: string) => `${s[0].toUpperCase()}${s.slice(1)}`
+import { daysOf, heldDayStarts, heldText, isPartial, figureText, stepWords } from '../../_template/lineClock'
 
 export function BorderDays({ ctx }: { ctx: PageContext }) {
   const w = ctx.window

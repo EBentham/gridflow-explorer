@@ -10,9 +10,10 @@
 import { useMemo, type ReactNode } from 'react'
 import { plural } from '../../../design/format'
 import type { PageContext } from '../../define'
-import { CI, FUELS, seriesOf } from './fuels'
+import { CI, FUELS } from './fuels'
 import { clockOf, heldText, periodName, periodsOf, rowKindOf, shareOf, stepsText, windowPeriod } from './periods'
 import { ShareBar } from './ShareBar'
+import { seriesOf } from '../../_template/seriesModel'
 
 /** The two wind heads on two lines, so eleven fuels fit across the wide panel. */
 const HEAD: Record<string, ReactNode> = {

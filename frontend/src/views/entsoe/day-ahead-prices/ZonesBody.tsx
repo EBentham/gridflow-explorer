@@ -18,9 +18,9 @@ import { dayLabel, windowDomain } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
 import { SeriesBody } from '../../_template/SeriesBody'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
-import { seriesId } from '../../_template/seriesModel'
+import { seriesId, seriesOf } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, GB_KEY, GB_PRICE, GB_ROUTE, markGaps, partialDaySentences, seriesOf, zoneFigures } from './figures'
+import { AXIS_WIDTH, GB_KEY, GB_PRICE, GB_ROUTE, markGaps, partialDaySentences, zoneFigures } from './figures'
 
 export function ZonesBody({ ctx }: { ctx: PageContext }) {
   const model = ctx.series

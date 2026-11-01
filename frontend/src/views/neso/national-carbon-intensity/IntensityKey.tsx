@@ -9,11 +9,11 @@ import './page.css'
 import { listText, plural } from '../../../design/format'
 import { stepNoun } from '../../../design/time'
 import { SeriesKey } from '../../_template/panels'
-import { extremesOf, latestValue, periodName } from '../../_template/seriesModel'
+import { extremesOf, latestValue, periodName, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { SeriesRowsResponse } from '../../contract'
 import type { PageContext } from '../../define'
-import { ACTUAL, COLORS, FORECAST, GRADES, gradeCounts, gradeOf, gradesByTime, seriesOf } from './figures'
+import { ACTUAL, COLORS, FORECAST, GRADES, gradeCounts, gradeOf, gradesByTime } from './figures'
 
 export function IntensityKey({ ctx }: { ctx: PageContext }) {
   const model = ctx.series

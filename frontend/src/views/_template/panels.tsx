@@ -164,7 +164,7 @@ export function PageNotes({ ctx }: { ctx: PageContext }) {
       if (said.length) beside.push({ rel, said })
     }
   }
-  const caveats = [...(ctx.config.caveats ?? []), ...(ctx.view.caveats ?? [])]
+  const caveats = [...(ctx.config.caveats ?? []).map((c) => (typeof c === 'string' ? c : c(ctx))), ...(ctx.view.caveats ?? [])]
   if (!facts.length && !beside.length && !caveats.length) return null
   return (
     <div className="gf-notes">

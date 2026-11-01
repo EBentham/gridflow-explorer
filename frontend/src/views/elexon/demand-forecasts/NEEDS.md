@@ -9,11 +9,6 @@
   ahead, or every issue for one period. What the page does instead: reads each row's issue
   time, says in the key how far ahead the drawn forecasts were issued, and says which issue
   is shown in the caveats.
-- **The window can't run past the latest local day.** The daily forecasts (`ndfd`,
-  `tsdfd`) run up to two weeks past today, but the toolbar's windows end on the latest
-  local day. What the page does instead: a toolbar control, "On to <last day>", sets the
-  template's custom window from a week before the latest local day to the last delivery
-  day held.
 - **No overlay of a related series in the main panel.** As on the demand outturn page,
   outturn can't share the main chart's axis with the forecast. The working panel draws the
   forecast and its outturn on one axis, with the miss as bars under them.

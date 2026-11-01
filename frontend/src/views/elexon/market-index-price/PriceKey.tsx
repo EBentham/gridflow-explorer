@@ -9,10 +9,10 @@
 import { KeyList, type KeyItem } from '../../../design/charts'
 import { money } from '../../../design/format'
 import { stepNoun } from '../../../design/time'
-import { extremesOf, latestValue, periodName } from '../../_template/seriesModel'
+import { extremesOf, latestValue, periodName, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { PRICE, VOLUME, seriesOf } from './figures'
+import { PRICE, VOLUME } from './figures'
 
 export function PriceKey({ ctx }: { ctx: PageContext }) {
   const model = ctx.series

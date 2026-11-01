@@ -12,11 +12,13 @@ import { SourceLine } from '../../_template/panels'
 import { periodLabel } from '../../../design/time'
 import { keyStamp, relatedParts } from '../../_template/panelHelpers'
 import { defineView } from '../../define'
-import { AXIS_WIDTH, ATL, COLORS, INDO, INDOD, ITSDO, NATIONAL_KEY, TSD_KEY, seriesOf } from './figures'
+import { ATL, COLORS, INDO, INDOD, ITSDO, NATIONAL_KEY, TSD_KEY } from './figures'
 import { DailyPanel } from './DailyPanel'
 import { DemandKey } from './DemandKey'
 import { GapPanel } from './GapPanel'
 import { LoadKey } from './LoadKey'
+import { seriesOf } from '../../_template/seriesModel'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 
 const view = defineView({
   title: 'Demand outturn',
@@ -44,7 +46,6 @@ const view = defineView({
       chart: { mark: 'line', extremes: true, axisWidth: AXIS_WIDTH, lower: { from: TSD_KEY, mark: 'line' } },
       panels: {
         key: {
-          title: 'Key',
           src: (ctx) => {
             const t = seriesOf(ctx.related[TSD_KEY]?.series, ITSDO)
             return <SourceLine ctx={ctx} unit="GW" also={t ? relatedParts(ctx, [t], false) : []} what="the latest half-hour held, and the window's peak, trough, mean and gap" />
@@ -93,7 +94,6 @@ const view = defineView({
       chart: { mark: 'line' },
       panels: {
         key: {
-          title: 'Key',
           src: (ctx) => {
             // A custom key line drops the template's stamp, so name the latest half-hour here: the rows have gaps.
             const stamp = keyStamp(ctx)

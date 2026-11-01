@@ -9,7 +9,8 @@ import { plural } from '../../../design/format'
 import { daySummaries } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { MW, UNIT_PARAM, levelsOf, unitLines } from './figures'
+import { UNIT_PARAM, levelsOf, unitLines } from './figures'
+import { MW } from '../../_template/units'
 
 export function UnitsTable({ ctx }: { ctx: PageContext }) {
   const model = ctx.series

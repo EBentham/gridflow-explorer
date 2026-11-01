@@ -11,9 +11,10 @@
  */
 import { SourceLine } from '../../_template/panels'
 import { defineView } from '../../define'
-import { AXIS_WIDTH, PRICE, VOLUME } from './figures'
+import { PRICE, VOLUME } from './figures'
 import { PriceKey } from './PriceKey'
 import { VolumePanel } from './VolumePanel'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 
 const view = defineView({
   title: 'Market index price',
@@ -36,7 +37,6 @@ const view = defineView({
       chart: { mark: 'line', values: [PRICE], lower: false, belowZero: true, axisWidth: AXIS_WIDTH },
       panels: {
         key: {
-          title: 'Key',
           src: (ctx) => (
             <SourceLine ctx={ctx} columns={[PRICE, VOLUME]} filters={ctx.response?.filters} unit="£/MWh and MWh" what="the latest half-hour held, and the window's range, extremes and mean" />
           ),

@@ -8,7 +8,9 @@
  * there at all (it is on another clock).
  */
 import { SERIES_COLORS } from '../../design/chartTheme'
-import { datesBetween, dayStart, fmtDay, HOUR_MS, londonMidnight, periodLabel, stepsInDay, ukDate } from '../../design/time'
+import { daysInWindow } from '../../design/days'
+import { runsWhere, type Run } from '../../design/series'
+import { fmtDay, periodLabel, ukDate } from '../../design/time'
 import type { DateRange } from '../../lib/range'
 import type { SeriesRowsResponse, ValueColumn } from '../contract'
 import type { GroupSpec, ValueSpec } from '../define'
@@ -35,6 +37,13 @@ export interface SeriesDef {
   max: number | null
   /** Some value is below zero: a stack draws it in its own negative stack. */
   signed: boolean
+  /**
+   * Its own step, for rows on a mixed clock (ENTSO-E's zones, some hourly and
+   * some every 15 minutes): the smallest spacing between its held times, as a
+   * gap only ever widens one; the bucket when the rows are means; null with
+   * fewer than two values. Set by `buildSeriesModel`.
+   */
+  stepMs?: number | null
 }
 
 /** One time on the window's clock: a field per series (`SeriesDef.field`), null for a gap, absent off that series' clock. */
@@ -90,7 +99,11 @@ export const DEFAULT_MAX_SERIES = 10
 /** A series' id across a page's datasets: `self/wind`, `price/price_gbp_mwh`. Focus and keys use it. */
 export const seriesId = (d: Pick<SeriesDef, 'from' | 'key'>) => `${d.from}/${d.key}`
 
-const collator = new Intl.Collator('en-GB', { numeric: true, sensitivity: 'base' })
+/** Natural en-GB order for names and codes: `T_ABC-2` before `T_ABC-10`. */
+export const collator = new Intl.Collator('en-GB', { numeric: true, sensitivity: 'base' })
+
+/** The series drawing a column (the first, when the rows are split). */
+export const seriesOf = (model: SeriesModel | null | undefined, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
 
 const groupKey = (v: unknown) => (v === null || v === undefined ? '' : String(v))
 
@@ -159,11 +172,16 @@ export function buildSeriesModel(response: SeriesRowsResponse, opts: SeriesOptio
   }
   const rows = [...byT.values()].sort((a, b) => a.t - b.t)
 
+  const bucket = response.truncation?.bucket_ms ?? null
   for (const d of all) {
     let sum = 0
+    let prev: number | null = null
+    let step: number | null = null
     for (const row of rows) {
       const v = row[d.field]
       if (typeof v !== 'number') continue
+      if (prev !== null && (step === null || row.t - prev < step)) step = row.t - prev
+      prev = row.t
       d.count += 1
       sum += v
       d.min = d.min === null ? v : Math.min(d.min, v)
@@ -171,13 +189,13 @@ export function buildSeriesModel(response: SeriesRowsResponse, opts: SeriesOptio
     }
     d.mean = d.count ? sum / d.count : null
     d.signed = (d.min ?? 0) < 0
+    d.stepMs = bucket ?? step
   }
 
   const cap = opts.maxSeries ?? DEFAULT_MAX_SERIES
   const held = all.filter((d) => d.count > 0)
   const bySize = [...held].sort((a, b) => Math.abs(b.mean ?? 0) - Math.abs(a.mean ?? 0))
   const kept = new Set(bySize.slice(0, cap))
-  const bucket = response.truncation?.bucket_ms ?? null
 
   let settlement: Map<number, Settlement> | null = null
   // A bucket mean spans several periods: it names none.
@@ -221,53 +239,42 @@ export function periodName(t: number, stepMs: number | null, settlement: Map<num
 }
 
 /** Runs of consecutive held values below zero, as [first, last] times; a gap ends a run. Only on a regular clock. */
-export function runsBelowZero(rows: WideRow[], def: SeriesDef, stepMs: number | null): { start: number; last: number; n: number; min: number }[] {
-  if (stepMs === null) return []
-  const out: { start: number; last: number; n: number; min: number }[] = []
-  let run: (typeof out)[number] | null = null
-  for (const row of rows) {
-    if (!(def.field in row)) continue
-    const v = row[def.field]
-    if (typeof v === 'number' && v < 0) {
-      if (run && row.t - run.last <= stepMs) {
-        run.last = row.t
-        run.n += 1
-        run.min = Math.min(run.min, v)
-      } else {
-        run = { start: row.t, last: row.t, n: 1, min: v }
-        out.push(run)
-      }
-    } else run = null
-  }
-  return out
+export function runsBelowZero(rows: WideRow[], def: SeriesDef, stepMs: number | null): Run[] {
+  return runsWhere(rows, stepMs, (row) => (def.field in row ? (row[def.field] ?? null) : undefined), (v) => v < 0)
 }
 
-/** The last held value of a series, or null. */
-export function latestValue(model: SeriesModel, def: SeriesDef): { t: number; v: number } | null {
-  for (let i = model.rows.length - 1; i >= 0; i -= 1) {
-    const v = model.rows[i][def.field]
-    if (typeof v === 'number') return { t: model.rows[i].t, v }
+/** The last held value of a field over some rows, or null. */
+export function latestIn(rows: WideRow[], field: string): { t: number; v: number } | null {
+  for (let i = rows.length - 1; i >= 0; i -= 1) {
+    const v = rows[i][field]
+    if (typeof v === 'number') return { t: rows[i].t, v }
   }
   return null
 }
+
+/** The last held value of a series, or null. */
+export const latestValue = (model: SeriesModel, def: SeriesDef) => latestIn(model.rows, def.field)
 
 export interface Extremes {
   low: { t: number; v: number }
   high: { t: number; v: number }
 }
 
-/** The lowest and highest held values of a series over the rows given (the window by default). */
-export function extremesOf(rows: WideRow[], def: SeriesDef): Extremes | null {
+/** The lowest and highest held values of a field over some rows. */
+export function extremesIn(rows: WideRow[], field: string): Extremes | null {
   let low: { t: number; v: number } | null = null
   let high: { t: number; v: number } | null = null
   for (const row of rows) {
-    const v = row[def.field]
+    const v = row[field]
     if (typeof v !== 'number') continue
     if (!low || v < low.v) low = { t: row.t, v }
     if (!high || v > high.v) high = { t: row.t, v }
   }
   return low && high ? { low, high } : null
 }
+
+/** The lowest and highest held values of a series over the rows given (the window by default). */
+export const extremesOf = (rows: WideRow[], def: SeriesDef) => extremesIn(rows, def.field)
 
 export interface DaySummary {
   /** `YYYY-MM-DD` on the UK clock. */
@@ -289,17 +296,8 @@ export interface DaySummary {
  * is listed as missing rather than dropped.
  */
 export function daySummaries(model: SeriesModel, window: DateRange, def?: SeriesDef): DaySummary[] {
-  const byDay = new Map<number, WideRow[]>()
-  for (const row of model.rows) {
-    const d = londonMidnight(row.t)
-    const list = byDay.get(d)
-    if (list) list.push(row)
-    else byDay.set(d, [row])
-  }
   const defs = def ? [def] : model.all
-  return datesBetween(window.start, window.end).map((day) => {
-    const start = dayStart(day)
-    const rows = byDay.get(start) ?? []
+  return daysInWindow(model.rows, window, model).map(({ day, start, rows, expected }) => {
     let held = 0
     let sum = 0
     let low: DaySummary['low'] = null
@@ -318,8 +316,7 @@ export function daySummaries(model: SeriesModel, window: DateRange, def?: Series
     return {
       day,
       start,
-      // Buckets are UTC-aligned: those of an hour or less fall on UK hours, longer ones straddle UK days.
-      expected: model.bucketed && model.stepMs !== null && model.stepMs > HOUR_MS ? null : stepsInDay(start, model.stepMs),
+      expected,
       held,
       mean: def && held ? sum / held : null,
       low,

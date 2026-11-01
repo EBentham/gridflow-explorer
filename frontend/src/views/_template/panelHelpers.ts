@@ -95,7 +95,9 @@ export function plannedFilters(query: QuerySpec | undefined, dataset: Pick<Manif
 
 /** A related dataset's filters: as applied once its rows are read, as planned before. */
 export function relatedFilters(rel: RelatedData): Record<string, Scalar> {
-  return rel.response ? rel.response.filters : plannedFilters(rel.spec.query, rel.dataset)
+  if (rel.response) return rel.response.filters
+  // A query read from the URL isn't known here; its filters show once the rows are read.
+  return typeof rel.spec.query === 'function' ? {} : plannedFilters(rel.spec.query, rel.dataset)
 }
 
 /** Source-line parts for the related datasets among `series`, each named in full, in the order they appear. */
@@ -149,8 +151,8 @@ export function plannedParts(ctx: PageContext): { columns: string[]; by: string 
       source: rel?.source ?? null,
       dataset: spec.dataset,
       columns: cols,
-      by: spec.query?.group ?? null,
-      filters: rel ? relatedFilters(rel) : plannedFilters(spec.query, null),
+      by: typeof spec.query === 'function' ? null : (spec.query?.group ?? null),
+      filters: rel ? relatedFilters(rel) : typeof spec.query === 'function' ? {} : plannedFilters(spec.query, null),
       unit: plannedUnit(rel?.dataset ?? null, cols, spec.values),
     }
   })

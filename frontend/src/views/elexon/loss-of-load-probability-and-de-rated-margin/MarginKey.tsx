@@ -6,10 +6,12 @@
  * each row's own issue time, which is what says which issue the page shows.
  */
 import { KeyList } from '../../../design/charts'
-import { instantLabel } from '../../../design/time'
+import { instantLabel, leadText } from '../../../design/time'
 import { periodName } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { extremesIn, issueStats, latestIn, leadText, lolpStats, lolpText, modelOf, perMillionText } from './figures'
+import { issueStats, issuesIn } from '../../_template/issues'
+import { extremesIn, latestIn } from '../../_template/seriesModel'
+import { lolpStats, lolpText, modelOf, perMillionText } from './figures'
 
 export function MarginKey({ ctx }: { ctx: PageContext }) {
   const model = modelOf(ctx)
@@ -23,7 +25,7 @@ export function MarginKey({ ctx }: { ctx: PageContext }) {
   const latest = latestIn(model.rows, 'm')
   const ex = extremesIn(model.rows, 'm')
   const lolp = lolpStats(model)
-  const issue = issueStats(model)
+  const issue = issueStats(issuesIn(model.rows))
   return (
     <>
       {margin && (

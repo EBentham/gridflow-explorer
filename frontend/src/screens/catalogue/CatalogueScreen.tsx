@@ -16,7 +16,8 @@ import { DEFAULT_ADAPTER } from '../../views/_data/adapters'
 import { useManifest } from '../../views/_data/hooks'
 import type { Domain, Kind, ManifestSource } from '../../views/contract'
 import { SourceListStatus } from './SourceListStatus'
-import { countWord, datasetsOf, DOMAINS, inSceneOrder, KINDS, kindCounts, shortName } from './sourceList'
+import { sourceName } from '../../views/_template/text'
+import { countWord, datasetsOf, DOMAINS, inSceneOrder, KINDS, kindCounts } from './sourceList'
 
 const KIND_LABEL: Record<Kind, [string, string]> = {
   series: ['time series', 'time series'],
@@ -88,7 +89,7 @@ function Scene({ sources }: { sources: ManifestSource[] | null }) {
               <li key={s.key}>
                 <Link to={`/sources/${s.key}`} className="gf-scene-site">
                   <SourceSymbol source={s.key} domain={s.domain} size={54} />
-                  <span>{shortName(s)}</span>
+                  <span>{sourceName(s)}</span>
                 </Link>
               </li>
             ))}

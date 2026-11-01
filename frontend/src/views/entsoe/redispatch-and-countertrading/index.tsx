@@ -22,7 +22,6 @@ const src = (what: string) => (ctx: PageContext) => <SourceLine ctx={ctx} column
 
 const panels: { key: SlotSpec; working: SlotSpec; side: SlotSpec } = {
   key: {
-    title: 'Key',
     src: src('each zone’s latest value held, then its quarter-hours redispatching, peak and energy in MWh'),
     Body: RedispatchKey,
   },

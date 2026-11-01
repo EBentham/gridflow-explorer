@@ -3,31 +3,6 @@
  * the design already uses (DESIGN.md): no new looks.
  */
 
-/* ---------------------------------------------------------------- toolbar */
-
-.gf-wa-control,
-.gf-wa-unitform,
-.gf-wa-unitlabel {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-.gf-wa-control {
-  gap: 8px 14px;
-}
-.gf-wa-unitform {
-  margin: 0;
-}
-/* a unit id is an identifier, so the box sets it in the id face */
-.gf-input.gf-wa-input {
-  width: 11rem;
-  font-family: var(--font-id);
-}
-.gf-input.gf-wa-input::placeholder {
-  font-family: var(--font-ui);
-}
-
 /* ---------------------------------------------------------------- key */
 
 .gf-wa-stats dt {

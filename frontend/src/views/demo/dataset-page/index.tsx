@@ -18,8 +18,11 @@
  */
 import { SourceLine } from '../../_template/panels'
 import { defineView } from '../../define'
-import { AreaControl } from './AreaControl'
+import { paramSwitch } from '../../_template/ParamSwitch'
 import { PriceExtremes } from './PriceExtremes'
+
+/** The notices default to GB only (the dataset's default filter); `?area=all`, which the view's `query` reads, clears it. */
+const Area = paramSwitch('area', 'Area', ['default', 'GB only'], ['all', 'All areas'])
 
 const view = defineView({
   title: 'Dataset page demo',
@@ -90,7 +93,7 @@ const view = defineView({
       strip: true,
       // The dataset's default filter keeps GB only; the page's own switch clears it.
       query: (params) => (params.get('area') === 'all' ? { filters: null } : {}),
-      controls: AreaControl,
+      controls: Area,
     },
     {
       id: 'demo_units',

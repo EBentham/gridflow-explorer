@@ -20,6 +20,7 @@
  * Every read pins the published headline run (`RUN_QUERY`); the backend
  * keeps that run by default and the source lines name it.
  */
+import { rangeText } from '../../../design/time'
 import { SourceLine } from '../../_template/panels'
 import { relatedFilters, type SourcePart } from '../../_template/panelHelpers'
 import { periodName } from '../../_template/seriesModel'
@@ -34,7 +35,6 @@ import { CurveMain } from './CurveMain'
 import {
   AT_FLOOR,
   AVAILABLE,
-  AXIS_WIDTH,
   CAPACITY,
   CLEARING_DATASET,
   COST,
@@ -52,6 +52,7 @@ import {
   MARKET_COLOR,
   MARKET_DATASET,
   MODEL_COLOR,
+  NEXT_RUN_CAVEAT,
   OTHER,
   POLICY,
   PRICE,
@@ -75,6 +76,7 @@ import { NettedPanel } from './NettedPanel'
 import { ResidualKey } from './ResidualKey'
 import { ResidualMain } from './ResidualMain'
 import './stack.css'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 
 /** The run's filter as the rows carry it, or as the page asks for it before they arrive. */
 const runFilters = (ctx: PageContext) => ctx.response?.filters ?? RUN_QUERY.filters
@@ -107,7 +109,11 @@ const view = defineView({
   sub: 'gridflow’s model of the GB power price for each half-hour: where a merit order of power stations, costed by the model, meets the demand left for them, set beside the market index price.',
   caveats: [
     'This is a model, not a market price: built with perfect prognosis, from the demand, wind and solar that actually happened, it tests how the model’s stack works rather than forecasting a price.',
-    'The run shown is the one gridflow published, for 18 Aug – 3 Sep 2026. A run for the week from 14 Sep 2026 failed its check before publishing, so that week isn’t shown: the actual price fell inside none of its 50, 80 or 90% ranges, and its average error was £157.7/MWh.',
+    (ctx) => {
+      const { first_day: first, last_day: last } = ctx.dataset.coverage ?? {}
+      return `The run shown is the one gridflow published${first && last ? `, for ${rangeText(first, last)}` : ''}.`
+    },
+    NEXT_RUN_CAVEAT,
     'gridflow also holds an earlier version of this run, and monthly diagnostic runs from May 2025 to May 2026; the page reads the published run only.',
   ],
   datasets: [
@@ -154,7 +160,6 @@ const view = defineView({
           Body: ClearingMain,
         },
         key: {
-          title: 'Key',
           src: (ctx) => (
             <SourceLine
               ctx={ctx}
@@ -223,7 +228,6 @@ const view = defineView({
           Body: ResidualMain,
         },
         key: {
-          title: 'Key',
           src: (ctx) => (
             <SourceLine
               ctx={ctx}
@@ -322,7 +326,6 @@ const view = defineView({
           Body: CurveMain,
         },
         key: {
-          title: 'Key',
           src: (ctx) => (
             <SourceLine
               ctx={ctx}

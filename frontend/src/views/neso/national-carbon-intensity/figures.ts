@@ -12,8 +12,8 @@
  */
 import type { SeriesRow, SeriesRowsResponse } from '../../contract'
 import type { SeriesDef, SeriesModel, WideRow } from '../../_template/seriesModel'
-import { datesBetween, dayStart, londonMidnight } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
+import { daysInWindow } from '../../../design/days'
 
 export const FORECAST = 'forecast_gco2_kwh'
 export const ACTUAL = 'actual_gco2_kwh'
@@ -33,9 +33,6 @@ export const COLORS = {
   grade: 'var(--heat-hi)',
 } as const
 
-/** Every chart on the page takes this value-axis width, so their clocks line up. */
-export const AXIS_WIDTH = 52
-
 export interface Grade {
   value: string
   label: string
@@ -53,9 +50,6 @@ export const GRADES: Grade[] = [
 ]
 
 export const gradeOf = (value: string): Grade | undefined => GRADES.find((g) => g.value === value)
-
-/** A column's series in the model, when the rows hold it. */
-export const seriesOf = (model: SeriesModel | null, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
 
 /** Each time's published grade, from the rows as read; a missing step, or a mean, has none. */
 export function gradesByTime(response: SeriesRowsResponse | null): Map<number, string> {
@@ -127,15 +121,7 @@ export interface DayFigures {
 
 /** Every UK day of the window, held or not, with its means and grade counts over what it holds. */
 export function dayFigures(model: SeriesModel, window: DateRange, forecast: SeriesDef, actual: SeriesDef, grades: Map<number, string>): DayFigures[] {
-  const byDay = new Map<number, WideRow[]>()
-  for (const r of model.rows) {
-    const d = londonMidnight(r.t)
-    const list = byDay.get(d)
-    if (list) list.push(r)
-    else byDay.set(d, [r])
-  }
-  return datesBetween(window.start, window.end).map((day) => {
-    const start = dayStart(day)
+  return daysInWindow(model.rows, window).map(({ day, start, rows: dayRows }) => {
     let fN = 0
     let fSum = 0
     let aN = 0
@@ -144,7 +130,7 @@ export function dayFigures(model: SeriesModel, window: DateRange, forecast: Seri
     let mSum = 0
     let mAbs = 0
     const g = new Map<string, number>()
-    for (const r of byDay.get(start) ?? []) {
+    for (const r of dayRows) {
       const f = r[forecast.field]
       const a = r[actual.field]
       if (typeof f === 'number') {

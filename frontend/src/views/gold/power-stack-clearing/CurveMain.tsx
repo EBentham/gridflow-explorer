@@ -20,7 +20,6 @@ import { SeriesBody } from '../../_template/SeriesBody'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
 import {
-  AXIS_WIDTH,
   MARKET_COLOR,
   MODEL_COLOR,
   chosenTime,
@@ -37,6 +36,7 @@ import {
   type CurveUnit,
 } from './figures'
 import { UnreadNote } from './UnreadNote'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 
 const CURVE_H = 400
 /** A block narrower than this share of the axis (about 4 px) is drawn without its surface-coloured edge. */

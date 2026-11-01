@@ -47,6 +47,34 @@ export const FUEL_BANDS: FuelBand[] = [
 
 export const fuelVar = (key: string) => `var(--fuel-${key})`
 
+/**
+ * Elexon's fuel codes, bottom of the stack first, each with its own name and
+ * the band it folds into, as the generation mix folds them (the backend's
+ * `FUEL_TO_SERIES`). `INT…` codes are interconnectors, in net imports.
+ */
+export const ELEXON_FUELS: { code: string; label: string; band: string }[] = [
+  { code: 'NUCLEAR', label: 'Nuclear', band: 'nuclear' },
+  { code: 'NPSHYD', label: 'Hydro', band: 'hydro' },
+  { code: 'BIOMASS', label: 'Biomass', band: 'biomass' },
+  { code: 'WIND', label: 'Wind', band: 'wind' },
+  { code: 'CCGT', label: 'Gas (CCGT)', band: 'gas' },
+  { code: 'OCGT', label: 'Gas (OCGT)', band: 'peaking' },
+  { code: 'COAL', label: 'Coal', band: 'peaking' },
+  { code: 'OIL', label: 'Oil', band: 'peaking' },
+  { code: 'OTHER', label: 'Other', band: 'other' },
+  { code: 'PS', label: 'Pumped storage', band: 'pumped_storage' },
+]
+
+export const isInterconnectorCode = (code: string) => code.startsWith('INT')
+
+/** The band an Elexon fuel code folds into; null for a code the list doesn't know (each page says what that is). */
+export function elexonBand(code: string): string | null {
+  return isInterconnectorCode(code) ? 'imports' : (ELEXON_FUELS.find((f) => f.code === code)?.band ?? null)
+}
+
+/** A listed Elexon fuel code's own name: `Gas (OCGT)`; null for an interconnector or a code the list doesn't know. */
+export const elexonFuelName = (code: string): string | null => ELEXON_FUELS.find((f) => f.code === code)?.label ?? null
+
 export interface MixRow {
   t: number
   /** Band values in GW (display unit), signed; null where the source sent none. */

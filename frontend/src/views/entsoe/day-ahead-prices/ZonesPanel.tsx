@@ -14,12 +14,11 @@ import { seriesId } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
 import { RANGE_OPACITY, perStep, slotText, zoneDays, zoneFigures, zoneNoun, zoneProfile, type ZoneDay, type ZoneFigures } from './figures'
 import { ProfileChart, type ProfileLine } from './ProfileChart'
+import { dashCell } from '../../_template/cells'
 
 const DAY_COLOR = 'var(--chart-actual)'
 
 type DayRow = { kind: 'day'; d: ZoneDay; i: number } | { kind: 'gap'; key: string; from: number; to: number; n: number }
-
-const dash = <span className="gf-cell-missing">–</span>
 
 function Swatch({ color }: { color: string }) {
   return (
@@ -130,7 +129,7 @@ export function ZonesPanel({ ctx }: { ctx: PageContext }) {
                   </th>
                   {cells.map(({ z, zd }) => (
                     <td key={z.value} className="is-num">
-                      {zd.mean === null ? dash : plain(zd.mean)}
+                      {zd.mean === null ? dashCell : plain(zd.mean)}
                       {zd.held > 0 && zd.expected !== null && zd.held < zd.expected ? ` (${zd.held} of ${zd.expected})` : ''}
                     </td>
                   ))}
@@ -172,11 +171,11 @@ function ZoneRow({ z, on, bucketed, plain, at }: { z: ZoneFigures; on: boolean; 
       </th>
       <td>{bucketed ? zoneNoun(z, bucketed) : perStep(z.step)}</td>
       <td className="is-num">{partial ? `${z.points.length.toLocaleString('en-GB')} of ${(z.expected as number).toLocaleString('en-GB')}` : z.points.length.toLocaleString('en-GB')}</td>
-      <td className="is-num">{z.mean === null ? dash : plain(z.mean)}</td>
-      <td className="is-num">{z.low ? plain(z.low.v) : dash}</td>
-      <td>{z.low ? at(z.low.t) : dash}</td>
-      <td className="is-num">{z.high ? plain(z.high.v) : dash}</td>
-      <td>{z.high ? at(z.high.t) : dash}</td>
+      <td className="is-num">{z.mean === null ? dashCell : plain(z.mean)}</td>
+      <td className="is-num">{z.low ? plain(z.low.v) : dashCell}</td>
+      <td>{z.low ? at(z.low.t) : dashCell}</td>
+      <td className="is-num">{z.high ? plain(z.high.v) : dashCell}</td>
+      <td>{z.high ? at(z.high.t) : dashCell}</td>
       <td className={`is-num${z.below ? ' is-flag' : ''}`}>{z.below.toLocaleString('en-GB')}</td>
     </tr>
   )

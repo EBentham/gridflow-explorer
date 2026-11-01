@@ -9,9 +9,9 @@
 import { plural } from '../../../design/format'
 import { HALF_HOUR, dayLabel } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
-import { daySummaries } from '../../_template/seriesModel'
+import { daySummaries, seriesOf } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { INDO, INDOD, NATIONAL_KEY, seriesOf, sumsByDay } from './figures'
+import { INDO, INDOD, NATIONAL_KEY, sumsByDay } from './figures'
 
 const MWH = (v: number) => Math.round(v).toLocaleString('en-GB')
 

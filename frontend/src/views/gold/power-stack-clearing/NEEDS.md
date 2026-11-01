@@ -40,13 +40,6 @@ works around each gap inside its folder.
    So the clearing chart is composed in `ClearingMain`. Shared versions would
    let other model pages reuse them.
 
-5. **Solar colour: resolved on this branch, by the seat's ruling.** This
-   branch adds `--fuel-solar` to `src/design/tokens.css`: `#f5c518` in light
-   and `#fde047` in both dark blocks, a yellow no other fuel uses. It also
-   adds one line to the Fuels section of `DESIGN.md`. The page's one legend,
-   `FUELS` in `figures.ts`, takes solar from it on every view. Other pages
-   that draw solar can use the token once this merges.
-
 6. **Coal and OCGT share one colour.** Both fall into the design's peaking
    band, `--fuel-peaking`. On the supply curve the coal blocks sit among the gas
    blocks and OCGT at the top. The key names each fuel, and the tooltip and the

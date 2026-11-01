@@ -11,15 +11,16 @@
  * half-hour's end only when the unit notified one run (the page's caveat,
  * and NEEDS.md, say so).
  */
-import { FUEL_BANDS, fuelVar } from '../../../design/fuels'
+import { FUEL_BANDS, fuelVar, elexonBand, elexonFuelName } from '../../../design/fuels'
 import { datesBetween, dayStart, londonMidnight } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
-import type { RowsResponse, Scalar } from '../../contract'
+import type { RowsResponse } from '../../contract'
 import type { PageContext, RelatedData } from '../../define'
 import type { ChartPanel } from '../../_template/SeriesChart'
-import { daySummaries, type DaySummary, type SeriesDef, type SeriesModel, type WideRow } from '../../_template/seriesModel'
+import { daySummaries, type DaySummary, type SeriesDef, type SeriesModel, type WideRow, collator } from '../../_template/seriesModel'
 import { relatedFilters, type SourcePart } from '../../_template/panelHelpers'
-import { displayUnit } from '../../_template/units'
+import { displayUnit, MW } from '../../_template/units'
+import { validUnitId } from '../../_template/codes'
 
 // ---------------------------------------------------------------- columns and keys
 
@@ -54,20 +55,8 @@ export const AXIS_WIDTH = 56
 
 /** A stack of many units reads in GW; one unit's level keeps MW (DESIGN §6). */
 export const GW = displayUnit('MW', 'GW')
-export const MW = displayUnit('MW', 'MW')
-
-const collator = new Intl.Collator('en-GB', { numeric: true, sensitivity: 'base' })
 
 // ---------------------------------------------------------------- the unit asked for
-
-/** What the rows endpoint takes as a filter value: letters, digits, spaces and `_ . - / :`, 1 to 64 of them. */
-const UNIT_ID = /^[A-Za-z0-9 _.\-/:]{1,64}$/
-
-/** A unit id the endpoint can filter by, trimmed; null for anything else. */
-export function validUnit(value: string | null | undefined): string | null {
-  const v = (value ?? '').trim()
-  return UNIT_ID.test(v) ? v : null
-}
 
 /** The unit read alone: the filter the rows came back with, or, before they arrive, the one the address asks for. */
 export function unitShown(ctx: PageContext): string | null {
@@ -75,7 +64,7 @@ export function unitShown(ctx: PageContext): string | null {
     const f = ctx.response.filters?.[UNIT]
     return f === null || f === undefined ? null : String(f)
   }
-  return validUnit(ctx.param(UNIT_PARAM))
+  return validUnitId(ctx.param(UNIT_PARAM))
 }
 
 /** The units the backend kept by default, largest first, as its truncation reason names them. */
@@ -97,23 +86,6 @@ export interface Fuel {
   order: number
 }
 
-/** Elexon's fuel codes on the design's fuel bands, as the generation mix folds them. `INT…` codes are interconnectors. */
-const BAND_OF: Record<string, string> = {
-  NUCLEAR: 'nuclear',
-  NPSHYD: 'hydro',
-  BIOMASS: 'biomass',
-  WIND: 'wind',
-  CCGT: 'gas',
-  OCGT: 'peaking',
-  COAL: 'peaking',
-  OIL: 'peaking',
-  OTHER: 'other',
-  PS: 'pumped_storage',
-}
-
-/** The peaking band's own fuels, named as the generation mix names them. */
-const PEAKING_LABELS: Record<string, string> = { OCGT: 'Gas (OCGT)', COAL: 'Coal', OIL: 'Oil' }
-
 /** No fuel colour for a fuel the page can't name: the chart's neutral ink, as the power stack page uses for its floor. */
 const NEUTRAL = 'var(--chart-tick)'
 
@@ -122,10 +94,10 @@ const MIXED_FUEL: Fuel = { code: null, label: 'More than one fuel listed', color
 
 /** A fuel code's name, colour and place in the stack; a code the page doesn't know keeps its code as its name. */
 export function fuelOf(code: string): Fuel {
-  const band = code.startsWith('INT') ? 'imports' : BAND_OF[code]
+  const band = elexonBand(code)
   const i = band ? FUEL_BANDS.findIndex((b) => b.key === band) : -1
   if (i < 0) return { code, label: code, color: NEUTRAL, order: FUEL_BANDS.length }
-  const label = band === 'imports' ? 'Interconnector' : (PEAKING_LABELS[code] ?? FUEL_BANDS[i].label)
+  const label = band === 'imports' ? 'Interconnector' : (elexonFuelName(code) ?? FUEL_BANDS[i].label)
   return { code, label, color: fuelVar(FUEL_BANDS[i].key), order: i }
 }
 
@@ -171,13 +143,6 @@ export function listedUnits(lookup: FuelLookup): { id: string; fuel: Fuel }[] {
   return [...lookup.codes.keys()]
     .map((id) => ({ id, fuel: fuelFor(lookup, id) }))
     .sort((a, b) => a.fuel.order - b.fuel.order || a.fuel.label.localeCompare(b.fuel.label) || collator.compare(a.id, b.id))
-}
-
-/** The id as the forecast lists it, matched without regard to case; the id as typed when it lists none. */
-export function listedId(lookup: FuelLookup, typed: string): string {
-  if (lookup.codes.has(typed)) return typed
-  const lower = typed.toLowerCase()
-  return [...lookup.codes.keys()].find((id) => id.toLowerCase() === lower) ?? typed
 }
 
 // ---------------------------------------------------------------- the units' lines
@@ -324,9 +289,6 @@ export function priceAt(price: PriceSeries): Map<number, number> {
 }
 
 // ---------------------------------------------------------------- figures
-
-/** A cell's number, or null for a gap. */
-export const num = (v: Scalar | undefined): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 
 export interface Levels {
   /** Half-hours (or means) holding a start level. */

@@ -12,8 +12,9 @@ import { KeyList } from '../../../design/charts'
 import { listText } from '../../../design/format'
 import { periodLabel, rangeText } from '../../../design/time'
 import type { PageContext } from '../../define'
-import { CI, CI_COLOR, CI_LABEL, FUELS, FUEL_COLUMNS, amountText, idOf, seriesOf } from './fuels'
+import { CI, CI_COLOR, CI_LABEL, FUELS, FUEL_COLUMNS, amountText, idOf } from './fuels'
 import { clockOf, latestHeld, stepsText, windowPeriod, zeroRuns, type ZeroRun } from './periods'
+import { seriesOf } from '../../_template/seriesModel'
 
 /** `Every row held reads zero for “other” until 1 Feb 2012 and for solar until 1 Jan 2013…`, or empty. */
 function zeroText(runs: ZeroRun[]): string {

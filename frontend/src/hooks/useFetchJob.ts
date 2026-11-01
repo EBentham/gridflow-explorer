@@ -4,6 +4,8 @@ import type { JobStatus } from '../api/types'
 import type { DateRange } from '../lib/range'
 
 const POLL_INTERVAL_MS = 1500
+// About 15 s of failed polls in a row: gridflow has gone away, not paused for a refresh.
+const MAX_POLL_FAILURES = 10
 // `idle` is included alongside `succeeded`/`failed`: while polling, an
 // `idle` response means the job we were tracking vanished server-side
 // (restart, or the manager moved on) — that is terminal too, not a state
@@ -35,8 +37,9 @@ interface UseFetchJobResult {
  *
  * Polling uses a self-scheduling `setTimeout` chain, never a bare
  * `setInterval`, so a slow tick cannot overlap the next one
- * (P3-PLAN.md case 15). Polling stops on a terminal state and on unmount;
- * in-flight requests are aborted on cleanup, matching `useDataset`'s
+ * (P3-PLAN.md case 15). Polling stops on a terminal state, after
+ * `MAX_POLL_FAILURES` failed polls in a row (setting `error`), and on unmount;
+ * in-flight requests are aborted on cleanup, matching `useJson`'s
  * `AbortController` pattern.
  */
 export function useFetchJob(datasetId: string): UseFetchJobResult {
@@ -47,6 +50,7 @@ export function useFetchJob(datasetId: string): UseFetchJobResult {
   const timeoutRef = useRef<number | null>(null)
   const controllerRef = useRef<AbortController | null>(null)
   const mountedRef = useRef(true)
+  const failuresRef = useRef(0)
 
   const stopPolling = useCallback(() => {
     if (timeoutRef.current !== null) {
@@ -64,6 +68,7 @@ export function useFetchJob(datasetId: string): UseFetchJobResult {
     fetchJson<JobStatus>('/api/jobs/current', controller.signal)
       .then((status) => {
         if (!mountedRef.current || controller.signal.aborted) return
+        failuresRef.current = 0
         setJob(status)
         if (!TERMINAL_STATES.has(status.state)) {
           timeoutRef.current = window.setTimeout(poll, POLL_INTERVAL_MS)
@@ -73,7 +78,13 @@ export function useFetchJob(datasetId: string): UseFetchJobResult {
         if (err instanceof DOMException && err.name === 'AbortError') return
         if (!mountedRef.current) return
         // A transient poll failure (e.g. a 503 mid-refresh) should not kill
-        // the flow — the job is still running server-side; keep polling.
+        // the flow — the job is still running server-side; keep polling,
+        // until enough fail in a row that the banner should say so.
+        failuresRef.current += 1
+        if (failuresRef.current >= MAX_POLL_FAILURES) {
+          setError(err instanceof ApiError ? err : new ApiError('unknown_error', String(err)))
+          return
+        }
         timeoutRef.current = window.setTimeout(poll, POLL_INTERVAL_MS)
       })
   }, [])
@@ -81,6 +92,7 @@ export function useFetchJob(datasetId: string): UseFetchJobResult {
   const start = useCallback(
     (range: DateRange) => {
       stopPolling()
+      failuresRef.current = 0
       setStarting(true)
       setError(null)
 

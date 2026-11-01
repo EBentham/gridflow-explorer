@@ -31,17 +31,13 @@ why this page needs it, and what the page does meanwhile.
 
 ## Shared code outside this unit's boundary
 
-2. **No solar colour.** The locked palette has no Explorer `--fuel-solar`: the site's solar is
-   chartreuse, which DESIGN reserves for the brand and never uses as a data colour.
-   - The page borrows `--chart-tick` for solar. Measured against the nine fuel colours in both
-     themes, its minimum ΔE is 17.8 (18.9 under simulated colour-blindness), and its contrast
-     on the chart surface is 5.2 in light and 8.3 in dark.
-   - Embedded wind has no colour of its own. It sits directly above transmission-connected
-     wind, and a 1 px surface gap alone didn't part them (review, pass 1). Meanwhile it is
-     `--fuel-wind` hatched with `--chart-surface`: an SVG pattern in the charts
-     (`WindHatch.tsx`) and a matching CSS stripe in the key and the mix bar.
-   - Wanted: a CVD-checked `--fuel-solar` for both themes, and a ruling on embedded wind: its
-     own tint, or the hatch as a design pattern for a fuel's sub-band.
+2. **No embedded-wind colour.** Embedded wind has no colour of its own.
+   - It sits directly above transmission-connected wind, and a 1 px surface gap alone didn't
+     part them (review, pass 1). Meanwhile it is `--fuel-wind` hatched with `--chart-surface`:
+     an SVG pattern in the charts (`FuelHatch`, design/charts) and a matching CSS stripe in the key and
+     the mix bar.
+   - Wanted: a ruling on embedded wind: its own tint, or the hatch as a design pattern for a
+     fuel's sub-band.
 3. **The chart clock stops at months, and dates name no year.**
    - `ukTimeTicks` ticks every 14 days past 120 days, labelled like `15 Sep`, with no year.
    - `periodLabel` and `dayLabel` also name no year, so the template's chart and table can't

@@ -6,19 +6,20 @@
  * lowest half-hour. Table: a row per half-hour in MW, both figures, with the
  * issue each comes from and how far ahead it was made.
  */
-import { HOUR_MS, instantLabel, periodLabel, stepNoun, windowDomain } from '../../../design/time'
+import { HOUR_MS, instantLabel, leadText, periodLabel, stepNoun, windowDomain } from '../../../design/time'
+import { dashCell } from '../../_template/cells'
+import type { Pair, PairRow } from '../../_template/issuePair'
 import { ErrorWords } from '../../_template/panels'
-import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
+import { AXIS_WIDTH, SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import { meansText } from '../../_template/text'
+import { MW } from '../../_template/units'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, BOUNDARY_WORDS, MW_UNIT, leadText, pairOf, type Pair, type PairRow } from './figures'
-
-const dash = <span className="gf-cell-missing">–</span>
+import { BOUNDARY_WORDS, pairFor } from './figures'
 
 /** Why the other dataset isn't drawn beside the page's own, when it isn't. */
-export function OtherNote({ pair }: { pair: Pair }) {
-  const name = pair.ownIsImbalance ? 'Indicated margin' : 'Indicated imbalance'
+function OtherNote({ pair }: { pair: Pair }) {
+  const name = pair.ownIsA ? 'Indicated margin' : 'Indicated imbalance'
   if (pair.otherState === 'paired' || pair.otherState === 'loading') return null
   if (pair.otherState === 'failed')
     return (
@@ -32,53 +33,53 @@ export function OtherNote({ pair }: { pair: Pair }) {
 }
 
 function PairTable({ ctx, pair }: { ctx: PageContext; pair: Pair }) {
-  const mw = (v: number | null) => (v === null ? dash : MW_UNIT.plain(v))
+  const mw = (v: number | null) => (v === null ? dashCell : MW.plain(v))
   const split = pair.issueMismatch > 0
-  const issued = (at: number | null) => (at === null ? dash : instantLabel(at))
+  const issued = (at: number | null) => (at === null ? dashCell : instantLabel(at))
   const ownIssued = (r: PairRow) => {
     const c = pair.cells.get(r.t)
-    return (pair.ownIsImbalance ? c?.imbIssued : c?.marIssued) ?? null
+    return (pair.ownIsA ? c?.aIssued : c?.bIssued) ?? null
   }
   const imbCol: TableCol<PairRow> = {
     key: 'i',
     label: 'Imbalance, MW',
     num: true,
-    render: (r) => mw(pair.cells.get(r.t)?.imbMw ?? null),
-    sortValue: (r) => pair.cells.get(r.t)?.imbMw ?? null,
+    render: (r) => mw(pair.cells.get(r.t)?.aMw ?? null),
+    sortValue: (r) => pair.cells.get(r.t)?.aMw ?? null,
   }
   const marCol: TableCol<PairRow> = {
     key: 'm',
     label: 'Margin, MW',
     num: true,
-    render: (r) => mw(pair.cells.get(r.t)?.marMw ?? null),
-    sortValue: (r) => pair.cells.get(r.t)?.marMw ?? null,
+    render: (r) => mw(pair.cells.get(r.t)?.bMw ?? null),
+    sortValue: (r) => pair.cells.get(r.t)?.bMw ?? null,
   }
   const cols: TableCol<PairRow>[] = [
     { key: 't', label: pair.bucketed ? 'Period (means)' : 'Half-hour', render: (r) => periodLabel(r.t, pair.stepMs), sortValue: (r) => r.t },
     // The half-hour names its UK day; the SP is the backend's, never derived.
     ...(pair.settlement
       ? [
-          { key: 'sp', label: 'SP', num: true, render: (r: PairRow) => pair.settlement?.get(r.t)?.period ?? dash, sortValue: (r: PairRow) => pair.settlement?.get(r.t)?.period ?? null },
+          { key: 'sp', label: 'SP', num: true, render: (r: PairRow) => pair.settlement?.get(r.t)?.period ?? dashCell, sortValue: (r: PairRow) => pair.settlement?.get(r.t)?.period ?? null },
         ]
       : []),
-    ...(pair.ownIsImbalance ? [imbCol, marCol] : [marCol, imbCol]),
+    ...(pair.ownIsA ? [imbCol, marCol] : [marCol, imbCol]),
     ...(split
       ? [
-          { key: 'ii', label: 'Imbalance issued', render: (r: PairRow) => issued(pair.cells.get(r.t)?.imbIssued ?? null), sortValue: (r: PairRow) => pair.cells.get(r.t)?.imbIssued ?? null },
-          { key: 'mi', label: 'Margin issued', render: (r: PairRow) => issued(pair.cells.get(r.t)?.marIssued ?? null), sortValue: (r: PairRow) => pair.cells.get(r.t)?.marIssued ?? null },
+          { key: 'ii', label: 'Imbalance issued', render: (r: PairRow) => issued(pair.cells.get(r.t)?.aIssued ?? null), sortValue: (r: PairRow) => pair.cells.get(r.t)?.aIssued ?? null },
+          { key: 'mi', label: 'Margin issued', render: (r: PairRow) => issued(pair.cells.get(r.t)?.bIssued ?? null), sortValue: (r: PairRow) => pair.cells.get(r.t)?.bIssued ?? null },
         ]
       : [{ key: 'is', label: 'Issued', render: (r: PairRow) => issued(ownIssued(r)), sortValue: (r: PairRow) => ownIssued(r) }]),
     {
       key: 'l',
       label: 'Issued ahead',
       num: true,
-      render: (r) => (typeof r.l === 'number' ? leadText(r.l * HOUR_MS) : dash),
+      render: (r) => (typeof r.l === 'number' ? leadText(r.l * HOUR_MS) : dashCell),
       sortValue: (r) => (typeof r.l === 'number' ? r.l : null),
     },
   ]
   const steps = pair.bucketed && pair.stepMs ? meansText(pair.stepMs) : stepNoun(pair.stepMs)
-  const own = pair.ownIsImbalance ? 'imbalance' : 'margin'
-  const held = pair.rows.filter((r) => typeof r.i === 'number' || typeof r.m === 'number').length
+  const own = pair.ownIsA ? 'imbalance' : 'margin'
+  const held = pair.rows.filter((r) => typeof r.a === 'number' || typeof r.b === 'number').length
   const caption = `Boundary N, ${ctx.windowText}: ${pair.rows.length.toLocaleString('en-GB')} ${steps}, ${held.toLocaleString('en-GB')} held. Select a column heading to sort.`
   return (
     <>
@@ -97,7 +98,7 @@ function PairTable({ ctx, pair }: { ctx: PageContext; pair: Pair }) {
 }
 
 export function PairBody({ ctx }: { ctx: PageContext }) {
-  const pair = pairOf(ctx)
+  const pair = pairFor(ctx)
   if (!pair || !ctx.window) return null
   if (ctx.mode === 'table')
     return (
@@ -117,14 +118,14 @@ export function PairBody({ ctx }: { ctx: PageContext }) {
     settlement: pair.settlement,
     height,
     extremes: labelled ? d : null,
-    zero: d.key === 'imb',
+    zero: d.key === 'a',
     axisWidth: AXIS_WIDTH,
   })
   // The lower panel's labels would sit on the clock's labels; the key gives its highest and lowest.
   const panels = [panel(pair.own, 300, true), ...(pair.other ? [panel(pair.other, 190, false)] : [])]
   const means = pair.bucketed && pair.stepMs ? meansText(pair.stepMs) : null
-  const top = pair.ownIsImbalance ? 'indicated imbalance' : 'indicated margin'
-  const below = pair.ownIsImbalance ? 'indicated margin' : 'indicated imbalance'
+  const top = pair.ownIsA ? 'indicated imbalance' : 'indicated margin'
+  const below = pair.ownIsA ? 'indicated margin' : 'indicated imbalance'
   return (
     <>
       <OtherNote pair={pair} />

@@ -8,10 +8,11 @@
  * figure, never counted as zero.
  */
 import { plural } from '../../../design/format'
-import { DAY_MS, HOUR_MS, MINUTE_MS, datesBetween, dayStart, instantLabel, londonMidnight } from '../../../design/time'
+import { MINUTE_MS, datesBetween, dayStart, instantLabel, leadText, londonMidnight } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { RowsResponse } from '../../contract'
 import type { SeriesDef, SeriesModel } from '../../_template/seriesModel'
+import { seriesOf } from '../../_template/seriesModel'
 
 export const WIND_FC = 'embedded_wind_forecast'
 export const WIND_CAP = 'embedded_wind_capacity'
@@ -36,28 +37,10 @@ export const RECORDED_COLOR = 'var(--chart-actual)'
 /** The working panel's charts share this value-axis width with the main chart, so the clocks line up. */
 export const AXIS_WIDTH = 44
 
-/** A column's series in a model, when the rows hold it. */
-export const seriesOf = (model: SeriesModel | null | undefined, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
-
 /** A column's id in the template's focus and keys: the rows aren't split, so it is `self/<column>`. */
 export const idOf = (column: string) => `self/${column}`
 
 // ---------------------------------------------------------------- the forecast issue
-
-/**
- * `6 days`, `13 h`, `35 min`: how long before its half-hour a forecast was
- * issued, rounded down to whole days past two days. Joined with non-breaking
- * spaces, so a lead never wraps mid-figure.
- */
-export function leadText(ms: number): string {
-  const words = (() => {
-    const min = Math.floor(ms / MINUTE_MS)
-    if (min < 60) return `${min} min`
-    if (ms < 2 * DAY_MS) return `${Math.floor(ms / HOUR_MS)} h`
-    return `${Math.floor(ms / DAY_MS)} days`
-  })()
-  return words.replace(/ /g, ' ')
-}
 
 export interface Issues {
   /** Each issue time held behind a forecast value in the window, oldest first. */

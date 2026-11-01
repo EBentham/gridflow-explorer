@@ -1,17 +1,16 @@
 /**
- * The daily forecasts' window, after Chart | Table. The toolbar's windows end
- * on the latest local day, today at the latest, but these forecasts run up to
- * two weeks ahead of it, so this runs the window on to the last delivery day
- * held: the seven days to the latest local day, then every day ahead that a
- * forecast is held for. It sets
- * the template's own custom window (`ctx.range.setCustom`, the same `from`
- * and `to` its date inputs write).
+ * The forward window, after Chart | Table, for a forecast whose rows run past
+ * the latest local day (today at the latest): the week to that day, the
+ * toolbar's default, or on to the last day held, so the newest issue's days
+ * ahead can be seen without typing dates. It sets the toolbar's own custom
+ * window (`ctx.range.setCustom`, the same `from` and `to` its date inputs
+ * write), and shows only when there are days ahead to open.
  */
-import { Segmented } from '../../../design/frame'
-import { fmtDay, shiftDate } from '../../../design/time'
-import type { PageContext } from '../../define'
+import { Segmented } from '../../design/frame'
+import { fmtDay, shiftDate } from '../../design/time'
+import type { PageContext } from '../define'
 
-export function HorizonControl({ ctx }: { ctx: PageContext }) {
+export function ForwardControl({ ctx }: { ctx: PageContext }) {
   const range = ctx.range
   const latest = ctx.dataset.coverage?.latest_local_day
   const last = ctx.dataset.coverage?.last_day

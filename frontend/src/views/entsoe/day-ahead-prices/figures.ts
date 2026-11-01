@@ -15,6 +15,8 @@ import { CHART } from '../../../design/chartTheme'
 import type { DateRange } from '../../../lib/range'
 import type { GroupSpec } from '../../define'
 import type { SeriesDef, SeriesModel, WideRow } from '../../_template/seriesModel'
+import { runsWhere } from '../../../design/series'
+import { daysInWindow } from '../../../design/days'
 
 export const PRICE = 'price_eur_mwh'
 export const AREA = 'area_code'
@@ -56,9 +58,6 @@ export const ZONES: Zone[] = [
 
 export const GROUPS: GroupSpec[] = ZONES.map(({ value, label, color }) => ({ value, label, color }))
 
-/** A column's series in a model, when the rows hold it. */
-export const seriesOf = (model: SeriesModel | null | undefined, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
-
 export interface Point {
   t: number
   v: number
@@ -88,15 +87,6 @@ export interface ZoneFigures {
   longestBelow: { start: number; last: number; n: number; min: number } | null
 }
 
-/** The smallest spacing between a zone's own held times: its step, as a gap only ever widens a spacing. */
-function ownStep(points: Point[]): number | null {
-  let best: number | null = null
-  for (let i = 1; i < points.length; i += 1) {
-    const d = points[i].t - points[i - 1].t
-    if (d > 0 && (best === null || d < best)) best = d
-  }
-  return best
-}
 
 /** Steps a clock of `step` has over the window's UK days (clock changes included). */
 function stepsInWindow(window: DateRange, step: number | null): number | null {
@@ -111,24 +101,7 @@ function stepsInWindow(window: DateRange, step: number | null): number | null {
 }
 
 /** The runs of consecutive held steps below zero on a zone's own clock; a gap ends a run. */
-export function runsBelow(points: Point[], step: number | null): { start: number; last: number; n: number; min: number }[] {
-  if (step === null) return []
-  const out: { start: number; last: number; n: number; min: number }[] = []
-  let run: (typeof out)[number] | null = null
-  for (const p of points) {
-    if (p.v < 0) {
-      if (run && p.t - run.last <= step) {
-        run.last = p.t
-        run.n += 1
-        run.min = Math.min(run.min, p.v)
-      } else {
-        run = { start: p.t, last: p.t, n: 1, min: p.v }
-        out.push(run)
-      }
-    } else run = null
-  }
-  return out
-}
+export const runsBelow = (points: Point[], step: number | null) => runsWhere(points, step, (p) => p.v, (v) => v < 0)
 
 /**
  * Every zone of the five, and any other the rows hold, with its figures for
@@ -147,7 +120,7 @@ export function zoneFigures(model: SeriesModel, window: DateRange): ZoneFigures[
         if (typeof v === 'number') points.push({ t: row.t, v })
       }
     }
-    const step = model.bucketed ? model.stepMs : (ownStep(points) ?? zone?.cardStep ?? null)
+    const step = def?.stepMs ?? (model.bucketed ? model.stepMs : (zone?.cardStep ?? null))
     let sum = 0
     let low: Point | null = null
     let high: Point | null = null
@@ -208,16 +181,7 @@ export interface ZoneDay {
 
 /** Every UK day of the window with one zone's held values: a day it holds nothing of is listed, with none held. */
 export function zoneDays(z: ZoneFigures, window: DateRange, bucketed: boolean): ZoneDay[] {
-  const byDay = new Map<number, Point[]>()
-  for (const p of z.points) {
-    const d = londonMidnight(p.t)
-    const list = byDay.get(d)
-    if (list) list.push(p)
-    else byDay.set(d, [p])
-  }
-  return datesBetween(window.start, window.end).map((day) => {
-    const start = dayStart(day)
-    const points = byDay.get(start) ?? []
+  return daysInWindow(z.points, window).map(({ day, start, rows: points }) => {
     let sum = 0
     let low: Point | null = null
     let high: Point | null = null

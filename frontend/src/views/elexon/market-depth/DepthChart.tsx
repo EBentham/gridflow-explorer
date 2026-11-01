@@ -15,7 +15,8 @@ import { SeriesBody } from '../../_template/SeriesBody'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { ACCEPTED, ACC_OFFER, AXIS_WIDTH, IMBALANCE, OFFER, OFFERED, heldOf, seriesOf } from './figures'
+import { ACCEPTED, ACC_OFFER, AXIS_WIDTH, IMBALANCE, OFFER, OFFERED, heldOf } from './figures'
+import { seriesOf } from '../../_template/seriesModel'
 
 /**
  * Where the local rows run, said only when this window has a day inside

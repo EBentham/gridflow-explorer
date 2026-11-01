@@ -35,10 +35,6 @@ around each gap inside its folder.
 
 ## Template
 
-4. **The window can't run past the latest local day.** These forecasts run up to two weeks
-   ahead, but the toolbar's windows end on the latest local day. What the page does: a toolbar
-   control, "On to <last day>", sets the template's custom window from a week before the latest
-   local day to the last delivery day held (the demand forecasts page asks the same).
 5. **`SeriesChart` doesn't stack bars.** `mark: 'bars'` never takes a `stackId`, so the P1
    card's "stacked bars by fuel per delivery date" can't be drawn. What the page does: stacked
    areas with one point per delivery day, and the hint says the lines only join the days. A
@@ -47,9 +43,6 @@ around each gap inside its folder.
    and `rowsPath` don't send it. The by-unit read carries `national_grid_bm_unit`,
    `timestamp_utc` and the rest for 475 units a day, about 6,650 rows for two weeks. Asked for:
    `columns` on `QuerySpec`/`RelatedSpec`, passed through `rowsPath`.
-7. **Elexon's fuel codes have no shared map onto the design's bands.** This page copies the
-   physical notifications page's map (`INT…` to interconnectors, OCGT, coal and oil to peaking)
-   into `figures.ts`. One map in `design/fuels.ts` would keep every Elexon page alike.
 8. **No neutral data token for an unknown category.** A fuel code the page doesn't know would
    be drawn in `--chart-tick`, as the physical notifications page does (its NEEDS item 9).
 9. **A line held at zero all window gets a −1 to 1 axis.** `SeriesChart` scales a flat zero

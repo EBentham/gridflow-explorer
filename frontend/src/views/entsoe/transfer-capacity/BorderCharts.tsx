@@ -13,11 +13,11 @@ import { windowDomain } from '../../../design/time'
 import { SeriesChart } from '../../_template/SeriesChart'
 import { ErrorWords } from '../../_template/panels'
 import type { PageContext } from '../../define'
-import { areaPhrase } from './areas'
 import { BorderTable } from './BorderTable'
 import { aloneIn, besideOf, besideState, borderPanel, bordersOf, measureOf } from './model'
-import { heldDayStarts } from './figures'
-import { aloneSentence, besideMissingSentence, cadenceSentence, missingSentence } from './words'
+import { besideMissingSentence } from './words'
+import { heldDayStarts, aloneSentence, cadenceSentence, missingSentence } from '../../_template/lineClock'
+import { areaPhrase } from '../../_template/borders'
 
 export function BorderCharts({ ctx }: { ctx: PageContext }) {
   if (ctx.mode === 'table') return <BorderTable ctx={ctx} />

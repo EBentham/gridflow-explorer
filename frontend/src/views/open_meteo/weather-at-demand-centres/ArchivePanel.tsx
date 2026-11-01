@@ -9,10 +9,10 @@
  */
 import { windowDomain } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
-import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
+import { SeriesChart, type ChartPanel, AXIS_WIDTH } from '../../_template/SeriesChart'
 import { periodName, seriesId } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { ARCHIVE_KEY, AXIS_WIDTH, TEMP, cityGaps, cityName, citySeries, cityStepsText } from './figures'
+import { ARCHIVE_KEY, TEMP, cityGaps, cityName, citySeries, cityStepsText } from './figures'
 
 const signedText = (plain: string, v: number) => (v > 0 && plain !== '0.0' ? `+${plain}` : plain)
 

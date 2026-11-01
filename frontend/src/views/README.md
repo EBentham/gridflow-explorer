@@ -19,7 +19,7 @@ source lines, the honesty states and the Fixture tags.
 ```
 src/views/
   README.md              this contract
-  define.ts              the view config types, defineView, TEMPLATE_PARAMS
+  define.ts              the view config types and defineView
   contract.ts            the manifest and rows shapes, and the DataSource interface
   registry.ts            finds every page with import.meta.glob('./*/*/index.tsx')
   FamilyRoute.tsx        the route element: the page, or what the source list says of the address
@@ -82,7 +82,7 @@ Folders starting with `_` belong to the template. The registry skips them.
 | `title` | The H1: the family as a reader would say it. |
 | `sub` | One sentence under the H1: what this is and what it shows. |
 | `datasets` | The family's datasets on this page, in the order of the toolbar's switch. The first held one opens by default. |
-| `caveats` | Plain-words caveats for the whole family, shown in the main panel with each dataset's own. |
+| `caveats` | Plain-words caveats for the whole family, shown in the main panel with each dataset's own. A caveat that reads the page (its coverage, say) is a function of the page context. |
 | `adapter` | `'fixture'` reads the dev fixture. Only the demo uses it. |
 
 ### Every dataset (`DatasetView`)
@@ -237,9 +237,8 @@ A page **may not**:
   carry internal references. Words like "silver", "manifest" and "configured" stay off the
   page;
 - **use the fixture.** `adapter: 'fixture'` is for the demo only;
-- **take the template's URL parameters.** `TEMPLATE_PARAMS` (`days`, `from`, `to`, `view`,
-  `dataset`, `q`, `theme`, `fixture`) and anything starting `f.` (the events filters) are
-  the template's.
+- **take the template's URL parameters.** `days`, `from`, `to`, `view`, `dataset`, `q`,
+  `theme`, `fixture` and anything starting `f.` (the events filters) are the template's.
 
 ## Panels
 

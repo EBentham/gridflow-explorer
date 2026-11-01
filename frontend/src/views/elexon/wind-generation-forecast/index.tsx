@@ -12,7 +12,9 @@ import { SourceLine } from '../../_template/panels'
 import { relatedFilters, type SourcePart } from '../../_template/panelHelpers'
 import type { PageContext } from '../../define'
 import { defineView } from '../../define'
-import { AXIS_WIDTH, COLORS, FORECAST, FUEL_TYPE, ISSUED, METERED, METERED_KEY, WIND } from './figures'
+import { ISSUED } from '../../_template/issues'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
+import { COLORS, FORECAST, FUEL_TYPE, METERED, METERED_KEY, WIND } from './figures'
 import { ForecastKey } from './ForecastKey'
 import { MeteredPanel } from './MeteredPanel'
 
@@ -52,7 +54,6 @@ const view = defineView({
       chart: { mark: 'line', extremes: true, lower: false, axisWidth: AXIS_WIDTH, height: 480 },
       panels: {
         key: {
-          title: 'Key',
           src: (ctx) => (
             <SourceLine
               ctx={ctx}

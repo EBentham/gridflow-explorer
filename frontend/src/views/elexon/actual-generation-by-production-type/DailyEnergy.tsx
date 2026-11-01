@@ -15,12 +15,11 @@ import type { PageContext } from '../../define'
 import { energyDays, wholeSum, type EnergyDay } from './energy'
 import { halfHourly } from './figures'
 import { AXIS_WIDTH, fillOf, heldTypes, swatchOf } from './types'
+import { dashCell } from '../../_template/cells'
 
 const GWH = displayUnit('GWh')
 const WIND = ['Wind Onshore', 'Wind Offshore']
 const SOLAR = ['Solar']
-
-const dash = <span className="gf-cell-missing">–</span>
 
 function extremes(days: EnergyDay[], groups: string[]) {
   let hi: { d: EnergyDay; v: number } | null = null
@@ -110,7 +109,7 @@ export function DailyEnergy({ ctx }: { ctx: PageContext }) {
                   <td className="is-num">{none ? 'none held' : held === most ? `${held} of ${d.expected}` : `${held}–${most} of ${d.expected}`}</td>
                   {d.types.map((x) => (
                     <td key={x.def.key} className="is-num">
-                      {x.gwh === null ? dash : GWH.plain(x.gwh)}
+                      {x.gwh === null ? dashCell : GWH.plain(x.gwh)}
                     </td>
                   ))}
                 </tr>

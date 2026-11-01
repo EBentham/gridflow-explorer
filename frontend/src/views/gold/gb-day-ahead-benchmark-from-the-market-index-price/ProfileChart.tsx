@@ -14,9 +14,7 @@ import { fmtN, niceTicks, stepDigits } from '../../../design/format'
 import { dayTick } from '../../../design/time'
 import type { SeriesDef } from '../../_template/seriesModel'
 import { RANGE_OPACITY, slotText, type Slot } from './figures'
-
-/** The same width as the main chart's value axis would take at this scale; the clocks differ, so it needn't match. */
-const AXIS_WIDTH = 52
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 
 interface ProfileRow {
   minute: number

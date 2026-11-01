@@ -9,13 +9,13 @@
  * every column in it is held: nothing is part-summed or filled in.
  */
 import { useMemo } from 'react'
-import { fmt1, plural } from '../../../design/format'
+import { fmt1, plural, num } from '../../../design/format'
 import { windowDomain } from '../../../design/time'
-import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
+import { SeriesChart, type ChartPanel, AXIS_WIDTH } from '../../_template/SeriesChart'
 import type { SeriesDef, WideRow } from '../../_template/seriesModel'
 import { displayUnit } from '../../_template/units'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, INTERCONNECTORS, INTERCONNECTOR_CODES, NET_PIECES, demandIdentity, num, ownRows, pieceValue, statsOf, type Stats } from './figures'
+import { INTERCONNECTORS, INTERCONNECTOR_CODES, NET_PIECES, demandIdentity, ownRows, pieceValue, statsOf, type Stats } from './figures'
 
 const GW = displayUnit('MW')
 const gw = (v: number | null) => (v === null ? '–' : fmt1(v * GW.factor))

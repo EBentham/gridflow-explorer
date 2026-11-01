@@ -28,18 +28,21 @@ import { relatedParts } from '../../_template/panelHelpers'
 import { SourceLine } from '../../_template/panels'
 import { defineView, type PageContext, type PanelSlots, type RelatedSpec, type SeriesView, type SlotSpec } from '../../define'
 import { AboutFamily } from './AboutFamily'
-import { areaPhrase, borderQuery, GB, GB_QUERY, IN_PARAM, inAreaCode } from './areas'
 import { BorderCharts } from './BorderCharts'
 import { BorderDays } from './BorderDays'
 import { BorderKey } from './BorderKey'
-import { AXIS_WIDTH } from './figures'
-import { InAreaControl } from './InAreaControl'
 import { ALLOCATED, BESIDE, bordersOf, DC_LIMITS, focusedBorder, inAreaOf, latestStamp, MEASURES, measureOf, NOMINATED, NTC } from './model'
+import { areaPhrase, borderQuery, GB_QUERY, IN_PARAM, inAreaCode, BORDER_AXIS_WIDTH as AXIS_WIDTH } from '../../_template/borders'
+import { EIC } from '../../_template/codes'
+import { inAreaControl } from '../../_template/InAreaControl'
+import { IN_AREAS } from './areas'
 
 const MW = 'MW'
 
 /** The filters a border read carries: as the rows came back, else as asked. */
-const borderFilters = (ctx: PageContext) => ctx.response?.filters ?? { in_area_code: inAreaCode(ctx.view.id, ctx.param(IN_PARAM)) }
+const InAreas = inAreaControl((ctx) => IN_AREAS[ctx.view.id] ?? [])
+
+const borderFilters = (ctx: PageContext) => ctx.response?.filters ?? { in_area_code: inAreaCode(IN_AREAS[ctx.view.id] ?? [], ctx.param(IN_PARAM)) }
 
 /** The measures drawn beside the borders, for a source line, once they are read. */
 function besideParts(ctx: PageContext, out?: string) {
@@ -62,7 +65,7 @@ function panels(title: string): PanelSlots {
       title: (ctx) => {
         const code = inAreaOf(ctx)
         if (ctx.view.id === DC_LIMITS) return title
-        return code === GB ? `${title} on GB’s borders` : `${title}, ${areaPhrase(code)} as the in area`
+        return code === EIC.GB ? `${title} on GB’s borders` : `${title}, ${areaPhrase(code)} as the in area`
       },
       src: (ctx) => (
         <SourceLine
@@ -139,9 +142,9 @@ function border(dataset: string, extra: Pick<SeriesView, 'label' | 'title' | 'su
     body: 'series',
     ...extra,
     values: [{ column: m.column, label: m.label, display: 'MW' }],
-    query: borderQuery(dataset),
+    query: borderQuery(IN_AREAS[dataset] ?? []),
     related: besideReads(dataset),
-    controls: InAreaControl,
+    controls: InAreas,
     chart: { mark: 'line', lower: false, axisWidth: AXIS_WIDTH },
     panels: panels(extra.title ?? extra.label),
   }

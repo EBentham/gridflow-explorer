@@ -33,6 +33,12 @@ export class ApiError extends Error {
   }
 }
 
+/** Any failure as an `ApiError`: a backend error as it came, anything else as `unknown_error` with its message. */
+export const toApiError = (err: unknown): ApiError => (err instanceof ApiError ? err : new ApiError('unknown_error', err instanceof Error ? err.message : String(err)))
+
+/** A read cancelled because what asked for it moved on: not a failure. */
+export const isAbort = (err: unknown): boolean => err instanceof DOMException && err.name === 'AbortError'
+
 /**
  * Fetches JSON from `path` and throws a typed `ApiError` on a non-OK response.
  *

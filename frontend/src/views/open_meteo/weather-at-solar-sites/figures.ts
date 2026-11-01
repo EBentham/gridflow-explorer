@@ -22,9 +22,6 @@ export const OUTPUT_KEY = 'output'
 /** The related archive read beside the model re-run. */
 export const ARCHIVE_KEY = 'archive'
 
-/** Both charts' value axes take this width, so their clocks line up. */
-export const AXIS_WIDTH = 52
-
 /** The six sites, in gridflow's own order, each with its own colour. */
 const SITE_LIST: [string, string][] = [
   ['east_anglia_norfolk', 'East Anglia (Norfolk)'],

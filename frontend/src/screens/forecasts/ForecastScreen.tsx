@@ -13,11 +13,9 @@ import { EmptyState } from './EmptyState'
 import { ErrorState } from './ErrorState'
 import { ForecastFanChart } from './ForecastFanChart'
 import { LoadingState } from './LoadingState'
-import type { ForecastMetric, ForecastVariant } from '../../api/types'
+import type { ForecastDayRecord, ForecastMetric, ForecastVariant } from '../../api/types'
 import { variantKey } from '../../api/types'
-import { useForecastDay } from '../../hooks/useForecastDay'
-import { useForecastMetrics } from '../../hooks/useForecastMetrics'
-import { useForecastVariants } from '../../hooks/useForecastVariants'
+import { useJson } from '../../hooks/useJson'
 import './forecasts.css'
 
 function titleFor(variants: ForecastVariant[], key: string): string {
@@ -132,13 +130,13 @@ function MetricsPanel({
  * Deselecting every checkbox means "show nothing", not "show every
  * Variant" — `variantKeys` becomes `[]` (an explicit empty array,
  * distinct from `selectedVariantKeys === null`'s "not customised yet"),
- * and `useForecastDay`/`useForecastMetrics` both treat an empty key list
- * as "fetch nothing" (a Sol diff review finding: the previous behaviour
- * silently fell back to every Variant, contradicting the screen's own
- * controls).
+ * and the day and metrics reads treat an empty key list as "fetch
+ * nothing", never "every Variant". Each key is sent as its own repeated
+ * `variant_key` parameter: a key is itself a JSON string and may hold any
+ * separator a joined list would use.
  */
 export function ForecastScreen() {
-  const { data: variants, loading: variantsLoading, error: variantsError } = useForecastVariants()
+  const { data: variants, loading: variantsLoading, error: variantsError } = useJson<ForecastVariant[]>('/api/forecasts/variants')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [selectedVariantKeys, setSelectedVariantKeys] = useState<string[] | null>(null)
 
@@ -165,8 +163,12 @@ export function ForecastScreen() {
   )
   const variantKeys = selectedVariantKeys ?? allVariantKeys
 
-  const { data: dayRecords, loading: dayLoading, error: dayError } = useForecastDay(date, variantKeys)
-  const { data: metrics, loading: metricsLoading, error: metricsError } = useForecastMetrics(variantKeys)
+  const keys = (params: URLSearchParams) => (variantKeys.forEach((key) => params.append('variant_key', key)), params.toString())
+  // No day yet (the variants are still read), or no Variant chosen: nothing to read, and nothing to show.
+  const dayPath = date && variantKeys.length ? `/api/forecasts/day?${keys(new URLSearchParams({ date }))}` : null
+  const metricsPath = variantKeys.length ? `/api/forecasts/metrics?${keys(new URLSearchParams())}` : null
+  const { data: dayRecords, loading: dayLoading, error: dayError } = useJson<ForecastDayRecord[]>(dayPath, { skipped: [] })
+  const { data: metrics, loading: metricsLoading, error: metricsError } = useJson<ForecastMetric[]>(metricsPath, { skipped: [] })
   useDocumentTitle('Forecasts')
 
   const failure = variantsError ?? dayError ?? metricsError

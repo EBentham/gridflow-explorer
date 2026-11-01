@@ -5,8 +5,9 @@
  */
 import { About } from '../../_template/panels'
 import type { PageContext } from '../../define'
-import { areaName, isNamed, REGION } from './areas'
+import { REGION } from './areas'
 import { besideState, bordersOf, NET_POSITIONS } from './model'
+import { areaName, isNamed } from '../../_template/borders'
 
 /**
  * The area codes in the rows drawn: the filters' and every split's values. A

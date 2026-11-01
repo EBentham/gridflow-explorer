@@ -16,7 +16,8 @@ import { defineView } from '../../define'
 import { ContextChart } from './ContextChart'
 import { ContextDays } from './ContextDays'
 import { ContextKey } from './ContextKey'
-import { AXIS_WIDTH, CI_ACTUAL, CI_FORECAST, CI_SOURCE, NIV, SBP, SSP, VALUES, isMeans, unjoinable } from './figures'
+import { CI_ACTUAL, CI_FORECAST, CI_SOURCE, NIV, SBP, SSP, VALUES, isMeans, unjoinable } from './figures'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 
 const view = defineView({
   title: 'System prices joined with carbon intensity',
@@ -57,7 +58,6 @@ const view = defineView({
           Body: ContextChart,
         },
         key: {
-          title: 'Key',
           src: (ctx) => <SourceLine ctx={ctx} columns={[SSP, SBP, NIV, CI_FORECAST, CI_ACTUAL]} unit="£/MWh, MWh and gCO₂/kWh" what={unjoinable(ctx) ? 'nothing keyed: the means come apart by price derivation code' : isMeans(ctx) ? 'the series drawn' : 'the latest half-hour held, and the window’s price range, extremes and mean'} />,
           Body: ContextKey,
         },

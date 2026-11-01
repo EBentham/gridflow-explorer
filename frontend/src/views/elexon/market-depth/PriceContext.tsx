@@ -18,7 +18,8 @@ import { ErrorWords } from '../../_template/panels'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { ACC_OFFER, AXIS_WIDTH, IMBALANCE, NIV, PRICES, SSP, dayFigures, seriesOf, systemPrices } from './figures'
+import { ACC_OFFER, AXIS_WIDTH, IMBALANCE, NIV, PRICES, SSP, dayFigures, systemPrices } from './figures'
+import { seriesOf } from '../../_template/seriesModel'
 
 /** Why the system prices aren't shown (drawn, or in the days table's price column), in words. */
 function PricesWords({ ctx }: { ctx: PageContext }) {

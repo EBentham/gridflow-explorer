@@ -50,6 +50,40 @@ export function jsonName(v: Scalar): string | null {
   }
 }
 
+/** What the rows endpoint takes as a filter value: letters, digits, spaces and `_ . - / :`, 1 to 64 of them. */
+const UNIT_ID = /^[A-Za-z0-9 _.\-/:]{1,64}$/
+
+/** A BM unit id the rows endpoint can filter by, trimmed; null for anything else. */
+export function validUnitId(value: string | null | undefined): string | null {
+  const v = (value ?? '').trim()
+  return UNIT_ID.test(v) ? v : null
+}
+
+/** The ENTSO-E area codes (EIC) the pages read. */
+export const EIC = {
+  GB: '10YGB----------A',
+  FR: '10YFR-RTE------C',
+  NL: '10YNL----------L',
+  BE: '10YBE----------2',
+  DE_LU: '10Y1001A1001A82H',
+  IE_SEM: '10Y1001A1001A59C',
+} as const
+
+/** Their names, as gridflow's own ENTSO-E area list gives them (`connectors/entsoe/area_codes.py`). */
+export const ENTSOE_AREAS: Readonly<Record<string, string>> = {
+  [EIC.GB]: 'Great Britain',
+  [EIC.DE_LU]: 'Germany / Luxembourg',
+  [EIC.FR]: 'France',
+  [EIC.NL]: 'Netherlands',
+  [EIC.BE]: 'Belgium',
+  [EIC.IE_SEM]: 'Ireland (SEM)',
+}
+
+/** `France` from `10YFR-RTE------C`; null for a code gridflow doesn't name. */
+export function entsoeArea(v: Scalar): string | null {
+  return typeof v === 'string' ? (ENTSOE_AREAS[v] ?? null) : null
+}
+
 /** `Gas combined cycle` from `gas_combined_cycle`: a snake_case id as words. */
 export function idWords(v: Scalar): string | null {
   if (typeof v !== 'string' || !v) return null

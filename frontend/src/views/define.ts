@@ -104,6 +104,8 @@ export interface ColumnSpec {
    * `time` reads an ISO or epoch instant on the UK clock; `date` a `YYYY-MM-DD`.
    */
   format?: CellFormat
+  /** A `time` column names each instant's year: events that run years past their window. */
+  years?: boolean
   unit?: string
   display?: 'GW' | 'MW'
   /**
@@ -142,7 +144,8 @@ export interface RelatedSpec {
   dataset: string
   /** Its name in keys and tooltips. */
   label: string
-  query?: QuerySpec
+  /** Group and filters, fixed or read from the page's own URL parameters (its boundary, say). */
+  query?: QuerySpec | ((params: URLSearchParams) => QuerySpec)
   values?: ValueSpec[]
   groups?: GroupSpec[]
 }
@@ -221,7 +224,8 @@ export type DatasetView = SeriesView | EventsView | ReferenceView
 
 /** A panel's content. The template draws the panel, its H2, the source line and any Fixture tag. */
 export interface SlotSpec {
-  title: string | ((ctx: PageContext) => string)
+  /** The panel's H2. Default: the body's own for that panel (`Key` for a series' key). */
+  title?: string | ((ctx: PageContext) => string)
   /** The source line: dataset id, columns, unit, window. Default: the dataset's own (`SourceLine`). */
   src?: (ctx: PageContext) => ReactNode
   Body: ComponentType<{ ctx: PageContext }>
@@ -244,8 +248,8 @@ export interface ViewConfig {
   sub: string
   /** The datasets, in the order of the toolbar's switch. The first held one opens by default. */
   datasets: DatasetView[]
-  /** Caveats for the whole family, shown with each dataset's own. */
-  caveats?: string[]
+  /** Caveats for the whole family, shown with each dataset's own. A caveat that reads the page (its coverage, say) is a function. */
+  caveats?: (string | ((ctx: PageContext) => string))[]
   /** Read the dev fixture whatever the app's adapter is. Fixture pages carry the Fixture tag on every panel. */
   adapter?: 'fixture'
 }
@@ -293,18 +297,17 @@ export interface PageContext {
   /** A UK day's midnight picked on the chart or in a day table: the chart's highlight band. */
   picked: number | undefined
   pick: (midnight: number | undefined) => void
-  /** The page's URL parameters, for controls a page adds (not one of `TEMPLATE_PARAMS`, nor `f.…`). */
+  /**
+   * The page's URL parameters, for controls a page adds. The template and the
+   * app own `days`, `from`, `to`, `view`, `dataset`, `q`, `theme`, `fixture`
+   * and every `f.…` (the events table's column filters): a page's own
+   * controls use other names.
+   */
   param: (name: string) => string | null
   setParam: (name: string, value: string | null) => void
   /** Several parameters in one change (a null removes one). */
   setParams: (changes: Record<string, string | null>) => void
 }
-
-/**
- * URL parameters the template and the app own. A page's own controls use
- * other names, and never start with `f.` (the events table's column filters).
- */
-export const TEMPLATE_PARAMS = ['days', 'from', 'to', 'view', 'dataset', 'q', 'theme', 'fixture'] as const
 
 /** A family's view. Identity at runtime; it types the config. */
 export function defineView(config: ViewConfig): ViewConfig {

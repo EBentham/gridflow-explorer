@@ -1,10 +1,9 @@
 /**
  * The boundary, after Chart | Table: N, national, by default, or one of B1
- * to B17, written as `?boundary=`. The boundaries are named by their codes
- * alone: the rows don't say what area each one bounds.
+ * to B17, written as `?boundary=` (`boundaries.ts`).
  */
-import type { PageContext } from '../../define'
-import { BOUNDARIES, BOUNDARY_PARAM, NATIONAL_BOUNDARY, boundaryOf } from './figures'
+import type { PageContext } from '../define'
+import { BOUNDARIES, BOUNDARY_PARAM, NATIONAL_BOUNDARY, boundaryOf } from './boundaries'
 
 export function BoundaryControl({ ctx }: { ctx: PageContext }) {
   const value = boundaryOf(ctx)

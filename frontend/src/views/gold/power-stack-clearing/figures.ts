@@ -6,11 +6,14 @@
  * mean or a count, never read as zero, and nothing here re-derives what
  * gridflow's model computed.
  */
-import { niceTicks, type Scale } from '../../../design/format'
-import { datesBetween, dayStart, londonMidnight, stepsInDay } from '../../../design/time'
+import { niceTicks, type Scale, num } from '../../../design/format'
+import { stepsInDay } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { Scalar, SeriesRow } from '../../contract'
 import type { PageContext, QuerySpec } from '../../define'
+import { collator } from '../../_template/seriesModel'
+import { runsWhere, type Run } from '../../../design/series'
+import { daysInWindow } from '../../../design/days'
 
 // ---------------------------------------------------------------- the run
 
@@ -18,6 +21,13 @@ import type { PageContext, QuerySpec } from '../../define'
 export const POLICY = 'vintage_policy_id'
 /** The published headline run. gridflow also holds an earlier version of it for the same half-hours. */
 export const HEADLINE = 'smp_headline_perfect_prog_v2'
+/**
+ * The page's caveat on the run after `HEADLINE`. Change the two together:
+ * gridflow_models has still to rule whether the next headline run gets a new
+ * policy id or reuses this one, and either way this sentence goes stale.
+ */
+export const NEXT_RUN_CAVEAT =
+  'A run for the week from 14 Sep 2026 failed its check before publishing, so that week isn’t shown: the actual price fell inside none of its 50, 80 or 90% ranges, and its average error was £157.7/MWh.'
 /** One row per half-hour: the headline run, pinned, so its split is one value and the columns are the series. */
 export const RUN_QUERY: QuerySpec = { group: POLICY, filters: { [POLICY]: HEADLINE } }
 
@@ -63,9 +73,6 @@ export const FUEL = 'fuel_type'
 
 // ---------------------------------------------------------------- drawing
 
-/** Every chart's value axis takes this width, so charts stacked in different panels share a clock. */
-export const AXIS_WIDTH = 52
-
 /** The market index: the price that actually traded, drawn in the chart language's colour for an outturn. */
 export const MARKET_COLOR = 'var(--chart-actual)'
 /** The model's own figures: its clearing price and where its stack clears. */
@@ -109,7 +116,6 @@ export const FLOOR_STYLE: FuelStyle = { label: 'The price floor', color: 'var(--
 
 // ---------------------------------------------------------------- reading cells
 
-export const num = (v: Scalar | undefined): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 export const str = (v: Scalar | undefined): string | null => (typeof v === 'string' && v !== '' ? v : null)
 const bool = (v: Scalar | undefined): boolean | null => (typeof v === 'boolean' ? v : null)
 
@@ -216,21 +222,7 @@ export function setterOf(p: Pick<ClearingPoint, 'atFloor' | 'fuel'>): { key: str
 }
 
 /** Runs of consecutive half-hours where the floor set the price, as their first and last times. */
-export function floorRuns(points: ClearingPoint[], stepMs: number | null): { start: number; last: number }[] {
-  if (stepMs === null) return []
-  const out: { start: number; last: number }[] = []
-  let run: { start: number; last: number } | null = null
-  for (const p of points) {
-    if (p.atFloor === true) {
-      if (run && p.t - run.last <= stepMs) run.last = p.t
-      else {
-        run = { start: p.t, last: p.t }
-        out.push(run)
-      }
-    } else run = null
-  }
-  return out
-}
+export const floorRuns = (points: ClearingPoint[], stepMs: number | null): Run[] => runsWhere(points, stepMs, (p) => (p.atFloor === true ? 0 : null), () => true)
 
 export interface Mean {
   mean: number | null
@@ -346,16 +338,7 @@ export interface ClearingDay {
 }
 
 export function clearingDays(points: ClearingPoint[], window: DateRange, stepMs: number | null): ClearingDay[] {
-  const byDay = new Map<number, ClearingPoint[]>()
-  for (const p of points) {
-    const d = londonMidnight(p.t)
-    const list = byDay.get(d)
-    if (list) list.push(p)
-    else byDay.set(d, [p])
-  }
-  return datesBetween(window.start, window.end).map((day) => {
-    const start = dayStart(day)
-    const ps = byDay.get(start) ?? []
+  return daysInWindow(points, window).map(({ day, start, rows: ps }) => {
     const units = setterCounts(ps.filter((p) => p.atFloor !== true))
     return {
       day,
@@ -546,8 +529,6 @@ export interface CostTerm {
   term: string
   entries: CostEntry[]
 }
-
-const collator = new Intl.Collator('en-GB', { numeric: true, sensitivity: 'base' })
 
 export function costTerms(units: CurveUnit[]): { terms: CostTerm[]; unreadable: number; missing: number } {
   const terms = new Map<string, Map<string, CostEntry>>()

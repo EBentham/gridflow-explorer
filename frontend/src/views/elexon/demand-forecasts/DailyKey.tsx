@@ -11,7 +11,8 @@ import { plural } from '../../../design/format'
 import { fmtDay, instantLabel } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
 import type { PageContext } from '../../define'
-import { GW_UNIT, NDFD, OUTTURN_KEY, dailyPair, daysAhead, deliveryDays, forecastColumn, seriesOf, signedGw } from './figures'
+import { GW_UNIT, NDFD, OUTTURN_KEY, dailyPair, daysAhead, deliveryDays, forecastColumn, signedGw } from './figures'
+import { seriesOf } from '../../_template/seriesModel'
 
 export function DailyKey({ ctx }: { ctx: PageContext }) {
   const own = seriesOf(ctx.series, forecastColumn(ctx.dataset.id))

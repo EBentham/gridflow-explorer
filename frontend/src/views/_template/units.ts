@@ -95,3 +95,7 @@ export function displayUnit(unit: string | null | undefined, display: 'GW' | 'MW
 
 /** Whether one axis can carry both: they print the same, and two unconfirmed units come from the same text. */
 export const sameUnit = (a: DisplayUnit, b: DisplayUnit) => a.label === b.label && a.factor === b.factor && (a.label !== null || a.source === b.source)
+
+
+/** MW kept as MW: one unit's or one fuel's scale. */
+export const MW = displayUnit('MW', 'MW')

@@ -12,10 +12,11 @@
 import { SourceLine } from '../../_template/panels'
 import { relatedParts } from '../../_template/panelHelpers'
 import { defineView, type PageContext } from '../../define'
-import { ARCHIVE_KEY, ARCHIVE_SITES, AXIS_WIDTH, GTI, OUTPUT_KEY, SITES, SOLAR_MW, seriesOf, sitesOf } from './figures'
+import { ARCHIVE_KEY, ARCHIVE_SITES, GTI, OUTPUT_KEY, SITES, SOLAR_MW, seriesOf, sitesOf } from './figures'
 import { IrradiationPanel } from './IrradiationPanel'
 import { RerunPanel } from './RerunPanel'
 import { SiteKey } from './SiteKey'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 
 const STAMP =
   'Each irradiance value is the mean of the hour that ends at its time: the value at 13:00 covers 12:00 to 13:00. The chart’s tooltip and the table name the hour that starts at that time, so read each one as the hour before it.'
@@ -58,7 +59,7 @@ const view = defineView({
       ],
       chart: { mark: 'line', values: [GTI], zero: true, extremes: false, maxSeries: 30, axisWidth: AXIS_WIDTH, lower: { from: OUTPUT_KEY, mark: 'line' } },
       panels: {
-        key: { title: 'Key', src: (ctx) => keySrc(ctx, OUTPUT_KEY, SOLAR_MW), Body: SiteKey },
+        key: { src: (ctx) => keySrc(ctx, OUTPUT_KEY, SOLAR_MW), Body: SiteKey },
         working: {
           title: 'Irradiation per day, beside GB solar generation',
           src: (ctx) => {
@@ -104,7 +105,7 @@ const view = defineView({
       ],
       chart: { mark: 'line', values: [GTI], zero: true, extremes: false, maxSeries: 30, axisWidth: AXIS_WIDTH, lower: { from: ARCHIVE_KEY, mark: 'line' } },
       panels: {
-        key: { title: 'Key', src: (ctx) => keySrc(ctx, ARCHIVE_KEY, GTI), Body: SiteKey },
+        key: { src: (ctx) => keySrc(ctx, ARCHIVE_KEY, GTI), Body: SiteKey },
         working: {
           title: 'The re-run against the archive',
           src: (ctx) => {

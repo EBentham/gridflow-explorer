@@ -8,10 +8,10 @@
 import { plural } from '../../../design/format'
 import { dayLabel, stepNoun } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
-import { daySummaries } from '../../_template/seriesModel'
+import { daySummaries, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { DEMAND_KEY, INDO, TEMP, seriesOf } from './figures'
+import { DEMAND_KEY, INDO, TEMP } from './figures'
 
 export function DaysPanel({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
