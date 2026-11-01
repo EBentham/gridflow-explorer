@@ -1,6 +1,5 @@
 /**
- * The by-unit toolbar, after Chart | Table: the window of delivery days,
- * then all units or one (`?unit=`). The id box offers every unit the
+ * The by-unit toolbar, after Chart | Table: all units or one (`?unit=`). The id box offers every unit the
  * forecast lists in the window, named with its fuel, and matches a typed id
  * to a listed one without regard to case. The rows are already read for
  * every unit, so choosing one reads nothing more.
@@ -8,7 +7,6 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { Segmented } from '../../../design/frame'
 import type { PageContext } from '../../define'
-import { HorizonControl } from './HorizonControl'
 import { UNIT_PARAM, askedUnit, daysOf, keyDay, sortedUnits, unitFuel, unitShown, unitsOf, validUnit, type UnitInfo } from './figures'
 
 const LIST_ID = 'gf-av-units'
@@ -96,7 +94,6 @@ export function UnitControl({ ctx }: { ctx: PageContext }) {
   }
   return (
     <span className="gf-av-control">
-      <HorizonControl ctx={ctx} />
       <Segmented label="Units" options={MODES} value={asked ? 'one' : 'all'} onChange={choose} />
       <UnitBox key={asked ?? ''} ctx={ctx} current={one?.id ?? asked} units={units} />
       {refused && <span className="gf-toolbar-note">The address asks for a unit id that can’t be one, so every unit is shown.</span>}

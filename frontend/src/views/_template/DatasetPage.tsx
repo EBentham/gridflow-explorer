@@ -5,7 +5,8 @@
  *    stamp naming the window and "UK time".
  * 2. Toolbar: the dataset switch (when the family has more than one held
  *    dataset on the page), the range (1 / 7 / 30 days / custom; by default
- *    the 7 days ending on the dataset's latest local day), then Chart | Table;
+ *    the 7 days ending on the dataset's latest local day), then Chart | Table,
+ *    and for a forecast held past that day, a window on to its last day;
  *    under them, the family's datasets that aren't held locally.
  * 3. Grid: the main panel with the 272px key beside it, then the working
  *    panel with the side panel. Every panel has its H2, its source line and,
@@ -28,6 +29,7 @@ import { adapterFor } from '../_data/adapters'
 import { useManifest, useRowsList, type Load } from '../_data/hooks'
 import type { RegisteredView } from '../registry'
 import { panelTitle, slotsFor } from './defaults'
+import { ForwardControl } from './ForwardControl'
 import { About, ErrorWords, PageNotes, SourceLine } from './panels'
 import { buildSeriesModel } from './seriesModel'
 import { emptyWindowText, isoDayText, notHeldText, sourceName } from './text'
@@ -388,6 +390,7 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
         {switchable.length > 1 && <Segmented label="Dataset" options={switchable.map((e) => ({ value: e.view.id, label: e.view.label }))} value={view.id} onChange={switchTo} />}
         {!reference && dataset?.held !== false && <RangeControl state={range} />}
         {hasChart && dataset?.held !== false && <ViewSwitch value={mode} onChange={setMode} />}
+        {ctx && dataset?.held && view.body === 'series' && <ForwardControl ctx={ctx} />}
         {ctx && dataset?.held && view.controls && <view.controls ctx={ctx} />}
         {reference && <span className="gf-toolbar-note">A table with no clock: no range and no chart.</span>}
         {family && source && <FamilyNote family={family} config={config} layer={source.layer} />}

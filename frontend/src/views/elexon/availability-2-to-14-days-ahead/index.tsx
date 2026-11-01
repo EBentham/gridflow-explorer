@@ -25,7 +25,6 @@ import { FuelDays } from './FuelDays'
 import { FuelKey } from './FuelKey'
 import { FuelMain } from './FuelMain'
 import { FOU, FUEL, FUEL_KEY, ISSUED, NG_UNIT, UNIT, VALUE, daysOf, heldShape, unitShown } from './figures'
-import { HorizonControl } from './HorizonControl'
 import { UnitControl } from './UnitControl'
 import { UnitsCompare } from './UnitsCompare'
 import { UnitsKey } from './UnitsKey'
@@ -60,7 +59,6 @@ const view = defineView({
       ],
       values: [{ column: VALUE, label: 'Usable output forecast' }],
       chart: { mark: 'stacked', maxSeries: 30, lower: false, axisWidth: 52 },
-      controls: HorizonControl,
       panels: {
         main: {
           title: (ctx) => (ctx.mode === 'table' ? 'Each fuel code, each delivery day' : 'Usable output forecast by fuel'),

@@ -20,7 +20,6 @@ import { DailyKey } from './DailyKey'
 import { DailyPanel } from './DailyPanel'
 import { COLORS, FORECAST_TYPE, INDO, ITSDO, NATIONAL_FC, NDF, NDFD, OTHER_KEY, OUTTURN_KEY, TRANSMISSION_FC, TSDF, TSDFD, forecastColumn, outturnColumn } from './figures'
 import { HalfHourKey } from './HalfHourKey'
-import { HorizonControl } from './HorizonControl'
 import { OutturnPanel } from './OutturnPanel'
 
 /** A related dataset in a source line, named in full with the filters its rows carry. */
@@ -171,7 +170,6 @@ const view = defineView({
         DAILY_CAVEATS.ahead,
       ],
       query: { filters: { [FORECAST_TYPE]: '2_14_day' } },
-      controls: HorizonControl,
       values: [{ column: NATIONAL_FC, label: 'National demand forecast', color: COLORS.national }],
       related: [
         {
@@ -199,7 +197,6 @@ const view = defineView({
         'Its rows are stamped at midnight UTC, an hour after the national figure’s UK midnight in summer. The two are lined up on the delivery date, never on the stamp.',
         DAILY_CAVEATS.ahead,
       ],
-      controls: HorizonControl,
       values: [{ column: TRANSMISSION_FC, label: 'Transmission demand forecast', color: COLORS.transmission }],
       related: [
         {
