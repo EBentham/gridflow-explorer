@@ -8,7 +8,7 @@
  * figure, never counted as zero.
  */
 import { plural } from '../../../design/format'
-import { DAY_MS, HOUR_MS, MINUTE_MS, datesBetween, dayStart, instantLabel, londonMidnight } from '../../../design/time'
+import { MINUTE_MS, datesBetween, dayStart, instantLabel, leadText, londonMidnight } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { RowsResponse } from '../../contract'
 import type { SeriesDef, SeriesModel } from '../../_template/seriesModel'
@@ -41,21 +41,6 @@ export const AXIS_WIDTH = 44
 export const idOf = (column: string) => `self/${column}`
 
 // ---------------------------------------------------------------- the forecast issue
-
-/**
- * `6 days`, `13 h`, `35 min`: how long before its half-hour a forecast was
- * issued, rounded down to whole days past two days. Joined with non-breaking
- * spaces, so a lead never wraps mid-figure.
- */
-export function leadText(ms: number): string {
-  const words = (() => {
-    const min = Math.floor(ms / MINUTE_MS)
-    if (min < 60) return `${min} min`
-    if (ms < 2 * DAY_MS) return `${Math.floor(ms / HOUR_MS)} h`
-    return `${Math.floor(ms / DAY_MS)} days`
-  })()
-  return words.replace(/ /g, ' ')
-}
 
 export interface Issues {
   /** Each issue time held behind a forecast value in the window, oldest first. */

@@ -8,26 +8,19 @@
  */
 import { KeyList } from '../../../design/charts'
 import { listText, plural, DASH } from '../../../design/format'
-import { HOUR_MS, clock, dayLabel, instantLabel, londonMidnight, stepNoun, windowDomain, zoneAbbrev } from '../../../design/time'
-import { SeriesChart } from '../../_template/SeriesChart'
+import { HOUR_MS, dayLabel, londonMidnight, stepNoun, windowDomain } from '../../../design/time'
+import { AXIS_WIDTH, SeriesChart } from '../../_template/SeriesChart'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, COLORS, LEAD_UNIT, daysOf, issueStats, lolpText, modelOf, type Day } from './figures'
-
-/** `01:04 BST that day (24)`: an issue named against the day it gives figures for. */
-function issueWords(day: Day, at: number, n: number, many: boolean): string {
-  const issuedOn = londonMidnight(at)
-  const time = `${clock(at)} ${zoneAbbrev(at)}`
-  const when = issuedOn === day.start ? `${time} that day` : issuedOn === londonMidnight(day.start - 1) ? `${time} the day before` : instantLabel(at)
-  return many ? `${when} (${n})` : when
-}
+import { LEAD_UNIT, issueStats, issuesIn, issueWords } from '../../_template/issues'
+import { COLORS, daysOf, lolpText, modelOf, type Day } from './figures'
 
 export function IssuePanel({ ctx }: { ctx: PageContext }) {
   const model = modelOf(ctx)
   if (!model || !ctx.window || (!model.margin && !model.lolp)) {
     return <p className="gf-hint">Nothing is held in this window, so there is no issue to read and no day to summarise.</p>
   }
-  const issue = issueStats(model)
+  const issue = issueStats(issuesIn(model.rows))
   const days = daysOf(model, ctx.window)
   const noun = model.bucketed && model.stepMs ? meansText(model.stepMs) : stepNoun(model.stepMs)
   const one = noun.replace(/s$/, '')
@@ -135,7 +128,7 @@ export function IssuePanel({ ctx }: { ctx: PageContext }) {
                   <td className="is-num">{held(d)}</td>
                   <td className="is-num">{range(d)}</td>
                   <td className="is-num">{lolpCell(d)}</td>
-                  <td>{d.issues.length ? d.issues.map((x) => issueWords(d, x.at, x.n, d.issues.length > 1)).join('; ') : DASH}</td>
+                  <td>{d.issues.length ? d.issues.map((x) => issueWords(d.start, x.at, x.n, d.issues.length > 1)).join('; ') : DASH}</td>
                 </tr>
               )
             })}

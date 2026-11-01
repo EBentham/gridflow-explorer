@@ -15,7 +15,10 @@ import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import { daySummaries, periodName, type SeriesDef, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, COLORS, ERROR_UNIT, INDO, ITSDO, NATIONAL_BOUNDARY, NDF, OUTTURN_KEY, boundaryOf, errorByDay, forecastColumn, joinOutturn, sameClock, signedMw, type ErrorStats } from './figures'
+import { NATIONAL_BOUNDARY, boundaryOf } from '../../_template/boundaries'
+import { ERROR_UNIT, errorByDay, joinForecast, sameClock, signedMw, type ErrorStats } from '../../_template/forecastError'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
+import { COLORS, INDO, ITSDO, NDF, OUTTURN_KEY, forecastColumn } from './figures'
 
 function def(base: SeriesDef, key: string, field: string, label: string, color: string, unit = base.unit): SeriesDef {
   return { ...base, key, field, label, color, from: key, unit }
@@ -39,7 +42,7 @@ function ErrorCells({ s, over }: { s: ErrorStats | undefined; over?: string }) {
         {over ? `, over ${plural(s.count, over.replace(/s$/, ''), over)}` : ''}
       </td>
       <td className="is-num">{ERROR_UNIT.plain(s.sumAbs / s.count)}</td>
-      <td className="is-num">{s.sumOutturn > 0 ? pct(s.sumAbs / s.sumOutturn) : DASH}</td>
+      <td className="is-num">{s.sumActual > 0 ? pct(s.sumAbs / s.sumActual) : DASH}</td>
     </>
   )
 }
@@ -58,7 +61,7 @@ export function OutturnPanel({ ctx }: { ctx: PageContext }) {
   const oModel = rel?.series ?? null
   const oDef = seriesOf(oModel, national ? INDO : ITSDO)
   const clockOk = Boolean(oModel && sameClock(model, oModel))
-  const join = oModel && oDef && clockOk ? joinOutturn(model, own, oModel, oDef) : null
+  const join = oModel && oDef && clockOk ? joinForecast(model, own, oModel, oDef) : null
   const noun = model.bucketed && model.stepMs ? meansText(model.stepMs) : stepNoun(model.stepMs)
   const outturnName = national ? 'national demand outturn' : 'transmission demand outturn'
   const OutturnName = national ? 'National demand outturn' : 'Transmission demand outturn'
@@ -68,7 +71,7 @@ export function OutturnPanel({ ctx }: { ctx: PageContext }) {
       ? [
           {
             rows: join.rows,
-            series: [def(own, 'forecast', 'f', own.label, own.color), def(own, 'outturn', 'o', OutturnName, COLORS.outturn)],
+            series: [def(own, 'forecast', 'f', own.label, own.color), def(own, 'outturn', 'a', OutturnName, COLORS.outturn)],
             mark: 'line',
             unit: own.unit,
             stepMs: model.stepMs,

@@ -14,7 +14,8 @@ import { ErrorWords } from '../../_template/panels'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import type { SeriesDef, WideRow } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, COLORS, GW_UNIT, NDFD, OTHER_KEY, OUTTURN_KEY, daysAhead, deliveryDays, type DailyFigure } from './figures'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
+import { COLORS, GW_UNIT, NDFD, OTHER_KEY, OUTTURN_KEY, daysAhead, deliveryDays, type DailyFigure } from './figures'
 
 function line(key: string, label: string, color: string, count: number): SeriesDef {
   return { key, field: key, column: key, group: null, label, color, unit: GW_UNIT, from: key, count, mean: null, min: null, max: null, signed: false }

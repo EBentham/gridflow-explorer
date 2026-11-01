@@ -6,22 +6,24 @@
  * which issue the page shows.
  */
 import { KeyList } from '../../../design/charts'
-import { instantLabel } from '../../../design/time'
-import { periodName } from '../../_template/seriesModel'
+import { DASH } from '../../../design/format'
+import { instantLabel, leadText } from '../../../design/time'
+import { issueStats, issuesIn } from '../../_template/issues'
+import { extremesIn, latestIn, periodName } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { extremesIn, issueStats, latestIn, leadText, mismatchWords, pairOf, signCounts } from './figures'
+import { mismatchWords, pairFor, signCounts } from './figures'
 
 export function PairKey({ ctx }: { ctx: PageContext }) {
-  const pair = pairOf(ctx)
+  const pair = pairFor(ctx)
   const series = pair ? [pair.own, pair.other].filter((d) => d !== null) : []
   if (!pair || !series.length) {
     return <p className="gf-hint">Nothing is held in this window, so there is nothing to key.</p>
   }
   const when = (t: number) => periodName(t, pair.stepMs, pair.settlement)
-  const issue = issueStats(pair)
-  const own = pair.ownIsImbalance ? 'imbalance' : 'margin'
-  const figures = series.map((d) => ({ d, field: d.key === 'imb' ? ('i' as const) : ('m' as const) }))
-  const signs = pair.imb ? signCounts(pair.rows) : null
+  const issue = issueStats(issuesIn(pair.rows))
+  const own = pair.ownIsA ? 'imbalance' : 'margin'
+  const figures = series.map((d) => ({ d, field: d.field }))
+  const signs = pair.a ? signCounts(pair.rows) : null
   const n = (v: number) => v.toLocaleString('en-GB')
   return (
     <>
@@ -31,8 +33,8 @@ export function PairKey({ ctx }: { ctx: PageContext }) {
           return (
             <li key={d.key}>
               <button type="button" disabled>
-                <KeyList items={[{ key: d.key, mark: { kind: 'line', color: d.color, dashed: ctx.fixture }, label: <span className="gf-series-name">{d.key === 'imb' ? 'Imbalance' : 'Margin'}</span> }]} />
-                <span className="gf-series-value">{latest ? d.unit.format(latest.v) : '–'}</span>
+                <KeyList items={[{ key: d.key, mark: { kind: 'line', color: d.color, dashed: ctx.fixture }, label: <span className="gf-series-name">{d.key === 'a' ? 'Imbalance' : 'Margin'}</span> }]} />
+                <span className="gf-series-value">{latest ? d.unit.format(latest.v) : DASH}</span>
               </button>
               {latest && <span className="gf-series-when">{when(latest.t)}</span>}
             </li>
@@ -43,7 +45,7 @@ export function PairKey({ ctx }: { ctx: PageContext }) {
         {figures.flatMap(({ d, field }) => {
           const ex = extremesIn(pair.rows, field)
           if (!ex) return []
-          const name = field === 'i' ? 'imbalance' : 'margin'
+          const name = field === 'a' ? 'imbalance' : 'margin'
           return [
             <div key={`${d.key}-high`}>
               <dt>Highest {name}</dt>

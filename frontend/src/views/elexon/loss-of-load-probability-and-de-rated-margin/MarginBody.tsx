@@ -7,12 +7,14 @@
  * held, and the issue both come from with how far ahead it was made.
  */
 import { plural } from '../../../design/format'
-import { HOUR_MS, instantLabel, periodLabel, stepNoun, windowDomain } from '../../../design/time'
+import { HOUR_MS, instantLabel, leadText, periodLabel, stepNoun, windowDomain } from '../../../design/time'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import { meansText } from '../../_template/text'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, MW_UNIT, leadText, lolpStats, lolpText, modelOf, type MarginRow, type Model } from './figures'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
+import { MW } from '../../_template/units'
+import { lolpStats, lolpText, modelOf, type MarginRow, type Model } from './figures'
 import { dashCell } from '../../_template/cells'
 
 function MarginTable({ ctx, model }: { ctx: PageContext; model: Model }) {
@@ -29,7 +31,7 @@ function MarginTable({ ctx, model }: { ctx: PageContext; model: Model }) {
       num: true,
       render: (r) => {
         const v = cell(r)?.mw ?? null
-        return v === null ? dashCell : MW_UNIT.plain(v)
+        return v === null ? dashCell : MW.plain(v)
       },
       sortValue: (r) => cell(r)?.mw ?? null,
     },

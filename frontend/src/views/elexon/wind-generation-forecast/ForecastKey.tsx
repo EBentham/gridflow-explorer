@@ -7,12 +7,13 @@
  * hours both hold, split the same way. Every figure comes from the rows read.
  */
 import { KeyList, type KeyItem } from '../../../design/charts'
-import { dayLabel, instantLabel, stepNoun } from '../../../design/time'
+import { dayLabel, instantLabel, leadText, stepNoun } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
 import { extremesOf, latestValue, periodName, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { COLORS, FORECAST, METERED, METERED_KEY, MW_UNIT, issuesByHour, joinMetered, leadText, signedMw, summariseIssues, type DiffStats } from './figures'
+import { ERROR_UNIT, signedMw } from '../../_template/forecastError'
+import { COLORS, FORECAST, METERED, METERED_KEY, issuesByHour, joinMetered, summariseIssues, type DiffStats } from './figures'
 
 function DiffStat({ label, s, noun }: { label: string; s: DiffStats; noun: string }) {
   return (
@@ -21,7 +22,7 @@ function DiffStat({ label, s, noun }: { label: string; s: DiffStats; noun: strin
       <dd>
         {signedMw(s.sum / s.count)} MW
         <span className="gf-stat-when">
-          mean absolute {MW_UNIT.plain(s.sumAbs / s.count)} MW, over {s.count.toLocaleString('en-GB')} {s.count === 1 ? noun.replace(/s$/, '') : noun}
+          mean absolute {ERROR_UNIT.plain(s.sumAbs / s.count)} MW, over {s.count.toLocaleString('en-GB')} {s.count === 1 ? noun.replace(/s$/, '') : noun}
         </span>
       </dd>
     </div>
@@ -91,14 +92,14 @@ export function ForecastKey({ ctx }: { ctx: PageContext }) {
               <dt>Issued before the hour</dt>
               <dd>
                 {summary.ahead.toLocaleString('en-GB')} of {summary.hours.toLocaleString('en-GB')} hours
-                <span className="gf-stat-when">{summary.longestAhead !== null ? `up to ${leadText(summary.longestAhead)} ahead` : 'none in this window'}</span>
+                <span className="gf-stat-when">{summary.longestAhead !== null ? `up to ${leadText(Math.abs(summary.longestAhead))} ahead` : 'none in this window'}</span>
               </dd>
             </div>
             <div>
               <dt>Issued after the hour</dt>
               <dd>
                 {summary.after.toLocaleString('en-GB')} of {summary.hours.toLocaleString('en-GB')} hours
-                <span className="gf-stat-when">{summary.longestAfter !== null ? `up to ${leadText(summary.longestAfter)} after` : 'none in this window'}</span>
+                <span className="gf-stat-when">{summary.longestAfter !== null ? `up to ${leadText(Math.abs(summary.longestAfter))} after` : 'none in this window'}</span>
               </dd>
             </div>
             <div>

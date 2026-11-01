@@ -13,31 +13,12 @@ import { SourceLine } from '../../_template/panels'
 import { relatedFilters, type SourcePart } from '../../_template/panelHelpers'
 import type { PageContext, RelatedSpec, SlotSpec } from '../../define'
 import { defineView } from '../../define'
-import { BoundaryControl } from './BoundaryControl'
+import { NATIONAL_BOUNDARY, boundaryOf, boundaryQuery } from '../../_template/boundaries'
+import { BoundaryControl } from '../../_template/BoundaryControl'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 import { DailyKey } from './DailyKey'
 import { DailyPanel } from './DailyPanel'
-import {
-  AXIS_WIDTH,
-  BOUNDARY,
-  BOUNDARY_PARAM,
-  BOUNDARIES,
-  COLORS,
-  FORECAST_TYPE,
-  INDO,
-  ITSDO,
-  NATIONAL_BOUNDARY,
-  NATIONAL_FC,
-  NDF,
-  NDFD,
-  OTHER_KEY,
-  OUTTURN_KEY,
-  TRANSMISSION_FC,
-  TSDF,
-  TSDFD,
-  boundaryOf,
-  forecastColumn,
-  outturnColumn,
-} from './figures'
+import { COLORS, FORECAST_TYPE, INDO, ITSDO, NATIONAL_FC, NDF, NDFD, OTHER_KEY, OUTTURN_KEY, TRANSMISSION_FC, TSDF, TSDFD, forecastColumn, outturnColumn } from './figures'
 import { HalfHourKey } from './HalfHourKey'
 import { HorizonControl } from './HorizonControl'
 import { OutturnPanel } from './OutturnPanel'
@@ -171,10 +152,7 @@ const view = defineView({
         'The line can step sharply where the half-hours drawn pass from one day’s issue to the next day’s: the step is between two issues, not a change in demand.',
         'Boundary N is the whole system and opens by default; B1 to B17 are named by their codes, as the rows don’t say what area each bounds. Only N is set against outturn, which is held for the whole system alone.',
       ],
-      query: (params) => {
-        const b = params.get(BOUNDARY_PARAM)
-        return { filters: { [BOUNDARY]: b && BOUNDARIES.includes(b) ? b : NATIONAL_BOUNDARY } }
-      },
+      query: boundaryQuery,
       controls: BoundaryControl,
       values: [{ column: TRANSMISSION_FC, label: 'Transmission demand forecast', color: COLORS.transmission }],
       related: [itsdo],

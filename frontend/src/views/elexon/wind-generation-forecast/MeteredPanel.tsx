@@ -16,7 +16,9 @@ import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import { periodName, type SeriesDef, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, COLORS, FORECAST, LEAD_UNIT, METERED, METERED_KEY, MW_UNIT, byDay, issuesByHour, joinMetered, signedMw, type DayRow } from './figures'
+import { ERROR_UNIT, signedMw } from '../../_template/forecastError'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
+import { COLORS, FORECAST, LEAD_UNIT, METERED, METERED_KEY, byDay, issuesByHour, joinMetered, type DayRow } from './figures'
 
 function def(base: SeriesDef, key: string, label: string, color: string, unit = base.unit): SeriesDef {
   return { ...base, key, field: key, label, color, from: key, unit }
@@ -80,7 +82,7 @@ export function MeteredPanel({ ctx }: { ctx: PageContext }) {
     },
   ]
   if (hasMetered && join.all.count > 0) {
-    panels.push({ ...common, series: [def(own, 'e', 'Metered less forecast', COLORS.difference, MW_UNIT)], mark: 'bars', unit: MW_UNIT, height: 130, zero: true })
+    panels.push({ ...common, series: [def(own, 'e', 'Metered less forecast', COLORS.difference, ERROR_UNIT)], mark: 'bars', unit: ERROR_UNIT, height: 130, zero: true })
   }
   if (hasLead) {
     panels.push({ ...common, series: [def(own, 'l', 'Issued before the hour', COLORS.lead, LEAD_UNIT)], mark: 'bars', unit: LEAD_UNIT, height: 130, zero: true })
@@ -202,7 +204,7 @@ export function MeteredPanel({ ctx }: { ctx: PageContext }) {
                         {mPartial ? `, over ${count(d.mHeld, d.mExpected)}` : ''}
                       </td>
                       <td className="is-num">{d.diff.count ? signedMw(d.diff.sum / d.diff.count) : DASH}</td>
-                      <td className="is-num">{d.diff.count ? MW_UNIT.plain(d.diff.sumAbs / d.diff.count) : DASH}</td>
+                      <td className="is-num">{d.diff.count ? ERROR_UNIT.plain(d.diff.sumAbs / d.diff.count) : DASH}</td>
                     </>
                   )}
                 </tr>

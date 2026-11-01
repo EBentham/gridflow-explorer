@@ -10,16 +10,17 @@
  *
  * Nothing is filled in: a half-hour with no figure is a gap, never a zero.
  */
+import { daysInWindow } from '../../../design/days'
 import { fmtN } from '../../../design/format'
-import { DAY_MS, HOUR_MS, MINUTE_MS, datesBetween, dayStart, londonMidnight, nextLondonMidnight } from '../../../design/time'
+import { HOUR_MS, stepsInDay } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { PageContext } from '../../define'
-import type { SeriesDef, Settlement, WideRow } from '../../_template/seriesModel'
+import { ISSUED, issuedAt, issuesIn, issueTally } from '../../_template/issues'
+import { extremesIn, type SeriesDef, type Settlement, type WideRow } from '../../_template/seriesModel'
 import { displayUnit, type DisplayUnit } from '../../_template/units'
 
 export const MARGIN = 'derated_margin_mw'
 export const LOLP = 'loss_of_load_probability'
-export const ISSUED = 'published_at'
 
 export const COLORS = {
   margin: 'var(--chart-fan)',
@@ -27,11 +28,6 @@ export const COLORS = {
   lead: 'var(--chart-fan-soft)',
 } as const
 
-/** Every chart on the page takes this value-axis width, so their clocks line up. */
-export const AXIS_WIDTH = 52
-
-/** Tables keep MW. */
-export const MW_UNIT = displayUnit('MW', 'MW')
 const GW = displayUnit('MW')
 
 // ---------------------------------------------------------------- the probability
@@ -66,43 +62,6 @@ export const LOLP_CHART_UNIT: DisplayUnit = {
   format: (v) => `${lolpText(v / 1e6)} (${perMillionText(v / 1e6)})`,
   plain: (v) => fmtN(v, 1),
   caption: 'Loss of load probability, per million',
-}
-
-// ---------------------------------------------------------------- issue times
-
-/**
- * `13 min`, `5 h 20 min`, `2 days 3 h`: how long before its half-hour a
- * figure was issued (`… after` if it came later). Non-breaking spaces keep a
- * lead from wrapping mid-figure.
- */
-export function leadText(ms: number): string {
-  return leadWords(ms).replace(/ /g, ' ')
-}
-
-function leadWords(ms: number): string {
-  if (ms < 0) return `${leadWords(-ms)} after`
-  const min = Math.round(ms / MINUTE_MS)
-  if (min < 60) return `${min} min`
-  if (ms < 2 * DAY_MS) {
-    const h = Math.floor(min / 60)
-    const m = min % 60
-    return m ? `${h} h ${m} min` : `${h} h`
-  }
-  const hours = Math.round(ms / HOUR_MS)
-  const d = Math.floor(hours / 24)
-  const h = hours % 24
-  return h ? `${d} days ${h} h` : `${d} days`
-}
-
-/** Hours before its half-hour a figure was issued; the tooltip gives the lead exactly. */
-export const LEAD_UNIT: DisplayUnit = {
-  label: 'h',
-  source: 'h',
-  factor: 1,
-  numeric: true,
-  format: (v) => `issued ${leadText(v * HOUR_MS)}${v >= 0 ? ' ahead' : ''}`,
-  plain: (v) => (Math.abs(v) < 0.05 ? '0' : `${v < 0 ? '−' : ''}${Math.abs(v).toFixed(1)}`),
-  caption: 'Hours issued ahead',
 }
 
 // ---------------------------------------------------------------- the rows
@@ -158,12 +117,6 @@ function def(which: 'm' | 'p', count: number): SeriesDef {
 
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 
-function issuedAt(v: unknown): number | null {
-  if (typeof v !== 'string') return null
-  const t = Date.parse(v)
-  return Number.isFinite(t) ? t : null
-}
-
 /** The page's rows, as the panels read them. Null until the rows are read. */
 export function modelOf(ctx: PageContext): Model | null {
   const series = ctx.series
@@ -209,26 +162,6 @@ export interface Point {
   v: number
 }
 
-export function extremesIn(rows: MarginRow[], field: 'm' | 'p' | 'l'): { high: Point; low: Point } | null {
-  let high: Point | null = null
-  let low: Point | null = null
-  for (const r of rows) {
-    const v = r[field]
-    if (typeof v !== 'number') continue
-    if (!high || v > high.v) high = { t: r.t, v }
-    if (!low || v < low.v) low = { t: r.t, v }
-  }
-  return high && low ? { high, low } : null
-}
-
-export function latestIn(rows: MarginRow[], field: 'm' | 'p'): Point | null {
-  for (let i = rows.length - 1; i >= 0; i -= 1) {
-    const v = rows[i][field]
-    if (typeof v === 'number') return { t: rows[i].t, v }
-  }
-  return null
-}
-
 export interface LolpStats {
   /** Half-hours holding a probability, and those above zero. */
   held: number
@@ -261,30 +194,6 @@ export function lolpStats(model: Model): LolpStats {
   return { held, above, highest, marginAbove, lowestMarginAtZero }
 }
 
-export interface IssueStats {
-  count: number
-  shortest: number
-  median: number
-  longest: number
-  newest: number
-}
-
-/** How far ahead of its half-hour each figure was issued. Null when the rows carry no issue time. */
-export function issueStats(model: Model): IssueStats | null {
-  const leads: number[] = []
-  let newest = -Infinity
-  for (const r of model.rows) {
-    if (typeof r.l !== 'number') continue
-    leads.push(r.l * HOUR_MS)
-    newest = Math.max(newest, r.t - r.l * HOUR_MS)
-  }
-  if (!leads.length) return null
-  leads.sort((a, b) => a - b)
-  const mid = leads.length >> 1
-  const median = leads.length % 2 ? leads[mid] : (leads[mid - 1] + leads[mid]) / 2
-  return { count: leads.length, shortest: leads[0], median, longest: leads[leads.length - 1], newest: Math.round(newest) }
-}
-
 // ---------------------------------------------------------------- the days
 
 export interface Day {
@@ -304,18 +213,8 @@ export interface Day {
 }
 
 export function daysOf(model: Model, window: DateRange): Day[] {
-  const byDay = new Map<number, MarginRow[]>()
-  for (const r of model.rows) {
-    const d = londonMidnight(r.t)
-    const list = byDay.get(d)
-    if (list) list.push(r)
-    else byDay.set(d, [r])
-  }
-  return datesBetween(window.start, window.end).map((date) => {
-    const start = dayStart(date)
-    const rows = byDay.get(start) ?? []
+  return daysInWindow(model.rows, window).map(({ day: date, start, rows }) => {
     const m = extremesIn(rows, 'm')
-    const issues = new Map<number, number>()
     let lolpHigh: Point | null = null
     let lolpHeld = 0
     let lolpAbove = 0
@@ -328,21 +227,18 @@ export function daysOf(model: Model, window: DateRange): Day[] {
         if (c.lolp > 0) lolpAbove += 1
         if (!lolpHigh || c.lolp > lolpHigh.v) lolpHigh = { t: r.t, v: c.lolp }
       }
-      if (typeof r.l !== 'number') continue
-      const at = Math.round(r.t - r.l * HOUR_MS)
-      issues.set(at, (issues.get(at) ?? 0) + 1)
     }
     return {
       date,
       start,
-      expected: model.stepMs ? Math.round((nextLondonMidnight(start) - start) / model.stepMs) : null,
+      expected: stepsInDay(start, model.stepMs),
       held,
       mLow: m?.low ?? null,
       mHigh: m?.high ?? null,
       lolpHigh,
       lolpHeld,
       lolpAbove,
-      issues: [...issues.entries()].map(([at, n]) => ({ at, n })).sort((a, b) => b.at - a.at),
+      issues: issueTally(issuesIn(rows)),
     }
   })
 }

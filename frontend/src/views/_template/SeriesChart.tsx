@@ -26,6 +26,13 @@ import type { Mark } from '../define'
 import { extremesOf, periodName, runsBelowZero, seriesId, type SeriesDef, type Settlement, type WideRow } from './seriesModel'
 import type { DisplayUnit } from './units'
 
+/**
+ * The value-axis width most pages give their main chart and their own charts
+ * under it, so the clocks line up. Without one, a panel's width comes from
+ * its tick labels.
+ */
+export const AXIS_WIDTH = 52
+
 export interface ChartPanel {
   rows: WideRow[]
   /** Drawn in this order: for a stack, bottom first. */

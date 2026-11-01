@@ -7,13 +7,14 @@
  * daily forecasts lined up by delivery date. Nothing is filled in: a step
  * either side lacks has no error, never a zero.
  */
-import { DAY_MS, HOUR_MS, MINUTE_MS, datesBetween, dayStart, londonMidnight, nextLondonMidnight } from '../../../design/time'
+import { daysInWindow } from '../../../design/days'
+import { DAY_MS, datesBetween, dayStart, londonMidnight, stepsInDay } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
-import type { RowsResponse, SeriesRow } from '../../contract'
+import type { RowsResponse } from '../../contract'
 import type { PageContext, RelatedData } from '../../define'
-import type { SeriesDef, SeriesModel, WideRow } from '../../_template/seriesModel'
+import { ISSUED, issuedAt } from '../../_template/issues'
+import { seriesOf, type SeriesDef, type SeriesModel } from '../../_template/seriesModel'
 import { displayUnit } from '../../_template/units'
-import { seriesOf } from '../../_template/seriesModel'
 
 export const NDF = 'ndf'
 export const TSDF = 'tsdf'
@@ -26,19 +27,12 @@ export const NATIONAL_FC = 'national_demand_mw'
 export const TRANSMISSION_FC = 'forecast_demand_mw'
 export const INDO = 'initial_demand_outturn_mw'
 export const ITSDO = 'initial_transmission_system_demand_outturn_mw'
-export const BOUNDARY = 'boundary'
 export const FORECAST_TYPE = 'forecast_type'
 
 /** The key of the outturn read beside a half-hourly forecast, and beside a daily one. */
 export const OUTTURN_KEY = 'outturn'
 /** The key of the other daily forecast read beside a daily one. */
 export const OTHER_KEY = 'other'
-
-/** The national boundary of the transmission forecast; the other 17 are B1 to B17. */
-export const NATIONAL_BOUNDARY = 'N'
-export const BOUNDARIES = [NATIONAL_BOUNDARY, ...Array.from({ length: 17 }, (_, i) => `B${i + 1}`)]
-/** The page's own URL parameter for the transmission forecast's boundary. */
-export const BOUNDARY_PARAM = 'boundary'
 
 export const COLORS = {
   national: 'var(--chart-fan)',
@@ -48,15 +42,7 @@ export const COLORS = {
   error: 'var(--fuel-other)',
 } as const
 
-/** Both charts' value axes take this width, so their clocks line up. */
-export const AXIS_WIDTH = 52
-
-/** Errors print in MW: a miss of a few hundred MW would read as 0.3 GW. */
-export const ERROR_UNIT = displayUnit('MW', 'MW')
 export const GW_UNIT = displayUnit('MW')
-
-/** A signed MW figure: `+431`, with a true minus below zero. */
-export const signedMw = (v: number) => `${Math.round(v) > 0 ? '+' : ''}${ERROR_UNIT.plain(v)}`
 /** A signed GW figure from GW: `+0.4`, with a true minus below zero. */
 export const signedGw = (v: number) => {
   const text = GW_UNIT.plain(v)
@@ -65,153 +51,6 @@ export const signedGw = (v: number) => {
 
 /** The page's forecast column: national for `ndf`/`ndfd`, transmission for `tsdf`/`tsdfd`. */
 export const forecastColumn = (datasetId: string) => (datasetId === NDF || datasetId === NDFD ? NATIONAL_FC : TRANSMISSION_FC)
-
-/** The transmission forecast's boundary on the page: the URL's, else N. */
-export function boundaryOf(ctx: Pick<PageContext, 'param'>): string {
-  const b = ctx.param(BOUNDARY_PARAM)
-  return b && BOUNDARIES.includes(b) ? b : NATIONAL_BOUNDARY
-}
-
-// ---------------------------------------------------------------- issue times
-
-/**
- * `13 min`, `5 h 20 min`, `2 days 3 h`: how long before its period a forecast
- * was issued (`… after` if it came later). The parts are joined with
- * non-breaking spaces, so a lead time never wraps mid-figure.
- */
-export function leadText(ms: number): string {
-  return leadWords(ms).replace(/ /g, '\u00a0')
-}
-
-function leadWords(ms: number): string {
-  if (ms < 0) return `${leadWords(-ms)} after`
-  const min = Math.round(ms / MINUTE_MS)
-  if (min < 60) return `${min} min`
-  if (ms < 2 * DAY_MS) {
-    const h = Math.floor(min / 60)
-    const m = min % 60
-    return m ? `${h} h ${m} min` : `${h} h`
-  }
-  const hours = Math.round(ms / HOUR_MS)
-  const d = Math.floor(hours / 24)
-  const h = hours % 24
-  return h ? `${d} days ${h} h` : `${d} days`
-}
-
-export interface IssueStats {
-  /** Periods with a value and an issue time. */
-  count: number
-  /** How long before its period each was issued: the shortest, the median and the longest. */
-  shortest: number
-  median: number
-  longest: number
-  /** The newest issue time held in the window. */
-  newest: number
-}
-
-const issuedAt = (r: SeriesRow): number | null => {
-  const p = r.published_at
-  if (typeof p !== 'string') return null
-  const t = Date.parse(p)
-  return Number.isFinite(t) ? t : null
-}
-
-/**
- * How far ahead of its period each held forecast was issued, read from the
- * rows' own issue time (`published_at`). Null when the rows don't carry it
- * (rows read as means have no issue time).
- */
-export function issueStats(response: RowsResponse | null | undefined, column: string): IssueStats | null {
-  if (!response || response.kind !== 'series') return null
-  const leads: number[] = []
-  let newest = -Infinity
-  for (const r of response.rows) {
-    if (typeof r[column] !== 'number') continue
-    const at = issuedAt(r)
-    if (at === null) continue
-    leads.push(r.ts - at)
-    newest = Math.max(newest, at)
-  }
-  if (!leads.length) return null
-  leads.sort((a, b) => a - b)
-  const mid = leads.length >> 1
-  const median = leads.length % 2 ? leads[mid] : (leads[mid - 1] + leads[mid]) / 2
-  return { count: leads.length, shortest: leads[0], median, longest: leads[leads.length - 1], newest }
-}
-
-// ---------------------------------------------------------------- half-hourly forecast against outturn
-
-export interface ErrorStats {
-  /** Steps both sides hold. */
-  count: number
-  /** Outturn less forecast, MW. */
-  sum: number
-  sumAbs: number
-  /** Outturn summed over the same steps, MW. */
-  sumOutturn: number
-  /** The steps where outturn ran furthest above and furthest below the forecast. */
-  above: { t: number; v: number } | null
-  below: { t: number; v: number } | null
-}
-
-export interface ForecastJoin {
-  /** One row per time either side holds: `f` and `o` in GW, `e` (outturn less forecast) in MW; null where either is missing. */
-  rows: WideRow[]
-  stats: ErrorStats
-}
-
-export const emptyStats = (): ErrorStats => ({ count: 0, sum: 0, sumAbs: 0, sumOutturn: 0, above: null, below: null })
-
-function addTo(s: ErrorStats, t: number, e: number, outturnMw: number) {
-  s.count += 1
-  s.sum += e
-  s.sumAbs += Math.abs(e)
-  s.sumOutturn += outturnMw
-  if (e > 0 && (!s.above || e > s.above.v)) s.above = { t, v: e }
-  if (e < 0 && (!s.below || e < s.below.v)) s.below = { t, v: e }
-}
-
-/**
- * The forecast and its outturn joined on time. The models hold GW (display
- * units); the error goes back to MW through the unit's factor.
- */
-export function joinOutturn(forecast: SeriesModel, fDef: SeriesDef, outturn: SeriesModel, oDef: SeriesDef): ForecastJoin {
-  const fAt = new Map(forecast.rows.map((r) => [r.t, r[fDef.field]]))
-  const oAt = new Map(outturn.rows.map((r) => [r.t, r[oDef.field]]))
-  const times = [...new Set([...fAt.keys(), ...oAt.keys()])].sort((x, y) => x - y)
-  const stats = emptyStats()
-  const rows = times.map((t) => {
-    const f = fAt.get(t)
-    const o = oAt.get(t)
-    const fv = typeof f === 'number' ? f : null
-    const ov = typeof o === 'number' ? o : null
-    let e: number | null = null
-    if (fv !== null && ov !== null) {
-      e = (ov - fv) / fDef.unit.factor
-      addTo(stats, t, e, ov / oDef.unit.factor)
-    }
-    return { t, f: fv, o: ov, e }
-  })
-  return { rows, stats }
-}
-
-/** Per UK day of the window: the error figures over the steps both sides hold. */
-export function errorByDay(join: ForecastJoin, window: DateRange, factor: number): Map<number, ErrorStats> {
-  const byDay = new Map<number, ErrorStats>()
-  for (const r of join.rows) {
-    const e = r.e
-    const o = r.o
-    if (typeof e !== 'number' || typeof o !== 'number') continue
-    const day = londonMidnight(r.t)
-    const s = byDay.get(day) ?? emptyStats()
-    addTo(s, r.t, e, o / factor)
-    byDay.set(day, s)
-  }
-  return new Map(datesBetween(window.start, window.end).map((iso) => [dayStart(iso), byDay.get(dayStart(iso)) ?? emptyStats()]))
-}
-
-/** The two models can be joined step for step: the same clock, both read as held or both as means. */
-export const sameClock = (a: SeriesModel, b: SeriesModel) => a.stepMs === b.stepMs && a.bucketed === b.bucketed
 
 // ---------------------------------------------------------------- daily forecasts, by delivery date
 
@@ -235,7 +74,7 @@ export function dailyByDate(response: RowsResponse | null | undefined, column: s
     if (typeof v !== 'number') continue
     const date = typeof r.settlement_date === 'string' ? r.settlement_date : typeof r.forecast_date === 'string' ? r.forecast_date : null
     if (!date) continue
-    out.set(date, { mw: v, issued: issuedAt(r) })
+    out.set(date, { mw: v, issued: issuedAt(r[ISSUED]) })
   }
   return out
 }
@@ -299,19 +138,9 @@ export function deliveryDays(ctx: PageContext): DeliveryDay[] {
 
 /** Outturn per UK day: half-hours held, and the peak and mean where the day holds every one. */
 function outturnDays(model: SeriesModel, def: SeriesDef, window: DateRange): { start: number; held: number; expected: number | null; peak: number | null; mean: number | null }[] {
-  const byDay = new Map<number, number[]>()
-  for (const r of model.rows) {
-    const v = r[def.field]
-    if (typeof v !== 'number') continue
-    const d = londonMidnight(r.t)
-    const list = byDay.get(d)
-    if (list) list.push(v)
-    else byDay.set(d, [v])
-  }
-  return datesBetween(window.start, window.end).map((iso) => {
-    const start = dayStart(iso)
-    const vs = byDay.get(start) ?? []
-    const expected = model.stepMs ? Math.round((nextLondonMidnight(start) - start) / model.stepMs) : null
+  return daysInWindow(model.rows, window).map(({ start, rows }) => {
+    const vs = rows.map((r) => r[def.field]).filter((v): v is number => typeof v === 'number')
+    const expected = stepsInDay(start, model.stepMs)
     const complete = expected !== null && vs.length === expected
     return {
       start,

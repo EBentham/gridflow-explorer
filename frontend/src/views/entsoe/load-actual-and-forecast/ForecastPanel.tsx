@@ -16,7 +16,9 @@ import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import { daySummaries, seriesId, type SeriesDef, type SeriesModel } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, ERROR_UNIT, MEASURE, ZONES, errorByDay, joinZone, signedMw, pairOf, sameClock, zoneDef, zoneInView, zoneName, type ErrorStats } from './figures'
+import { ERROR_UNIT, errorByDay, joinForecast, sameClock, signedMw, type ErrorStats } from '../../_template/forecastError'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
+import { MEASURE, ZONES, pairOf, zoneDef, zoneInView, zoneName } from './figures'
 
 const mw = (v: number) => ERROR_UNIT.plain(v)
 
@@ -49,7 +51,7 @@ function ZoneTable({ ctx, actual, forecast, zone }: { ctx: PageContext; actual: 
     const a = zoneDef(actual, z.value)
     const f = zoneDef(forecast, z.value)
     const own = zoneDef(ctx.series, z.value)
-    return { z, a, own, join: a && f ? joinZone(actual, a, forecast, f) : null }
+    return { z, a, own, join: a && f ? joinForecast(forecast, f, actual, a) : null }
   })
   return (
     <div className="gf-days">
@@ -138,7 +140,7 @@ export function ForecastPanel({ ctx }: { ctx: PageContext }) {
   const name = zoneName(zone)
   const bucketed = model.bucketed
   const noun = bucketed && model.stepMs ? meansText(model.stepMs) : stepNoun(model.stepMs)
-  const join = aDef && fDef ? joinZone(actual, aDef, forecast, fDef) : null
+  const join = aDef && fDef ? joinForecast(forecast, fDef, actual, aDef) : null
   const base = aDef ?? fDef ?? ownDef
   const panels: ChartPanel[] =
     join && base && join.stats.count > 0

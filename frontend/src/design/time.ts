@@ -203,6 +203,30 @@ export function stepNoun(stepMs: number | null): string {
   return 'readings'
 }
 
+/**
+ * `13 min`, `5 h 20 min`, `2 days 3 h`: how long before its period a figure
+ * was issued (`… after` if it came later). Non-breaking spaces keep a lead
+ * from wrapping mid-figure.
+ */
+export function leadText(ms: number): string {
+  return leadWords(ms).replace(/ /g, ' ')
+}
+
+function leadWords(ms: number): string {
+  if (ms < 0) return `${leadWords(-ms)} after`
+  const min = Math.round(ms / MINUTE_MS)
+  if (min < 60) return `${min} min`
+  if (ms < 2 * DAY) {
+    const h = Math.floor(min / 60)
+    const m = min % 60
+    return m ? `${h} h ${m} min` : `${h} h`
+  }
+  const hours = Math.round(ms / HOUR_MS)
+  const d = Math.floor(hours / 24)
+  const h = hours % 24
+  return h ? `${d} days ${h} h` : `${d} days`
+}
+
 /** How often a clock ticks, in words: `Half-hourly`, `Every 15 seconds`, `Daily`. */
 export function cadenceText(stepMs: number): string {
   if (stepMs === HALF_HOUR) return 'Half-hourly'

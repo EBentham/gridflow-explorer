@@ -246,32 +246,38 @@ export function runsBelowZero(rows: WideRow[], def: SeriesDef, stepMs: number | 
   return out
 }
 
-/** The last held value of a series, or null. */
-export function latestValue(model: SeriesModel, def: SeriesDef): { t: number; v: number } | null {
-  for (let i = model.rows.length - 1; i >= 0; i -= 1) {
-    const v = model.rows[i][def.field]
-    if (typeof v === 'number') return { t: model.rows[i].t, v }
+/** The last held value of a field over some rows, or null. */
+export function latestIn(rows: WideRow[], field: string): { t: number; v: number } | null {
+  for (let i = rows.length - 1; i >= 0; i -= 1) {
+    const v = rows[i][field]
+    if (typeof v === 'number') return { t: rows[i].t, v }
   }
   return null
 }
+
+/** The last held value of a series, or null. */
+export const latestValue = (model: SeriesModel, def: SeriesDef) => latestIn(model.rows, def.field)
 
 export interface Extremes {
   low: { t: number; v: number }
   high: { t: number; v: number }
 }
 
-/** The lowest and highest held values of a series over the rows given (the window by default). */
-export function extremesOf(rows: WideRow[], def: SeriesDef): Extremes | null {
+/** The lowest and highest held values of a field over some rows. */
+export function extremesIn(rows: WideRow[], field: string): Extremes | null {
   let low: { t: number; v: number } | null = null
   let high: { t: number; v: number } | null = null
   for (const row of rows) {
-    const v = row[def.field]
+    const v = row[field]
     if (typeof v !== 'number') continue
     if (!low || v < low.v) low = { t: row.t, v }
     if (!high || v > high.v) high = { t: row.t, v }
   }
   return low && high ? { low, high } : null
 }
+
+/** The lowest and highest held values of a series over the rows given (the window by default). */
+export const extremesOf = (rows: WideRow[], def: SeriesDef) => extremesIn(rows, def.field)
 
 export interface DaySummary {
   /** `YYYY-MM-DD` on the UK clock. */

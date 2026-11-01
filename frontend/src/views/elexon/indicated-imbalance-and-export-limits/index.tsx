@@ -16,11 +16,14 @@
  * The source list calls the family "export limits"; the second dataset is
  * Elexon's indicated margin, and the page names it so.
  */
+import { ISSUED } from '../../_template/issues'
+import { OTHER_KEY } from '../../_template/issuePair'
 import { SourceLine } from '../../_template/panels'
 import type { SourcePart } from '../../_template/panelHelpers'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 import type { DatasetView, PageContext, PanelSlots, RelatedSpec } from '../../define'
 import { defineView } from '../../define'
-import { AXIS_WIDTH, COLORS, IMBALANCE, IMBALNGC, ISSUED, LABELS, MARGIN, MELNGC, OTHER_KEY } from './figures'
+import { COLORS, IMBALANCE, IMBALNGC, LABELS, MARGIN, MELNGC } from './figures'
 import { IssuePanel } from './IssuePanel'
 import { PairBody } from './PairBody'
 import { PairKey } from './PairKey'

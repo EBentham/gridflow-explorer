@@ -6,22 +6,25 @@
  * Demand is the held figure with its sign flipped, and says so.
  */
 import { KeyList } from '../../../design/charts'
-import { instantLabel } from '../../../design/time'
-import { periodName } from '../../_template/seriesModel'
+import { DASH } from '../../../design/format'
+import { instantLabel, leadText } from '../../../design/time'
+import { boundaryName, boundaryOf } from '../../_template/boundaries'
+import { issueStats, issuesIn } from '../../_template/issues'
+import { extremesIn, latestIn, periodName } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { boundaryName, extremesIn, issueStats, latestIn, leadText, pairId, pairOf } from './figures'
+import { pairFor, pairId } from './figures'
 
 export function PairKey({ ctx }: { ctx: PageContext }) {
-  const pair = pairOf(ctx)
-  const series = pair ? [pair.gen, pair.dem].filter((d) => d !== null) : []
+  const pair = pairFor(ctx)
+  const series = pair ? [pair.a, pair.b].filter((d) => d !== null) : []
   if (!pair || !series.length) {
     return <p className="gf-hint">Nothing is held for this boundary in this window, so there is nothing to key.</p>
   }
   const when = (t: number) => periodName(t, pair.stepMs, pair.settlement)
   const pickable = series.length > 1 && ctx.mode === 'chart'
-  const issue = issueStats(pair)
-  const own = pair.ownIsDemand ? 'demand' : 'generation'
-  const figures = series.map((d) => ({ d, field: d.key === 'gen' ? ('g' as const) : ('d' as const) }))
+  const issue = issueStats(issuesIn(pair.rows))
+  const own = pair.ownIsA ? 'generation' : 'demand'
+  const figures = series.map((d) => ({ d, field: d.field }))
   return (
     <>
       <ul className="gf-series-key">
@@ -32,8 +35,8 @@ export function PairKey({ ctx }: { ctx: PageContext }) {
           return (
             <li key={id} className={on ? 'is-focus' : ctx.focus ? 'is-muted' : undefined}>
               <button type="button" aria-pressed={on} disabled={!pickable} onClick={() => ctx.setFocus(on ? undefined : id)}>
-                <KeyList items={[{ key: id, mark: { kind: 'line', color: d.color, dashed: ctx.fixture }, label: <span className="gf-series-name">{d.key === 'gen' ? 'Generation' : 'Demand, sign flipped'}</span> }]} />
-                <span className="gf-series-value">{latest ? d.unit.format(latest.v) : '–'}</span>
+                <KeyList items={[{ key: id, mark: { kind: 'line', color: d.color, dashed: ctx.fixture }, label: <span className="gf-series-name">{d.key === 'a' ? 'Generation' : 'Demand, sign flipped'}</span> }]} />
+                <span className="gf-series-value">{latest ? d.unit.format(latest.v) : DASH}</span>
               </button>
               {latest && <span className="gf-series-when">{when(latest.t)}</span>}
             </li>
@@ -45,7 +48,7 @@ export function PairKey({ ctx }: { ctx: PageContext }) {
         {figures.flatMap(({ d, field }) => {
           const ex = extremesIn(pair.rows, field)
           if (!ex) return []
-          const name = field === 'g' ? 'generation' : 'demand, flipped'
+          const name = field === 'a' ? 'generation' : 'demand, flipped'
           return [
             <div key={`${d.key}-high`}>
               <dt>Highest {name}</dt>
@@ -82,7 +85,7 @@ export function PairKey({ ctx }: { ctx: PageContext }) {
             </div>
           </dl>
           <p className="gf-hint">
-            How long before each half-hour the {own} figure drawn for it was issued, over the {issue.count.toLocaleString('en-GB')} held for {boundaryName(pair.boundary)}.{' '}
+            How long before each half-hour the {own} figure drawn for it was issued, over the {issue.count.toLocaleString('en-GB')} held for {boundaryName(boundaryOf(ctx))}.{' '}
             {pair.otherState === 'paired' && pair.bothHeld > 0
               ? pair.issueMismatch === 0
                 ? 'Both figures at each half-hour come from the same issue.'
