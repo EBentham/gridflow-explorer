@@ -142,7 +142,8 @@ export interface RelatedSpec {
   dataset: string
   /** Its name in keys and tooltips. */
   label: string
-  query?: QuerySpec
+  /** Group and filters, fixed or read from the page's own URL parameters (its boundary, say). */
+  query?: QuerySpec | ((params: URLSearchParams) => QuerySpec)
   values?: ValueSpec[]
   groups?: GroupSpec[]
 }

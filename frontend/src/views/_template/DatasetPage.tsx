@@ -23,7 +23,7 @@ import { SourceEmblem } from '../../design/symbols'
 import { rangeText } from '../../design/time'
 import type { DateRange } from '../../lib/range'
 import type { Manifest, ManifestDataset, ManifestFamily, ManifestSource, RowsRequest, RowsResponse } from '../contract'
-import type { DatasetView, PageContext, PanelSlots, QuerySpec, RelatedData, SlotSpec, ViewConfig } from '../define'
+import type { DatasetView, PageContext, PanelSlots, QuerySpec, RelatedData, RelatedSpec, SlotSpec, ViewConfig } from '../define'
 import { adapterFor } from '../_data/adapters'
 import { useManifest, useRowsList, type Load } from '../_data/hooks'
 import type { RegisteredView } from '../registry'
@@ -48,8 +48,8 @@ function toViewState(load: Load<RowsResponse> | undefined): ViewState {
   return load.value && load.value.rows.length > 0 ? 'data' : 'empty'
 }
 
-function resolveQuery(view: DatasetView, params: URLSearchParams): QuerySpec {
-  return typeof view.query === 'function' ? view.query(params) : (view.query ?? {})
+function resolveQuery(spec: Pick<DatasetView | RelatedSpec, 'query'>, params: URLSearchParams): QuerySpec {
+  return typeof spec.query === 'function' ? spec.query(params) : (spec.query ?? {})
 }
 
 const repeats = (xs: string[]) => [...new Set(xs.filter((x, i) => xs.indexOf(x) !== i))]
@@ -195,16 +195,17 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
   const range = useAnchoredRange(latest)
   // A table with no clock has no window; nor does a dataset that isn't held, as nothing is read.
   const window = reference || dataset?.held === false ? null : range.range
-  const queryKey = JSON.stringify(resolveQuery(view, params))
+  // The dataset's query, then each related read's, as one key: a page control can move any of them.
+  const queryKey = JSON.stringify([view, ...(view.related ?? [])].map((s) => resolveQuery(s, params)))
   const ready = Boolean(dataset?.held && !problems.length && (reference || window))
 
   const requests = useMemo<RowsRequest[]>(() => {
     if (!ready || !dataset) return []
     const span = window ? { start: window.start, end: window.end } : {}
-    const query = JSON.parse(queryKey) as QuerySpec
+    const [query, ...relatedQueries] = JSON.parse(queryKey) as QuerySpec[]
     return [
       { source: entry.source, dataset: dataset.id, ...span, ...query },
-      ...(view.related ?? []).map((r) => ({ source: r.source, dataset: r.dataset, ...span, ...(r.query ?? {}) })),
+      ...(view.related ?? []).map((r, i) => ({ source: r.source, dataset: r.dataset, ...span, ...relatedQueries[i] })),
     ]
   }, [ready, dataset, window, queryKey, entry.source, view.related])
   const loads = useRowsList(adapter, requests)
