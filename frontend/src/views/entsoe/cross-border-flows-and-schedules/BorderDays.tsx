@@ -9,9 +9,8 @@
 import { plural, cap } from '../../../design/format'
 import { dayLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
-import { daysOf, heldDayStarts, heldText, isPartial } from './figures'
 import { bordersOf, focusedBorder, roleOf } from './model'
-import { figureText, stepWords } from './words'
+import { daysOf, heldDayStarts, heldText, isPartial, figureText, stepWords } from '../../_template/lineClock'
 
 export function BorderDays({ ctx }: { ctx: PageContext }) {
   const w = ctx.window

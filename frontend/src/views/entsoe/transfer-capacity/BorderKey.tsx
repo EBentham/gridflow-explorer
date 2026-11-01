@@ -10,10 +10,9 @@
 import { KeyList } from '../../../design/charts'
 import { cadenceText, periodLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
-import { areaName } from './areas'
-import { heldText, windowTally } from './figures'
 import { besideOf, besideState, bordersOf, countStep, focusedBorder, latestStamp, measureOf } from './model'
-import { figureText, stepWords } from './words'
+import { heldText, windowTally, figureText, stepWords } from '../../_template/lineClock'
+import { areaName } from '../../_template/borders'
 
 export function BorderKey({ ctx }: { ctx: PageContext }) {
   const w = ctx.window

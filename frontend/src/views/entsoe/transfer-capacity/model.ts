@@ -6,12 +6,11 @@
  *   nominated, and the DC link's intraday limit. Each keeps one colour on
  *   every view of the page, as a panel draws up to three of them on one border.
  * - A border is one out area of the in area read (the page's own series).
- *   The other measures are read beside it for GB's borders (a related read
- *   can't follow the page's parameters), and drawn on a border only when they
- *   were read for the same in area. Only the borders the page's own dataset
+ *   The other measures are read beside it for GB's borders, and drawn on a
+ *   border only when they were read for the same in area. Only the borders the page's own dataset
  *   holds a value on are drawn: a measure read beside never adds a border.
  * - Each line keeps its own points and step, with a null at every missing
- *   step (`figures.ts`), and becomes one panel of the stacked chart.
+ *   step (`_template/lineClock.ts`), and becomes one panel of the stacked chart.
  */
 import { CHART } from '../../../design/chartTheme'
 import { DAY_MS } from '../../../design/time'
@@ -19,8 +18,9 @@ import type { Scalar } from '../../contract'
 import type { PageContext } from '../../define'
 import type { ChartPanel } from '../../_template/SeriesChart'
 import type { SeriesDef, SeriesModel } from '../../_template/seriesModel'
-import { areaRank, borderName, IN_PARAM, inAreaCode } from './areas'
-import { aloneCount, AXIS_WIDTH, PANEL_HEIGHT, pointsOf, rowsOf, stepOf, withBreaks, type Point } from './figures'
+import { aloneCount, pointsOf, rowsOf, stepOf, withBreaks, type Point } from '../../_template/lineClock'
+import { areaRank, borderName, IN_PARAM, inAreaCode, BORDER_AXIS_WIDTH as AXIS_WIDTH, PANEL_HEIGHT } from '../../_template/borders'
+import { IN_AREAS } from './areas'
 
 export const NTC = 'net_transfer_capacity'
 export const ALLOCATED = 'total_capacity_allocated'
@@ -104,7 +104,7 @@ export function latestStamp(lines: (Line | null)[]): { t: number; step: number |
 
 /** The in area the page reads its borders for: as the rows came back, else as asked. */
 export function inAreaOf(ctx: PageContext): string {
-  return str(ctx.response?.filters?.in_area_code) ?? inAreaCode(ctx.view.id, ctx.param(IN_PARAM))
+  return str(ctx.response?.filters?.in_area_code) ?? inAreaCode(IN_AREAS[ctx.view.id] ?? [], ctx.param(IN_PARAM))
 }
 
 export type BesideState = 'drawn' | 'other-area' | 'error' | 'none'

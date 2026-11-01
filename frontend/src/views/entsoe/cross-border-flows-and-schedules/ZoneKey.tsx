@@ -9,10 +9,10 @@ import { KeyList } from '../../../design/charts'
 import { periodLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
 import { SIDE_COLORS } from './areas'
-import { sideDays, windowTally, type Tally } from './figures'
+import { sideDays } from './figures'
 import { focusedZone, latestStamp, SIDE_LABELS, zonesOf, type Line, type Zone } from './model'
-import { figureText, stepWords } from './words'
 import { cap } from '../../../design/format'
+import { windowTally, type Tally, figureText, stepWords } from '../../_template/lineClock'
 
 /** The zone's latest value held, on whichever side it was named. */
 function latestOf(z: Zone, tallies: { in: Tally | null; out: Tally | null }): { t: number; v: number; side: 'in' | 'out'; line: Line } | null {

@@ -4,13 +4,13 @@
  * - A border is one out area of the in area read (the page's own series),
  *   with the other border dataset beside it when that was read for the same
  *   in area: the schedule beside a flow, or the flow beside a schedule. The
- *   beside read is pinned to GB's borders (a related read can't follow the
- *   page's parameters), so the continental pairs are drawn alone.
+ *   beside read is pinned to GB's borders, so the continental pairs are
+ *   drawn alone.
  * - A zone is one continental area's net position, held on two sides: named
  *   as the in area (the page's own read) or as the out area (read beside it).
  *   The two are never combined into one signed number.
  * - Each line keeps its own points and step, with a null at every missing
- *   step (`figures.ts`), and becomes one panel of the stacked chart.
+ *   step (`_template/lineClock.ts`), and becomes one panel of the stacked chart.
  */
 import { CHART } from '../../../design/chartTheme'
 import { DAY_MS } from '../../../design/time'
@@ -18,8 +18,9 @@ import type { Scalar } from '../../contract'
 import type { PageContext } from '../../define'
 import type { ChartPanel } from '../../_template/SeriesChart'
 import type { SeriesDef, SeriesModel } from '../../_template/seriesModel'
-import { areaColor, areaName, areaPhrase, areaRank, borderName, BESIDE_COLOR, IN_PARAM, inAreaCode, SIDE_COLORS } from './areas'
-import { aloneCount, AXIS_WIDTH, PANEL_HEIGHT, pointsOf, rowsOf, stepOf, withBreaks, type Point } from './figures'
+import { areaColor, BESIDE_COLOR, SIDE_COLORS, IN_AREAS } from './areas'
+import { aloneCount, pointsOf, rowsOf, stepOf, withBreaks, type Point } from '../../_template/lineClock'
+import { areaName, areaPhrase, areaRank, borderName, IN_PARAM, inAreaCode, BORDER_AXIS_WIDTH as AXIS_WIDTH, PANEL_HEIGHT } from '../../_template/borders'
 
 export const SCHEDULES = 'commercial_schedules'
 export const NET_POSITIONS = 'net_positions'
@@ -76,7 +77,7 @@ export function latestStamp(lines: (Line | null)[]): { t: number; step: number |
 
 /** The in area the page reads its borders for: as the rows came back, else as asked. */
 export function inAreaOf(ctx: PageContext): string {
-  return str(ctx.response?.filters?.in_area_code) ?? inAreaCode(ctx.param(IN_PARAM))
+  return str(ctx.response?.filters?.in_area_code) ?? inAreaCode(IN_AREAS, ctx.param(IN_PARAM))
 }
 
 export interface Border {

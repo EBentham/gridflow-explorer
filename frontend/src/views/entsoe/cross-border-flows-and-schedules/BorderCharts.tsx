@@ -13,10 +13,10 @@ import { windowDomain } from '../../../design/time'
 import { SeriesChart } from '../../_template/SeriesChart'
 import { ErrorWords } from '../../_template/panels'
 import type { PageContext } from '../../define'
-import { areaPhrase } from './areas'
 import { BorderTable } from './BorderTable'
 import { aloneIn, besideState, borderPanel, bordersOf, roleOf } from './model'
-import { aloneSentence, cadenceSentence, missingSentence } from './words'
+import { aloneSentence, cadenceSentence, missingSentence } from '../../_template/lineClock'
+import { areaPhrase } from '../../_template/borders'
 
 export function BorderCharts({ ctx }: { ctx: PageContext }) {
   if (ctx.mode === 'table') return <BorderTable ctx={ctx} />

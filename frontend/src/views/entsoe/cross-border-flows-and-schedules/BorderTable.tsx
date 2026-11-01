@@ -10,11 +10,11 @@
 import { instantLabel } from '../../../design/time'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
-import { pointsOf } from './figures'
 import { besideState, bordersOf, roleOf, type Border } from './model'
-import { cadenceSentence, stepsApartSentence } from './words'
+import { stepsApartSentence } from './words'
 import { dashCell } from '../../_template/cells'
 import { cap } from '../../../design/format'
+import { pointsOf, cadenceSentence } from '../../_template/lineClock'
 
 interface BorderRow {
   t: number
