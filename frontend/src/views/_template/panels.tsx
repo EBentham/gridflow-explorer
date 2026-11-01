@@ -742,7 +742,7 @@ export function About({ ctx }: { ctx: PageContext }) {
       <div>
         <dt>Dataset</dt>
         <dd>
-          <Id id={d.id} />, from {sourceName(ctx.source)} ({ctx.source.host})
+          <Id id={d.id} />, {`from ${sourceName(ctx.source)} (${ctx.source.host})`}
         </dd>
       </div>
       <div>
