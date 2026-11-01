@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 import json
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -20,6 +19,7 @@ from fastapi.testclient import TestClient
 
 from app import rows as N  # noqa: N812 - new implementation arm
 from app import sources
+from app.errors import error_envelope
 from app.main import app
 
 STAMP = datetime(2026, 9, 22, tzinfo=UTC)
@@ -117,8 +117,11 @@ def _outcome(
     try:
         payload = module.execute(db, request, f"equivalence-{id(db)}")
     except module.RowsError as exc:
-        status = JSONResponse(status_code=exc.http_status, content=exc.envelope()).status_code
-        return status, json.dumps(exc.envelope(), sort_keys=False).encode("utf-8")
+        envelope = (
+            exc.envelope() if module is D else error_envelope(exc.code, exc.message, exc.details)
+        )
+        status = JSONResponse(status_code=exc.http_status, content=envelope).status_code
+        return status, json.dumps(envelope, sort_keys=False).encode("utf-8")
     return 200, json.dumps(payload, sort_keys=False).encode("utf-8")
 
 
@@ -418,14 +421,14 @@ def test_real_stages_exist_during_request_and_are_dropped(
     spec["row_filter"] = {"column": "status", "equals": "keep"}
     _seed(sources_db, [_record()])
     monkeypatch.setattr(N, "REGISTRY", {("test", "sample"): spec})
-    original = N._TempOperations.create
+    original = N._DeadlineClient.create
     seen: list[set[str]] = []
 
-    def observe(self: N._TempOperations, name: str, sql: str) -> None:
+    def observe(self: N._DeadlineClient, name: str, sql: str) -> None:
         original(self, name, sql)
         seen.append(_temporary_tables(sources_db))
 
-    monkeypatch.setattr(N._TempOperations, "create", observe)
+    monkeypatch.setattr(N._DeadlineClient, "create", observe)
     N.execute(sources_db, N.validate("test", "sample", None, None, None, None), "temp-lifetime")
     assert seen and any(any(name.startswith("__rows_") for name in tables) for tables in seen)
     assert _temporary_tables(sources_db) == set()
@@ -443,17 +446,17 @@ def test_temp_creation_oom_uses_unmaterialised_selection(
     D._cache.clear()
     N._cache.clear()
     expected = _outcome(D, sources_db, spec, {})
-    original = N._TempOperations.create
+    original = N._DeadlineClient.create
     calls = 0
 
-    def fail_once(self: N._TempOperations, name: str, sql: str) -> None:
+    def fail_once(self: N._DeadlineClient, name: str, sql: str) -> None:
         nonlocal calls
         calls += 1
         if calls == 1:
             raise duckdb.OutOfMemoryException("injected TEMP creation OOM")
         original(self, name, sql)
 
-    monkeypatch.setattr(N._TempOperations, "create", fail_once)
+    monkeypatch.setattr(N._DeadlineClient, "create", fail_once)
     assert _outcome(N, sources_db, spec, {}) == expected
     assert calls > 1
     assert _temporary_tables(sources_db) == set()
@@ -463,11 +466,11 @@ def test_cleanup_preserves_primary_and_attempts_every_drop(
     monkeypatch: pytest.MonkeyPatch, sources_db: SourcesDuckDBClient
 ) -> None:
     """Pre-fix close masks the primary error and skips drops after a DROP failure."""
-    scope = N._SelectionScope(sources_db)
+    scope = N._SelectionScope(N._DeadlineClient(sources_db))
     scope.stage("SELECT 1 AS n")
     scope.stage("SELECT 2 AS n")
     attempted: list[str] = []
-    original = scope.operations.drop
+    original = scope.client.drop
 
     def failing_drop(name: str) -> None:
         attempted.append(name)
@@ -475,7 +478,7 @@ def test_cleanup_preserves_primary_and_attempts_every_drop(
             raise duckdb.Error("injected DROP failure")
         original(name)
 
-    monkeypatch.setattr(scope.operations, "drop", failing_drop)
+    monkeypatch.setattr(scope.client, "drop", failing_drop)
     with pytest.raises(ValueError, match="primary"):
         try:
             raise ValueError("primary")
@@ -491,13 +494,13 @@ def test_cleanup_without_primary_raises_drop_error_in_unrelated_handler(
     monkeypatch: pytest.MonkeyPatch, sources_db: SourcesDuckDBClient
 ) -> None:
     """An unrelated handled exception cannot suppress a successful request's cleanup error."""
-    scope = N._SelectionScope(sources_db)
+    scope = N._SelectionScope(N._DeadlineClient(sources_db))
     scope.stage("SELECT 1 AS n")
 
     def failing_drop(name: str) -> None:
         raise duckdb.Error("injected DROP failure")
 
-    monkeypatch.setattr(scope.operations, "drop", failing_drop)
+    monkeypatch.setattr(scope.client, "drop", failing_drop)
     try:
         raise ValueError("unrelated caller failure")
     except ValueError:
@@ -506,13 +509,13 @@ def test_cleanup_without_primary_raises_drop_error_in_unrelated_handler(
     sources_db.con.execute(f"DROP TABLE IF EXISTS temp.main.{scope.owned[0]}")
 
 
-def test_selection_key_guard_and_memoization(
+def test_selection_memoization(
     monkeypatch: pytest.MonkeyPatch, sources_db: SourcesDuckDBClient
 ) -> None:
-    """Pre-fix selection silently returns a previous relation for a new key."""
+    """One rows execution compiles its semantic selection once."""
     spec = _spec()
     _seed(sources_db, [_record()])
-    scope = N._SelectionScope(sources_db)
+    scope = N._SelectionScope(N._DeadlineClient(sources_db))
     original = N._selected_sql
     calls = 0
 
@@ -525,12 +528,6 @@ def test_selection_key_guard_and_memoization(
     selected = scope.selection("silver_test_sample", spec)
     assert scope.selection("silver_test_sample", spec) == selected
     assert calls == 1
-    with pytest.raises(ValueError, match="different relation or dataset"):
-        scope.selection("other_relation", spec)
-    changed = copy.deepcopy(spec)
-    changed["row_filter"] = {"column": "status", "equals": "keep"}
-    with pytest.raises(ValueError, match="different relation or dataset"):
-        scope.selection("silver_test_sample", changed)
     scope.close()
 
 

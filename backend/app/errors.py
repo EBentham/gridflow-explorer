@@ -1,8 +1,8 @@
 """The API's single authoritative error contract.
 
 Every handled non-2xx response from this API has the shape
-``{"error": {"code": <machine_code>, "message": <human sentence>}}``. That
-mapping is implemented once, as an ``@app.exception_handler(ApiError)`` in
+``{"error": {"code": <machine_code>, "message": <human sentence>, **details}}``.
+That mapping is implemented once, as an ``@app.exception_handler(ApiError)`` in
 ``main.py`` (added in T4). This module only defines the codes and the
 exception hierarchy that carries them.
 
@@ -25,6 +25,13 @@ class ErrorCode(StrEnum):
     CATALOGUE_MISSING = "catalogue_missing"
     REFRESH_IN_PROGRESS = "refresh_in_progress"
     UNKNOWN_VARIANT = "unknown_variant"
+    BAD_FILTER = "bad_filter"
+    BAD_GROUP = "bad_group"
+    BAD_COLUMNS = "bad_columns"
+    QUERY_TIMEOUT = "query_timeout"
+    WINDOW_UNAVAILABLE = "window_unavailable"
+    AMBIGUOUS_SERIES = "ambiguous_series"
+    RESULT_TOO_LARGE = "result_too_large"
 
 
 class ApiError(Exception):
@@ -34,14 +41,16 @@ class ApiError(Exception):
         code: Machine-readable error code from `ErrorCode`.
         http_status: HTTP status the exception handler should respond with.
         message: Human-readable sentence returned in the error envelope.
+        details: Extra envelope fields the frontend reads, such as a hint.
     """
 
     code: ErrorCode
     http_status: int
 
-    def __init__(self, message: str) -> None:
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
         super().__init__(message)
         self.message = message
+        self.details = details or {}
 
 
 class UnknownDataset(ApiError):
@@ -91,8 +100,10 @@ class UnknownVariant(ApiError):
     http_status = 404
 
 
-def error_envelope(code: ErrorCode, message: str) -> dict[str, Any]:
-    """Build the API's single `{"error": {"code", "message"}}` envelope.
+def error_envelope(
+    code: ErrorCode, message: str, details: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Build the API's single `{"error": {"code", "message", **details}}` envelope.
 
     The one definition of this shape (P3-PLAN.md "Only two additions to
     shipped code"). `main.py`'s `handle_api_error` uses it for every
@@ -104,8 +115,9 @@ def error_envelope(code: ErrorCode, message: str) -> dict[str, Any]:
     Args:
         code: Machine-readable error code.
         message: Human-readable sentence.
+        details: Extra fields merged after the message.
 
     Returns:
-        `{"error": {"code": code, "message": message}}`.
+        `{"error": {"code": code, "message": message, **details}}`.
     """
-    return {"error": {"code": code, "message": message}}
+    return {"error": {"code": code, "message": message, **(details or {})}}

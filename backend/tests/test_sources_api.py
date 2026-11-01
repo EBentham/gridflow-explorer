@@ -193,7 +193,7 @@ def test_fetch_preflight_sharing_violation_returns_409(
     manager = JobManager()
     monkeypatch.setattr(jobs_router, "JOBS", manager)
     counting_fake_client.configure(raise_exc=duckdb.IOException(SHARING))
-    monkeypatch.setattr(fetch, "GridflowClient", counting_fake_client)
+    monkeypatch.setattr(deps, "GridflowClient", counting_fake_client)
     response = TestClient(app).post(
         "/api/datasets/generation-mix/fetch?start=2026-09-01&end=2026-09-01"
     )

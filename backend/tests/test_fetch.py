@@ -20,14 +20,14 @@ import pytest
 from conftest import CountingFakeClient
 
 import app.jobs as jobs_module
-from app import fetch
+from app import deps, fetch
 from app.catalogue import get_dataset
 from app.errors import RefreshInProgress
 from app.jobs import JOBS, JobState
 
 
 class _FakeSettings:
-    """Minimal stand-in for `Settings`, carrying only what `fetch.py` reads."""
+    """Minimal stand-in for `Settings`, carrying only `duckdb_path`."""
 
     def __init__(self, duckdb_path: Path | None) -> None:
         self.duckdb_path = duckdb_path
@@ -241,9 +241,9 @@ def test_probe_closes_client_on_successful_construction(
     monkeypatch: pytest.MonkeyPatch, counting_fake_client: type[CountingFakeClient]
 ) -> None:
     counting_fake_client.configure()
-    monkeypatch.setattr(fetch, "GridflowClient", counting_fake_client)
+    monkeypatch.setattr(deps, "GridflowClient", counting_fake_client)
     monkeypatch.setattr(
-        fetch, "get_settings", lambda: _FakeSettings(Path("C:/gridflow-data/gridflow.duckdb"))
+        deps, "get_settings", lambda: _FakeSettings(Path("C:/gridflow-data/gridflow.duckdb"))
     )
 
     fetch.probe_writer_lock()
@@ -265,9 +265,9 @@ def test_probe_leaves_no_handle_open_when_construction_raises(
     counting_fake_client.configure(
         raise_exc=duckdb.IOException("Could not set lock on file gridflow.duckdb")
     )
-    monkeypatch.setattr(fetch, "GridflowClient", counting_fake_client)
+    monkeypatch.setattr(deps, "GridflowClient", counting_fake_client)
     monkeypatch.setattr(
-        fetch, "get_settings", lambda: _FakeSettings(Path("C:/gridflow-data/gridflow.duckdb"))
+        deps, "get_settings", lambda: _FakeSettings(Path("C:/gridflow-data/gridflow.duckdb"))
     )
 
     with pytest.raises(RefreshInProgress):

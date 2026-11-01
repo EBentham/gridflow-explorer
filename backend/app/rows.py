@@ -8,27 +8,33 @@ import re
 import threading
 import time
 import uuid
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
-from enum import StrEnum
 from typing import Any
-from zoneinfo import ZoneInfo
 
 import duckdb
 import polars as pl
 
-from app.sources import _required_columns
+from app.errors import ApiError, ErrorCode
+from app.sources import (
+    LONDON,
+    TTL_SECONDS,
+    _clock_kind,
+    _instant,
+    _literal,
+    _quote,
+    _required_columns,
+    _uk_day,
+)
 from app.sources_spec import SOURCES
 
-LONDON = ZoneInfo("Europe/London")
 MAX_RESPONSE_ROWS = 50_000
 MAX_DUPLICATE_PROOF = 50_000
-TTL_SECONDS = 600
 _ROWS_MEMORY_CEILING = "8GiB"
-ROWS_OPERATION_TIMEOUT_SECONDS = 30
 ROWS_REQUEST_TIMEOUT_SECONDS = 30
-MIN_OPERATION_SECONDS = 0.05
 LOG = logging.getLogger(__name__)
 GRAINS = {
     "15s": 15_000,
@@ -64,57 +70,17 @@ FILTER_VALUE = re.compile(r"[A-Za-z0-9 _.\-/:]{1,64}\Z")
 DATE_VALUE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}\Z")
 
 
-class RowsErrorCode(StrEnum):
-    UNKNOWN_DATASET = "unknown_dataset"
-    BAD_IDENTIFIER = "bad_identifier"
-    BAD_RANGE = "bad_range"
-    BAD_FILTER = "bad_filter"
-    BAD_GROUP = "bad_group"
-    BAD_COLUMNS = "bad_columns"
-    QUERY_TIMEOUT = "query_timeout"
-    WINDOW_UNAVAILABLE = "window_unavailable"
-    AMBIGUOUS_SERIES = "ambiguous_series"
-    RESULT_TOO_LARGE = "result_too_large"
+class RowsError(ApiError):
+    """A rows error whose HTTP status follows its code."""
 
-
-class RowsError(Exception):
-    def __init__(
-        self, code: RowsErrorCode, message: str, *, details: dict[str, Any] | None = None
-    ) -> None:
-        super().__init__(message)
+    def __init__(self, code: ErrorCode, message: str, **details: Any) -> None:
+        super().__init__(message, details)
         self.code = code
-        self.message = message
-        self.details = details or {}
-        self.http_status = (
-            404
-            if code == RowsErrorCode.UNKNOWN_DATASET
-            else 413
-            if code == RowsErrorCode.RESULT_TOO_LARGE
-            else 503
-            if code == RowsErrorCode.QUERY_TIMEOUT
-            else 422
-        )
-
-    def envelope(self) -> dict[str, Any]:
-        return {"error": {"code": self.code, "message": self.message, **self.details}}
-
-
-def _error(code: RowsErrorCode, message: str, **details: Any) -> RowsError:
-    return RowsError(code, message, details=details)
-
-
-def _quote(value: str) -> str:
-    return '"' + value.replace('"', '""') + '"'
-
-
-def _literal(value: Any) -> str:
-    if value is None:
-        return "NULL"
-    if isinstance(value, bool):
-        return "TRUE" if value else "FALSE"
-    if isinstance(value, (int, float)):
-        return str(value)
-    return "'" + str(value).replace("'", "''") + "'"
+        self.http_status = {
+            ErrorCode.UNKNOWN_DATASET: 404,
+            ErrorCode.RESULT_TOO_LARGE: 413,
+            ErrorCode.QUERY_TIMEOUT: 503,
+        }.get(code, 422)
 
 
 def _registry() -> dict[tuple[str, str], dict[str, Any]]:
@@ -144,11 +110,11 @@ def _parse_date(value: str | None) -> date | None:
     if value is None:
         return None
     if not DATE_VALUE.fullmatch(value):
-        raise _error(RowsErrorCode.BAD_RANGE, "Date must be YYYY-MM-DD.")
+        raise RowsError(ErrorCode.BAD_RANGE, "Date must be YYYY-MM-DD.")
     try:
         return date.fromisoformat(value)
     except ValueError as exc:
-        raise _error(RowsErrorCode.BAD_RANGE, "Date is invalid.") from exc
+        raise RowsError(ErrorCode.BAD_RANGE, "Date is invalid.") from exc
 
 
 @dataclass(frozen=True)
@@ -174,32 +140,24 @@ def validate(
 ) -> Request:
     dataset = REGISTRY.get((source, dataset_id))
     if dataset is None:
-        raise _error(RowsErrorCode.UNKNOWN_DATASET, "Unknown source or dataset.")
+        raise RowsError(ErrorCode.UNKNOWN_DATASET, "Unknown source or dataset.")
     if dataset["not_held_cause"]:
-        raise _error(
-            RowsErrorCode.UNKNOWN_DATASET,
+        raise RowsError(
+            ErrorCode.UNKNOWN_DATASET,
             "Dataset is not held.",
             not_held_cause=dataset["not_held_cause"],
         )
-    relations = (dataset["base_relation"], dataset["latest_relation"])
-    if not dataset["base_relation"] or any(
-        value is not None and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", value)
-        for value in relations
-    ):
-        raise _error(RowsErrorCode.BAD_IDENTIFIER, "Unregistered relation identifier.")
-    if any(not column or not isinstance(column, str) for column in _projection(dataset)):
-        raise _error(RowsErrorCode.BAD_IDENTIFIER, "Invalid declared projection.")
     first = _parse_date(start)
     last = _parse_date(end)
     if dataset["kind"] == "reference" and (first or last):
-        raise _error(RowsErrorCode.BAD_RANGE, "Reference records have no date window.")
+        raise RowsError(ErrorCode.BAD_RANGE, "Reference records have no date window.")
     if first and last and first > last:
-        raise _error(RowsErrorCode.BAD_RANGE, "start is after end.")
+        raise RowsError(ErrorCode.BAD_RANGE, "start is after end.")
     if last == date.max:
-        raise _error(RowsErrorCode.BAD_RANGE, "End date exceeds supported bounds.")
+        raise RowsError(ErrorCode.BAD_RANGE, "End date exceeds supported bounds.")
     dims = {dim["column"] for dim in dataset["dims"]}
     if group is not None and group not in dims:
-        raise _error(RowsErrorCode.BAD_GROUP, "Group must be a declared dimension.")
+        raise RowsError(ErrorCode.BAD_GROUP, "Group must be a declared dimension.")
     if group is None and dataset["kind"] == "series":
         group = next(
             (dim["column"] for dim in dataset["dims"] if dim["role"] == "series"),
@@ -214,17 +172,15 @@ def validate(
         parsed = {}
     else:
         if "" in filters:
-            raise _error(RowsErrorCode.BAD_FILTER, "Empty filter cannot be combined.")
+            raise RowsError(ErrorCode.BAD_FILTER, "Empty filter cannot be combined.")
         parsed = {}
         for item in filters:
             if ":" not in item:
-                raise _error(RowsErrorCode.BAD_FILTER, "Filter needs column:value.")
+                raise RowsError(ErrorCode.BAD_FILTER, "Filter needs column:value.")
             column, value = item.split(":", 1)
             if column not in dims or not FILTER_VALUE.fullmatch(value) or column in parsed:
-                raise _error(RowsErrorCode.BAD_FILTER, "Invalid or duplicate dimension filter.")
+                raise RowsError(ErrorCode.BAD_FILTER, "Invalid or duplicate dimension filter.")
             parsed[column] = value
-    if any(column not in dims for column in parsed):
-        raise _error(RowsErrorCode.BAD_IDENTIFIER, "Default filter is not a dimension.")
     selected_columns = None
     if columns is not None:
         names = tuple(name.strip() for name in columns[0].split(",")) if len(columns) == 1 else ()
@@ -234,8 +190,8 @@ def validate(
             or len(set(names)) != len(names)
             or any(name not in _projection(dataset) for name in names)
         ):
-            raise _error(
-                RowsErrorCode.BAD_COLUMNS,
+            raise RowsError(
+                ErrorCode.BAD_COLUMNS,
                 "Columns must be a non-empty, unique subset of the declared projection.",
             )
         selected_columns = names
@@ -266,91 +222,62 @@ _cache: dict[tuple[str, str, str], tuple[float, Metadata]] = {}
 _cache_lock = threading.Lock()
 
 
-class _TempOperations:
-    """Allow only request-owned TEMP DDL and interruption on the client's connection."""
-
-    def __init__(self, connection: duckdb.DuckDBPyConnection, prefix: str) -> None:
-        self._connection = connection
-        self._prefix = prefix
-
-    def create(self, name: str, selection: str) -> None:
-        if not name.startswith(self._prefix) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
-            raise ValueError("TEMP name is not owned by this rows request")
-        if not selection.lstrip().upper().startswith(("SELECT ", "WITH ")) or ";" in selection:
-            raise ValueError("TEMP creation requires one generated selection")
-        self._connection.execute(f"CREATE TEMP TABLE {_quote(name)} AS {selection}")
-
-    def drop(self, name: str) -> None:
-        if not name.startswith(self._prefix) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
-            raise ValueError("TEMP name is not owned by this rows request")
-        self._connection.execute(f"DROP TABLE IF EXISTS temp.main.{_quote(name)}")
-
-    def interrupt(self) -> None:
-        self._connection.interrupt()
-
-
-def _temp_operations(client: Any, prefix: str) -> _TempOperations:
-    """Confine private installed-client access to this adapter factory."""
-    return _TempOperations(client._require_con(), prefix)
-
-
 def _query_timeout() -> RowsError:
-    return _error(RowsErrorCode.QUERY_TIMEOUT, "Rows query exceeded its time limit.")
+    return RowsError(ErrorCode.QUERY_TIMEOUT, "Rows query exceeded its time limit.")
 
 
 class _DeadlineClient:
-    """Bound each database call by the shared monotonic request deadline."""
+    """Run each database call on the client's connection under the active deadline."""
 
-    def __init__(self, client: Any, deadline: float) -> None:
+    def __init__(self, client: Any) -> None:
         self.client = client
+        # The installed client has no public interrupt or TEMP DDL.
+        self.connection: duckdb.DuckDBPyConnection = client._require_con()
+        self.deadline = math.inf
+        self.expired = False
+
+    @contextmanager
+    def watchdog(self, deadline: float) -> Iterator[None]:
+        """Interrupt the connection from ``deadline`` until the block exits.
+
+        One thread covers every call in the block. It repeats the interrupt, because one
+        that lands between bind and execution is lost, and it is joined on exit, so it
+        never reaches a later call such as TEMP cleanup.
+        """
         self.deadline = deadline
-        self.prefix = "__rows_" + uuid.uuid4().hex + "_"
-        self.operations = _temp_operations(client, self.prefix)
+        self.expired = False
+        stop = threading.Event()
+
+        def interrupt() -> None:
+            if stop.wait(max(0.0, deadline - time.monotonic())):
+                return
+            self.expired = True
+            while not stop.is_set():
+                self.connection.interrupt()
+                stop.wait(0.05)
+
+        thread = threading.Thread(target=interrupt, daemon=True)
+        thread.start()
+        try:
+            yield
+        finally:
+            stop.set()
+            thread.join()
 
     def check(self) -> None:
         if time.monotonic() >= self.deadline:
             raise _query_timeout()
 
-    def run(self, operation: Any, *, cleanup_budget: float | None = None) -> Any:
-        remaining = self.deadline - time.monotonic() if cleanup_budget is None else cleanup_budget
-        if remaining <= MIN_OPERATION_SECONDS:
-            raise _query_timeout()
-        timeout = min(ROWS_OPERATION_TIMEOUT_SECONDS, remaining)
-        lock = threading.Lock()
-        active = True
-        expired = False
-        stop = threading.Event()
-
-        def interrupt() -> None:
-            nonlocal expired
-            with lock:
-                if not active:
-                    return
-                expired = True
-            while not stop.is_set():
-                self.operations.interrupt()
-                stop.wait(0.05)
-
-        timer = threading.Timer(timeout, interrupt)
-        timer.start()
+    def run(self, operation: Callable[[], Any]) -> Any:
+        self.check()
         try:
-            try:
-                result = operation()
-            except duckdb.InterruptException as exc:
-                with lock:
-                    timed_out = expired
-                if timed_out:
-                    raise _query_timeout() from exc
-                raise
-        finally:
-            with lock:
-                active = False
-                timed_out = expired
-            stop.set()
-            timer.cancel()
-            timer.join()
-        if timed_out or (cleanup_budget is None and time.monotonic() >= self.deadline):
-            raise _query_timeout()
+            result = operation()
+        except duckdb.InterruptException as exc:
+            # An interrupt the watchdog did not send is not a timeout.
+            if self.expired:
+                raise _query_timeout() from exc
+            raise
+        self.check()
         return result
 
     def query(self, sql: str) -> pl.DataFrame:
@@ -360,28 +287,20 @@ class _DeadlineClient:
         return self.run(self.client.get_tables)
 
     def create(self, name: str, sql: str) -> None:
-        self.run(lambda: self.operations.create(name, sql))
+        self.run(lambda: self.connection.execute(f"CREATE TEMP TABLE {_quote(name)} AS {sql}"))
 
-    def drop(self, name: str, *, cleanup_budget: float | None = None) -> None:
-        self.run(lambda: self.operations.drop(name), cleanup_budget=cleanup_budget)
+    def drop(self, name: str) -> None:
+        self.run(lambda: self.connection.execute(f"DROP TABLE IF EXISTS temp.main.{_quote(name)}"))
 
 
 class _SelectionScope:
     """Own reusable selections for one rows execution and clean them on exit."""
 
-    def __init__(self, client: Any) -> None:
+    def __init__(self, client: _DeadlineClient) -> None:
         self.client = client
-        self.prefix = (
-            client.prefix
-            if isinstance(client, _DeadlineClient)
-            else "__rows_" + uuid.uuid4().hex + "_"
-        )
+        self.prefix = "__rows_" + uuid.uuid4().hex + "_"
         self.owned: list[str] = []
         self.semantic: str | None = None
-        self.semantic_key: tuple[str, dict[str, Any]] | None = None
-        self.operations = (
-            client if isinstance(client, _DeadlineClient) else _temp_operations(client, self.prefix)
-        )
 
     def query(self, sql: str) -> pl.DataFrame:
         return self.client.query(sql)
@@ -393,9 +312,9 @@ class _SelectionScope:
         name = f"{self.prefix}{len(self.owned)}"
         self.owned.append(name)
         try:
-            self.operations.create(name, sql)
+            self.client.create(name, sql)
         except duckdb.OutOfMemoryException:
-            self.operations.drop(name)
+            self.client.drop(name)
             self.owned.pop()
             return sql
         return f"SELECT * FROM temp.main.{_quote(name)}"
@@ -407,31 +326,26 @@ class _SelectionScope:
             if (dedup and dedup["order_by"]) or dataset["row_filter"] or dataset["snapshot_column"]:
                 selected = self.stage(selected)
             self.semantic = selected
-            self.semantic_key = (relation, dataset)
-        elif self.semantic_key != (relation, dataset):
-            raise ValueError("Rows selection reused with a different relation or dataset")
         return self.semantic
 
     def close(self, primary: BaseException | None = None) -> None:
+        """Drop every owned TEMP table within a fresh one-second budget."""
         first_drop_error: duckdb.Error | None = None
-        cleanup_deadline = time.monotonic() + 1
         names = list(reversed(self.owned))
-        for index, name in enumerate(names):
-            try:
-                if isinstance(self.operations, _DeadlineClient):
-                    self.operations.drop(name, cleanup_budget=cleanup_deadline - time.monotonic())
-                else:
-                    self.operations.drop(name)
-            except RowsError:
-                LOG.warning(
-                    "Rows TEMP cleanup budget exhausted; leaving %s for connection close",
-                    names[index:],
-                )
-                break
-            except duckdb.Error as exc:
-                LOG.exception("Failed to drop rows TEMP table %s", name)
-                if first_drop_error is None:
-                    first_drop_error = exc
+        with self.client.watchdog(time.monotonic() + 1):
+            for index, name in enumerate(names):
+                try:
+                    self.client.drop(name)
+                except RowsError:
+                    LOG.warning(
+                        "Rows TEMP cleanup budget exhausted; leaving %s for connection close",
+                        names[index:],
+                    )
+                    break
+                except duckdb.Error as exc:
+                    LOG.exception("Failed to drop rows TEMP table %s", name)
+                    if first_drop_error is None:
+                        first_drop_error = exc
         if primary is None and first_drop_error is not None:
             raise first_drop_error
 
@@ -446,29 +360,6 @@ def cached_status(request: Request, config: str) -> Metadata | None:
         if hit and time.monotonic() - hit[0] < TTL_SECONDS:
             return hit[1]
     return None
-
-
-def _clock_kind(column: str, types: dict[str, str]) -> str | None:
-    kind = types[column].upper()
-    if kind == "DATE":
-        return "date"
-    if kind == "TIMESTAMPTZ" or "WITH TIME ZONE" in kind:
-        return "aware"
-    if kind.startswith("TIMESTAMP") and column.endswith("_utc"):
-        return "naive_utc"
-    return None
-
-
-def _instant(column: str, types: dict[str, str]) -> str:
-    name = _quote(column)
-    return f"timezone('UTC', {name})" if _clock_kind(column, types) == "naive_utc" else name
-
-
-def _uk_day(column: str, types: dict[str, str]) -> str:
-    name = _instant(column, types)
-    if _clock_kind(column, types) == "date":
-        return name
-    return f"CAST(timezone('Europe/London', {name}) AS DATE)"
 
 
 def _selected_sql(relation: str, dataset: dict[str, Any]) -> str:
@@ -507,7 +398,7 @@ def _metadata(client: Any, request: Request, config: str) -> Metadata:
     dataset = request.dataset
     tables = set(client.get_tables())
     relation = dataset["latest_relation"]
-    if not relation or relation not in tables:
+    if relation not in tables:
         relation = dataset["base_relation"]
     types: dict[str, str] = {}
     if relation in tables:
@@ -526,11 +417,7 @@ def _metadata(client: Any, request: Request, config: str) -> Metadata:
     if relation not in tables or missing or unsupported:
         meta = Metadata(None, types, None, None, None, 0, "missing-in-catalogue")
     else:
-        selected = (
-            client.selection(relation, dataset)
-            if isinstance(client, _SelectionScope)
-            else _selected_sql(relation, dataset)
-        )
+        selected = client.selection(relation, dataset)
         clock = _clock_column(dataset)
         day_sql = _uk_day(clock, types) if clock else "CAST(NULL AS DATE)"
         result = client.query(
@@ -561,7 +448,7 @@ def _window(request: Request, meta: Metadata) -> tuple[date, date, datetime, dat
         anchor = anchor.date()
     if request.end is None:
         if anchor is None:
-            raise _error(RowsErrorCode.WINDOW_UNAVAILABLE, "Latest-day anchor is unavailable.")
+            raise RowsError(ErrorCode.WINDOW_UNAVAILABLE, "Latest-day anchor is unavailable.")
         end = min(anchor, datetime.now(UTC).astimezone(LONDON).date())
     else:
         end = request.end
@@ -569,17 +456,17 @@ def _window(request: Request, meta: Metadata) -> tuple[date, date, datetime, dat
         start = request.start or end - timedelta(days=6)
         upper_day = end + timedelta(days=1)
     except OverflowError as exc:
-        raise _error(RowsErrorCode.BAD_RANGE, "Default window overflows supported dates.") from exc
+        raise RowsError(ErrorCode.BAD_RANGE, "Default window overflows supported dates.") from exc
     if start > end:
-        raise _error(RowsErrorCode.BAD_RANGE, "start is after resolved end.")
+        raise RowsError(ErrorCode.BAD_RANGE, "start is after resolved end.")
     elapsed = (end - start).days
     if elapsed > 400:
         if request.dataset["kind"] == "events":
-            raise _error(RowsErrorCode.BAD_RANGE, "Event range exceeds 400 elapsed days.")
+            raise RowsError(ErrorCode.BAD_RANGE, "Event range exceeds 400 elapsed days.")
         if meta.first_day is None or meta.last_day is None:
-            raise _error(RowsErrorCode.WINDOW_UNAVAILABLE, "Local clock depth is unavailable.")
+            raise RowsError(ErrorCode.WINDOW_UNAVAILABLE, "Local clock depth is unavailable.")
         if start < meta.first_day or end > meta.last_day:
-            raise _error(RowsErrorCode.BAD_RANGE, "Deep window exceeds local clock depth.")
+            raise RowsError(ErrorCode.BAD_RANGE, "Deep window exceeds local clock depth.")
     lower = datetime.combine(start, datetime.min.time(), LONDON).astimezone(UTC)
     upper = datetime.combine(upper_day, datetime.min.time(), LONDON).astimezone(UTC)
     return start, end, lower, upper
@@ -643,8 +530,8 @@ def _ambiguity(
             hint += f"&filter={request.group}:{observed_group}"
     elif observation:
         hint = "Try a clean date window; no declared filter resolves this instant."
-    return _error(
-        RowsErrorCode.AMBIGUOUS_SERIES,
+    return RowsError(
+        ErrorCode.AMBIGUOUS_SERIES,
         "Selected records do not identify one series.",
         group=request.group,
         varying_dimensions=varying_dims,
@@ -701,8 +588,8 @@ def _native_collision_check(
         f"SELECT coalesce(sum(copies),0) AS n FROM ({repeated}) AS repeated"
     ).to_dicts()[0]["n"]
     if count > MAX_DUPLICATE_PROOF:
-        raise _error(
-            RowsErrorCode.RESULT_TOO_LARGE,
+        raise RowsError(
+            ErrorCode.RESULT_TOO_LARGE,
             "Too many duplicate candidates to verify.",
             reason="duplicate_verification_limit",
             hint="Narrow the date window or filter a dimension.",
@@ -732,11 +619,7 @@ def _native_collision_check(
         for index, (values, raw) in enumerate(
             zip(frame.select(keys).iter_rows(), byte_rows, strict=True)
         ):
-            if (
-                index % 256 == 0
-                and isinstance(client, _SelectionScope)
-                and isinstance(client.client, _DeadlineClient)
-            ):
+            if index % 256 == 0:
                 client.client.check()
             if values in signatures and signatures[values][0] != raw:
                 previous = signatures[values][1]
@@ -754,11 +637,9 @@ def _native_collision_check(
     if not count:
         distinct = f"SELECT {', '.join(_quote(c) for c in projection)} FROM ({sql}) AS checked"
     else:
-        distinct = (
+        distinct = client.stage(
             f"SELECT DISTINCT {', '.join(_quote(c) for c in projection)} FROM ({sql}) AS checked"
         )
-        if isinstance(client, _SelectionScope):
-            distinct = client.stage(distinct)
     return removed, distinct
 
 
@@ -840,8 +721,8 @@ def _numeric_kind(kind: str) -> bool:
 
 
 def _limit(reason: str, hint: str) -> RowsError:
-    return _error(
-        RowsErrorCode.RESULT_TOO_LARGE,
+    return RowsError(
+        ErrorCode.RESULT_TOO_LARGE,
         "Selected records have conflicting cadence or identity."
         if reason == "unsupported_cadence"
         else "Result exceeds the safe row limit.",
@@ -986,26 +867,26 @@ def _configure_resources(client: Any) -> None:
 
 def execute(client: Any, request: Request, config: str) -> dict[str, Any]:
     """Execute one rows request with instance resource policy and owned TEMP stages."""
-    bounded = _DeadlineClient(client, time.monotonic() + ROWS_REQUEST_TIMEOUT_SECONDS)
-    _configure_resources(bounded)
+    bounded = _DeadlineClient(client)
     scope = _SelectionScope(bounded)
     try:
-        result = _execute_selected(scope, request, config)
-        bounded.check()
+        with bounded.watchdog(time.monotonic() + ROWS_REQUEST_TIMEOUT_SECONDS):
+            _configure_resources(bounded)
+            result = _execute_selected(scope, request, config)
+            bounded.check()
     except BaseException as primary:
         scope.close(primary)
         raise
-    else:
-        scope.close(None)
-        return result
+    scope.close(None)
+    return result
 
 
 def _execute_selected(client: Any, request: Request, config: str) -> dict[str, Any]:
     dataset = request.dataset
     meta = _metadata(client, request, config)
     if meta.cause:
-        raise _error(
-            RowsErrorCode.UNKNOWN_DATASET,
+        raise RowsError(
+            ErrorCode.UNKNOWN_DATASET,
             "Dataset schema is unavailable.",
             not_held_cause=meta.cause,
         )

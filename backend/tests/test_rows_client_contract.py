@@ -1,8 +1,6 @@
-"""Installed GridflowClient and the restricted TEMP adapter contract."""
+"""Installed GridflowClient: read-only, TEMP tables work and vanish on reopen."""
 
 from __future__ import annotations
-
-import inspect
 
 import duckdb
 import pytest
@@ -21,8 +19,7 @@ def test_installed_client_read_only_temp_and_closure(tmp_path):
         assert isinstance(client._require_con(), duckdb.DuckDBPyConnection)
         databases = client.query("SELECT * FROM duckdb_databases()").to_dicts()
         assert any(row["readonly"] for row in databases if row["database_name"] == "synthetic")
-        adapter = rows._temp_operations(client, "__rows_contract_")
-        adapter.create("__rows_contract_0", "SELECT n FROM seed")
+        rows._DeadlineClient(client).create("__rows_contract_0", "SELECT n FROM seed")
         assert client.query("SELECT n FROM temp.main.__rows_contract_0")["n"][0] == 7
         with pytest.raises(duckdb.Error):
             client.query("CREATE TABLE persistent_write (n INTEGER)")
@@ -35,23 +32,3 @@ def test_installed_client_read_only_temp_and_closure(tmp_path):
             )["n"][0]
             == 0
         )
-
-
-def test_adapter_rejects_unowned_names_and_has_no_general_execute(sources_db):
-    adapter = rows._temp_operations(sources_db, "__rows_owned_")
-    for name in ("seed", "__rows_other_0", "main.bad", "__rows_owned_0;DROP TABLE seed"):
-        with pytest.raises(ValueError):
-            adapter.create(name, "SELECT 1")
-        with pytest.raises(ValueError):
-            adapter.drop(name)
-    for selection in (
-        "CREATE TABLE persistent_write AS SELECT 1",
-        "SELECT 1; CREATE TABLE bad AS SELECT 2",
-    ):
-        with pytest.raises(ValueError):
-            adapter.create("__rows_owned_0", selection)
-    assert not hasattr(adapter, "execute")
-    assert not hasattr(adapter, "query")
-    assert not hasattr(adapter, "get_tables")
-    source = inspect.getsource(rows)
-    assert source.count("._require_con(") == 1

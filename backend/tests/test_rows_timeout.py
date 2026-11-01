@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 import time
 from datetime import UTC, datetime
 
@@ -9,6 +10,7 @@ import duckdb
 from test_rows_api import _route, _seed, _spec
 
 from app import rows, sources
+from app.errors import ErrorCode
 
 
 def test_post_return_timeout_returns_503_and_releases_limiter(monkeypatch, sources_db):
@@ -26,7 +28,7 @@ def test_post_return_timeout_returns_503_and_releases_limiter(monkeypatch, sourc
         return result
 
     monkeypatch.setattr(sources_db, "query", slow)
-    # Above MIN_OPERATION_SECONDS, so the slow query runs and returns after the deadline.
+    # The slow query runs and returns after the deadline, between watchdog interrupts.
     monkeypatch.setattr(rows, "ROWS_REQUEST_TIMEOUT_SECONDS", 0.2)
     response = client.get(url)
     assert len(returned) == 1
@@ -37,33 +39,32 @@ def test_post_return_timeout_returns_503_and_releases_limiter(monkeypatch, sourc
     assert sources._ROWS_LIMITER.borrowed_tokens == 0
 
 
-def test_real_duckdb_interrupt_is_translated_and_connection_recovers(monkeypatch, sources_db):
-    monkeypatch.setattr(rows, "ROWS_OPERATION_TIMEOUT_SECONDS", 0.02)
-    bounded = rows._DeadlineClient(sources_db, time.monotonic() + 2)
+def test_real_duckdb_interrupt_is_translated_and_connection_recovers(sources_db):
+    bounded = rows._DeadlineClient(sources_db)
     try:
-        bounded.query("SELECT sum(sin(i)) FROM range(10000000000) t(i)")
+        with bounded.watchdog(time.monotonic() + 0.1):
+            bounded.query("SELECT sum(sin(i)) FROM range(10000000000) t(i)")
     except rows.RowsError as exc:
-        assert exc.code == rows.RowsErrorCode.QUERY_TIMEOUT
+        assert exc.code == ErrorCode.QUERY_TIMEOUT
     else:
         raise AssertionError("long query was not interrupted")
     assert sources_db.query("SELECT 42 AS answer")["answer"][0] == 42
 
 
 def test_interrupt_retries_after_bind_before_execution(monkeypatch, sources_db):
-    monkeypatch.setattr(rows, "ROWS_OPERATION_TIMEOUT_SECONDS", 0.02)
-
     def bind_then_execute(sql):
         relation = sources_db.con.sql(sql)
         time.sleep(0.1)
         return relation.pl()
 
     monkeypatch.setattr(sources_db, "query", bind_then_execute)
-    bounded = rows._DeadlineClient(sources_db, time.monotonic() + 2)
+    bounded = rows._DeadlineClient(sources_db)
     started = time.monotonic()
     try:
-        bounded.query("SELECT sum(sin(i)) FROM range(400000000) t(i)")
+        with bounded.watchdog(time.monotonic() + 0.02):
+            bounded.query("SELECT sum(sin(i)) FROM range(400000000) t(i)")
     except rows.RowsError as exc:
-        assert exc.code == rows.RowsErrorCode.QUERY_TIMEOUT
+        assert exc.code == ErrorCode.QUERY_TIMEOUT
     else:
         raise AssertionError("long query was not interrupted")
     assert time.monotonic() - started < 1
@@ -74,9 +75,10 @@ def test_unrelated_interrupt_is_not_called_a_timeout(monkeypatch, sources_db):
         raise duckdb.InterruptException("external")
 
     monkeypatch.setattr(sources_db, "query", interrupted)
-    bounded = rows._DeadlineClient(sources_db, time.monotonic() + 2)
+    bounded = rows._DeadlineClient(sources_db)
     try:
-        bounded.query("SELECT 1")
+        with bounded.watchdog(time.monotonic() + 2):
+            bounded.query("SELECT 1")
     except duckdb.InterruptException:
         pass
     else:
@@ -91,14 +93,34 @@ def test_request_deadline_is_shared_across_operations(monkeypatch, sources_db):
         return original(sql)
 
     monkeypatch.setattr(sources_db, "query", slow)
-    bounded = rows._DeadlineClient(sources_db, time.monotonic() + 0.5)
-    assert bounded.query("SELECT 1 AS n")["n"][0] == 1
-    try:
-        bounded.query("SELECT 2 AS n")
-    except rows.RowsError as exc:
-        assert exc.code == rows.RowsErrorCode.QUERY_TIMEOUT
-    else:
-        raise AssertionError("operation reset the request deadline")
+    bounded = rows._DeadlineClient(sources_db)
+    with bounded.watchdog(time.monotonic() + 0.5):
+        assert bounded.query("SELECT 1 AS n")["n"][0] == 1
+        try:
+            bounded.query("SELECT 2 AS n")
+        except rows.RowsError as exc:
+            assert exc.code == ErrorCode.QUERY_TIMEOUT
+        else:
+            raise AssertionError("operation reset the request deadline")
+
+
+def test_one_watchdog_covers_every_query_of_a_request(monkeypatch, sources_db):
+    """A request starts one interrupt thread for its queries and one for TEMP cleanup."""
+    stamp = datetime(2026, 9, 22, tzinfo=UTC)
+    _seed(sources_db, [(stamp, "A", 1.0, stamp)])
+    monkeypatch.setattr(rows, "REGISTRY", {("test", "sample"): _spec()})
+    started: list[threading.Thread] = []
+    original = threading.Thread.start
+
+    def counted(thread: threading.Thread) -> None:
+        started.append(thread)
+        original(thread)
+
+    monkeypatch.setattr(threading.Thread, "start", counted)
+    request = rows.validate("test", "sample", "2026-09-22", "2026-09-22", None, None)
+    assert rows.execute(sources_db, request, f"watchdog-{id(sources_db)}")["row_count"] == 24
+    assert len(sources_db.calls) > 2
+    assert len(started) == 2
 
 
 def test_timeout_cleans_staged_temp_and_releases_limiter(monkeypatch, sources_db):

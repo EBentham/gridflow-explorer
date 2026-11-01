@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import logging
+import re
 import threading
 import time
 from datetime import UTC, date, datetime
@@ -15,7 +16,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from app.deps import client_ctx
-from app.errors import RefreshInProgress
+from app.errors import ErrorCode, RefreshInProgress
 from app.sources_spec import SOURCES
 
 router = APIRouter()
@@ -41,45 +42,42 @@ async def get_rows(
     query = request.query_params
     filters = query.getlist("filter") if "filter" in query else None
     columns = query.getlist("columns") if "columns" in query else None
-    try:
-        parsed = rows.validate(
-            source_key,
-            dataset_id,
-            query.get("start"),
-            query.get("end"),
-            query.get("group"),
-            filters,
-            columns,
+    parsed = rows.validate(
+        source_key,
+        dataset_id,
+        query.get("start"),
+        query.get("end"),
+        query.get("group"),
+        filters,
+        columns,
+    )
+    config = str(get_settings().duckdb_path)
+    status = rows.cached_status(parsed, config)
+    if status and status.cause:
+        raise rows.RowsError(
+            ErrorCode.UNKNOWN_DATASET,
+            "Dataset schema is unavailable.",
+            not_held_cause=status.cause,
         )
-        config = str(get_settings().duckdb_path)
-        status = rows.cached_status(parsed, config)
-        if status and status.cause:
-            raise rows.RowsError(
-                rows.RowsErrorCode.UNKNOWN_DATASET,
-                "Dataset schema is unavailable.",
-                details={"not_held_cause": status.cause},
+
+    def execute_rows() -> dict[str, Any]:
+        with client_ctx() as client:
+            return rows.execute(client, parsed, config)
+
+    async with _ROWS_LIMITER:
+        if await request.is_disconnected():
+            # uvicorn drops the response of a gone client before its access log line.
+            LOG.info("rows skipped, client gone: %s/%s", source_key, dataset_id)
+            return JSONResponse(
+                status_code=499,
+                content={
+                    "error": {
+                        "code": "client_closed",
+                        "message": "Client closed the request.",
+                    }
+                },
             )
-
-        def execute_rows() -> dict[str, Any]:
-            with client_ctx() as client:
-                return rows.execute(client, parsed, config)
-
-        async with _ROWS_LIMITER:
-            if await request.is_disconnected():
-                # uvicorn drops the response of a gone client before its access log line.
-                LOG.info("rows skipped, client gone: %s/%s", source_key, dataset_id)
-                return JSONResponse(
-                    status_code=499,
-                    content={
-                        "error": {
-                            "code": "client_closed",
-                            "message": "Client closed the request.",
-                        }
-                    },
-                )
-            return await anyio.to_thread.run_sync(execute_rows)
-    except rows.RowsError as exc:
-        return JSONResponse(status_code=exc.http_status, content=exc.envelope())
+        return await anyio.to_thread.run_sync(execute_rows)
 
 
 _PUBLIC_DATASET = (
@@ -129,7 +127,7 @@ def _literal(value: str | int | float | bool | None) -> str:
 
 
 def validate_spec() -> None:
-    """Reject duplicate identities, routes, or malformed committed rules before acquisition."""
+    """Reject duplicate identities or routes and malformed committed rules, once at import."""
     identities: set[tuple[str, str]] = set()
     for source in SOURCES:
         slugs: set[str] = set()
@@ -147,6 +145,13 @@ def validate_spec() -> None:
                     raise ValueError(f"Invalid latest-day rule: {identity}")
                 if rule["mode"] == "max" and not rule["column"]:
                     raise ValueError(f"Missing latest-day anchor: {identity}")
+                if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", dataset["latest_relation"]):
+                    raise ValueError(f"Relation name is not an identifier: {identity}")
+                if not all(isinstance(c, str) and c for c in _required_columns(dataset)):
+                    raise ValueError(f"Invalid declared column: {identity}")
+                default = dataset["default_filter"]
+                if default and default["column"] not in {d["column"] for d in dataset["dims"]}:
+                    raise ValueError(f"Default filter is not a dimension: {identity}")
 
 
 def _required_columns(dataset: dict[str, Any]) -> set[str]:
@@ -172,19 +177,30 @@ def _required_columns(dataset: dict[str, Any]) -> set[str]:
     return columns
 
 
-def _uk_date(column: str, types: dict[str, str]) -> str:
-    quoted = _quote(column)
+def _clock_kind(column: str, types: dict[str, str]) -> str | None:
     kind = types[column].upper()
     if kind == "DATE":
-        return quoted
-    if "WITH TIME ZONE" in kind or kind == "TIMESTAMPTZ":
-        return f"CAST(timezone('Europe/London', {quoted}) AS DATE)"
-    if kind.startswith("TIMESTAMP"):
-        # Naive timestamps are accepted only for the committed UTC-named clock.
-        if not column.endswith("_utc"):
-            raise ValueError(f"Naive timestamp has no verified UTC encoding: {column}")
-        return f"CAST(timezone('Europe/London', timezone('UTC', {quoted})) AS DATE)"
-    raise ValueError(f"Unsupported date column type: {column} {kind}")
+        return "date"
+    if kind == "TIMESTAMPTZ" or "WITH TIME ZONE" in kind:
+        return "aware"
+    # Naive timestamps are accepted only for the committed UTC-named clock.
+    if kind.startswith("TIMESTAMP") and column.endswith("_utc"):
+        return "naive_utc"
+    return None
+
+
+def _instant(column: str, types: dict[str, str]) -> str:
+    name = _quote(column)
+    return f"timezone('UTC', {name})" if _clock_kind(column, types) == "naive_utc" else name
+
+
+def _uk_day(column: str, types: dict[str, str]) -> str:
+    kind = _clock_kind(column, types)
+    if kind is None:
+        raise ValueError(f"Unsupported or unverified date column type: {column} {types[column]}")
+    if kind == "date":
+        return _quote(column)
+    return f"CAST(timezone('Europe/London', {_instant(column, types)}) AS DATE)"
 
 
 def _selected_sql(relation: str, dataset: dict[str, Any]) -> str:
@@ -223,13 +239,13 @@ def _coverage_sql(relation: str, dataset: dict[str, Any], types: dict[str, str])
     reference = dataset["kind"] == "reference"
     clock = dataset["clock"]
     day = (
-        _uk_date(clock["column"], types)
+        _uk_day(clock["column"], types)
         if not reference and clock and clock["column"]
         else "CAST(NULL AS DATE)"
     )
     rule = dataset["latest_day_rule"]
     anchor = (
-        _uk_date(rule["column"], types)
+        _uk_day(rule["column"], types)
         if not reference and rule["mode"] == "max"
         else "CAST(NULL AS DATE)"
     )
@@ -281,7 +297,6 @@ def _coverage(
 
 def build_manifest(client: Any, *, generated_at: datetime | None = None) -> dict[str, Any]:
     """Build one complete manifest using a single GridflowClient handle."""
-    validate_spec()
     generated_at = generated_at or _utc_now()
     tables = set(client.get_tables())
     schema = client.query(
@@ -311,7 +326,7 @@ def build_manifest(client: Any, *, generated_at: datetime | None = None) -> dict
                 candidate = dataset["base_relation"]
                 latest = dataset["latest_relation"]
                 if cause:
-                    if (candidate and candidate in tables) or (latest and latest in tables):
+                    if candidate in tables or latest in tables:
                         LOG.warning(
                             "Declared not held but catalogue relation exists: %s/%s (%s)",
                             source["key"],
@@ -320,7 +335,7 @@ def build_manifest(client: Any, *, generated_at: datetime | None = None) -> dict
                         )
                     public.update(held=False, relation=None, not_held_cause=cause, coverage=None)
                 else:
-                    selected = latest if latest and latest in tables else candidate
+                    selected = latest if latest in tables else candidate
                     types = columns.get(selected, {})
                     missing = _required_columns(dataset) - set(types)
                     invalid_dates = []
@@ -335,7 +350,7 @@ def build_manifest(client: Any, *, generated_at: datetime | None = None) -> dict
                                 date_columns.append(rule["column"])
                         for column in set(date_columns) - missing:
                             try:
-                                _uk_date(column, types)
+                                _uk_day(column, types)
                             except ValueError as exc:
                                 invalid_dates.append(str(exc))
                     if selected not in tables or missing or invalid_dates:
@@ -397,7 +412,6 @@ def _response(snapshot: dict[str, Any]) -> dict[str, Any]:
 def get_sources() -> dict[str, Any]:
     """Serve a fresh or stale complete snapshot, rebuilding lazily."""
     global _snapshot, _refreshed_at
-    validate_spec()
     now = time.monotonic()
     if _snapshot is not None and now - _refreshed_at < TTL_SECONDS:
         return _response(_snapshot)
@@ -420,3 +434,6 @@ def get_sources() -> dict[str, Any]:
         return _response(built)
     finally:
         _lock.release()
+
+
+validate_spec()
