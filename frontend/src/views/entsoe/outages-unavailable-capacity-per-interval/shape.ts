@@ -87,12 +87,6 @@ export function shapeOf(ctx: PageContext): OutageShape | undefined {
   return SHAPES[ctx.dataset.id]
 }
 
-/** Every field the shape knows, by id. */
-export function fieldsOf(shape: OutageShape): Map<string, Field> {
-  const all = [shape.name, shape.who, shape.type, ...shape.areas, shape.status].filter((f): f is Field => Boolean(f))
-  return new Map(all.map((f) => [f.field, f]))
-}
-
 // ---------------------------------------------------------------- values
 
 /** A block start (or any instant) with its year: blocks run years ahead of the window. */

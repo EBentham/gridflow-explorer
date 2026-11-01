@@ -75,11 +75,12 @@ export function useManifest(ds: DataSource): Load<Manifest> {
     }
   }, [ds, tick, version])
 
+  // Every failed answer is a new load, so each one re-arms the wait: a second refresh answer still asks again.
   useEffect(() => {
     if (load.state !== 'refreshing') return undefined
     const timer = window.setTimeout(() => setTick((n) => n + 1), REFRESH_RETRY_MS)
     return () => window.clearTimeout(timer)
-  }, [load.state])
+  }, [load])
 
   return load
 }

@@ -43,12 +43,17 @@ export function pointsOf(rows: WideRow[], field: string): Point[] {
   return out
 }
 
-/** The usual step between a series' held points (the median spacing); null with fewer than two. */
-export function stepOf(points: Point[]): number | null {
-  const held = points.filter((p) => p.v !== null)
-  const diffs = held
+/**
+ * The usual step between a series' points (the median spacing); null with
+ * fewer than two. `heldOnly` reads held values alone, for a dataset whose
+ * rows are gap-filled with nulls past its own data (transfer capacity);
+ * otherwise a null row is a step of the clock too (flows and schedules).
+ */
+export function stepOf(points: Point[], { heldOnly = false }: { heldOnly?: boolean } = {}): number | null {
+  const read = heldOnly ? points.filter((p) => p.v !== null) : points
+  const diffs = read
     .slice(1)
-    .map((p, i) => p.t - held[i].t)
+    .map((p, i) => p.t - read[i].t)
     .filter((d) => d > 0)
     .sort((a, b) => a - b)
   return diffs.length ? diffs[Math.floor(diffs.length / 2)] : null

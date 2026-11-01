@@ -79,7 +79,7 @@ const str = (v: Scalar | undefined): string | null => (typeof v === 'string' ? v
 function lineOf(model: SeriesModel, def: SeriesDef | undefined): Line | null {
   if (!def) return null
   const raw = pointsOf(model.rows, def.field)
-  const step = stepOf(raw)
+  const step = stepOf(raw, { heldOnly: true })
   return { def, points: withBreaks(raw, step), step }
 }
 
