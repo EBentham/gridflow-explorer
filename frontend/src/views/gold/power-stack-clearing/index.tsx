@@ -160,7 +160,6 @@ const view = defineView({
           Body: ClearingMain,
         },
         key: {
-          title: 'Key',
           src: (ctx) => (
             <SourceLine
               ctx={ctx}
@@ -229,7 +228,6 @@ const view = defineView({
           Body: ResidualMain,
         },
         key: {
-          title: 'Key',
           src: (ctx) => (
             <SourceLine
               ctx={ctx}
@@ -328,7 +326,6 @@ const view = defineView({
           Body: CurveMain,
         },
         key: {
-          title: 'Key',
           src: (ctx) => (
             <SourceLine
               ctx={ctx}

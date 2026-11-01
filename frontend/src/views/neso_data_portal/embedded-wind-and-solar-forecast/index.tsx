@@ -81,7 +81,6 @@ const view = defineView({
           Body: ForecastBody,
         },
         key: {
-          title: 'Key',
           src: (ctx) => (
             <SourceLine
               ctx={ctx}

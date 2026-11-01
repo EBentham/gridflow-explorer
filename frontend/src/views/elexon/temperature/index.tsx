@@ -66,7 +66,6 @@ const view = defineView({
           Body: SeriesBody,
         },
         key: {
-          title: 'Key',
           src: (ctx) => {
             const t = seriesOf(ctx.series, TEMP)
             // One day held gives no mean and no range, so the line names only what the key shows.

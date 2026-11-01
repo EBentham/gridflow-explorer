@@ -224,7 +224,8 @@ export type DatasetView = SeriesView | EventsView | ReferenceView
 
 /** A panel's content. The template draws the panel, its H2, the source line and any Fixture tag. */
 export interface SlotSpec {
-  title: string | ((ctx: PageContext) => string)
+  /** The panel's H2. Default: the body's own for that panel (`Key` for a series' key). */
+  title?: string | ((ctx: PageContext) => string)
   /** The source line: dataset id, columns, unit, window. Default: the dataset's own (`SourceLine`). */
   src?: (ctx: PageContext) => ReactNode
   Body: ComponentType<{ ctx: PageContext }>

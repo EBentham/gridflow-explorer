@@ -35,7 +35,6 @@ const comparable = (ctx: PageContext) => ctx.dataset.id === NDF || boundaryOf(ct
 
 const halfHourPanels: { key: SlotSpec; working: SlotSpec } = {
   key: {
-    title: 'Key',
     src: (ctx) => (
       <SourceLine
         ctx={ctx}
@@ -72,7 +71,6 @@ const halfHourPanels: { key: SlotSpec; working: SlotSpec } = {
 
 const dailyPanels: { key: SlotSpec; working: SlotSpec } = {
   key: {
-    title: 'Key',
     src: (ctx) => (
       <SourceLine
         ctx={ctx}

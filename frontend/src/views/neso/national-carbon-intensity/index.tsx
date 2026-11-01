@@ -70,7 +70,6 @@ const view = defineView({
           Body: IntensityMain,
         },
         key: {
-          title: 'Key',
           src: (ctx) => <SourceLine ctx={ctx} columns={[ACTUAL, FORECAST]} unit={UNIT} what={<>{GRADE} counted; the latest half-hour held, and the window’s range and means</>} />,
           Body: IntensityKey,
         },

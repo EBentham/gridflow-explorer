@@ -106,7 +106,7 @@ const view = defineView({
       controls: UnitControl,
       panels: {
         main: { title: mainTitle, src: mainSrc, Body: AvailabilityMain },
-        key: { title: 'Key', src: keySrc, Body: AvailabilityKey },
+        key: { src: keySrc, Body: AvailabilityKey },
         working: {
           title: (ctx) => (unitMissing(ctx) ? 'The days' : unitShown(ctx) && ctx.mode === 'chart' ? 'The days' : 'The days, and the units that change'),
           src: workingSrc,

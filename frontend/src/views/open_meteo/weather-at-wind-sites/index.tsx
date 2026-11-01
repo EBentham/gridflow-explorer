@@ -68,7 +68,6 @@ const view = defineView({
       chart: { mark: 'line', maxSeries: 12, height: 560, lower: { from: OUTPUT_KEY, mark: 'line', height: 190 } },
       panels: {
         key: {
-          title: 'Key',
           src: (ctx) => (
             <SourceLine ctx={ctx} columns={[SPEED]} by="location" unit="m/s" also={outputParts(ctx)} what="the latest hour, the mean of the sites and each site" />
           ),
@@ -115,7 +114,6 @@ const view = defineView({
       chart: { mark: 'line', maxSeries: 12, height: 700, lower: false },
       panels: {
         key: {
-          title: 'Key',
           src: (ctx) => <SourceLine ctx={ctx} columns={[SPEED]} by="location" unit="m/s" what="the latest hour, the mean of the sites and each site" />,
           Body: SitesKey,
         },

@@ -57,7 +57,6 @@ const panels: PanelSlots = {
     Body: PairBody,
   },
   key: {
-    title: 'Key',
     src: (ctx) => <SourceLine ctx={ctx} columns={[ownColumn(ctx), ISSUED]} filters={at(ctx)} unit="GW" also={otherPart(ctx, 'GW', false)} what="the latest half-hour, highest and lowest, and how far ahead each was issued" />,
     Body: PairKey,
   },

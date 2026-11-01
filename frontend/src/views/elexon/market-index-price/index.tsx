@@ -37,7 +37,6 @@ const view = defineView({
       chart: { mark: 'line', values: [PRICE], lower: false, belowZero: true, axisWidth: AXIS_WIDTH },
       panels: {
         key: {
-          title: 'Key',
           src: (ctx) => (
             <SourceLine ctx={ctx} columns={[PRICE, VOLUME]} filters={ctx.response?.filters} unit="£/MWh and MWh" what="the latest half-hour held, and the window's range, extremes and mean" />
           ),

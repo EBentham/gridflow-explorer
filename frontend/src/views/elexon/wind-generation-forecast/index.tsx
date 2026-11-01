@@ -54,7 +54,6 @@ const view = defineView({
       chart: { mark: 'line', extremes: true, lower: false, axisWidth: AXIS_WIDTH, height: 480 },
       panels: {
         key: {
-          title: 'Key',
           src: (ctx) => (
             <SourceLine
               ctx={ctx}

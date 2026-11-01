@@ -46,7 +46,6 @@ const view = defineView({
       chart: { mark: 'line', extremes: true, axisWidth: AXIS_WIDTH, lower: { from: TSD_KEY, mark: 'line' } },
       panels: {
         key: {
-          title: 'Key',
           src: (ctx) => {
             const t = seriesOf(ctx.related[TSD_KEY]?.series, ITSDO)
             return <SourceLine ctx={ctx} unit="GW" also={t ? relatedParts(ctx, [t], false) : []} what="the latest half-hour held, and the window's peak, trough, mean and gap" />
@@ -95,7 +94,6 @@ const view = defineView({
       chart: { mark: 'line' },
       panels: {
         key: {
-          title: 'Key',
           src: (ctx) => {
             // A custom key line drops the template's stamp, so name the latest half-hour here: the rows have gaps.
             const stamp = keyStamp(ctx)

@@ -128,7 +128,6 @@ const view = defineView({
           Body: WindSolarBody,
         },
         key: {
-          title: 'Key',
           src: (ctx) => <SourceLine ctx={ctx} columns={[FORECAST]} by={TYPE} filters={ctx.response?.filters} unit="GW" what="each type’s latest forecast held, then the window’s highest and lowest" />,
           Body: WindSolarKey,
         },
@@ -178,7 +177,6 @@ const view = defineView({
       panels: {
         main: { title: 'Total generation forecast per zone', src: mainSrc, Body: TotalBody },
         key: {
-          title: 'Key',
           src: (ctx) => (
             <SourceLine
               ctx={ctx}
@@ -227,7 +225,6 @@ const view = defineView({
           Body: UnitsBody,
         },
         key: {
-          title: 'Key',
           src: (ctx) => <SourceLine ctx={ctx} columns={[OUTPUT]} by={UNIT} filters={ctx.response?.filters} unit="MW" what="each drawn unit’s latest output held, then all units summed in GW" />,
           Body: UnitsKey,
         },

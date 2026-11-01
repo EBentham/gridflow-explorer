@@ -71,7 +71,6 @@ const view = defineView({
           Body: FuelMain,
         },
         key: {
-          title: 'Key',
           src: (ctx) => <SourceLine ctx={ctx} columns={[VALUE, ISSUED]} by={FUEL} filters={filters(ctx)} unit="GW" what="one delivery day by fuel, with its issue, and the window’s highest and lowest total" />,
           Body: FuelKey,
         },
@@ -130,7 +129,6 @@ const view = defineView({
           Body: UnitsMain,
         },
         key: {
-          title: 'Key',
           src: (ctx) => {
             const one = unitShown(ctx)
             if (one) return <SourceLine ctx={ctx} columns={[VALUE, ISSUED, FUEL]} by={UNIT} filters={filters(ctx)} unit="MW" what={`${one.id}: one day, its range and its issues`} />

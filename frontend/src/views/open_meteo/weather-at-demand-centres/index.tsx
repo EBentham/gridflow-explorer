@@ -78,7 +78,6 @@ const view = defineView({
       chart: { mark: 'line', values: [TEMP], lower: false, maxSeries: capFor(REANALYSIS_VALUES), axisWidth: AXIS_WIDTH },
       panels: {
         key: {
-          title: 'Key',
           src: (ctx) => <SourceLine ctx={ctx} columns={[TEMP, HDD, CDD]} by="location" unit="°C and K" what="each city’s latest reading, and the window across the seven" />,
           Body: WeatherKey,
         },
@@ -127,7 +126,6 @@ const view = defineView({
       chart: { mark: 'line', values: [TEMP], lower: false, maxSeries: capFor(HINDCAST_VALUES), axisWidth: AXIS_WIDTH },
       panels: {
         key: {
-          title: 'Key',
           src: (ctx) => <SourceLine ctx={ctx} columns={[TEMP, HDD, CDD]} by="location" unit="°C and K" what="each city’s latest reading, and the window across the seven" />,
           Body: WeatherKey,
         },

@@ -140,7 +140,7 @@ const view = defineView({
       controls: UnitControl,
       panels: {
         main: { title: mainTitle, src: mainSrc, Body: LevelsMain },
-        key: { title: 'Key', src: keySrc, Body: UnitsKey },
+        key: { src: keySrc, Body: UnitsKey },
         working: {
           title: (ctx) => (unitShown(ctx) ? (scatterShown(ctx) ? 'Level against price, and the days' : 'The days') : `The top ${unitCount(ctx)} units in this window`),
           src: workingSrc,

@@ -41,7 +41,6 @@ const zoneText = (ctx: PageContext) => {
 
 const panels: { key: SlotSpec; working: SlotSpec; side: SlotSpec } = {
   key: {
-    title: 'Key',
     src: (ctx) => (
       <SourceLine
         ctx={ctx}

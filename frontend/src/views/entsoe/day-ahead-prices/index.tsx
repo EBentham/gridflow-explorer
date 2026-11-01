@@ -71,7 +71,6 @@ const view = defineView({
           Body: ZonesBody,
         },
         key: {
-          title: 'Key',
           src: (ctx) => (
             <SourceLine ctx={ctx} columns={[PRICE]} by={AREA} filters={ctx.response?.filters} unit="€/MWh" also={gbParts(ctx, false)} what="each zone's latest price held, and the window's extremes" />
           ),

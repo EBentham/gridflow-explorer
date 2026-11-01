@@ -59,7 +59,7 @@ const view = defineView({
       ],
       chart: { mark: 'line', values: [GTI], zero: true, extremes: false, maxSeries: 30, axisWidth: AXIS_WIDTH, lower: { from: OUTPUT_KEY, mark: 'line' } },
       panels: {
-        key: { title: 'Key', src: (ctx) => keySrc(ctx, OUTPUT_KEY, SOLAR_MW), Body: SiteKey },
+        key: { src: (ctx) => keySrc(ctx, OUTPUT_KEY, SOLAR_MW), Body: SiteKey },
         working: {
           title: 'Irradiation per day, beside GB solar generation',
           src: (ctx) => {
@@ -105,7 +105,7 @@ const view = defineView({
       ],
       chart: { mark: 'line', values: [GTI], zero: true, extremes: false, maxSeries: 30, axisWidth: AXIS_WIDTH, lower: { from: ARCHIVE_KEY, mark: 'line' } },
       panels: {
-        key: { title: 'Key', src: (ctx) => keySrc(ctx, ARCHIVE_KEY, GTI), Body: SiteKey },
+        key: { src: (ctx) => keySrc(ctx, ARCHIVE_KEY, GTI), Body: SiteKey },
         working: {
           title: 'The re-run against the archive',
           src: (ctx) => {

@@ -96,7 +96,6 @@ const view = defineView({
           Body: OfferedBody,
         },
         key: {
-          title: 'Key',
           src: (ctx) => (
             <SourceLine
               ctx={ctx}

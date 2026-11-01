@@ -37,7 +37,6 @@ const panels: PanelSlots = {
     Body: MarginBody,
   },
   key: {
-    title: 'Key',
     src: (ctx) => <SourceLine ctx={ctx} columns={columns} unit="GW; probability 0 to 1" what="the latest half-hour, highest and lowest, and how far ahead each was issued" />,
     Body: MarginKey,
   },
