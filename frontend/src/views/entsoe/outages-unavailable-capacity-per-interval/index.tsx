@@ -93,7 +93,6 @@ const view = defineView({
         'The MW figure here may be the capacity left, not the capacity out: measured against each unit’s rated capacity, full outages mostly show 0 MW.',
         'About 40% of the generation notices gridflow fetched were cancelled, and these rows have no status column to tell which: any row may be a withdrawn plan.',
         'Where two notices give one unit a block at the same start, only the newer shows.',
-        'GB’s units appear only in notices published 2 to 6 October 2025: set the window there to read them.',
       ],
       ...table('outages_generation'),
     },
@@ -139,7 +138,6 @@ const view = defineView({
       body: 'events',
       label: 'Offshore grid',
       title: 'Outage blocks on offshore grids',
-      caveats: ['Every answer gridflow had from ENTSO-E for offshore grid outages, from 1 August to 14 September 2026, was empty.'],
     },
   ],
 })
