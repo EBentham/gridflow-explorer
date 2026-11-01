@@ -6,7 +6,8 @@ template fix would serve both pages.
 
 ## Template
 
-1. **A related read can't follow the page's URL parameters.** `RelatedSpec.query` is static.
+1. **The beside reads don't follow the page's in area.** `RelatedSpec.query` can now be a
+   function of the page's parameters; this page hasn't taken it up.
    - The page reads borders one in area at a time (`?in=`) and draws the family's other
      measures beside each border: allocated and nominated beside the net transfer capacity,
      the net transfer capacity beside the others. The beside reads are pinned to GB's
@@ -14,24 +15,20 @@ template fix would serve both pages.
      continental pairs, and the GB reads are still made.
    - Meanwhile: a beside line is drawn only when its read shares the page's in area, and
      the main panel says why it isn't otherwise.
-   - Wanted: `query` on `RelatedSpec` as a function of the parameters.
+   - Wanted: the beside reads on `borderQuery(...)`, with the model's beside state
+     following them.
 
 2. **Rows that aren't gap-filled, and `SeriesChart` drawing a sparse series across a hole.**
    `total_nominated_capacity` (hourly on GB's borders, 15 minutes on France–Germany/
    Luxembourg) and `dc_link_intraday_transfer_limits` (published only when a limit is set)
    come with `grain_ms: null`. The limits on 1 Aug and 5 Aug would be drawn as one line.
    - Meanwhile: each line's step is read from its own held points, and a null is placed
-     one step after each value the next doesn't follow within a step (`figures.ts`,
-     `withBreaks`). Held values with nothing either side are counted under the chart
+     one step after each value the next doesn't follow within a step
+     (`_template/lineClock.ts`, `withBreaks`). Held values with nothing either side are counted under the chart
      (`aloneIn`) and listed in the Table view.
-   - Wanted: a per-series step in the model, breaks at missing steps in `SeriesChart`,
-     and a dot for a lone held value on any clock.
-
-3. **Helpers copied from the flows page.** `figures.ts` and `words.ts` here are trimmed
-   copies of the flows page's (per-line step, breaks, per-day tallies against a line's
-   own clock, cadence and missing-step sentences). No page imports another family's
-   folder, so they were copied. Wanted: promote them to `_template/` (a per-line clock
-   module) so both pages read one copy.
+   - Wanted: breaks at missing steps in `SeriesChart`, and a dot for a lone held value on
+     any clock. (The model's per-series step, `SeriesDef.stepMs`, takes the smallest held
+     spacing, which the DC link limits would defeat; this page keeps the median.)
 
 4. **One split column only.** A border is two columns (in and out area); read whole, every
    dataset here answers `ambiguous_series`. The page reads one in area at a time with a

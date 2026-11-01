@@ -2,18 +2,18 @@
  * ENTSO-E's outage notices (v0.4 P4): planned outages of generation units,
  * production units, cross-border transmission assets and consumption, each
  * as a table of availability blocks (a start and a MW figure) dated by when
- * the notice was published. The page draws its own table (block starts name
- * their year and sort as times), a key of counts, a per-unit working panel,
- * and About with a line on its dates. Nothing adds the MW figure up: whether
+ * the notice was published. The template's events table (block starts name
+ * their year), a key of counts, a per-unit working panel, and About with a
+ * line on its dates. Nothing adds the MW figure up: whether
  * it is the capacity out or the capacity left is unsettled.
  */
 import { instantLabel } from '../../../design/time'
+import { EventsBody } from '../../_template/EventsBody'
 import { SourceLine } from '../../_template/panels'
-import { defineView, type PanelSlots, type PageContext } from '../../define'
+import { defineView, type EventsView, type PanelSlots, type PageContext } from '../../define'
 import { AboutOutages } from './AboutOutages'
 import { OutagesKey } from './OutagesKey'
-import { OutagesTable } from './OutagesTable'
-import { MW, START, shapeOf } from './shape'
+import { MW, SHAPES, START, columnsOf, shapeOf } from './shape'
 import { UnitsPanel } from './UnitsPanel'
 
 const UNIT = 'MW, meaning unconfirmed'
@@ -36,7 +36,7 @@ const PANELS: PanelSlots = {
         }
       />
     ),
-    Body: OutagesTable,
+    Body: EventsBody,
   },
   key: {
     title: 'In this window',
@@ -64,6 +64,15 @@ const PANELS: PanelSlots = {
   },
 }
 
+/** Each outage table's columns and filters, newest publication first, with a strip of blocks published per period. */
+const table = (id: string): Pick<EventsView, 'timeLabel' | 'columns' | 'filters' | 'strip' | 'panels'> => ({
+  timeLabel: 'Published',
+  columns: columnsOf(SHAPES[id]),
+  filters: SHAPES[id].filters,
+  strip: true,
+  panels: PANELS,
+})
+
 const view = defineView({
   title: 'Outages, unavailable capacity per interval',
   sub: 'ENTSO-E’s notices of planned outages at power stations, cross-border lines and consumers, each as blocks with a start and a MW figure, dated by when the notice was published.',
@@ -84,10 +93,8 @@ const view = defineView({
         'The MW figure here may be the capacity left, not the capacity out: measured against each unit’s rated capacity, full outages mostly show 0 MW.',
         'About 40% of the generation notices gridflow fetched were cancelled, and these rows have no status column to tell which: any row may be a withdrawn plan.',
         'Where two notices give one unit a block at the same start, only the newer shows.',
-        'GB’s units appear only in notices published 2 to 6 October 2025: set the window there to read them.',
       ],
-      strip: true,
-      panels: PANELS,
+      ...table('outages_generation'),
     },
     {
       id: 'outages_transmission',
@@ -100,22 +107,20 @@ const view = defineView({
         'A few of the blocks held are cancelled; when a window holds any, filter Status to leave them out. A blank status is a notice that states none.',
         'No capacity is published beside these figures, so whether they are the capacity out or left can’t be checked against the asset.',
       ],
-      strip: true,
-      panels: PANELS,
+      ...table('outages_transmission'),
     },
     {
       id: 'outages_production',
       body: 'events',
       label: 'Production units',
       title: 'Outage blocks at production units',
-      sub: 'ENTSO-E’s notices of planned outages at production units in the Netherlands, Germany-Luxembourg and France, dated by when the notice was published.',
+      sub: 'ENTSO-E’s notices of planned outages at production units in the Netherlands, Germany / Luxembourg and France, dated by when the notice was published.',
       caveats: [
         'Measured against each unit’s rated capacity, the MW figure here reads more like the capacity left than the capacity out.',
         'About two thirds of the blocks held are cancelled (status Cancelled); filter Status to leave them out. A blank status is a notice that states none.',
-        'No GB units: these rows cover the Netherlands, Germany-Luxembourg and France. For many areas ENTSO-E’s production units overlap its generation units.',
+        'No GB units: these rows cover the Netherlands, Germany / Luxembourg and France. For many areas ENTSO-E’s production units overlap its generation units.',
       ],
-      strip: true,
-      panels: PANELS,
+      ...table('outages_production'),
     },
     {
       id: 'outages_consumption',
@@ -124,17 +129,15 @@ const view = defineView({
       title: 'Outage blocks at consumption units',
       sub: 'ENTSO-E’s planned unavailability of consumption units, per area and quarter-hour, dated by when it was published.',
       caveats: [
-        'This one comes on a regular 15-minute clock, almost all Germany-Luxembourg and near flat. It is dated here by publication, so a fortnight of quarter-hours lands on the day ENTSO-E sent it; sort by Block starts to read it in order.',
+        'This one comes on a regular 15-minute clock, almost all Germany / Luxembourg and near flat. It is dated here by publication, so a fortnight of quarter-hours lands on the day ENTSO-E sent it; sort by Block starts to read it in order.',
       ],
-      strip: true,
-      panels: PANELS,
+      ...table('outages_consumption'),
     },
     {
       id: 'outages_offshore_grid',
       body: 'events',
       label: 'Offshore grid',
       title: 'Outage blocks on offshore grids',
-      caveats: ['Every answer gridflow had from ENTSO-E for offshore grid outages, from 1 August to 14 September 2026, was empty.'],
     },
   ],
 })

@@ -23,10 +23,11 @@ import { relatedParts } from '../../_template/panelHelpers'
 import { About, SourceLine } from '../../_template/panels'
 import type { PageContext } from '../../define'
 import { defineView } from '../../define'
-import { AREA, AXIS_WIDTH, GB_KEY, GB_PRICE, GROUPS, PRICE, seriesOf } from './figures'
+import { AREA, AXIS_WIDTH, GB_KEY, GB_PRICE, GROUPS, PRICE } from './figures'
 import { ZoneKey } from './ZoneKey'
 import { ZonesBody } from './ZonesBody'
 import { ZonesPanel } from './ZonesPanel'
+import { seriesOf } from '../../_template/seriesModel'
 
 /** The GB benchmark's part of a source line, once it is read. */
 function gbParts(ctx: PageContext, withColumns: boolean) {
@@ -70,7 +71,6 @@ const view = defineView({
           Body: ZonesBody,
         },
         key: {
-          title: 'Key',
           src: (ctx) => (
             <SourceLine ctx={ctx} columns={[PRICE]} by={AREA} filters={ctx.response?.filters} unit="€/MWh" also={gbParts(ctx, false)} what="each zone's latest price held, and the window's extremes" />
           ),

@@ -16,18 +16,18 @@ import { SeriesBody } from '../../_template/SeriesBody'
 import type { SeriesModel, WideRow } from '../../_template/seriesModel'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
-import { CI, CI_LABEL, FUELS, seriesOf } from './fuels'
+import { CI, CI_LABEL, FUELS, WIND_HATCH_ID } from './fuels'
 import { LongChart } from './LongChart'
 import { clockOf, heldText, periodName, periodsOf, periodText, pointKindOf, rowKindOf, stepsText, type Clock, type Period } from './periods'
-import { WindHatch } from './WindHatch'
-
-const dash = <span className="gf-cell-missing">–</span>
+import { seriesOf } from '../../_template/seriesModel'
+import { dashCell } from '../../_template/cells'
+import { FuelHatch } from '../../../design/charts'
 
 function LongTable({ ctx, periods, stepWords }: { ctx: PageContext; periods: Period[]; stepWords: string }) {
   const model = ctx.series as SeriesModel
   const gw = seriesOf(model, 'gas')?.unit
   const ci = seriesOf(model, CI)?.unit
-  const num = (v: number | null, plain?: (x: number) => string) => (v === null || !plain ? dash : plain(v))
+  const num = (v: number | null, plain?: (x: number) => string) => (v === null || !plain ? dashCell : plain(v))
   const kind = periods[0]?.kind ?? 'day'
   const gwLabel = gw?.label ?? 'unit unconfirmed'
   const columns: TableCol<Period>[] = [
@@ -115,7 +115,7 @@ export function MixBody({ ctx }: { ctx: PageContext }) {
     const extremes = ctx.series && ctx.state === 'data' && ctx.mode !== 'table' ? ciExtremesText(ctx.series) : ''
     return (
       <>
-        <WindHatch />
+        <FuelHatch id={WIND_HATCH_ID} token="var(--fuel-wind)" />
         <SeriesBody ctx={ctx} />
         {extremes && <p className="gf-hint">{extremes}</p>}
       </>
@@ -123,7 +123,7 @@ export function MixBody({ ctx }: { ctx: PageContext }) {
   }
   return (
     <>
-      <WindHatch />
+      <FuelHatch id={WIND_HATCH_ID} token="var(--fuel-wind)" />
       <LongBody ctx={ctx} window={ctx.window} clock={clock} />
     </>
   )

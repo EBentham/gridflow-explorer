@@ -9,7 +9,8 @@ import { KeyList } from '../../../design/charts'
 import { DAY_MS, HOUR_MS, instantLabel, windowDomain } from '../../../design/time'
 import { isoDayText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { MW, START, activeFilters, applyFilters, rowsOf, shapeOf, startMs, withYear } from './shape'
+import { activeFilters, applyFilters } from '../../_template/filters'
+import { MW, START, rowsOf, shapeOf, startMs, withYear } from './shape'
 
 const n = (v: number) => v.toLocaleString('en-GB')
 
@@ -30,7 +31,7 @@ export function OutagesKey({ ctx }: { ctx: PageContext }) {
     )
   }
 
-  const active = activeFilters(ctx, shape)
+  const active = activeFilters(ctx, shape.filters)
   const rows = applyFilters(all, active)
   if (!rows.length) return <p className="gf-hint">No outage block in this window matches the table’s filters.</p>
 

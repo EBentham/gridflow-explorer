@@ -11,8 +11,9 @@ import { SeriesChart } from '../../_template/SeriesChart'
 import { ErrorWords } from '../../_template/panels'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { MW, PRICE_KEY, flatLevel, focusedLine, linePanel, priceCover, pricePanel, priceSeries, stackPanel, unitLines, unitShown } from './figures'
+import { PRICE_KEY, flatLevel, focusedLine, linePanel, priceCover, pricePanel, priceSeries, stackPanel, unitLines, unitShown } from './figures'
 import { LevelsTable } from './LevelsTable'
+import { MW } from '../../_template/units'
 
 export function LevelsMain({ ctx }: { ctx: PageContext }) {
   if (ctx.mode === 'table') return <LevelsTable ctx={ctx} />

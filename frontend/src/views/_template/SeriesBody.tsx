@@ -18,8 +18,7 @@ import { planPanels } from './seriesPanels'
 import { meansText } from './text'
 import { displayUnit } from './units'
 import { WindowedTable, type TableCol } from './WindowedTable'
-
-const dash = <span className="gf-cell-missing">–</span>
+import { dashCell } from './cells'
 
 /** Past this many series the table goes long: one row per time and group. */
 const WIDE_MAX = 12
@@ -48,8 +47,8 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
   const period: TableCol<{ t: number }> = { key: 't', label: model.bucketed ? 'Period (means)' : 'Period', render: (r) => periodLabel(r.t, model.stepMs), sortValue: (r) => r.t }
   const settlementCols: TableCol<{ t: number }>[] = hasSettlement
     ? [
-        { key: 'sd', label: 'Settlement date', render: (r) => settlement.get(r.t)?.settlement_date ?? dash, sortValue: (r) => settlement.get(r.t)?.settlement_date ?? null },
-        { key: 'sp', label: 'SP', num: true, render: (r) => settlement.get(r.t)?.settlement_period ?? dash, sortValue: (r) => settlement.get(r.t)?.settlement_period ?? null },
+        { key: 'sd', label: 'Settlement date', render: (r) => settlement.get(r.t)?.settlement_date ?? dashCell, sortValue: (r) => settlement.get(r.t)?.settlement_date ?? null },
+        { key: 'sp', label: 'SP', num: true, render: (r) => settlement.get(r.t)?.settlement_period ?? dashCell, sortValue: (r) => settlement.get(r.t)?.settlement_period ?? null },
       ]
     : []
   const drawnRelated = planPanels(ctx)
@@ -90,7 +89,7 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
         num: true,
         render: (r: (typeof model.rows)[number]) => {
           const v = r[d.field]
-          return typeof v === 'number' ? d.unit.plain(v) : dash
+          return typeof v === 'number' ? d.unit.plain(v) : dashCell
         },
         sortValue: (r: (typeof model.rows)[number]) => {
           const v = r[d.field]
@@ -103,7 +102,7 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
         num: true,
         render: (r: (typeof model.rows)[number]) => {
           const v = relatedValue(d.from, d.field, r.t)
-          return v === null ? dash : d.unit.plain(v)
+          return v === null ? dashCell : d.unit.plain(v)
         },
         sortValue: (r: (typeof model.rows)[number]) => relatedValue(d.from, d.field, r.t),
       })),
@@ -112,7 +111,7 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
         label: textHeader(c.column),
         render: (r: (typeof model.rows)[number]) => {
           const v = texts.get(r.t)?.[c.column]
-          return v === null || v === undefined ? dash : String(v)
+          return v === null || v === undefined ? dashCell : String(v)
         },
         sortValue: (r: (typeof model.rows)[number]) => {
           const v = texts.get(r.t)?.[c.column]
@@ -130,8 +129,8 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
     { ...period, render: (r) => periodLabel(r.ts, model.stepMs), sortValue: (r) => r.ts } as TableCol<SeriesRow>,
     ...(hasSettlement
       ? [
-          { key: 'sd', label: 'Settlement date', render: (r: SeriesRow) => r.settlement_date ?? dash, sortValue: (r: SeriesRow) => r.settlement_date ?? null },
-          { key: 'sp', label: 'SP', num: true, render: (r: SeriesRow) => r.settlement_period ?? dash, sortValue: (r: SeriesRow) => r.settlement_period ?? null },
+          { key: 'sd', label: 'Settlement date', render: (r: SeriesRow) => r.settlement_date ?? dashCell, sortValue: (r: SeriesRow) => r.settlement_date ?? null },
+          { key: 'sp', label: 'SP', num: true, render: (r: SeriesRow) => r.settlement_period ?? dashCell, sortValue: (r: SeriesRow) => r.settlement_period ?? null },
         ]
       : []),
     ...(group
@@ -141,7 +140,7 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
             label: <code>{group}</code>,
             render: (r: SeriesRow) => {
               const v = r[group]
-              if (v === null || v === undefined) return dash
+              if (v === null || v === undefined) return dashCell
               return groupLabels.get(String(v)) ?? <code>{String(v)}</code>
             },
             sortValue: (r: SeriesRow) => (r[group] === null || r[group] === undefined ? null : String(r[group])),
@@ -159,7 +158,7 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
       num: true,
       render: (r: SeriesRow) => {
         const v = r[c.column]
-        return typeof v === 'number' ? unit.plain(v * unit.factor) : dash
+        return typeof v === 'number' ? unit.plain(v * unit.factor) : dashCell
       },
       sortValue: (r: SeriesRow) => {
         const v = r[c.column]
@@ -169,7 +168,7 @@ function SeriesTable({ ctx }: { ctx: PageContext }) {
     ...model.textColumns.map((c) => ({
       key: c.column,
       label: textHeader(c.column),
-      render: (r: SeriesRow) => (r[c.column] === null || r[c.column] === undefined ? dash : String(r[c.column])),
+      render: (r: SeriesRow) => (r[c.column] === null || r[c.column] === undefined ? dashCell : String(r[c.column])),
       sortValue: (r: SeriesRow) => (r[c.column] === null || r[c.column] === undefined ? null : String(r[c.column])),
     })),
   ]

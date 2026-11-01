@@ -11,7 +11,8 @@ import { SeriesKey } from '../../_template/panels'
 import { extremesOf, periodName } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { joinZone, pairOf, sameClock, signedMw, zoneDef, zoneInView, zoneName } from './figures'
+import { joinForecast, sameClock, signedMw } from '../../_template/forecastError'
+import { pairOf, zoneDef, zoneInView, zoneName } from './figures'
 
 export function ZoneKey({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
@@ -21,7 +22,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
   const { actual, forecast, ownIsActual } = pairOf(ctx)
   const aDef = zoneDef(actual, zone)
   const fDef = zoneDef(forecast, zone)
-  const join = actual && forecast && aDef && fDef && sameClock(actual, forecast) ? joinZone(actual, aDef, forecast, fDef) : null
+  const join = actual && forecast && aDef && fDef && sameClock(actual, forecast) ? joinForecast(forecast, fDef, actual, aDef) : null
   const ex = extremesOf(model.rows, own)
   const step = model.stepMs
   const when = (t: number) => periodName(t, step, model.settlement)

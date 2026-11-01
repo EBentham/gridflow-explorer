@@ -15,7 +15,8 @@ import { periodLabel } from '../../../design/time'
 import type { PageContext, SlotSpec } from '../../define'
 import { defineView } from '../../define'
 import { AboutLoad } from './AboutLoad'
-import { ACTUAL, ACTUAL_ID, ACTUAL_KEY, AREA, AXIS_WIDTH, FORECAST, FORECAST_ID, FORECAST_KEY, ZONES, zoneInView, zoneName } from './figures'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
+import { ACTUAL, ACTUAL_ID, ACTUAL_KEY, AREA, FORECAST, FORECAST_ID, FORECAST_KEY, ZONES, zoneInView, zoneName } from './figures'
 import { ForecastPanel } from './ForecastPanel'
 import { ZoneKey } from './ZoneKey'
 
@@ -40,7 +41,6 @@ const zoneText = (ctx: PageContext) => {
 
 const panels: { key: SlotSpec; working: SlotSpec; side: SlotSpec } = {
   key: {
-    title: 'Key',
     src: (ctx) => (
       <SourceLine
         ctx={ctx}
@@ -81,7 +81,7 @@ const view = defineView({
   title: 'Load, actual and forecast',
   sub: 'How much electricity four of GB’s continental neighbours drew each quarter-hour, and the forecast of it published the day before.',
   caveats: [
-    'The four zones are Germany-Luxembourg, France, the Netherlands and Belgium. ENTSO-E hasn’t published GB’s load since Brexit, so GB isn’t here; they matter to GB through the interconnectors, and About links GB’s own demand.',
+    'The four zones are Germany / Luxembourg, France, the Netherlands and Belgium. ENTSO-E hasn’t published GB’s load since Brexit, so GB isn’t here; they matter to GB through the interconnectors, and About links GB’s own demand.',
     'Each quarter-hour holds one day-ahead forecast, as ENTSO-E showed it when gridflow fetched it. Earlier versions aren’t kept, and the rows don’t say when the forecast was made.',
     'The chart reads the zones on the UK clock, an hour behind their own Central European time: 19:00 there reads 18:00 here.',
     'In every window held, the Netherlands’ actual load runs well below its day-ahead forecast, where the other three zones miss by a few per cent. The gap varies in size: about a fifth of its load in September, about two-fifths in the early-August days. The rows don’t say why, so that gap may not be the forecast’s miss alone.',

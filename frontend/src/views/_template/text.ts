@@ -92,8 +92,7 @@ function badRange(message: string): string {
  * - 413 `result_too_large`: too many rows, by its `reason`;
  * - 422 `ambiguous_series`: the columns that vary within one series, which
  *   the page's config must split or filter by (README, "Series");
- * - 422 `bad_range`, `bad_filter`, `bad_group`, `bad_identifier`,
- *   `window_unavailable`;
+ * - 422 `bad_range`, `bad_filter`, `bad_group`, `window_unavailable`;
  * - 404 `unknown_dataset`, with why it isn't held when the backend says;
  * - 503 `catalogue_missing`, and `refresh_in_progress` (the page shows its
  *   refreshing state instead, and asks again);
@@ -127,8 +126,6 @@ export function errorParts(error: ApiError | null): ErrorPart[] {
       return ["This page asks for a filter the dataset can't take, so nothing was read. The page's settings need fixing."]
     case 'bad_group':
       return ["This page asks to split the dataset by a column it can't be split by, so nothing was read. The page's settings need fixing."]
-    case 'bad_identifier':
-      return ["gridflow's description of this dataset doesn't match its table, so it can't be read."]
     case 'window_unavailable':
       return ['The dataset holds no dated rows, so there is no latest day to end the window on.']
     case 'unknown_dataset':

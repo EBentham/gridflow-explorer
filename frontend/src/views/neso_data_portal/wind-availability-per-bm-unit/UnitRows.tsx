@@ -5,7 +5,8 @@
  */
 import { instantLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
-import { GW, MW, captureFrom, dayText, signedMw, type Unit } from './figures'
+import { GW, captureFrom, dayText, signedMw, type Unit } from './figures'
+import { MW } from '../../_template/units'
 
 export function UnitRows({ ctx, unit }: { ctx: PageContext; unit: Unit }) {
   const cap = captureFrom(ctx)

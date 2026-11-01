@@ -25,7 +25,6 @@ import { FuelDays } from './FuelDays'
 import { FuelKey } from './FuelKey'
 import { FuelMain } from './FuelMain'
 import { FOU, FUEL, FUEL_KEY, ISSUED, NG_UNIT, UNIT, VALUE, daysOf, heldShape, unitShown } from './figures'
-import { HorizonControl } from './HorizonControl'
 import { UnitControl } from './UnitControl'
 import { UnitsCompare } from './UnitsCompare'
 import { UnitsKey } from './UnitsKey'
@@ -60,7 +59,6 @@ const view = defineView({
       ],
       values: [{ column: VALUE, label: 'Usable output forecast' }],
       chart: { mark: 'stacked', maxSeries: 30, lower: false, axisWidth: 52 },
-      controls: HorizonControl,
       panels: {
         main: {
           title: (ctx) => (ctx.mode === 'table' ? 'Each fuel code, each delivery day' : 'Usable output forecast by fuel'),
@@ -73,7 +71,6 @@ const view = defineView({
           Body: FuelMain,
         },
         key: {
-          title: 'Key',
           src: (ctx) => <SourceLine ctx={ctx} columns={[VALUE, ISSUED]} by={FUEL} filters={filters(ctx)} unit="GW" what="one delivery day by fuel, with its issue, and the window’s highest and lowest total" />,
           Body: FuelKey,
         },
@@ -132,7 +129,6 @@ const view = defineView({
           Body: UnitsMain,
         },
         key: {
-          title: 'Key',
           src: (ctx) => {
             const one = unitShown(ctx)
             if (one) return <SourceLine ctx={ctx} columns={[VALUE, ISSUED, FUEL]} by={UNIT} filters={filters(ctx)} unit="MW" what={`${one.id}: one day, its range and its issues`} />

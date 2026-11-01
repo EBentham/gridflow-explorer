@@ -13,16 +13,18 @@
  *   clock, then the days with the issues behind them.
  * - Side: the template's About.
  *
- * The other dataset is read split by boundary rather than filtered to one:
- * a dataset read beside the page can't follow the page's boundary (see
- * NEEDS.md), so the page picks the boundary's series from it.
+ * Both reads follow the page's boundary.
  */
+import { BOUNDARY, boundaryOf, boundaryQuery } from '../../_template/boundaries'
+import { BoundaryControl } from '../../_template/BoundaryControl'
+import { ISSUED } from '../../_template/issues'
+import { OTHER_KEY } from '../../_template/issuePair'
 import { SourceLine } from '../../_template/panels'
 import type { SourcePart } from '../../_template/panelHelpers'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 import type { DatasetView, PageContext, PanelSlots, RelatedSpec } from '../../define'
 import { defineView } from '../../define'
-import { BoundaryControl } from './BoundaryControl'
-import { AXIS_WIDTH, BOUNDARIES, BOUNDARY, BOUNDARY_PARAM, COLORS, DEMAND, GENERATION, INDDEM, INDGEN, ISSUED, NATIONAL_BOUNDARY, OTHER_KEY, boundaryOf } from './figures'
+import { COLORS, DEMAND, GENERATION, INDDEM, INDGEN } from './figures'
 import { IssuePanel } from './IssuePanel'
 import { PairBody } from './PairBody'
 import { PairKey } from './PairKey'
@@ -31,7 +33,7 @@ const ownColumn = (ctx: PageContext) => (ctx.dataset.id === INDDEM ? DEMAND : GE
 const otherColumn = (ctx: PageContext) => (ctx.dataset.id === INDDEM ? GENERATION : DEMAND)
 const at = (ctx: PageContext) => ({ [BOUNDARY]: boundaryOf(ctx) })
 
-/** The other dataset in a source line: split by boundary as read, the page's boundary picked from it. */
+/** The other dataset in a source line, at the page's boundary. */
 function otherPart(ctx: PageContext, unit: string, columns = true): SourcePart[] {
   const rel = ctx.related[OTHER_KEY]
   if (!rel) return []
@@ -55,7 +57,6 @@ const panels: PanelSlots = {
     Body: PairBody,
   },
   key: {
-    title: 'Key',
     src: (ctx) => <SourceLine ctx={ctx} columns={[ownColumn(ctx), ISSUED]} filters={at(ctx)} unit="GW" also={otherPart(ctx, 'GW', false)} what="the latest half-hour, highest and lowest, and how far ahead each was issued" />,
     Body: PairKey,
   },
@@ -75,29 +76,24 @@ const panels: PanelSlots = {
   },
 }
 
-const query = (params: URLSearchParams) => {
-  const b = params.get(BOUNDARY_PARAM)
-  return { filters: { [BOUNDARY]: b && BOUNDARIES.includes(b) ? b : NATIONAL_BOUNDARY } }
-}
-
 const generation: RelatedSpec = {
   key: OTHER_KEY,
   source: 'elexon',
   dataset: INDGEN,
-  label: 'Indicated generation, every boundary',
-  query: { group: BOUNDARY },
+  label: 'Indicated generation',
+  query: boundaryQuery,
   values: [{ column: GENERATION, label: 'Indicated generation', color: COLORS.generation }],
 }
 const demand: RelatedSpec = {
   key: OTHER_KEY,
   source: 'elexon',
   dataset: INDDEM,
-  label: 'Indicated demand, every boundary',
-  query: { group: BOUNDARY },
+  label: 'Indicated demand',
+  query: boundaryQuery,
   values: [{ column: DEMAND, label: 'Indicated demand, as held (negative)', color: COLORS.demand }],
 }
 
-const common: Pick<DatasetView, 'controls' | 'panels' | 'query'> = { controls: BoundaryControl, panels, query }
+const common: Pick<DatasetView, 'controls' | 'panels' | 'query'> = { controls: BoundaryControl, panels, query: boundaryQuery }
 
 const view = defineView({
   title: 'Indicated demand and generation',

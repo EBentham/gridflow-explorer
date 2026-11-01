@@ -5,15 +5,16 @@ does meanwhile.
 
 ## Template
 
-1. **A related read can't follow the page's URL parameters.** `RelatedSpec.query` is static
-   (`define.ts`), while the page's own `query` can be a function of the parameters.
+1. **The beside read doesn't follow the page's in area.** `RelatedSpec.query` can now be a
+   function of the page's parameters, as the dataset's own can; this page hasn't taken it up.
    - The page reads borders one in area at a time (`?in=`), and draws each GB border's
      schedule beside its flow (and the flow beside its schedule). The beside read is pinned
      to GB's borders, so with France or the Netherlands as the in area nothing is drawn
      beside the continental pairs, and the GB read is still made.
    - Meanwhile: the page draws the beside line only when the two reads share an in area,
      and says why it doesn't otherwise.
-   - Wanted: `query` on `RelatedSpec` as a function of the parameters, as on the dataset.
+   - Wanted: the beside read on `borderQuery(IN_AREAS)`, with the model's beside state
+     following it.
 
 2. **Mixed-clock rows aren't gap-filled, and `SeriesChart` draws a sparse series straight
    across a hole.** `cross_border_flows` and `commercial_schedules` have `grain_ms: null`
@@ -22,8 +23,10 @@ does meanwhile.
    stops at 11:00 on 20 Sep and would be drawn through to the next day).
    - Meanwhile: the page reads each line's step from its own points (their median
      spacing) and places a null one step after each held value that the next doesn't
-     follow within a step, so the line breaks there (`figures.ts`, `withBreaks`).
-   - Wanted: a per-series step in the model, and breaks at missing steps in `SeriesChart`.
+     follow within a step, so the line breaks there (`_template/lineClock.ts`, `withBreaks`).
+   - Wanted: breaks at missing steps in `SeriesChart`. The model now has a per-series step
+     (`SeriesDef.stepMs`, the smallest held spacing); this page keeps the line clock's median,
+     which a sparse series needs.
    - With the breaks, a value with nothing held a step either side on its own line draws
      nothing: `SeriesChart` dots a line's values only on a clock of a day or longer
      (`dots`), so on an hourly or 15-minute line no mark is left for it. Meanwhile: the

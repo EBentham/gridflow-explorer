@@ -6,12 +6,15 @@
  * the mean miss. Every figure comes from the rows read.
  */
 import { KeyList, type KeyItem } from '../../../design/charts'
-import { instantLabel, stepNoun } from '../../../design/time'
+import { instantLabel, leadText, stepNoun } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
-import { extremesOf, latestValue, periodName } from '../../_template/seriesModel'
+import { extremesOf, latestValue, periodName, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { COLORS, ERROR_UNIT, INDO, ITSDO, NATIONAL_BOUNDARY, NDF, OUTTURN_KEY, boundaryOf, forecastColumn, issueStats, joinOutturn, leadText, sameClock, seriesOf, signedMw } from './figures'
+import { NATIONAL_BOUNDARY, boundaryOf } from '../../_template/boundaries'
+import { ERROR_UNIT, joinForecast, sameClock, signedMw } from '../../_template/forecastError'
+import { issueStats, rowIssues } from '../../_template/issues'
+import { COLORS, INDO, ITSDO, NDF, OUTTURN_KEY, forecastColumn } from './figures'
 
 export function HalfHourKey({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
@@ -25,13 +28,13 @@ export function HalfHourKey({ ctx }: { ctx: PageContext }) {
   const rel = national || boundaryOf(ctx) === NATIONAL_BOUNDARY ? ctx.related[OUTTURN_KEY] : undefined
   const oModel = rel?.series ?? null
   const oDef = seriesOf(oModel, national ? INDO : ITSDO)
-  const join = oModel && oDef && sameClock(model, oModel) ? joinOutturn(model, own, oModel, oDef) : null
+  const join = oModel && oDef && sameClock(model, oModel) ? joinForecast(model, own, oModel, oDef) : null
   const step = model.stepMs
   const noun = model.bucketed && step ? meansText(step) : stepNoun(step)
   const when = (t: number) => periodName(t, step, model.settlement)
   const latest = latestValue(model, own)
   const ex = extremesOf(model.rows, own)
-  const issue = issueStats(ctx.response, column)
+  const issue = issueStats(rowIssues(ctx.response, column))
   const unit = own.unit
   const outturnName = national ? 'national demand outturn' : 'transmission demand outturn'
 

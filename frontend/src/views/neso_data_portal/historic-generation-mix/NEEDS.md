@@ -34,7 +34,7 @@ why this page needs it, and what the page does meanwhile.
 2. **No embedded-wind colour.** Embedded wind has no colour of its own.
    - It sits directly above transmission-connected wind, and a 1 px surface gap alone didn't
      part them (review, pass 1). Meanwhile it is `--fuel-wind` hatched with `--chart-surface`:
-     an SVG pattern in the charts (`WindHatch.tsx`) and a matching CSS stripe in the key and
+     an SVG pattern in the charts (`FuelHatch`, design/charts) and a matching CSS stripe in the key and
      the mix bar.
    - Wanted: a ruling on embedded wind: its own tint, or the hatch as a design pattern for a
      fuel's sub-band.

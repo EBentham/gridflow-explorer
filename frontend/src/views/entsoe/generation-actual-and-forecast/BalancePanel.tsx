@@ -11,16 +11,15 @@
  */
 import type { ReactNode } from 'react'
 import { KeyList } from '../../../design/charts'
-import { plural } from '../../../design/format'
+import { plural, DASH } from '../../../design/format'
 import { dayLabel, londonMidnight, windowDomain } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
-import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
+import { SeriesChart, type ChartPanel, AXIS_WIDTH } from '../../_template/SeriesChart'
 import { seriesId, type SeriesDef, type WideRow } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, LOAD_KEY, markGaps, perText, pointsOf, statsOf, stepWords, trackDays, type Point } from './figures'
+import { LOAD_KEY, markGaps, perText, pointsOf, statsOf, stepWords, trackDays, type Point } from './figures'
 import { zoneForecasts, zoneInView, type ZoneForecast } from './total'
 
-const dash = '–'
 const AVG = 'A series held more often is averaged into each longer step it holds in full.'
 /** Generation takes its zone's own colour, as in the chart above; load and the difference take tokens no zone line uses, in either theme. */
 const MEASURE = { load: 'var(--fuel-imports)', diff: 'var(--fuel-other)' } as const
@@ -29,7 +28,7 @@ const meanOf = (points: Point[]) => (points.length ? points.reduce((s, p) => s +
 
 function ZoneTable({ ctx, zones, current }: { ctx: PageContext; zones: ZoneForecast[]; current: ZoneForecast }) {
   const unit = current.gen?.def.unit
-  const plain = (v: number | null) => (v === null || !unit ? dash : unit.plain(v))
+  const plain = (v: number | null) => (v === null || !unit ? DASH : unit.plain(v))
   return (
     <div className="gf-days">
       <table>
@@ -107,7 +106,7 @@ export function BalancePanel({ ctx }: { ctx: PageContext }) {
   const load = ctx.related[LOAD_KEY]
   const gen = z.gen
   const unit = gen.def.unit
-  const plain = (v: number | null) => (v === null ? dash : unit.plain(v))
+  const plain = (v: number | null) => (v === null ? DASH : unit.plain(v))
   const name = z.zone.label
   const pair = z.pair
   const both = pair?.both ?? []

@@ -8,9 +8,9 @@
 import { plural } from '../../../design/format'
 import { dayLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
-import { heldDayStarts, sideDays } from './figures'
+import { sideDays } from './figures'
 import { focusedZone, zonesOf } from './model'
-import { figureText, stepWords } from './words'
+import { heldDayStarts, figureText, stepWords } from '../../_template/lineClock'
 
 export function ZoneDays({ ctx }: { ctx: PageContext }) {
   const w = ctx.window

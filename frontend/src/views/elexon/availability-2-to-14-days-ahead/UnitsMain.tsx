@@ -12,26 +12,26 @@ import { SeriesChart } from '../../_template/SeriesChart'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import { ErrorWords } from '../../_template/panels'
 import type { PageContext } from '../../define'
-import { FUEL_KEY, MW, bandId, bandOf, bandsIn, barsPanel, codeName, daysAhead, daysOf, linePanel, rowsOf, stackPanel, totalDiffs, heldShape, loneWords, unitKey, unitShown, type Row } from './figures'
+import { FUEL_KEY, bandId, bandOf, bandsIn, barsPanel, codeName, daysAhead, daysOf, linePanel, rowsOf, stackPanel, totalDiffs, heldShape, loneWords, unitKey, unitShown, type Row } from './figures'
 import { OneDayWords } from './OneDay'
-
-const dash = <span className="gf-cell-missing">–</span>
+import { dashCell } from '../../_template/cells'
+import { MW } from '../../_template/units'
 
 function UnitsTable({ ctx }: { ctx: PageContext }) {
   const one = unitShown(ctx)
   // The backend sends a row with no value for each unit on a day it holds nothing for; the table lists the rows holding one.
   const all = rowsOf(ctx.response).filter((r) => r.mw !== null)
   const rows = one ? all.filter((r) => unitKey(r) === one.key) : all
-  const id = (r: Row): ReactNode => (r.unit ? <code>{r.unit}</code> : dash)
+  const id = (r: Row): ReactNode => (r.unit ? <code>{r.unit}</code> : dashCell)
   const columns: TableCol<Row>[] = [
     { key: 'date', label: 'Delivery day', render: (r) => fmtDay(r.date), sortValue: (r) => r.date },
     ...(one ? [] : [{ key: 'unit', label: 'BM unit', render: id, sortValue: (r: Row) => r.unit }]),
-    { key: 'ng', label: 'National Grid id', render: (r) => (r.ng ? <code>{r.ng}</code> : dash), sortValue: (r) => r.ng },
-    { key: 'code', label: 'Fuel code', render: (r) => (r.code ? <code>{r.code}</code> : dash), sortValue: (r) => r.code },
-    { key: 'fuel', label: 'Fuel', render: (r) => (r.code ? codeName(r.code) : dash), sortValue: (r) => bandOf(r.code).order },
-    { key: 'mw', label: `Usable output, ${MW.label}`, num: true, render: (r) => (r.mw === null ? dash : MW.plain(r.mw)), sortValue: (r) => r.mw },
-    { key: 'issued', label: 'Issued', render: (r) => (r.issued === null ? dash : instantLabel(r.issued)), sortValue: (r) => r.issued },
-    { key: 'ahead', label: 'Days ahead', num: true, render: (r) => (r.issued === null ? dash : daysAhead(r.date, r.issued)), sortValue: (r) => (r.issued === null ? null : daysAhead(r.date, r.issued)) },
+    { key: 'ng', label: 'National Grid id', render: (r) => (r.ng ? <code>{r.ng}</code> : dashCell), sortValue: (r) => r.ng },
+    { key: 'code', label: 'Fuel code', render: (r) => (r.code ? <code>{r.code}</code> : dashCell), sortValue: (r) => r.code },
+    { key: 'fuel', label: 'Fuel', render: (r) => (r.code ? codeName(r.code) : dashCell), sortValue: (r) => bandOf(r.code).order },
+    { key: 'mw', label: `Usable output, ${MW.label}`, num: true, render: (r) => (r.mw === null ? dashCell : MW.plain(r.mw)), sortValue: (r) => r.mw },
+    { key: 'issued', label: 'Issued', render: (r) => (r.issued === null ? dashCell : instantLabel(r.issued)), sortValue: (r) => r.issued },
+    { key: 'ahead', label: 'Days ahead', num: true, render: (r) => (r.issued === null ? dashCell : daysAhead(r.date, r.issued)), sortValue: (r) => (r.issued === null ? null : daysAhead(r.date, r.issued)) },
   ]
   return (
     <WindowedTable

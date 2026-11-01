@@ -39,7 +39,7 @@ interface UseFetchJobResult {
  * `setInterval`, so a slow tick cannot overlap the next one
  * (P3-PLAN.md case 15). Polling stops on a terminal state, after
  * `MAX_POLL_FAILURES` failed polls in a row (setting `error`), and on unmount;
- * in-flight requests are aborted on cleanup, matching `useDataset`'s
+ * in-flight requests are aborted on cleanup, matching `useJson`'s
  * `AbortController` pattern.
  */
 export function useFetchJob(datasetId: string): UseFetchJobResult {

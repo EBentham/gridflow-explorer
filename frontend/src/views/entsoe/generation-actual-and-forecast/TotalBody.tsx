@@ -12,10 +12,10 @@
 import { useMemo } from 'react'
 import { dayLabel, windowDomain } from '../../../design/time'
 import { SeriesBody } from '../../_template/SeriesBody'
-import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
+import { SeriesChart, type ChartPanel, AXIS_WIDTH } from '../../_template/SeriesChart'
 import { seriesId } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, commonStep, markGaps, partialDaySentences, perText, type Track } from './figures'
+import { commonStep, markGaps, partialDaySentences, perText, type Track } from './figures'
 import { zoneForecasts } from './total'
 
 export function TotalBody({ ctx }: { ctx: PageContext }) {

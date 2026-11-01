@@ -11,9 +11,9 @@
 import './page.css'
 import { plural } from '../../../design/format'
 import { dayLabel } from '../../../design/time'
-import { daySummaries } from '../../_template/seriesModel'
+import { daySummaries, seriesOf } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { CI_FORECAST, MIN_PAIRS, NIV, SSP, folded, isMeans, priceByIntensity, seriesOf, unjoinable } from './figures'
+import { CI_FORECAST, MIN_PAIRS, NIV, SSP, folded, isMeans, priceByIntensity, unjoinable } from './figures'
 
 export function ContextDays({ ctx }: { ctx: PageContext }) {
   if (unjoinable(ctx)) return <p className="gf-hint">This window comes as means over two hours or more, kept apart by price derivation code, so its days aren't summarised. Choose a shorter window.</p>

@@ -6,7 +6,8 @@
  */
 import { fmtDay } from '../../../design/time'
 import type { PageContext } from '../../define'
-import { MW, bandOf, codeName, daysOf, keyDay } from './figures'
+import { bandOf, codeName, daysOf, keyDay } from './figures'
+import { MW } from '../../_template/units'
 
 export function FuelCodes({ ctx }: { ctx: PageContext }) {
   const days = daysOf(ctx.response, ctx.window, 'code')

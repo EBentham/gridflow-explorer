@@ -5,8 +5,8 @@
  */
 import { About } from '../../_template/panels'
 import type { PageContext } from '../../define'
-import { areaName, isNamed } from './areas'
 import { besideOf, besideState, bordersOf } from './model'
+import { areaName, isNamed } from '../../_template/borders'
 
 /** The area codes in the rows drawn: the filters' and every split's values, a measure read beside counting only when drawn. */
 function codesOf(ctx: PageContext): string[] {

@@ -9,11 +9,9 @@
 import { instantLabel } from '../../../design/time'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
-import { pointsOf } from './figures'
 import { besideOf, besideState, bordersOf, measureOf, type Border, type Measure } from './model'
-import { cadenceSentence } from './words'
-
-const dash = <span className="gf-cell-missing">–</span>
+import { dashCell } from '../../_template/cells'
+import { pointsOf, cadenceSentence } from '../../_template/lineClock'
 
 interface BorderRow {
   t: number
@@ -50,7 +48,7 @@ export function BorderTable({ ctx }: { ctx: PageContext }) {
   rows.sort((a, c) => a.t - c.t || borders.indexOf(a.border) - borders.indexOf(c.border))
   const unit = borders[0].own.def.unit
   const unitLabel = unit.label ?? 'unit unconfirmed'
-  const value = (v: number | null | undefined) => (v === null || v === undefined ? dash : unit.plain(v))
+  const value = (v: number | null | undefined) => (v === null || v === undefined ? dashCell : unit.plain(v))
   const columns: TableCol<BorderRow>[] = [
     { key: 't', label: 'Starts', render: (r) => instantLabel(r.t), sortValue: (r) => r.t },
     { key: 'border', label: 'Border', render: (r) => r.border.name, sortValue: (r) => borders.indexOf(r.border) },

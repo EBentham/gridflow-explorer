@@ -9,6 +9,7 @@ import type { DateRange } from '../../../lib/range'
 import { plannedParts } from '../../_template/panelHelpers'
 import type { SeriesDef, SeriesModel } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
+import { seriesOf } from '../../_template/seriesModel'
 
 export const TEMP = 'temperature'
 /** National demand per half-hour (`indo`), read beside the temperature. */
@@ -29,9 +30,6 @@ export function tempUnit(ctx: PageContext): string | null | undefined {
 
 /** A figure at the one decimal the rows hold: two days tie when these match. */
 export const tempText = (v: number) => fmtN(v, 1)
-
-/** A column's series in a model, when the rows hold it. */
-export const seriesOf = (model: SeriesModel | null | undefined, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
 
 /** Each held day's figure, oldest first, with the London midnight starting its day. */
 export function heldFigures(model: SeriesModel, def: SeriesDef): { day: number; v: number }[] {

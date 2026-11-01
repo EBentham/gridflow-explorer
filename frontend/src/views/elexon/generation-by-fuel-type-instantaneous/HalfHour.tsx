@@ -20,13 +20,12 @@ import { SeriesChart } from '../../_template/SeriesChart'
 import { ErrorWords } from '../../_template/panels'
 import type { SeriesDef } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
-import { displayUnit } from '../../_template/units'
+import { MW } from '../../_template/units'
 import type { PageContext } from '../../define'
 import './page.css'
 import { bandLines, dayName, dayRows, halfHourView, hhFolded, pairsFor, summarise, type Day, type PairSummary } from './compare'
 import { AXIS_WIDTH, HH_KEY, TOTAL_FIELD, bandField, focusedBand, seriesFor } from './fuels'
 
-const MW = displayUnit('MW', 'MW')
 // FUELHH's line: beside the total's neutral ink, the axis ink (the actual-line ink sits too close to it in dark);
 // beside a fuel's colour, the actual-line ink, as the axis ink sits close to several fuels.
 const HH_COLOR_TOTAL = 'var(--chart-axis)'

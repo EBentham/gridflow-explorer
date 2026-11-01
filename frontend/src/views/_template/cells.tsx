@@ -5,7 +5,7 @@
  * their year) and its sort value. A missing value reads as a dash, never 0.
  */
 import type { ReactNode } from 'react'
-import { autoDigits, fmtN } from '../../design/format'
+import { autoDigits, DASH, fmt0, fmtN } from '../../design/format'
 import { instantLabel, rangeText } from '../../design/time'
 import type { Scalar } from '../contract'
 import type { CellFormat, ColumnSpec } from '../define'
@@ -17,7 +17,8 @@ type Row = Record<string, Scalar | undefined>
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
-const MISSING = <span className="gf-cell-missing">–</span>
+/** A table cell with no value: a muted dash. */
+export const dashCell = <span className="gf-cell-missing">{DASH}</span>
 
 /** A time cell's instant: epoch ms or an ISO string; null when it isn't one. */
 export function toInstant(v: Scalar | undefined): number | null {
@@ -79,7 +80,8 @@ export function toTableCol(spec: ColumnSpec, { years = false }: { years?: boolea
   const format = spec.format ?? 'text'
   const unit = spec.unit ? displayUnit(spec.unit, spec.display ?? 'MW') : null
   const cell = (v: Scalar | undefined): ReactNode => {
-    if (v === null || v === undefined || v === '') return MISSING
+    // A blank reads as a dash, unless the column has words for it ("Not stated").
+    if (v === null || v === undefined || v === '') return spec.text?.(null) ?? dashCell
     const words = wordsOf(spec, v)
     if (words !== null) return words
     switch (format) {
@@ -88,7 +90,8 @@ export function toTableCol(spec: ColumnSpec, { years = false }: { years?: boolea
       case 'number': {
         if (typeof v !== 'number') return String(v)
         const shown = unit && unit.numeric ? v * unit.factor : v
-        return unit && unit.label !== null ? unit.plain(shown) : fmtN(shown, autoDigits(shown))
+        if (unit && unit.label !== null) return unit.plain(shown)
+        return Number.isInteger(shown) ? fmt0(shown) : fmtN(shown, autoDigits(shown))
       }
       case 'time': {
         const ms = toInstant(v)

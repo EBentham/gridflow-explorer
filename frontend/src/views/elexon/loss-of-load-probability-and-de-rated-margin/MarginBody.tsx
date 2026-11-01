@@ -7,14 +7,15 @@
  * held, and the issue both come from with how far ahead it was made.
  */
 import { plural } from '../../../design/format'
-import { HOUR_MS, instantLabel, periodLabel, stepNoun, windowDomain } from '../../../design/time'
+import { HOUR_MS, instantLabel, leadText, periodLabel, stepNoun, windowDomain } from '../../../design/time'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import { meansText } from '../../_template/text'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, MW_UNIT, leadText, lolpStats, lolpText, modelOf, type MarginRow, type Model } from './figures'
-
-const dash = <span className="gf-cell-missing">–</span>
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
+import { MW } from '../../_template/units'
+import { lolpStats, lolpText, modelOf, type MarginRow, type Model } from './figures'
+import { dashCell } from '../../_template/cells'
 
 function MarginTable({ ctx, model }: { ctx: PageContext; model: Model }) {
   const cell = (r: MarginRow) => model.cells.get(r.t)
@@ -22,7 +23,7 @@ function MarginTable({ ctx, model }: { ctx: PageContext; model: Model }) {
     { key: 't', label: model.bucketed ? 'Period (means)' : 'Half-hour', render: (r) => periodLabel(r.t, model.stepMs), sortValue: (r) => r.t },
     // The half-hour names its UK day; the SP is the backend's, never derived.
     ...(model.settlement
-      ? [{ key: 'sp', label: 'SP', num: true, render: (r: MarginRow) => model.settlement?.get(r.t)?.period ?? dash, sortValue: (r: MarginRow) => model.settlement?.get(r.t)?.period ?? null }]
+      ? [{ key: 'sp', label: 'SP', num: true, render: (r: MarginRow) => model.settlement?.get(r.t)?.period ?? dashCell, sortValue: (r: MarginRow) => model.settlement?.get(r.t)?.period ?? null }]
       : []),
     {
       key: 'm',
@@ -30,7 +31,7 @@ function MarginTable({ ctx, model }: { ctx: PageContext; model: Model }) {
       num: true,
       render: (r) => {
         const v = cell(r)?.mw ?? null
-        return v === null ? dash : MW_UNIT.plain(v)
+        return v === null ? dashCell : MW.plain(v)
       },
       sortValue: (r) => cell(r)?.mw ?? null,
     },
@@ -40,7 +41,7 @@ function MarginTable({ ctx, model }: { ctx: PageContext; model: Model }) {
       num: true,
       render: (r) => {
         const v = cell(r)?.lolp ?? null
-        return v === null ? dash : lolpText(v)
+        return v === null ? dashCell : lolpText(v)
       },
       sortValue: (r) => cell(r)?.lolp ?? null,
     },
@@ -52,7 +53,7 @@ function MarginTable({ ctx, model }: { ctx: PageContext; model: Model }) {
             label: 'Issued',
             render: (r: MarginRow) => {
               const at = cell(r)?.issued ?? null
-              return at === null ? dash : instantLabel(at)
+              return at === null ? dashCell : instantLabel(at)
             },
             sortValue: (r: MarginRow) => cell(r)?.issued ?? null,
           },
@@ -60,7 +61,7 @@ function MarginTable({ ctx, model }: { ctx: PageContext; model: Model }) {
             key: 'l',
             label: 'Issued ahead',
             num: true,
-            render: (r: MarginRow) => (typeof r.l === 'number' ? leadText(r.l * HOUR_MS) : dash),
+            render: (r: MarginRow) => (typeof r.l === 'number' ? leadText(r.l * HOUR_MS) : dashCell),
             sortValue: (r: MarginRow) => (typeof r.l === 'number' ? r.l : null),
           },
         ]),

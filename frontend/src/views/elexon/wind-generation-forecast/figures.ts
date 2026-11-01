@@ -8,14 +8,14 @@
  * Nothing is filled in: an hour either side lacks has no difference, never a
  * zero.
  */
-import { DAY_MS, HOUR_MS, MINUTE_MS, datesBetween, dayStart, londonMidnight, stepsInDay } from '../../../design/time'
+import { HOUR_MS, datesBetween, dayStart, leadText, londonMidnight, stepsInDay } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { RowsResponse } from '../../contract'
 import type { SeriesDef, SeriesModel, WideRow } from '../../_template/seriesModel'
-import { displayUnit, type DisplayUnit } from '../../_template/units'
+import { ISSUED, issuedAt } from '../../_template/issues'
+import type { DisplayUnit } from '../../_template/units'
 
 export const FORECAST = 'latest_forecast_mw'
-export const ISSUED = 'published_at'
 /** Elexon's generation by fuel type: its value column, and the fuel it is cut to. */
 export const METERED = 'generation_mw'
 export const FUEL_TYPE = 'fuel_type'
@@ -31,11 +31,6 @@ export const COLORS = {
   lead: 'var(--chart-fan-soft)',
 } as const
 
-/** Every chart's value axis takes this width, so their clocks line up. */
-export const AXIS_WIDTH = 52
-
-/** Differences print in MW: a few hundred MW would read as 0.3 GW. */
-export const MW_UNIT = displayUnit('MW', 'MW')
 
 /**
  * Hours before the hour an issue was made; below zero, after it. Not a unit
@@ -48,7 +43,7 @@ export const LEAD_UNIT: DisplayUnit = {
   source: 'h',
   factor: 1,
   numeric: true,
-  format: (v) => (v === 0 ? 'at the hour' : `${leadText(v * HOUR_MS)} ${v > 0 ? 'before' : 'after'}`),
+  format: (v) => (v === 0 ? 'at the hour' : `${leadText(Math.abs(v) * HOUR_MS)} ${v > 0 ? 'before' : 'after'}`),
   plain: (v) => signed(v),
   caption: 'Hours issued before the hour',
 }
@@ -59,36 +54,8 @@ function signed(v: number): string {
   return v > 0 ? `+${text}` : `−${text}`
 }
 
-/** A signed MW figure: `+431`, with a true minus below zero. */
-export const signedMw = (v: number) => `${Math.round(v) > 0 ? '+' : ''}${MW_UNIT.plain(v)}`
-
-/** A column's series in a model, when the rows hold it. */
-export const seriesOf = (model: SeriesModel | null | undefined, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
 
 // ---------------------------------------------------------------- issues
-
-/**
- * `13 min`, `5 h 30 min`, `2 days 3 h`: how long before or after its hour an
- * issue was made. The parts are joined with non-breaking spaces, so a lead
- * never wraps mid-figure.
- */
-export function leadText(ms: number): string {
-  return leadWords(Math.abs(ms)).replace(/ /g, ' ')
-}
-
-function leadWords(ms: number): string {
-  const min = Math.round(ms / MINUTE_MS)
-  if (min < 60) return `${min} min`
-  if (ms < 2 * DAY_MS) {
-    const h = Math.floor(min / 60)
-    const m = min % 60
-    return m ? `${h} h ${m} min` : `${h} h`
-  }
-  const hours = Math.round(ms / HOUR_MS)
-  const d = Math.floor(hours / 24)
-  const h = hours % 24
-  return h ? `${d} days ${h} h` : `${d} days`
-}
 
 /** Each held hour's issue time, by the hour's time stamp; empty when the rows carry none (rows read as means). */
 export function issuesByHour(response: RowsResponse | null | undefined): Map<number, number> {
@@ -96,10 +63,8 @@ export function issuesByHour(response: RowsResponse | null | undefined): Map<num
   if (!response || response.kind !== 'series') return out
   for (const r of response.rows) {
     if (typeof r[FORECAST] !== 'number') continue
-    const p = r[ISSUED]
-    if (typeof p !== 'string') continue
-    const at = Date.parse(p)
-    if (Number.isFinite(at)) out.set(r.ts, at)
+    const at = issuedAt(r[ISSUED])
+    if (at !== null) out.set(r.ts, at)
   }
   return out
 }

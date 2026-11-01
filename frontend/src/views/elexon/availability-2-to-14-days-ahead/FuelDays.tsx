@@ -4,13 +4,12 @@
  * usable output, and the total. A day holding fewer fuel codes than the
  * window's fullest day is flagged; a day with no forecast held says so.
  */
-import { plural } from '../../../design/format'
+import { plural, DASH } from '../../../design/format'
 import { fmtDay, instantLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
 import { GW, bandsIn, daysAhead, daysOf, heldShape } from './figures'
 
-const dash = '–'
-const gw = (mw: number | null | undefined) => (mw === null || mw === undefined ? dash : GW.plain(mw * GW.factor))
+const gw = (mw: number | null | undefined) => (mw === null || mw === undefined ? DASH : GW.plain(mw * GW.factor))
 
 export function FuelDays({ ctx }: { ctx: PageContext }) {
   const days = daysOf(ctx.response, ctx.window, 'code')
@@ -58,15 +57,15 @@ export function FuelDays({ ctx }: { ctx: PageContext }) {
                       {fmtDay(d.date)}
                     </button>
                   </th>
-                  <td>{d.held === 0 ? 'not held locally' : issued === null ? dash : `${instantLabel(issued)}${d.issued.length > 1 ? ', and earlier' : ''}`}</td>
-                  <td className="is-num">{issued === null ? dash : daysAhead(d.date, issued)}</td>
+                  <td>{d.held === 0 ? 'not held locally' : issued === null ? DASH : `${instantLabel(issued)}${d.issued.length > 1 ? ', and earlier' : ''}`}</td>
+                  <td className="is-num">{issued === null ? DASH : daysAhead(d.date, issued)}</td>
                   {bands.map((b) => (
                     <td key={b.key} className="is-num">
-                      {d.held === 0 ? dash : gw(d.bands.get(b.key)?.mw)}
+                      {d.held === 0 ? DASH : gw(d.bands.get(b.key)?.mw)}
                     </td>
                   ))}
                   <td className="is-num">{gw(d.total)}</td>
-                  {counts && <td className={partial ? 'is-num is-flag' : 'is-num'}>{d.held === 0 ? dash : partial ? `${d.held} of ${most}` : d.held}</td>}
+                  {counts && <td className={partial ? 'is-num is-flag' : 'is-num'}>{d.held === 0 ? DASH : partial ? `${d.held} of ${most}` : d.held}</td>}
                 </tr>
               )
             })}

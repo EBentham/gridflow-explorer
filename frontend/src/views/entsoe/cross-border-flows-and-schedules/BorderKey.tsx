@@ -9,12 +9,11 @@
 import { KeyList } from '../../../design/charts'
 import { cadenceText, periodLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
-import { areaName, BESIDE_COLOR } from './areas'
-import { heldText, windowTally } from './figures'
+import { BESIDE_COLOR } from './areas'
 import { besideState, bordersOf, focusedBorder, latestStamp, roleOf } from './model'
-import { figureText, stepWords } from './words'
-
-const cap = (s: string) => `${s[0].toUpperCase()}${s.slice(1)}`
+import { cap } from '../../../design/format'
+import { heldText, windowTally, figureText, stepWords } from '../../_template/lineClock'
+import { areaName } from '../../_template/borders'
 
 export function BorderKey({ ctx }: { ctx: PageContext }) {
   const w = ctx.window

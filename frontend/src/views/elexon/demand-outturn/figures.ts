@@ -27,12 +27,6 @@ export const TSD_KEY = 'tsd'
 /** The key of the related national demand read beside the daily figure. */
 export const NATIONAL_KEY = 'national'
 
-/** Both charts' value axes take this width, so their clocks line up. */
-export const AXIS_WIDTH = 52
-
-/** A column's series in a model, when the rows hold it. */
-export const seriesOf = (model: SeriesModel | null | undefined, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
-
 /**
  * Transmission demand less national demand at each half-hour both hold a
  * value, in the models' display unit (GW). A half-hour either lacks is null:

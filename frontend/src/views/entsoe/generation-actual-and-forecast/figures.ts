@@ -13,12 +13,13 @@
  */
 import { SERIES_COLORS } from '../../../design/chartTheme'
 import { plural } from '../../../design/format'
-import { dayStart, datesBetween, HOUR_MS, londonMidnight, MINUTE_MS, stepNoun, stepsInDay } from '../../../design/time'
+import { datesBetween, HOUR_MS, MINUTE_MS, stepNoun, stepsInDay } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { GroupSpec, PageContext } from '../../define'
-import { ENTSOE_PRODUCTION_TYPES } from '../../_template/codes'
 import { seriesId, type SeriesDef, type SeriesModel, type WideRow } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
+import { EIC, ENTSOE_AREAS } from '../../_template/codes'
+import { daysInWindow } from '../../../design/days'
 
 // ---------------------------------------------------------------- datasets and columns
 
@@ -44,9 +45,6 @@ export const LOAD_KEY = 'load'
 export const ZONE_PARAM = 'zone'
 export const TYPE_PARAM = 'type'
 
-/** Chart panels on one page take this value-axis width, so their clocks line up. */
-export const AXIS_WIDTH = 52
-
 const QUARTER_MS = 15 * MINUTE_MS
 
 // ---------------------------------------------------------------- zones
@@ -65,7 +63,7 @@ export interface Zone {
   cardStep: number
 }
 
-const DE_LU: Zone = { value: '10Y1001A1001A82H', param: 'de-lu', label: 'Germany-Luxembourg', prose: 'Germany-Luxembourg', color: 'var(--chart-price)', cardStep: QUARTER_MS }
+const DE_LU: Zone = { value: EIC.DE_LU, param: 'de-lu', label: ENTSOE_AREAS[EIC.DE_LU], prose: ENTSOE_AREAS[EIC.DE_LU], color: 'var(--chart-price)', cardStep: QUARTER_MS }
 const FR: Zone = { value: '10YFR-RTE------C', param: 'fr', label: 'France', prose: 'France', color: 'var(--chart-price-2)', cardStep: QUARTER_MS }
 const NL: Zone = { value: '10YNL----------L', param: 'nl', label: 'Netherlands', prose: 'the Netherlands', color: 'var(--fuel-wind)', cardStep: QUARTER_MS }
 const BE: Zone = { value: '10YBE----------2', param: 'be', label: 'Belgium', prose: 'Belgium', color: 'var(--fuel-pumped_storage)', cardStep: HOUR_MS }
@@ -142,9 +140,6 @@ export function typeFrom(params: URLSearchParams | ((name: string) => string | n
   return UNIT_TYPES.find((f) => f.code === p) ?? UNIT_TYPES[0]
 }
 
-/** ENTSO-E's own name for a type, with its code: `Fossil hard coal (B05)`. */
-export const typeName = (code: string) => `${ENTSOE_PRODUCTION_TYPES[code] ?? code} (${code})`
-
 /** The unit a page's rows are filtered to, as the response says. */
 export function filteredType(ctx: PageContext): Fuel {
   const code = ctx.response?.filters?.[TYPE]
@@ -191,7 +186,7 @@ export interface Clocked {
 
 export interface Track extends Clocked {
   def: SeriesDef
-  /** Its step: the bucket when the rows are means, else the commonest spacing of its own held times; null when unknown. */
+  /** Its step (`SeriesDef.stepMs`), else the zone's published one; null when unknown. */
   step: number | null
   /** Its held values in the window, in time order. */
   points: Point[]
@@ -206,27 +201,10 @@ export function pointsOf(rows: WideRow[], def: SeriesDef): Point[] {
   return out
 }
 
-/** The commonest spacing between consecutive held times: a gap only ever adds a longer one. */
-function ownStep(points: Point[]): number | null {
-  const counts = new Map<number, number>()
-  for (let i = 1; i < points.length; i += 1) {
-    const d = points[i].t - points[i - 1].t
-    if (d > 0) counts.set(d, (counts.get(d) ?? 0) + 1)
-  }
-  let best: number | null = null
-  let n = 0
-  for (const [d, c] of counts) {
-    if (c > n || (c === n && best !== null && d < best)) {
-      best = d
-      n = c
-    }
-  }
-  return best
-}
 
 export function trackOf(model: SeriesModel, def: SeriesDef, fallback: number | null = null): Track {
   const points = pointsOf(model.rows, def)
-  const step = model.bucketed ? model.stepMs : (ownStep(points) ?? fallback)
+  const step = def.stepMs ?? fallback
   return { def, step, points }
 }
 
@@ -384,16 +362,7 @@ export interface TrackDay {
 
 /** Every UK day of the window with one track's held values: a day holding none is listed too. */
 export function trackDays(points: Point[], step: number | null, window: DateRange, bucketed: boolean): TrackDay[] {
-  const byDay = new Map<number, Point[]>()
-  for (const p of points) {
-    const d = londonMidnight(p.t)
-    const list = byDay.get(d)
-    if (list) list.push(p)
-    else byDay.set(d, [p])
-  }
-  return datesBetween(window.start, window.end).map((day) => {
-    const start = dayStart(day)
-    const held = byDay.get(start) ?? []
+  return daysInWindow(points, window).map(({ day, start, rows: held }) => {
     const expected = bucketed && step !== null && step > HOUR_MS ? null : stepsInDay(start, step)
     return { day, start, expected, held: held.length, points: held }
   })

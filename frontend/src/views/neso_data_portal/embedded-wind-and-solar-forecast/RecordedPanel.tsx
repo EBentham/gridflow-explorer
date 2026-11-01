@@ -15,7 +15,8 @@ import { ErrorWords } from '../../_template/panels'
 import type { SeriesDef, SeriesModel, WideRow } from '../../_template/seriesModel'
 import { displayUnit } from '../../_template/units'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, MIX_KEY, MIX_SOLAR, MIX_WIND, SOLAR_COLOR, SOLAR_FC, WIND_COLOR, WIND_FC, dayFigures, seriesOf, type DayFigures } from './figures'
+import { AXIS_WIDTH, MIX_KEY, MIX_SOLAR, MIX_WIND, SOLAR_COLOR, SOLAR_FC, WIND_COLOR, WIND_FC, dayFigures, type DayFigures } from './figures'
+import { seriesOf } from '../../_template/seriesModel'
 
 const GWH = displayUnit('GWh')
 

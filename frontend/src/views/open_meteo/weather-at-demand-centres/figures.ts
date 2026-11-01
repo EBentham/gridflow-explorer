@@ -33,9 +33,6 @@ export const ARCHIVE_KEY = 'archive'
 
 export const DEMAND_COLOR = 'var(--chart-actual)'
 
-/** Both charts' value axes take this width, so their clocks line up. */
-export const AXIS_WIDTH = 52
-
 const CITY_NAMES: [string, string][] = [
   ['belfast', 'Belfast'],
   ['birmingham', 'Birmingham'],
@@ -56,9 +53,6 @@ export function cityStepsText(n: number, model: Pick<SeriesModel, 'bucketed' | '
   if (model.stepMs === HOUR_MS) return `${count} city-hours`
   return `${count} city values`
 }
-
-/** A column's series in a model, when the rows hold it (the first, for a split column). */
-export const seriesOf = (model: SeriesModel | null | undefined, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
 
 /** Every city's series of one column. */
 export const citySeries = (model: SeriesModel | null | undefined, column: string): SeriesDef[] => model?.all.filter((d) => d.column === column) ?? []

@@ -16,19 +16,21 @@
  * names them (`INT…` codes are interconnectors; OCGT, coal and oil are the
  * peaking band).
  */
-import { FUEL_BANDS, fuelVar } from '../../../design/fuels'
+import { FUEL_BANDS, fuelVar, elexonBand, elexonFuelName, isInterconnectorCode } from '../../../design/fuels'
 import { DAY_MS, datesBetween, dayStart, londonMidnight, nextLondonMidnight, ukDate } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { RowsResponse, SeriesRow } from '../../contract'
 import type { PageContext } from '../../define'
 import type { ChartPanel } from '../../_template/SeriesChart'
 import type { SeriesDef, WideRow } from '../../_template/seriesModel'
-import { displayUnit } from '../../_template/units'
+import { displayUnit, MW } from '../../_template/units'
+import { collator } from '../../_template/seriesModel'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
+import { validUnitId } from '../../_template/codes'
 
 // ---------------------------------------------------------------- columns and keys
 
 export const FOU = 'fou2t14d'
-export const UOU = 'uou2t14d'
 /** Forecast usable output, MW, one figure per fuel (or unit) per delivery day. */
 export const VALUE = 'output_usable_mw'
 export const FUEL = 'fuel_type'
@@ -43,16 +45,10 @@ export const FUEL_KEY = 'byfuel'
 /** The page's own URL parameter: the one unit to read alone. */
 export const UNIT_PARAM = 'unit'
 
-/** Every chart on the page takes this value-axis width, so their clocks line up. */
-export const AXIS_WIDTH = 52
-
 export const GW = displayUnit('MW', 'GW')
-export const MW = displayUnit('MW', 'MW')
 
 /** The difference between the units' sum and the fuel figure: both forecasts, so the forecast colour. */
 export const DIFF_COLOR = 'var(--chart-fan)'
-
-const collator = new Intl.Collator('en-GB', { numeric: true, sensitivity: 'base' })
 
 // ---------------------------------------------------------------- fuel codes and bands
 
@@ -64,28 +60,6 @@ export interface Band {
   color: string
   /** Stack order, bottom first. */
   order: number
-}
-
-/** Elexon's fuel codes on the design's fuel bands, as the generation mix and the physical notifications page fold them. */
-const BAND_OF: Record<string, string> = {
-  NUCLEAR: 'nuclear',
-  NPSHYD: 'hydro',
-  BIOMASS: 'biomass',
-  WIND: 'wind',
-  CCGT: 'gas',
-  OCGT: 'peaking',
-  COAL: 'peaking',
-  OIL: 'peaking',
-  OTHER: 'other',
-  PS: 'pumped_storage',
-}
-
-/** Each code's own name, where it says more than its band's. */
-const CODE_NAMES: Record<string, string> = {
-  CCGT: 'Gas (CCGT)',
-  OCGT: 'Gas (OCGT)',
-  COAL: 'Coal',
-  OIL: 'Oil',
 }
 
 /** The chart's neutral ink, for a code the page doesn't know: no fuel colour is claimed for it. */
@@ -101,7 +75,7 @@ const bandByKey = new Map(BANDS.map((b) => [b.key, b]))
 
 /** A fuel code's band; a code the page doesn't know is a band of its own, named by its code, in neutral ink. */
 export function bandOf(code: string | null): Band {
-  const key = code === null ? null : code.startsWith('INT') ? 'imports' : BAND_OF[code]
+  const key = code === null ? null : elexonBand(code)
   const band = key ? bandByKey.get(key) : undefined
   if (band) return band
   const name = code ?? 'Fuel not listed'
@@ -112,8 +86,8 @@ export const isInterconnector = (band: Band) => band.key === 'imports'
 
 /** A code in words: `Gas (OCGT)`, `Interconnector`, or the band's name. */
 export function codeName(code: string): string {
-  if (code.startsWith('INT')) return 'Interconnector'
-  return CODE_NAMES[code] ?? bandOf(code).label
+  if (isInterconnectorCode(code)) return 'Interconnector'
+  return elexonFuelName(code) ?? bandOf(code).label
 }
 
 const byBand = (a: Band, b: Band) => a.order - b.order || collator.compare(a.label, b.label)
@@ -377,16 +351,9 @@ export function sortedUnits(units: Map<string, UnitInfo>): UnitInfo[] {
 }
 
 /** What the rows endpoint takes as a filter value, and what an id in the address may be: letters, digits, spaces and `_ . - / :`. */
-const UNIT_ID = /^[A-Za-z0-9 _.\-/:]{1,64}$/
-
-export function validUnit(value: string | null | undefined): string | null {
-  const v = (value ?? '').trim()
-  return UNIT_ID.test(v) ? v : null
-}
-
 /** The unit the address asks for, matched to a listed id without regard to case; null for all units. */
 export function askedUnit(ctx: Pick<PageContext, 'param'>): string | null {
-  return validUnit(ctx.param(UNIT_PARAM))
+  return validUnitId(ctx.param(UNIT_PARAM))
 }
 
 /** The unit read alone: the one asked for, when the rows list it. */

@@ -5,9 +5,8 @@
  * (`refresh_in_progress`) both ask again every 15 seconds, as the pinned
  * screens do.
  */
-import { useEffect, useState } from 'react'
-import { ApiError } from '../../api/client'
-import { REFRESH_RETRY_MS } from '../../hooks/latestDays'
+import { useEffect, useState, useSyncExternalStore } from 'react'
+import { isAbort, toApiError, type ApiError } from '../../api/client'
 import type { DataSource, Manifest, RowsRequest, RowsResponse } from '../contract'
 
 export type LoadState = 'loading' | 'data' | 'error' | 'refreshing'
@@ -20,8 +19,9 @@ export interface Load<T> {
 
 const LOADING: Load<never> = { state: 'loading', value: null, error: null }
 
-const toApiError = (err: unknown) => (err instanceof ApiError ? err : new ApiError('unknown_error', err instanceof Error ? err.message : String(err)))
-const isAbort = (err: unknown) => err instanceof DOMException && err.name === 'AbortError'
+/** How long to wait before asking again while gridflow holds the store for a refresh. */
+export const REFRESH_RETRY_MS = 15_000
+
 
 function failed<T>(err: unknown): Load<T> {
   const error = toApiError(err)
@@ -29,7 +29,24 @@ function failed<T>(err: unknown): Load<T> {
 }
 
 const MANIFEST_TTL_MS = 5 * 60 * 1000
-const manifests = new WeakMap<DataSource, { at: number; promise: Promise<Manifest> }>()
+let manifests = new WeakMap<DataSource, { at: number; promise: Promise<Manifest> }>()
+
+/** Bumped when a fetch job lands: every mounted `useManifest` reads the source list again. */
+let manifestVersion = 0
+const listeners = new Set<() => void>()
+const subscribe = (listener: () => void) => {
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
+  }
+}
+
+/** Drops the cached source list and has every reader ask for it again (its coverage moved). */
+export function invalidateManifest(): void {
+  manifests = new WeakMap()
+  manifestVersion += 1
+  for (const listener of listeners) listener()
+}
 
 function readManifest(ds: DataSource): Promise<Manifest> {
   const hit = manifests.get(ds)
@@ -44,23 +61,26 @@ function readManifest(ds: DataSource): Promise<Manifest> {
 export function useManifest(ds: DataSource): Load<Manifest> {
   const [load, setLoad] = useState<Load<Manifest>>(LOADING)
   const [tick, setTick] = useState(0)
+  const version = useSyncExternalStore(subscribe, () => manifestVersion)
 
   useEffect(() => {
     let live = true
     readManifest(ds).then(
       (value) => live && setLoad({ state: 'data', value, error: null }),
-      (err: unknown) => live && setLoad(failed(err)),
+      // A failed re-read keeps the list it had beside the error, for a reader that can use it.
+      (err: unknown) => live && setLoad((prev) => ({ ...failed(err), value: prev.value })),
     )
     return () => {
       live = false
     }
-  }, [ds, tick])
+  }, [ds, tick, version])
 
+  // Every failed answer is a new load, so each one re-arms the wait: a second refresh answer still asks again.
   useEffect(() => {
     if (load.state !== 'refreshing') return undefined
     const timer = window.setTimeout(() => setTick((n) => n + 1), REFRESH_RETRY_MS)
     return () => window.clearTimeout(timer)
-  }, [load.state])
+  }, [load])
 
   return load
 }

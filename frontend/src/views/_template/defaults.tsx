@@ -170,6 +170,7 @@ export function slotsFor(view: DatasetView): Required<PanelSlots> {
 /** A panel's H2. Without a page context (the source list not read yet, or failed) a worked-out title falls back to a fixed one. */
 export function panelTitle(view: DatasetView, area: keyof PanelSlots, ctx: PageContext | null): string {
   const { title } = slotsFor(view)[area]
+  if (title === undefined) return PENDING_TITLES[view.body][area]
   if (typeof title === 'string') return title
   if (ctx) return title(ctx)
   if (area === 'main') return view.title ?? view.label

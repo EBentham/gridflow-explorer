@@ -7,8 +7,9 @@
  */
 import { plural } from '../../../design/format'
 import type { PageContext } from '../../define'
-import { GW, MW, UNIT_PARAM, captureFrom, dayText, midnightOf, signedMw, unitMissing, unitShown, type Capture } from './figures'
+import { GW, UNIT_PARAM, captureFrom, dayText, midnightOf, signedMw, unitMissing, unitShown, type Capture } from './figures'
 import { UnitRows } from './UnitRows'
+import { MW } from '../../_template/units'
 
 function DaysTable({ ctx, cap }: { ctx: PageContext; cap: Capture }) {
   let prev: { day: string; sum: number; full: boolean } | null = null

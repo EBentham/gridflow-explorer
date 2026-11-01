@@ -18,9 +18,6 @@ export const MID_ROUTE = '/sources/elexon/market-index-price'
 /** The clock-time chart's lowest-to-highest band, and its key mark: the fan's two outer bands' weight. */
 export const RANGE_OPACITY = CHART.fan.b90 + CHART.fan.b80
 
-/** A column's series in the model, when the rows hold it. */
-export const seriesOf = (model: SeriesModel | null, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
-
 /** Minutes past midnight on the UK clock (a clock-change day's repeated hour shares its clock times). */
 export function clockMinute(t: number): number {
   const [h, m] = clock(t).split(':').map(Number)

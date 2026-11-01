@@ -47,7 +47,6 @@ const view = defineView({
           Body: DepthChart,
         },
         key: {
-          title: 'Key',
           src: (ctx) => <SourceLine ctx={ctx} columns={[...OFFERED, ...ACCEPTED, IMBALANCE]} unit="MWh" what="the latest half-hour held, the most accepted and what the window holds" />,
           Body: DepthKey,
         },

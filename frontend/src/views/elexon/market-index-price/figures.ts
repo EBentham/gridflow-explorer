@@ -11,12 +11,6 @@ import type { SeriesDef, SeriesModel } from '../../_template/seriesModel'
 export const PRICE = 'market_index_price'
 export const VOLUME = 'market_index_volume'
 
-/** Both charts' value axes take this width, so their clocks line up. */
-export const AXIS_WIDTH = 52
-
-/** A column's series in the model, when the rows hold it. */
-export const seriesOf = (model: SeriesModel | null, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
-
 /** Each UK day of the window: the volume summed over its held half-hours, and how many held one; null sum when none did. */
 export function volumeByDay(model: SeriesModel, window: DateRange, def: SeriesDef): Map<number, { sum: number | null; held: number }> {
   const sums = new Map<number, { sum: number; held: number }>()

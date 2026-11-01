@@ -9,16 +9,17 @@
  * datasets hold, and a step either lacks is a gap.
  */
 import { KeyList } from '../../../design/charts'
-import { pct, plural } from '../../../design/format'
+import { pct, plural, DASH } from '../../../design/format'
 import { dayLabel, stepNoun, windowDomain } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import { daySummaries, seriesId, type SeriesDef, type SeriesModel } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, ERROR_UNIT, MEASURE, ZONES, errorByDay, joinZone, signedMw, pairOf, sameClock, zoneDef, zoneInView, zoneName, type ErrorStats } from './figures'
+import { ERROR_UNIT, errorByDay, joinForecast, sameClock, signedMw, type ErrorStats } from '../../_template/forecastError'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
+import { MEASURE, ZONES, pairOf, zoneDef, zoneInView, zoneName } from './figures'
 
-const dash = '–'
 const mw = (v: number) => ERROR_UNIT.plain(v)
 
 function def(base: SeriesDef, key: string, field: string, label: string, color: string, from: string, unit = base.unit): SeriesDef {
@@ -30,9 +31,9 @@ function ErrorCells({ s }: { s: ErrorStats }) {
   if (!s.count) {
     return (
       <>
-        <td className="is-num">{dash}</td>
-        <td className="is-num">{dash}</td>
-        <td className="is-num">{dash}</td>
+        <td className="is-num">{DASH}</td>
+        <td className="is-num">{DASH}</td>
+        <td className="is-num">{DASH}</td>
       </>
     )
   }
@@ -40,7 +41,7 @@ function ErrorCells({ s }: { s: ErrorStats }) {
     <>
       <td className="is-num">{signedMw(s.sum / s.count)}</td>
       <td className="is-num">{mw(s.sumAbs / s.count)}</td>
-      <td className="is-num">{s.sumActual > 0 ? pct(s.sumAbs / s.sumActual) : dash}</td>
+      <td className="is-num">{s.sumActual > 0 ? pct(s.sumAbs / s.sumActual) : DASH}</td>
     </>
   )
 }
@@ -50,7 +51,7 @@ function ZoneTable({ ctx, actual, forecast, zone }: { ctx: PageContext; actual: 
     const a = zoneDef(actual, z.value)
     const f = zoneDef(forecast, z.value)
     const own = zoneDef(ctx.series, z.value)
-    return { z, a, own, join: a && f ? joinZone(actual, a, forecast, f) : null }
+    return { z, a, own, join: a && f ? joinForecast(forecast, f, actual, a) : null }
   })
   return (
     <div className="gf-days">
@@ -100,7 +101,7 @@ function ZoneTable({ ctx, actual, forecast, zone }: { ctx: PageContext; actual: 
                   )}
                 </th>
                 <td className="is-num">{join ? join.stats.count.toLocaleString('en-GB') : '0'}</td>
-                <td className="is-num">{a.mean === null ? dash : a.unit.plain(a.mean)}</td>
+                <td className="is-num">{a.mean === null ? DASH : a.unit.plain(a.mean)}</td>
                 {join ? <ErrorCells s={join.stats} /> : <td colSpan={3}>no forecast held in this window</td>}
               </tr>
             )
@@ -139,7 +140,7 @@ export function ForecastPanel({ ctx }: { ctx: PageContext }) {
   const name = zoneName(zone)
   const bucketed = model.bucketed
   const noun = bucketed && model.stepMs ? meansText(model.stepMs) : stepNoun(model.stepMs)
-  const join = aDef && fDef ? joinZone(actual, aDef, forecast, fDef) : null
+  const join = aDef && fDef ? joinForecast(forecast, fDef, actual, aDef) : null
   const base = aDef ?? fDef ?? ownDef
   const panels: ChartPanel[] =
     join && base && join.stats.count > 0
@@ -175,7 +176,7 @@ export function ForecastPanel({ ctx }: { ctx: PageContext }) {
   const errDays = join && aDef ? errorByDay(join, ctx.window, aDef.unit.factor) : null
   const own = ownIsActual ? 'actual' : 'forecast'
   const unit = ownDef?.unit
-  const fmt = (x: { v: number } | null) => (x && unit ? unit.plain(x.v) : dash)
+  const fmt = (x: { v: number } | null) => (x && unit ? unit.plain(x.v) : DASH)
 
   return (
     <>
@@ -258,10 +259,10 @@ export function ForecastPanel({ ctx }: { ctx: PageContext }) {
                     </button>
                   </th>
                   <td className="is-num">{d.expected === null || !partial ? d.held : `${d.held} of ${d.expected}`}</td>
-                  <td className="is-num">{d.mean === null || !unit ? dash : unit.plain(d.mean)}</td>
+                  <td className="is-num">{d.mean === null || !unit ? DASH : unit.plain(d.mean)}</td>
                   <td className="is-num">{fmt(d.low)}</td>
                   <td className="is-num">{fmt(d.high)}</td>
-                  {e ? <ErrorCells s={e} /> : <td colSpan={3}>{dash}</td>}
+                  {e ? <ErrorCells s={e} /> : <td colSpan={3}>{DASH}</td>}
                 </tr>
               )
             })}

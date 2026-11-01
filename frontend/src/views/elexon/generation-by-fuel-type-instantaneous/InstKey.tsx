@@ -10,12 +10,10 @@ import { FUEL_BANDS } from '../../../design/fuels'
 import { instantLabel, periodLabel } from '../../../design/time'
 import { extremesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
-import { displayUnit } from '../../_template/units'
+import { MW } from '../../_template/units'
 import type { PageContext } from '../../define'
 import './page.css'
 import { bandField, bandOf, codeDefs, codeLabel, codeOrder, fold, latestRow, totalDef } from './fuels'
-
-const MW = displayUnit('MW', 'MW')
 
 export function InstKey({ ctx }: { ctx: PageContext }) {
   const model = ctx.series

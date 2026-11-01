@@ -22,22 +22,25 @@ import { relatedParts } from '../../_template/panelHelpers'
 import { SourceLine } from '../../_template/panels'
 import { defineView, type PageContext, type PanelSlots, type SlotSpec } from '../../define'
 import { AboutFamily } from './AboutFamily'
-import { areaPhrase, AREA_GROUPS, borderQuery, GB, GB_QUERY, IN_PARAM, IN_SIDE_QUERY, inAreaCode, OUT_SIDE_QUERY } from './areas'
+import { AREA_GROUPS, IN_AREAS, IN_SIDE_QUERY, OUT_SIDE_QUERY } from './areas'
 import { BorderCharts } from './BorderCharts'
 import { BorderDays } from './BorderDays'
 import { BorderKey } from './BorderKey'
-import { AXIS_WIDTH } from './figures'
-import { InAreaControl } from './InAreaControl'
 import { bordersOf, FLOW_ROLE, focusedBorder, focusedZone, inAreaOf, latestStamp, OUT_SIDE_KEY, roleOf, SCHEDULE_ROLE, zonesOf, type Line } from './model'
 import { ZoneCharts } from './ZoneCharts'
 import { ZoneDays } from './ZoneDays'
 import { ZoneKey } from './ZoneKey'
+import { areaPhrase, borderQuery, GB_QUERY, IN_PARAM, inAreaCode, BORDER_AXIS_WIDTH as AXIS_WIDTH } from '../../_template/borders'
+import { EIC } from '../../_template/codes'
+import { inAreaControl } from '../../_template/InAreaControl'
 
 const MW = 'MW'
 const NET_UNIT = 'MW, sign unconfirmed'
 
 /** The filters a border read carries: as the rows came back, else as asked. */
-const borderFilters = (ctx: PageContext) => ctx.response?.filters ?? { in_area_code: inAreaCode(ctx.param(IN_PARAM)) }
+const InAreas = inAreaControl(() => IN_AREAS)
+
+const borderFilters = (ctx: PageContext) => ctx.response?.filters ?? { in_area_code: inAreaCode(IN_AREAS, ctx.param(IN_PARAM)) }
 
 /** `latest held values, Mon 21 Sep, 00:45–01:00 BST`: the time a key's latest values are at. */
 function latestText(lines: (Line | null)[]): string {
@@ -66,7 +69,7 @@ function borderPanels(measure: string): PanelSlots {
     main: {
       title: (ctx) => {
         const code = inAreaOf(ctx)
-        return code === GB ? `${measure} on GB’s borders` : `${measure}, ${areaPhrase(code)} as the in area`
+        return code === EIC.GB ? `${measure} on GB’s borders` : `${measure}, ${areaPhrase(code)} as the in area`
       },
       src: (ctx) => (
         <SourceLine
@@ -202,7 +205,7 @@ const view = defineView({
       ],
       values: [{ column: FLOW_ROLE.column, label: 'Physical flow', display: 'MW' }],
       groups: AREA_GROUPS,
-      query: borderQuery,
+      query: borderQuery(IN_AREAS),
       related: [
         {
           key: FLOW_ROLE.besideKey,
@@ -214,7 +217,7 @@ const view = defineView({
           groups: AREA_GROUPS,
         },
       ],
-      controls: InAreaControl,
+      controls: InAreas,
       chart: { mark: 'line', lower: false, axisWidth: AXIS_WIDTH },
       panels: borderPanels('Physical flow'),
     },
@@ -231,7 +234,7 @@ const view = defineView({
       ],
       values: [{ column: SCHEDULE_ROLE.column, label: 'Commercial schedule', display: 'MW' }],
       groups: AREA_GROUPS,
-      query: borderQuery,
+      query: borderQuery(IN_AREAS),
       related: [
         {
           key: SCHEDULE_ROLE.besideKey,
@@ -243,7 +246,7 @@ const view = defineView({
           groups: AREA_GROUPS,
         },
       ],
-      controls: InAreaControl,
+      controls: InAreas,
       chart: { mark: 'line', lower: false, axisWidth: AXIS_WIDTH },
       panels: borderPanels('Commercial schedule'),
     },

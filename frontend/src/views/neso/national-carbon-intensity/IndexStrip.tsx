@@ -11,7 +11,8 @@ import { ChartFrame, DayRules, TooltipBox } from '../../../design/charts'
 import { CHART, CURSOR, TICK, timeAxis } from '../../../design/chartTheme'
 import { ukTimeTicks } from '../../../design/time'
 import { periodName, type SeriesModel } from '../../_template/seriesModel'
-import { AXIS_WIDTH, COLORS, gradeOf, gradeRuns } from './figures'
+import { COLORS, gradeOf, gradeRuns } from './figures'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 
 const HEIGHT = 30
 const MARGIN = { top: 3, right: CHART.margin.right, bottom: 0, left: CHART.margin.left }

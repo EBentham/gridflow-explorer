@@ -30,9 +30,6 @@ export function kindCounts(families: ManifestFamily[]): Record<Kind, number> {
   return out
 }
 
-/** `ENTSO-E`, `GIE AGSI+`: a source's name as it stands on the land. */
-export const shortName = (s: Pick<ManifestSource, 'name'>) => s.name.replace(' Transparency', '')
-
 const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve']
 
 /** `eight`: a count in words up to twelve, in figures past it. */

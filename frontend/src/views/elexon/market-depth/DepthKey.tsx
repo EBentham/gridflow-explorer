@@ -9,10 +9,10 @@
  */
 import { KeyList, type KeyMark } from '../../../design/charts'
 import { stepNoun } from '../../../design/time'
-import { extremesOf, latestValue, periodName, seriesId, type SeriesDef } from '../../_template/seriesModel'
+import { extremesOf, latestValue, periodName, seriesId, type SeriesDef, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { ACCEPTED, ACC_BID, ACC_OFFER, IMBALANCE, OFFER, OFFERED, heldOf, seriesOf } from './figures'
+import { ACCEPTED, ACC_BID, ACC_OFFER, IMBALANCE, OFFER, OFFERED, heldOf } from './figures'
 
 function markOf(d: SeriesDef, bars: boolean): KeyMark {
   if (!bars) return { kind: 'line', color: d.color }

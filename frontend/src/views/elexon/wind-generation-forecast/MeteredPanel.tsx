@@ -9,16 +9,16 @@
  * side lacks is a gap, never a zero.
  */
 import { KeyList, type KeyItem } from '../../../design/charts'
-import { plural } from '../../../design/format'
+import { plural, DASH } from '../../../design/format'
 import { clock, dayLabel, dayTick, stepNoun, windowDomain } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
-import { periodName, type SeriesDef } from '../../_template/seriesModel'
+import { periodName, type SeriesDef, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, COLORS, FORECAST, LEAD_UNIT, METERED, METERED_KEY, MW_UNIT, byDay, issuesByHour, joinMetered, seriesOf, signedMw, type DayRow } from './figures'
-
-const dash = '–'
+import { ERROR_UNIT, signedMw } from '../../_template/forecastError'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
+import { COLORS, FORECAST, LEAD_UNIT, METERED, METERED_KEY, byDay, issuesByHour, joinMetered, type DayRow } from './figures'
 
 function def(base: SeriesDef, key: string, label: string, color: string, unit = base.unit): SeriesDef {
   return { ...base, key, field: key, label, color, from: key, unit }
@@ -31,8 +31,8 @@ function IssueCells({ d }: { d: DayRow }) {
   if (!d.issues.length) {
     return (
       <>
-        <td>{dash}</td>
-        <td>{dash}</td>
+        <td>{DASH}</td>
+        <td>{DASH}</td>
       </>
     )
   }
@@ -82,7 +82,7 @@ export function MeteredPanel({ ctx }: { ctx: PageContext }) {
     },
   ]
   if (hasMetered && join.all.count > 0) {
-    panels.push({ ...common, series: [def(own, 'e', 'Metered less forecast', COLORS.difference, MW_UNIT)], mark: 'bars', unit: MW_UNIT, height: 130, zero: true })
+    panels.push({ ...common, series: [def(own, 'e', 'Metered less forecast', COLORS.difference, ERROR_UNIT)], mark: 'bars', unit: ERROR_UNIT, height: 130, zero: true })
   }
   if (hasLead) {
     panels.push({ ...common, series: [def(own, 'l', 'Issued before the hour', COLORS.lead, LEAD_UNIT)], mark: 'bars', unit: LEAD_UNIT, height: 130, zero: true })
@@ -99,7 +99,7 @@ export function MeteredPanel({ ctx }: { ctx: PageContext }) {
   const lead = firstHeld === -1 ? 0 : firstHeld
   const shown = lead >= 2 ? days.slice(lead) : days
   const cols = hasMetered ? 8 : 5
-  const gw = (v: number | null) => (v === null ? dash : unit.plain(v))
+  const gw = (v: number | null) => (v === null ? DASH : unit.plain(v))
   const count = (held: number, expected: number | null) => (expected !== null && held < expected ? `${held} of ${expected}` : String(held))
   const meteredTo = join.meteredTo !== null && mModel ? periodName(join.meteredTo, mModel.stepMs, mModel.settlement) : null
   // The days at the end of the window with forecast and no metered output: the ones a scrolled box hides.
@@ -203,8 +203,8 @@ export function MeteredPanel({ ctx }: { ctx: PageContext }) {
                         {d.mHeld === 0 ? 'not held' : gw(d.meteredMean)}
                         {mPartial ? `, over ${count(d.mHeld, d.mExpected)}` : ''}
                       </td>
-                      <td className="is-num">{d.diff.count ? signedMw(d.diff.sum / d.diff.count) : dash}</td>
-                      <td className="is-num">{d.diff.count ? MW_UNIT.plain(d.diff.sumAbs / d.diff.count) : dash}</td>
+                      <td className="is-num">{d.diff.count ? signedMw(d.diff.sum / d.diff.count) : DASH}</td>
+                      <td className="is-num">{d.diff.count ? ERROR_UNIT.plain(d.diff.sumAbs / d.diff.count) : DASH}</td>
                     </>
                   )}
                 </tr>

@@ -21,7 +21,6 @@ import { meansText } from '../../_template/text'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
 import {
-  AXIS_WIDTH,
   MARKET_COLOR,
   MODEL_COLOR,
   clearingPoints,
@@ -36,6 +35,8 @@ import {
   type ClearingPoint,
 } from './figures'
 import { UnreadNote } from './UnreadNote'
+import { dashCell } from '../../_template/cells'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 
 const PRICE_H = 270
 const DEMAND_H = 150
@@ -64,8 +65,6 @@ interface ClickState {
 
 const priceText = (v: number | null) => (v === null ? 'no value' : `${money(v, 2)}/MWh`)
 const gwText = (v: number | null) => (v === null ? 'no value' : `${fmt1(v / 1000)} GW`)
-const dash = <span className="gf-cell-missing">–</span>
-
 function ClearingChart({ ctx, points, unread }: { ctx: PageContext; points: ClearingPoint[]; unread: boolean }) {
   const model = ctx.series
   const window = ctx.window
@@ -182,14 +181,14 @@ function ClearingTable({ ctx, points, unread }: { ctx: PageContext; points: Clea
   const model = ctx.series
   if (!model) return null
   const settlement = model.settlement
-  const money2 = (v: number | null) => (v === null ? dash : fmtN(v, 2))
-  const mw = (v: number | null) => (v === null ? dash : fmt0(v))
+  const money2 = (v: number | null) => (v === null ? dashCell : fmtN(v, 2))
+  const mw = (v: number | null) => (v === null ? dashCell : fmt0(v))
   const columns: TableCol<ClearingPoint>[] = [
     { key: 't', label: model.bucketed ? 'Period (means)' : 'Period', render: (p) => periodLabel(p.t, model.stepMs), sortValue: (p) => p.t },
     ...(settlement
       ? [
-          { key: 'sd', label: 'Settlement date', render: (p: ClearingPoint) => settlement.get(p.t)?.date ?? dash, sortValue: (p: ClearingPoint) => settlement.get(p.t)?.date ?? null },
-          { key: 'sp', label: 'SP', num: true, render: (p: ClearingPoint) => settlement.get(p.t)?.period ?? dash, sortValue: (p: ClearingPoint) => settlement.get(p.t)?.period ?? null },
+          { key: 'sd', label: 'Settlement date', render: (p: ClearingPoint) => settlement.get(p.t)?.date ?? dashCell, sortValue: (p: ClearingPoint) => settlement.get(p.t)?.date ?? null },
+          { key: 'sp', label: 'SP', num: true, render: (p: ClearingPoint) => settlement.get(p.t)?.period ?? dashCell, sortValue: (p: ClearingPoint) => settlement.get(p.t)?.period ?? null },
         ]
       : []),
     { key: 'model', label: 'Modelled, £/MWh', num: true, render: (p) => money2(p.model), sortValue: (p) => p.model },
@@ -200,8 +199,8 @@ function ClearingTable({ ctx, points, unread }: { ctx: PageContext; points: Clea
           { key: 'market', label: 'Market index, £/MWh', num: true, render: (p: ClearingPoint) => money2(p.market), sortValue: (p: ClearingPoint) => p.market },
           { key: 'gap', label: 'Modelled − market, £/MWh', num: true, render: (p: ClearingPoint) => money2(gapOf(p)), sortValue: gapOf },
         ]),
-    { key: 'set', label: 'Set by', render: (p) => setterOf(p)?.style.label ?? dash, sortValue: (p) => setterOf(p)?.style.label ?? null },
-    { key: 'unit', label: 'Marginal unit', render: (p) => (p.unit ? <code>{p.unit}</code> : dash), sortValue: (p) => p.unit },
+    { key: 'set', label: 'Set by', render: (p) => setterOf(p)?.style.label ?? dashCell, sortValue: (p) => setterOf(p)?.style.label ?? null },
+    { key: 'unit', label: 'Marginal unit', render: (p) => (p.unit ? <code>{p.unit}</code> : dashCell), sortValue: (p) => p.unit },
     { key: 'demand', label: 'Clearing demand, MW', num: true, render: (p) => mw(p.demand), sortValue: (p) => p.demand },
     { key: 'capacity', label: 'Capacity, MW', num: true, render: (p) => mw(p.capacity), sortValue: (p) => p.capacity },
     { key: 'floor', label: 'Floor, £/MWh', num: true, render: (p) => money2(p.floor), sortValue: (p) => p.floor },
