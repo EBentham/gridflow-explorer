@@ -23,7 +23,6 @@ import subprocess
 import sys
 import time
 from datetime import timedelta
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from app.deps import open_client
@@ -35,11 +34,6 @@ if TYPE_CHECKING:
 
     from app.catalogue import DatasetSpec
     from app.jobs import Job
-
-# `gridflow` is editable-installed into this backend's venv, so its console
-# script lands in the same Scripts directory as the running interpreter —
-# see P1-PLAN.md "Subprocess runner" > "Executable". Never assume PATH.
-GRIDFLOW_EXE = Path(sys.executable).parent / "gridflow.exe"
 
 # Attempt schedule: 1 initial attempt plus up to 5 retries, sleeping these
 # delays (seconds) before each successive retry — 6 attempts total, ~15.5s
@@ -87,9 +81,13 @@ def build_command(spec: DatasetSpec, start: date, end: date) -> list[str]:
 
     Returns:
         The argv list, per P1-PLAN.md "Subprocess runner" > "CLI mapping".
+        gridflow runs as a module of this interpreter, never from PATH, and
+        not as a console script whose name differs by OS.
     """
     return [
-        str(GRIDFLOW_EXE),
+        sys.executable,
+        "-m",
+        "gridflow",
         "pipeline",
         spec.cli_source,
         spec.cli_dataset,

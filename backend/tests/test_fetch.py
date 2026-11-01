@@ -12,6 +12,7 @@ it to idle after every test in this module regardless of outcome.
 from __future__ import annotations
 
 import subprocess
+import sys
 from datetime import date
 from pathlib import Path
 
@@ -300,6 +301,15 @@ def test_build_env_returns_none_when_duckdb_path_unset(monkeypatch: pytest.Monke
     assert fetch.build_env() is None
 
 
+def test_fetch_command_runs_gridflow_as_module() -> None:
+    """The CLI runs as `python -m gridflow` under this interpreter, so the fetch
+    works on any OS, not only where a `gridflow.exe` sits beside Python.
+    """
+    cmd = fetch.build_command(get_dataset("generation-mix"), date(2026, 8, 1), date(2026, 8, 15))
+
+    assert cmd[:4] == [sys.executable, "-m", "gridflow", "pipeline"]
+
+
 def test_build_command_matches_documented_shape_for_both_datasets() -> None:
     """`--end` is the day after the inclusive `end` arg — see
     `test_build_command_advances_end_by_one_day_for_zero_width_window` for
@@ -308,7 +318,9 @@ def test_build_command_matches_documented_shape_for_both_datasets() -> None:
     generation_mix = get_dataset("generation-mix")
     cmd = fetch.build_command(generation_mix, date(2026, 8, 1), date(2026, 8, 15))
     assert cmd == [
-        str(fetch.GRIDFLOW_EXE),
+        sys.executable,
+        "-m",
+        "gridflow",
         "pipeline",
         "elexon",
         "fuelhh",
@@ -321,7 +333,9 @@ def test_build_command_matches_documented_shape_for_both_datasets() -> None:
     system_prices = get_dataset("system-prices")
     cmd2 = fetch.build_command(system_prices, date(2026, 8, 1), date(2026, 8, 15))
     assert cmd2 == [
-        str(fetch.GRIDFLOW_EXE),
+        sys.executable,
+        "-m",
+        "gridflow",
         "pipeline",
         "elexon",
         "system_prices",
@@ -342,7 +356,9 @@ def test_build_command_advances_end_by_one_day_for_zero_width_window() -> None:
     generation_mix = get_dataset("generation-mix")
     cmd = fetch.build_command(generation_mix, date(2026, 3, 1), date(2026, 3, 1))
     assert cmd == [
-        str(fetch.GRIDFLOW_EXE),
+        sys.executable,
+        "-m",
+        "gridflow",
         "pipeline",
         "elexon",
         "fuelhh",
