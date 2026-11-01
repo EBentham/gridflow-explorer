@@ -16,15 +16,20 @@ def test_post_return_timeout_returns_503_and_releases_limiter(monkeypatch, sourc
     _seed(sources_db, [(stamp, "A", 1.0, stamp)])
     client, url = _route(monkeypatch, sources_db, _spec())
     original = sources_db.query
+    returned: list[str] = []
 
     def slow(sql):
+        result = original(sql)
         if sql.startswith("SELECT current_setting("):
-            time.sleep(0.06)
-        return original(sql)
+            time.sleep(0.3)
+            returned.append(sql)
+        return result
 
     monkeypatch.setattr(sources_db, "query", slow)
-    monkeypatch.setattr(rows, "ROWS_REQUEST_TIMEOUT_SECONDS", 0.02)
+    # Above MIN_OPERATION_SECONDS, so the slow query runs and returns after the deadline.
+    monkeypatch.setattr(rows, "ROWS_REQUEST_TIMEOUT_SECONDS", 0.2)
     response = client.get(url)
+    assert len(returned) == 1
     assert response.status_code == 503
     assert response.json() == {
         "error": {"code": "query_timeout", "message": "Rows query exceeded its time limit."}

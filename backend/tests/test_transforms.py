@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import date
 
-from conftest import StubClient
+import polars as pl
+import pytest
+from conftest import StubClient, generation_mix_frame
 
 from app.catalogue import DATASETS, to_catalogue_entry
 from app.transforms import load_generation_mix, load_system_prices
@@ -33,6 +36,30 @@ def test_exact_duplicate_fuelhh_row_does_not_double_the_summed_value() -> None:
     records = _generation_records()
     row = next(r for r in records if r["timestamp"] == "2026-08-09T23:00:00Z")
     assert row["nuclear"] == 4000.0
+
+
+def test_copy_differing_only_in_provenance_collapses_without_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    first = generation_mix_frame().filter(pl.col("fuel_type") == "WIND")
+    copies = pl.concat([first.with_columns(ingested_at=pl.lit(stamp)) for stamp in ("t1", "t2")])
+    with caplog.at_level(logging.WARNING, logger="app.transforms"):
+        records = load_generation_mix(StubClient(copies), WINDOW_START, WINDOW_END)
+    assert records[0]["wind"] == 2000.0
+    assert "differing generation_mw" not in caplog.text
+
+
+def test_differing_measurements_for_one_key_are_order_independent_and_warned(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    first = generation_mix_frame().filter(pl.col("fuel_type") == "WIND")
+    conflicting = pl.concat([first, first.with_columns(generation_mw=pl.lit(2500.0))])
+    with caplog.at_level(logging.WARNING, logger="app.transforms"):
+        forward = load_generation_mix(StubClient(conflicting), WINDOW_START, WINDOW_END)
+        backward = load_generation_mix(StubClient(conflicting.reverse()), WINDOW_START, WINDOW_END)
+    assert forward == backward
+    assert forward[0]["wind"] == 2000.0 + 2500.0
+    assert "differing generation_mw" in caplog.text
 
 
 def test_int_star_codes_collapse_into_single_imports_value() -> None:

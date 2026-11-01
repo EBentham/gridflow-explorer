@@ -103,6 +103,18 @@ def test_bad_range_unparseable_date_returns_422(
     assert not stub_client_ctx.entered
 
 
+def test_default_window_before_the_first_date_returns_422(
+    monkeypatch: pytest.MonkeyPatch, stub_client_ctx: StubClientCtx
+) -> None:
+    monkeypatch.setattr(datasets_router, "client_ctx", stub_client_ctx)
+
+    response = _client().get("/api/datasets/generation-mix/data", params={"end": "0001-01-01"})
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "bad_range"
+    assert not stub_client_ctx.entered
+
+
 def test_validation_ordering_holds_with_real_client_ctx_and_running_job(
     running_job: None,
 ) -> None:
@@ -213,6 +225,23 @@ def test_post_fetch_bad_range_422_never_reaches_preflight(
     response = _client().post(
         "/api/datasets/generation-mix/fetch",
         params={"start": "2026-08-15", "end": "2026-08-01"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "bad_range"
+    assert preflight_calls == []
+
+
+def test_post_fetch_end_on_the_last_date_422_never_reaches_preflight(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The CLI's exclusive end is the day after `end`, which `date.max` cannot hold."""
+    preflight_calls: list[None] = []
+    monkeypatch.setattr(jobs_router, "probe_writer_lock", lambda: preflight_calls.append(None))
+
+    response = _client().post(
+        "/api/datasets/generation-mix/fetch",
+        params={"start": "9999-12-30", "end": "9999-12-31"},
     )
 
     assert response.status_code == 422

@@ -1070,6 +1070,18 @@ def _execute_selected(client: Any, request: Request, config: str) -> dict[str, A
         _check_output_key(client, request, selected, clock, meta.types)
         if removed:
             reasons.append({"type": "exact_duplicate_rows", "removed_rows": removed})
+    elif dataset["kind"] in ("events", "reference"):
+        # rank() keeps every tied capture; serve identical copies once, keep distinct ties.
+        distinct = (
+            f"SELECT DISTINCT {', '.join(_quote(c) for c in projection)} FROM ({selected}) AS raw"
+        )
+        removed = client.query(
+            f"SELECT (SELECT count(*) FROM ({selected}) AS raw) "
+            f"- (SELECT count(*) FROM ({distinct}) AS kept) AS n"
+        ).to_dicts()[0]["n"]
+        if removed:
+            selected = client.stage(distinct)
+            reasons.append({"type": "exact_duplicate_rows", "removed_rows": removed})
     count = client.query(f"SELECT count(*) AS n FROM ({selected}) AS final_count").to_dicts()[0][
         "n"
     ]
