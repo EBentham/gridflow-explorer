@@ -92,7 +92,7 @@ export function TotalBody({ ctx }: { ctx: PageContext }) {
   return (
     <>
       {notes}
-      {panel ? <SeriesChart panels={[panel]} domain={domain} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} /> : <p className="gf-state">Rows are held for this window, but none of them holds a forecast value.</p>}
+      {panel ? <SeriesChart panels={[panel]} domain={domain} picked={ctx.picked} onPick={ctx.pick} /> : <p className="gf-state">Rows are held for this window, but none of them holds a forecast value.</p>}
       <p className="gf-hint">Each zone’s forecast, made the day before, of all the electricity it would generate. The working panel sets one zone’s against its day-ahead load forecast.</p>
     </>
   )

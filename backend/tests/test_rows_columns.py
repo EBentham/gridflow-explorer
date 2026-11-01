@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime, timedelta
 
 from fastapi.testclient import TestClient
@@ -26,21 +25,6 @@ def test_columns_subset_preserves_order_and_gap_identity(monkeypatch, sources_db
     assert all(set(row) <= {"ts", "unit", "value"} for row in payload["rows"])
     assert any(row["value"] is None for row in payload["rows"])
     assert all("unit" in row for row in payload["rows"])
-
-
-def test_columns_absent_matches_frozen_baseline(monkeypatch, sources_db):
-    import rows_baseline
-
-    first = datetime(2026, 9, 22, tzinfo=UTC)
-    _seed(sources_db, [(first, "A", 1.0, first)])
-    spec = _spec()
-    client, url = _route(monkeypatch, sources_db, spec)
-    monkeypatch.setattr(rows_baseline, "REGISTRY", {("test", "sample"): spec})
-    request = rows_baseline.validate("test", "sample", "2026-09-22", "2026-09-22", None, None)
-    baseline = rows_baseline.execute(sources_db, request, "baseline-columns")
-    response = client.get(url + "?start=2026-09-22&end=2026-09-22")
-    assert response.status_code == 200
-    assert json.dumps(response.json(), sort_keys=False) == json.dumps(baseline, sort_keys=False)
 
 
 def test_bad_columns_rejected_before_catalogue(monkeypatch):

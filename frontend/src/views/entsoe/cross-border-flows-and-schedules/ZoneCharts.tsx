@@ -27,7 +27,7 @@ export function ZoneCharts({ ctx }: { ctx: PageContext }) {
   const alone = aloneSentence(drawn.map((z) => ({ name: z.phrase, alone: aloneIn([z.inSide, z.outSide]) })), 'for')
   return (
     <>
-      <SeriesChart panels={panels} domain={windowDomain(w.start, w.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+      <SeriesChart panels={panels} domain={windowDomain(w.start, w.end)} picked={ctx.picked} onPick={ctx.pick} />
       <p className="gf-hint">
         {turnsSentence(zones)} {zoneMissingSentence(zones, w)} {focus ? '' : 'Each zone has a scale of its own. '}{belowZeroText(drawn, 'drawn here')} The sign is unconfirmed, so the two sides are drawn apart and never netted into one line.{alone ? ` ${alone}` : ''}
       </p>

@@ -78,7 +78,7 @@ export function RevenueKey({ ctx }: { ctx: PageContext }) {
       {ctx.mode === 'chart' && beneath.length > 0 && (
         <>
           <p className="gf-hint">Beneath, the capacity allocated on each border, in MW:</p>
-          <KeyList items={beneath.map((d) => ({ key: seriesId(d), mark: { kind: 'line' as const, color: d.color, dashed: ctx.fixture }, label: d.label }))} />
+          <KeyList items={beneath.map((d) => ({ key: seriesId(d), mark: { kind: 'line' as const, color: d.color }, label: d.label }))} />
         </>
       )}
       {fewer.length > 0 && <p className="gf-hint">The capacity allocated holds fewer hours than the revenue on {fewerText}. An hour it lacks is not held, not zero.</p>}

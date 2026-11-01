@@ -56,7 +56,7 @@ export function DemandPanel({ ctx }: { ctx: PageContext }) {
   return (
     <>
       {ctx.mode === 'chart' && panel && (
-        <SeriesChart panels={[panel]} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+        <SeriesChart panels={[panel]} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} />
       )}
       {rel && (rel.state === 'error' || rel.state === 'refreshing') && (
         <p className="gf-hint">

@@ -6,7 +6,6 @@
  * window's highest and lowest price across the zones. Every figure is read
  * from the rows, on each zone's own clock.
  */
-import { CHART } from '../../../design/chartTheme'
 import { currency, plural } from '../../../design/format'
 import { periodLabel } from '../../../design/time'
 import { latestValue, periodName, seriesId, seriesOf } from '../../_template/seriesModel'
@@ -21,11 +20,11 @@ const eur = (v: number) => `${currency(v, '€', 2)}/MWh`
  * panel; the rows show the price without its `/MWh`, which the line above
  * the list names once.
  */
-function Row({ color, label, value, dashed }: { color: string; label: string; value: string; dashed: boolean }) {
+function Row({ color, label, value }: { color: string; label: string; value: string }) {
   return (
     <>
       <svg width="22" height="10" aria-hidden="true" style={{ flex: 'none' }}>
-        <line x1="0" y1="5" x2="22" y2="5" stroke={color} strokeWidth="2" strokeDasharray={dashed ? CHART.fixtureDash : undefined} />
+        <line x1="0" y1="5" x2="22" y2="5" stroke={color} strokeWidth="2" />
       </svg>
       <span className="gf-series-name" style={{ flex: '1 1 auto', minWidth: 0 }} title={label}>
         {label}
@@ -73,7 +72,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
           return (
             <li key={id} className={on ? 'is-focus' : focus ? 'is-muted' : undefined}>
               <button type="button" aria-pressed={on} disabled={held.length < 2} onClick={() => ctx.setFocus(on ? undefined : id)}>
-                <Row color={z.color} label={z.label} value={z.latest ? currency(z.latest.v, '€', 2) : '–'} dashed={ctx.fixture} />
+                <Row color={z.color} label={z.label} value={z.latest ? currency(z.latest.v, '€', 2) : '–'} />
               </button>
               {z.latest && <span className="gf-series-when">{when(z.latest, z)}</span>}
             </li>
@@ -84,7 +83,7 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
         <ul className="gf-series-key">
           <li>
             <button type="button" disabled>
-              <Row color={gbDef.color} label="GB benchmark" value={gbLatest ? currency(gbLatest.v, '£', 2) : '–'} dashed={ctx.fixture} />
+              <Row color={gbDef.color} label="GB benchmark" value={gbLatest ? currency(gbLatest.v, '£', 2) : '–'} />
             </button>
             {gbLatest && <span className="gf-series-when">{periodName(gbLatest.t, gb.series.stepMs, gb.series.settlement)}</span>}
           </li>

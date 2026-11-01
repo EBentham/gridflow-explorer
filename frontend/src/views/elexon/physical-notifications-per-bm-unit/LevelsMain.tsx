@@ -43,7 +43,7 @@ export function LevelsMain({ ctx }: { ctx: PageContext }) {
   const thin = cover && cover.held < cover.expected ? ` The price is held for ${cover.held.toLocaleString('en-GB')} of the window’s ${cover.expected.toLocaleString('en-GB')} ${priceNoun}.` : ''
   return (
     <>
-      <SeriesChart panels={panels} domain={windowDomain(w.start, w.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+      <SeriesChart panels={panels} domain={windowDomain(w.start, w.end)} picked={ctx.picked} onPick={ctx.pick} />
       <p className="gf-hint">
         {one
           ? `${one}’s notified level at the start of each half-hour, in MW${flatText ? `: ${flatText}` : ''}.`

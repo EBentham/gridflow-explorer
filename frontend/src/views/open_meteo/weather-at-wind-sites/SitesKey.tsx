@@ -21,7 +21,7 @@ function SiteItem({ ctx, model, def }: { ctx: PageContext; model: SeriesModel; d
   return (
     <li className={on ? 'is-focus' : ctx.focus ? 'is-muted' : undefined}>
       <button type="button" aria-pressed={on} onClick={() => ctx.setFocus(on ? undefined : id)}>
-        <KeyList items={[{ key: id, mark: { kind: 'line', color: def.color, dashed: ctx.fixture }, label: <span className="gf-series-name">{def.label}</span> }]} />
+        <KeyList items={[{ key: id, mark: { kind: 'line', color: def.color }, label: <span className="gf-series-name">{def.label}</span> }]} />
         <span className="gf-series-value">{latest ? def.unit.format(latest.v) : '–'}</span>
       </button>
     </li>
@@ -144,7 +144,7 @@ export function SitesKey({ ctx }: { ctx: PageContext }) {
           <ul className="gf-series-key">
             <li>
               <button type="button" disabled>
-                <KeyList items={[{ key: 'output', mark: { kind: 'line', color: outDef?.color ?? 'var(--fuel-wind)', dashed: ctx.fixture }, label: <span className="gf-series-name">{rel.spec.label}</span> }]} />
+                <KeyList items={[{ key: 'output', mark: { kind: 'line', color: outDef?.color ?? 'var(--fuel-wind)' }, label: <span className="gf-series-name">{rel.spec.label}</span> }]} />
                 <span className="gf-series-value">{outLatest && outDef ? outDef.unit.format(outLatest.v) : '–'}</span>
               </button>
             </li>

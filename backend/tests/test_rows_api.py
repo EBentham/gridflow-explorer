@@ -34,7 +34,7 @@ def _spec(*, kind="series", grain="1h", grouped=True):
         if kind == "reference"
         else {"mode": "max", "column": "timestamp_utc"},
         "values": [{"column": "value", "unit": "MW", "label": "Value"}],
-        "dims": [{"column": "unit", "role": "series", "cardinality": 2}] if grouped else [],
+        "dims": [{"column": "unit", "role": "series"}] if grouped else [],
         "default_filter": None,
         "dedup": None,
         "row_filter": None,
@@ -158,8 +158,8 @@ def _gold_policy_case(monkeypatch, sources_db):
     spec = _spec(grain="irregular", grouped=False)
     spec["id"] = "gold_forecasts"
     spec["dims"] = [
-        {"column": "model_id", "role": "series", "cardinality": 2},
-        {"column": "vintage_policy_id", "role": "filter", "cardinality": 2},
+        {"column": "model_id", "role": "series"},
+        {"column": "vintage_policy_id", "role": "filter"},
     ]
     sources_db.con.execute(
         "CREATE TABLE silver_test_sample (timestamp_utc TIMESTAMPTZ, model_id VARCHAR, "
@@ -230,7 +230,7 @@ def _pn_case(monkeypatch, sources_db):
     spec = _spec(grain="irregular", grouped=False)
     spec.update(
         id="pn",
-        dims=[{"column": "bm_unit_id", "role": "series", "cardinality": 21}],
+        dims=[{"column": "bm_unit_id", "role": "series"}],
         values=[{"column": "level_to", "unit": "MW", "label": "End level"}],
     )
     sources_db.con.execute(
@@ -315,7 +315,7 @@ def test_default_filter_clear_and_filter_grammar(monkeypatch, sources_db):
     """Sole clear, explicit pairs, and mixed/duplicate grammar behave distinctly."""
     spec = _spec(kind="reference")
     spec["default_filter"] = {"column": "unit", "equals": "A"}
-    spec["dims"].append({"column": "region", "role": "filter", "cardinality": 2})
+    spec["dims"].append({"column": "region", "role": "filter"})
     sources_db.con.execute(
         "CREATE TABLE silver_test_sample (unit VARCHAR, region VARCHAR, value DOUBLE)"
     )
@@ -354,7 +354,7 @@ def test_filters_reports_effective_defaults_and_explicit_replacement(monkeypatch
 def test_boolean_filters_match_true_and_false(monkeypatch, sources_db):
     """Both Boolean values retain their matching reference records."""
     spec = _spec(kind="reference", grouped=False)
-    spec["dims"] = [{"column": "flag", "role": "filter", "cardinality": 2}]
+    spec["dims"] = [{"column": "flag", "role": "filter"}]
     sources_db.con.execute("CREATE TABLE silver_test_sample (flag BOOLEAN, value DOUBLE)")
     sources_db.con.executemany(
         "INSERT INTO silver_test_sample VALUES (?, ?)", [(True, 1.0), (False, 2.0)]
@@ -527,7 +527,7 @@ def test_unsafe_downsample_has_explicit_code(monkeypatch, sources_db, reason):
     elif reason == "mixed_identity":
         monkeypatch.setattr(rows, "MAX_RESPONSE_ROWS", 5)
         spec = _spec()
-        spec["dims"].append({"column": "region", "role": "filter", "cardinality": 2})
+        spec["dims"].append({"column": "region", "role": "filter"})
         sources_db.con.execute(
             "CREATE TABLE silver_test_sample (timestamp_utc TIMESTAMPTZ, unit VARCHAR, "
             "region VARCHAR, value DOUBLE)"

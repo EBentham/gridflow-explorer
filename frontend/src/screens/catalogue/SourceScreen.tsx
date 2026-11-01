@@ -9,7 +9,7 @@ import { Link, useParams } from 'react-router-dom'
 import { plural } from '../../design/format'
 import { Head, Panel, Screen, type ViewState } from '../../design/frame'
 import { SourceSymbol } from '../../design/symbols'
-import { DEFAULT_ADAPTER } from '../../views/_data/adapters'
+import { httpAdapter } from '../../views/_data/http'
 import { useManifest } from '../../views/_data/hooks'
 import { notHeldText } from '../../views/_template/text'
 import type { Kind, ManifestDataset, ManifestFamily, ManifestSource } from '../../views/contract'
@@ -215,7 +215,7 @@ function SourceBody({ s }: { s: ManifestSource }) {
 
 export function SourceScreen() {
   const { sourceKey } = useParams()
-  const manifest = useManifest(DEFAULT_ADAPTER)
+  const manifest = useManifest(httpAdapter)
   const s = manifest.value?.sources.find((x) => x.key === sourceKey)
 
   if (manifest.state !== 'data') {

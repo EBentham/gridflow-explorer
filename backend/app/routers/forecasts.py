@@ -68,9 +68,8 @@ VariantKeyFilter = Annotated[list[str] | None, Query()]
 def get_forecast_variants() -> list[dict[str, Any]]:
     """List every forecast Variant present, from its newest run.
 
-    Touches the database (unlike `/api/datasets`, which is pure catalogue),
-    so this answers `503 refresh_in_progress` during a live write, same as
-    every other route in this module.
+    Touches the database, so this answers `503 refresh_in_progress` during a
+    live write, same as every other route in this module.
 
     Returns:
         One entry per distinct `(model_id, vintage_policy_id)` pair, or

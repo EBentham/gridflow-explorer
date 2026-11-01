@@ -82,12 +82,12 @@ export function WindSolarPanel({ ctx }: { ctx: PageContext }) {
       <>
         <KeyList
           items={[
-            { key: 'a', mark: { kind: 'line', color: MEASURE.total, dashed: ctx.fixture }, label: `${zone.label}, total generation forecast, ${unit.label}` },
-            { key: 'b', mark: { kind: 'line', color: MEASURE.sum, dashed: ctx.fixture }, label: `${zone.label}, wind and solar forecast, ${unit.label}` },
+            { key: 'a', mark: { kind: 'line', color: MEASURE.total }, label: `${zone.label}, total generation forecast, ${unit.label}` },
+            { key: 'b', mark: { kind: 'line', color: MEASURE.sum }, label: `${zone.label}, wind and solar forecast, ${unit.label}` },
             { key: 'd', mark: { kind: 'bars', color: MEASURE.diff, shape: 'rise' }, label: `Total less wind and solar, ${unit.label}, lower chart` },
           ]}
         />
-        <SeriesChart panels={panels} domain={domain} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+        <SeriesChart panels={panels} domain={domain} picked={ctx.picked} onPick={ctx.pick} />
       </>
     )
   }

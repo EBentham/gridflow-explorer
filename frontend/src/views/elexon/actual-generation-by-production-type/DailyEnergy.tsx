@@ -72,7 +72,6 @@ export function DailyEnergy({ ctx }: { ctx: PageContext }) {
           <SeriesChart
             panels={[{ rows, series, mark: 'bars', unit: GWH, stepMs: DAY_MS, height: 220, zero: true, axisWidth: AXIS_WIDTH }]}
             domain={windowDomain(ctx.window.start, ctx.window.end)}
-            fixture={ctx.fixture}
             syncId="agws-energy"
           />
           <KeyList items={defs.map((d) => ({ key: d.key, mark: { kind: 'swatch' as const, color: swatchOf(d) }, label: d.label }))} />

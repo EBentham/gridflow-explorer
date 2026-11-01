@@ -84,13 +84,11 @@ _PUBLIC_DATASET = (
     "id",
     "schedule",
     "kind",
-    "verdict",
     "clock",
     "latest_day_rule",
     "values",
     "dims",
     "default_filter",
-    "volume_class",
     "notes",
 )
 
@@ -395,7 +393,6 @@ def build_manifest(client: Any, *, generated_at: datetime | None = None) -> dict
 def _response(snapshot: dict[str, Any]) -> dict[str, Any]:
     payload = copy.deepcopy(snapshot)
     today = _today_uk()
-    payload["today_uk"] = today.isoformat()
     for source in payload["sources"]:
         for family in source["families"]:
             for dataset in family["datasets"]:

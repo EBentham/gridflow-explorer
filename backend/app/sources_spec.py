@@ -31,7 +31,6 @@ SOURCES = [
                         "id": "fuelhh",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -47,8 +46,7 @@ SOURCES = [
                                 "positive = import to GB",
                             }
                         ],
-                        "dims": [{"column": "fuel_type", "role": "series", "cardinality": 21}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel_type", "role": "series"}],
                         "notes": [
                             "local hole: 2026-09-06 holds 40 rows (2 periods), "
                             "2026-09-07..09 hold none, 2026-09-16 is partial (780 of "
@@ -80,7 +78,6 @@ SOURCES = [
                         "id": "system_prices",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -104,10 +101,7 @@ SOURCES = [
                                 "label": "net imbalance volume",
                             },
                         ],
-                        "dims": [
-                            {"column": "price_derivation_code", "role": "filter", "cardinality": 3}
-                        ],
-                        "volume_class": "small",
+                        "dims": [{"column": "price_derivation_code", "role": "filter"}],
                         "notes": [
                             "base relation is APPEND_ONLY: 96,313 rows vs 88,456 in "
                             "_latest. About 7,100 keys carry more than one vintage "
@@ -141,7 +135,6 @@ SOURCES = [
                         "id": "fuelinst",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "5min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -151,9 +144,8 @@ SOURCES = [
                                 "label": "instantaneous (5-minute) generation by fuel type",
                             }
                         ],
-                        "dims": [{"column": "fuel_type", "role": "series", "cardinality": 20}],
+                        "dims": [{"column": "fuel_type", "role": "series"}],
                         "dedup": {"keys": ["timestamp_utc", "fuel_type"], "order_by": []},
-                        "volume_class": "medium",
                         "notes": [
                             "80 duplicate (timestamp_utc, fuel_type) rows (28,900 rows "
                             "vs 28,820 keys): the day-boundary instant appears in two "
@@ -176,7 +168,6 @@ SOURCES = [
                         "id": "agpt",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -191,10 +182,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "psr_type", "role": "series", "cardinality": 11},
-                            {"column": "business_type", "role": "filter", "cardinality": 3},
+                            {"column": "psr_type", "role": "series"},
+                            {"column": "business_type", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "psr_type holds human-readable labels ('Fossil Gas', 'Wind "
                             "Offshore'), not ENTSO-E B-codes (vault)",
@@ -208,7 +198,6 @@ SOURCES = [
                         "id": "agws",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -223,10 +212,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "psr_type", "role": "series", "cardinality": 3},
-                            {"column": "business_type", "role": "filter", "cardinality": 2},
+                            {"column": "psr_type", "role": "series"},
+                            {"column": "business_type", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "Solar is present and material (about 12.7 GW midday peak, "
                             "vault). Whether it is BM-only or national scope is "
@@ -247,7 +235,6 @@ SOURCES = [
                         "id": "mid",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -266,11 +253,8 @@ SOURCES = [
                                 "label": "market index volume per data provider",
                             },
                         ],
-                        "dims": [
-                            {"column": "data_provider_id", "role": "series", "cardinality": 2}
-                        ],
+                        "dims": [{"column": "data_provider_id", "role": "series"}],
                         "default_filter": {"column": "data_provider_id", "equals": "APXMIDP"},
-                        "volume_class": "small",
                         "notes": [
                             "N2EXMIDP is almost always empty: 87,351 of 87,547 rows "
                             "have price 0 and volume 0, and 1,728 of 1,731 since "
@@ -310,7 +294,6 @@ SOURCES = [
                         "id": "market_depth",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -346,7 +329,6 @@ SOURCES = [
                                 "label": "priced accepted bid volume",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "non-contiguous local days: 1-5 Aug, then 1, 17 and 21 Sep only",
                             "nulls: offer/bid volume 13.3%, accepted and priced "
@@ -375,13 +357,11 @@ SOURCES = [
                         "id": "freq",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "15s"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {"column": "frequency_hz", "unit": "Hz", "label": "system frequency"}
                         ],
-                        "volume_class": "medium",
                         "notes": [
                             "4 duplicate instants (28,805 rows vs 28,801 keys), at "
                             "capture boundaries",
@@ -408,7 +388,6 @@ SOURCES = [
                         "id": "indo",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -422,7 +401,6 @@ SOURCES = [
                                 "label": "initial national demand outturn",
                             }
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "first-publish outturn, revised later (vault)",
                             "INDO runs about 2,375 MW BELOW ITSDO (vault, 24 Jul "
@@ -436,7 +414,6 @@ SOURCES = [
                         "id": "itsdo",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -450,7 +427,6 @@ SOURCES = [
                                 "label": "initial transmission system demand outturn",
                             }
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "ITSDO runs above INDO by about 2,375 MW (vault)",
                             "0 duplicate keys",
@@ -463,7 +439,6 @@ SOURCES = [
                         "id": "indod",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "1d",
@@ -477,7 +452,6 @@ SOURCES = [
                                 "label": "initial national demand outturn, daily total",
                             }
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "unit unsettled: the column is named _mw, but values run "
                             "455,172-578,626. That matches a daily energy total in MWh "
@@ -496,7 +470,6 @@ SOURCES = [
                         "id": "atl",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -510,7 +483,6 @@ SOURCES = [
                                 "label": "actual total load per bidding zone (B0610)",
                             }
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "thin: 26-33 of 48 periods per day (142 of about 240 "
                             "expected over 5 days), with gaps scattered through each "
@@ -533,7 +505,6 @@ SOURCES = [
                         "id": "ndf",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -547,14 +518,13 @@ SOURCES = [
                                 "label": "national demand forecast, day-ahead (pairs with INDO)",
                             }
                         ],
-                        "dims": [{"column": "forecast_type", "role": "filter", "cardinality": 1}],
+                        "dims": [{"column": "forecast_type", "role": "filter"}],
                         "dedup": {
                             "keys": ["settlement_date", "settlement_period"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "medium",
                         "notes": [
                             "every vintage is kept (published_at is in the key): "
                             "14,080 rows / 295 keys, up to 82 vintages per key. "
@@ -575,7 +545,6 @@ SOURCES = [
                         "id": "tsdf",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -590,14 +559,13 @@ SOURCES = [
                                 "boundary (N = national)",
                             }
                         ],
-                        "dims": [{"column": "boundary", "role": "filter", "cardinality": 18}],
+                        "dims": [{"column": "boundary", "role": "filter"}],
                         "dedup": {
                             "keys": ["settlement_date", "settlement_period", "boundary"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "medium",
                         "notes": [
                             "vintage inversion: the API returns newest-first, and "
                             "unique(keep='last') keeps the EARLIEST publish of each "
@@ -623,7 +591,6 @@ SOURCES = [
                         "id": "ndfd",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "1d",
@@ -639,14 +606,13 @@ SOURCES = [
                                 "unknown)",
                             }
                         ],
-                        "dims": [{"column": "forecast_type", "role": "filter", "cardinality": 1}],
+                        "dims": [{"column": "forecast_type", "role": "filter"}],
                         "dedup": {
                             "keys": ["settlement_date"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "settlement_period is a placeholder 1, so join on the date (vault)",
                             "timestamp_utc = London midnight (00:00+01); TSDFD's is "
@@ -667,7 +633,6 @@ SOURCES = [
                         "id": "tsdfd",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "forecast_date", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
@@ -684,7 +649,6 @@ SOURCES = [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "the key is (forecast_date) only, but 39 rows / 17 dates "
                             "remain (up to 3 vintages from separate capture files)",
@@ -709,7 +673,6 @@ SOURCES = [
                         "id": "inddem",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -725,14 +688,13 @@ SOURCES = [
                                 "-19,924 to -10,745)",
                             }
                         ],
-                        "dims": [{"column": "boundary", "role": "filter", "cardinality": 18}],
+                        "dims": [{"column": "boundary", "role": "filter"}],
                         "dedup": {
                             "keys": ["settlement_date", "settlement_period", "boundary"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "medium",
                         "notes": [
                             "same vintage inversion as tsdf: keep='last' keeps the "
                             "earliest publish per capture day (bronze 2026-08-03: "
@@ -749,7 +711,6 @@ SOURCES = [
                         "id": "indgen",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -763,14 +724,13 @@ SOURCES = [
                                 "label": "day and day-ahead indicated generation per boundary",
                             }
                         ],
-                        "dims": [{"column": "boundary", "role": "filter", "cardinality": 18}],
+                        "dims": [{"column": "boundary", "role": "filter"}],
                         "dedup": {
                             "keys": ["settlement_date", "settlement_period", "boundary"],
                             "order_by": [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "medium",
                         "notes": [
                             "same transformer shape as inddem (indgen.py:117), so the "
                             "same earliest-publish-per-capture vintage selection is "
@@ -793,7 +753,6 @@ SOURCES = [
                         "id": "imbalngc",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -814,7 +773,6 @@ SOURCES = [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "boundary dropped: bronze carries 18 boundaries (N, "
                             "B1-B17) x 47 publications, and silver has no boundary "
@@ -840,7 +798,6 @@ SOURCES = [
                         "id": "melngc",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -862,7 +819,6 @@ SOURCES = [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "identical defect to imbalngc: 18 boundaries in bronze, "
                             "none kept; N survives by file order (103 of 103 keys); "
@@ -889,7 +845,6 @@ SOURCES = [
                         "id": "lolpdrm",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -914,7 +869,6 @@ SOURCES = [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "loss_of_load_probability is 0.0 on all 510 rows "
                             "(plausible in summer, but degenerate to chart). "
@@ -945,7 +899,6 @@ SOURCES = [
                         "id": "windfor",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1h"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
@@ -961,7 +914,6 @@ SOURCES = [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "every vintage kept (key timestamp_utc + published_at): "
                             "2,920 rows / 169 instants, up to 32 vintages. Deduped to "
@@ -987,7 +939,6 @@ SOURCES = [
                         "id": "fou2t14d",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "1d",
@@ -1001,8 +952,7 @@ SOURCES = [
                                 "label": "forecast usable output by fuel type per delivery date",
                             }
                         ],
-                        "dims": [{"column": "fuel_type", "role": "series", "cardinality": 19}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel_type", "role": "series"}],
                         "notes": [
                             "APPEND_ONLY: base 29,887 rows (about 41,800 per 7 publish "
                             "days) vs _latest 342 (19 fuels x 18 delivery dates)",
@@ -1023,7 +973,6 @@ SOURCES = [
                         "id": "uou2t14d",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "1d",
@@ -1038,12 +987,11 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "fuel_type", "role": "series", "cardinality": 19},
-                            {"column": "bm_unit_id", "role": "filter", "cardinality": 464},
+                            {"column": "fuel_type", "role": "series"},
+                            {"column": "bm_unit_id", "role": "filter"},
                             {
                                 "column": "national_grid_bm_unit",
                                 "role": "filter",
-                                "cardinality": 465,
                             },
                         ],
                         "dedup": {
@@ -1052,7 +1000,6 @@ SOURCES = [
                                 {"column": "published_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "medium",
                         "notes": [
                             "no _latest view: base 32,382 rows / 8,358 keys, up to 5 "
                             "vintages per key (about 45,000 rows per 7 publish days). "
@@ -1086,7 +1033,6 @@ SOURCES = [
                         "id": "temp",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "measurement_date", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "measurement_date"},
                         "values": [
@@ -1096,7 +1042,6 @@ SOURCES = [
                                 "label": "measured GB temperature (vault: Celsius)",
                             }
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "timestamp_utc is the publish instant (16:45 local each "
                             "day), not the measurement time. Use measurement_date",
@@ -1117,7 +1062,6 @@ SOURCES = [
                         "id": "nonbm",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "broken",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -1131,7 +1075,6 @@ SOURCES = [
                                 "label": "non-BM STOR generation",
                             }
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "5 identical rows: 2026-04-01 SP22, 0.0 MW, published "
                             "2026-04-01 10:04Z. They were ingested once per capture "
@@ -1161,7 +1104,6 @@ SOURCES = [
                         "id": "netbsad",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -1210,7 +1152,6 @@ SOURCES = [
                                 "label": "price adjustment to sell price",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "4 duplicate keys (SP3 on 2-5 Aug; 245 rows / 241 keys) "
                             "from capture overlap. Dedupe on read",
@@ -1257,7 +1198,6 @@ SOURCES = [
                         "id": "pn",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -1276,8 +1216,7 @@ SOURCES = [
                                 "label": "notified level at period end",
                             },
                         ],
-                        "dims": [{"column": "bm_unit_id", "role": "filter", "cardinality": 2490}],
-                        "volume_class": "large",
+                        "dims": [{"column": "bm_unit_id", "role": "filter"}],
                         "notes": [
                             "non-contiguous: 1-5 Aug are full (48 SPs x 2,465 units = "
                             "118,368/day), 2026-09-01 has 27 SPs, 09-17 has 42 and "
@@ -1306,7 +1245,6 @@ SOURCES = [
                         "id": "boal",
                         "schedule": "hourly",
                         "kind": "events",
-                        "verdict": "events-table",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -1327,10 +1265,9 @@ SOURCES = [
                             },
                         ],
                         "dims": [
-                            {"column": "bm_unit_id", "role": "filter", "cardinality": 386},
-                            {"column": "so_flag", "role": "filter", "cardinality": 2},
+                            {"column": "bm_unit_id", "role": "filter"},
+                            {"column": "so_flag", "role": "filter"},
                         ],
-                        "volume_class": "medium",
                         "notes": [
                             "132 duplicate keys (58,981 rows vs 58,849 on date, SP, "
                             "unit, acceptance_number) from capture overlap",
@@ -1358,7 +1295,6 @@ SOURCES = [
                         "id": "disbsad",
                         "schedule": "daily",
                         "kind": "events",
-                        "verdict": "events-table",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -1374,15 +1310,13 @@ SOURCES = [
                             },
                         ],
                         "dims": [
-                            {"column": "component", "role": "filter", "cardinality": 5},
-                            {"column": "so_flag", "role": "filter", "cardinality": 2},
+                            {"column": "component", "role": "filter"},
+                            {"column": "so_flag", "role": "filter"},
                             {
                                 "column": "adjustment_action_id",
                                 "role": "filter",
-                                "cardinality": 121,
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "component null on 2.4% of rows (values Energy, System, "
                             "Non-BM LCM, PSR, PQR)",
@@ -1404,7 +1338,6 @@ SOURCES = [
                         "id": "remit",
                         "schedule": "daily",
                         "kind": "events",
-                        "verdict": "events-table",
                         "clock": {"column": "timestamp_utc", "grain": "event"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -1425,12 +1358,11 @@ SOURCES = [
                             },
                         ],
                         "dims": [
-                            {"column": "fuel_type", "role": "filter", "cardinality": 7},
-                            {"column": "unavailability_type", "role": "filter", "cardinality": 2},
-                            {"column": "event_status", "role": "filter", "cardinality": 3},
-                            {"column": "participant_id", "role": "filter", "cardinality": 41},
+                            {"column": "fuel_type", "role": "filter"},
+                            {"column": "unavailability_type", "role": "filter"},
+                            {"column": "event_status", "role": "filter"},
+                            {"column": "participant_id", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "APPEND_ONLY: base 890 rows vs _latest 370 (one per mrid)",
                             "event_start_time runs 2024-02-19 to 2029-11-05 and "
@@ -1460,7 +1392,6 @@ SOURCES = [
                         "id": "soso",
                         "schedule": "daily",
                         "kind": "events",
-                        "verdict": "events-table",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "1h",
@@ -1480,11 +1411,10 @@ SOURCES = [
                             },
                         ],
                         "dims": [
-                            {"column": "trader_unit", "role": "filter", "cardinality": 6},
-                            {"column": "trade_direction", "role": "filter", "cardinality": 2},
-                            {"column": "resource_provider", "role": "filter", "cardinality": 4},
+                            {"column": "trader_unit", "role": "filter"},
+                            {"column": "trade_direction", "role": "filter"},
+                            {"column": "resource_provider", "role": "filter"},
                         ],
-                        "volume_class": "medium",
                         "notes": [
                             "end_time is 100% null",
                             "hourly (timestamp_utc minute 0 only; start_time drives "
@@ -1507,7 +1437,6 @@ SOURCES = [
                         "id": "bmunits_reference",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "verdict": "reference-table",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
@@ -1518,11 +1447,10 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "fuel_type", "role": "filter", "cardinality": 19},
-                            {"column": "gsp_group_id", "role": "filter", "cardinality": 14},
-                            {"column": "company_name", "role": "filter", "cardinality": 376},
+                            {"column": "fuel_type", "role": "filter"},
+                            {"column": "gsp_group_id", "role": "filter"},
+                            {"column": "company_name", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "fuel_type null on 83.4% of rows; gsp_group_id null on 60.7%",
                             "interconnector registrations (bmUnitType I) are per-party "
@@ -1561,7 +1489,6 @@ SOURCES = [
                         "id": "actual_load",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "15min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -1571,8 +1498,7 @@ SOURCES = [
                                 "label": "actual total load per bidding zone (A65/A16)",
                             }
                         ],
-                        "dims": [{"column": "area_code", "role": "series", "cardinality": 4}],
-                        "volume_class": "small",
+                        "dims": [{"column": "area_code", "role": "series"}],
                         "notes": [
                             "no GB and no IE-SEM rows: areas are FR, BE, NL, DE-LU. GB "
                             "is fetched (DEFAULT_ZONES) but ENTSO-E no longer "
@@ -1587,7 +1513,6 @@ SOURCES = [
                         "id": "load_forecast",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "15min"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
@@ -1597,8 +1522,7 @@ SOURCES = [
                                 "label": "day-ahead total load forecast (A65/A01)",
                             }
                         ],
-                        "dims": [{"column": "area_code", "role": "series", "cardinality": 4}],
-                        "volume_class": "small",
+                        "dims": [{"column": "area_code", "role": "series"}],
                         "notes": [
                             "no GB/IE rows (FR, BE, NL, DE-LU)",
                             "published_at = request time (A65 createdDateTime), not a "
@@ -1610,7 +1534,6 @@ SOURCES = [
                         "id": "load_forecast_weekly",
                         "schedule": "weekly",
                         "kind": "series",
-                        "verdict": "broken",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
@@ -1622,8 +1545,7 @@ SOURCES = [
                                 "unknown",
                             }
                         ],
-                        "dims": [{"column": "area_code", "role": "series", "cardinality": 4}],
-                        "volume_class": "small",
+                        "dims": [{"column": "area_code", "role": "series"}],
                         "notes": [
                             "SILVER BUG: bronze carries two series per zone "
                             "(businessType A60 min and A61 max, P1D). Silver dedups on "
@@ -1641,7 +1563,6 @@ SOURCES = [
                         "id": "load_forecast_monthly",
                         "schedule": "monthly",
                         "kind": "series",
-                        "verdict": "broken",
                         "clock": {"column": "timestamp_utc", "grain": "7d"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
@@ -1652,8 +1573,7 @@ SOURCES = [
                                 "collapsed (see quality)",
                             }
                         ],
-                        "dims": [{"column": "area_code", "role": "series", "cardinality": 4}],
-                        "volume_class": "small",
+                        "dims": [{"column": "area_code", "role": "series"}],
                         "notes": [
                             "SILVER BUG: min/max collapse, as in load_forecast_weekly "
                             "(vault load_forecast_monthly.md:136)",
@@ -1667,7 +1587,6 @@ SOURCES = [
                         "id": "load_forecast_yearly",
                         "schedule": "yearly",
                         "kind": "series",
-                        "verdict": "broken",
                         "clock": {"column": "timestamp_utc", "grain": "7d"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
@@ -1677,8 +1596,7 @@ SOURCES = [
                                 "label": "year-ahead forecast, weekly points; min/max collapsed",
                             }
                         ],
-                        "dims": [{"column": "area_code", "role": "series", "cardinality": 4}],
-                        "volume_class": "small",
+                        "dims": [{"column": "area_code", "role": "series"}],
                         "notes": [
                             "SILVER BUG: bronze has A60 + A61 per zone at P7D; silver keeps one",
                             "48 rows, 16 distinct keys: x3 duplicates",
@@ -1699,7 +1617,6 @@ SOURCES = [
                         "id": "forecast_margin",
                         "schedule": "yearly",
                         "kind": "reference",
-                        "verdict": "reference-table",
                         "clock": {"column": "timestamp_utc", "grain": "1y"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
@@ -1709,14 +1626,13 @@ SOURCES = [
                                 "label": "year-ahead forecast margin per zone (A70/A33)",
                             }
                         ],
-                        "dims": [{"column": "area_code", "role": "series", "cardinality": 4}],
+                        "dims": [{"column": "area_code", "role": "series"}],
                         "dedup": {
                             "keys": ["timestamp_utc", "area_code"],
                             "order_by": [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "48 rows = 4 distinct keys x12 identical copies (one per fetched day)",
                             "no GB (FR, BE, NL, DE-LU)",
@@ -1729,7 +1645,6 @@ SOURCES = [
                         "id": "installed_capacity",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "verdict": "reference-table",
                         "clock": {"column": "timestamp_utc", "grain": "1y"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
@@ -1741,8 +1656,8 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "area_code", "role": "filter", "cardinality": 4},
-                            {"column": "production_type", "role": "series", "cardinality": 21},
+                            {"column": "area_code", "role": "filter"},
+                            {"column": "production_type", "role": "series"},
                         ],
                         "dedup": {
                             "keys": ["timestamp_utc", "area_code", "production_type"],
@@ -1750,7 +1665,6 @@ SOURCES = [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "804 rows = 67 distinct keys x12 identical copies (one per "
                             "fetched day)",
@@ -1762,7 +1676,6 @@ SOURCES = [
                         "id": "installed_capacity_units",
                         "schedule": "yearly",
                         "kind": "reference",
-                        "verdict": "reference-table",
                         "clock": {"column": "timestamp_utc", "grain": "1y"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
@@ -1773,9 +1686,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "area_code", "role": "filter", "cardinality": 6},
-                            {"column": "production_type", "role": "filter", "cardinality": 18},
-                            {"column": "unit_mrid", "role": "filter", "cardinality": 639},
+                            {"column": "area_code", "role": "filter"},
+                            {"column": "production_type", "role": "filter"},
+                            {"column": "unit_mrid", "role": "filter"},
                         ],
                         "dedup": {
                             "keys": ["timestamp_utc", "area_code", "unit_mrid"],
@@ -1783,7 +1696,6 @@ SOURCES = [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "7,668 rows = 639 distinct keys x12 copies; 1 key has "
                             "conflicting values",
@@ -1806,7 +1718,6 @@ SOURCES = [
                         "id": "actual_generation",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "broken",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "mixed (PT15M FR/NL/DE-LU, PT60M BE, PT30M IE-SEM)",
@@ -1822,10 +1733,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "area_code", "role": "filter", "cardinality": 5},
-                            {"column": "production_type", "role": "series", "cardinality": 19},
+                            {"column": "area_code", "role": "filter"},
+                            {"column": "production_type", "role": "series"},
                         ],
-                        "volume_class": "medium",
                         "notes": [
                             "SILVER BUG: the parser maps both inBiddingZone "
                             "(generation) and outBiddingZone (consumption, e.g. pumped "
@@ -1850,7 +1760,6 @@ SOURCES = [
                         "id": "generation_forecast",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "mixed (PT15M, PT60M BE)"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
@@ -1861,8 +1770,7 @@ SOURCES = [
                                 "(A71/A01), zone total",
                             }
                         ],
-                        "dims": [{"column": "area_code", "role": "series", "cardinality": 4}],
-                        "volume_class": "small",
+                        "dims": [{"column": "area_code", "role": "series"}],
                         "notes": [
                             "production_type is '' on every row. The vault says it's "
                             "per production type, but the measured data is zone "
@@ -1877,7 +1785,6 @@ SOURCES = [
                         "id": "wind_solar_forecast",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "mixed (PT15M, PT60M)"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
@@ -1888,10 +1795,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "area_code", "role": "filter", "cardinality": 5},
-                            {"column": "production_type", "role": "series", "cardinality": 3},
+                            {"column": "area_code", "role": "filter"},
+                            {"column": "production_type", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "production_type B16 solar, B18 wind offshore, B19 wind "
                             "onshore (schema comment)",
@@ -1905,7 +1811,6 @@ SOURCES = [
                         "id": "actual_generation_units",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "mixed (PT15M, PT60M)"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -1916,11 +1821,10 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "area_code", "role": "filter", "cardinality": 3},
-                            {"column": "production_type", "role": "filter", "cardinality": 11},
-                            {"column": "unit_mrid", "role": "series", "cardinality": 175},
+                            {"column": "area_code", "role": "filter"},
+                            {"column": "production_type", "role": "filter"},
+                            {"column": "unit_mrid", "role": "series"},
                         ],
-                        "volume_class": "medium",
                         "notes": [
                             "unit_name is '' on every row (1 distinct value). Names "
                             "must come from silver_entsoe_generation_units_master_data "
@@ -1945,7 +1849,6 @@ SOURCES = [
                         "id": "day_ahead_prices",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "mixed (PT15M continental, PT60M IE-SEM)",
@@ -1959,10 +1862,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "area_code", "role": "series", "cardinality": 5},
-                            {"column": "currency", "role": "filter", "cardinality": 1},
+                            {"column": "area_code", "role": "series"},
+                            {"column": "currency", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "no GB rows: DE-LU, FR, BE, NL, IE-SEM. GB day-ahead is on "
                             "the gold_gb_day_ahead_benchmark side",
@@ -1986,7 +1888,6 @@ SOURCES = [
                         "id": "water_reservoirs",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "7d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -1996,14 +1897,13 @@ SOURCES = [
                                 "label": "aggregated reservoir filling (energy stored), weekly",
                             }
                         ],
-                        "dims": [{"column": "area_code", "role": "series", "cardinality": 1}],
+                        "dims": [{"column": "area_code", "role": "series"}],
                         "dedup": {
                             "keys": ["timestamp_utc", "area_code"],
                             "order_by": [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "FR only; 11 rows, 3 distinct weekly points (x3.7 "
                             "duplicates, identical values)",
@@ -2025,7 +1925,6 @@ SOURCES = [
                         "id": "cross_border_flows",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "mixed (PT15M, PT60M)"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -2037,10 +1936,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "in_area_code", "role": "series", "cardinality": 3},
-                            {"column": "out_area_code", "role": "series", "cardinality": 5},
+                            {"column": "in_area_code", "role": "series"},
+                            {"column": "out_area_code", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "8 pairs (client.py _FLOW_PAIRS). GB>FR has only 432 rows "
                             "and GB>IE-SEM 266, against ~1,728 for the other pairs. "
@@ -2055,7 +1953,6 @@ SOURCES = [
                         "id": "commercial_schedules",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "mixed (PT15M, PT60M GB pairs)",
@@ -2070,11 +1967,10 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "in_area_code", "role": "series", "cardinality": 3},
-                            {"column": "out_area_code", "role": "series", "cardinality": 5},
-                            {"column": "business_type", "role": "filter", "cardinality": 1},
+                            {"column": "in_area_code", "role": "series"},
+                            {"column": "out_area_code", "role": "series"},
+                            {"column": "business_type", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "8 pairs, including GB>FR, GB>NL, GB>BE and GB>IE-SEM; 0 "
                             "duplicate keys",
@@ -2085,7 +1981,6 @@ SOURCES = [
                         "id": "net_positions",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "15min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -2098,10 +1993,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "in_area_code", "role": "series", "cardinality": 5},
-                            {"column": "out_area_code", "role": "series", "cardinality": 4},
+                            {"column": "in_area_code", "role": "series"},
+                            {"column": "out_area_code", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "one side of every row is the literal placeholder "
                             "'REGION_CODE-----' (e.g. BE>REGION 480 rows, REGION>NL "
@@ -2129,7 +2023,6 @@ SOURCES = [
                         "id": "net_transfer_capacity",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "60min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -2141,10 +2034,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "in_area_code", "role": "series", "cardinality": 2},
-                            {"column": "out_area_code", "role": "series", "cardinality": 5},
+                            {"column": "in_area_code", "role": "series"},
+                            {"column": "out_area_code", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "6 pairs: GB>NL, GB>FR, GB>BE, GB>IE-SEM, NL>BE, NL>DE-LU; "
                             "0 duplicates",
@@ -2155,7 +2047,6 @@ SOURCES = [
                         "id": "dc_link_intraday_transfer_limits",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "60min (sparse)"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -2166,10 +2057,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "in_area_code", "role": "series", "cardinality": 1},
-                            {"column": "out_area_code", "role": "series", "cardinality": 1},
+                            {"column": "in_area_code", "role": "series"},
+                            {"column": "out_area_code", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "GB>NL only; 24 rows (22 on 1 Aug, 1 each on 5 and 6 Aug). "
                             "The data is published only when a limit is set",
@@ -2181,7 +2071,6 @@ SOURCES = [
                         "id": "offered_transfer_capacity_continuous",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty:OFFERED_TRANSFER_CAPACITIES_IMPLICIT "
                         "[11.1]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
@@ -2208,7 +2097,6 @@ SOURCES = [
                         "id": "offered_transfer_capacity_implicit",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty:OFFERED_TRANSFER_CAPACITIES_IMPLICIT "
                         "[11.1]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
@@ -2229,7 +2117,6 @@ SOURCES = [
                         "id": "offered_transfer_capacity_explicit",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty:OFFERED_TRANSFER_CAPACITIES_IMPLICIT "
                         "[11.1]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
@@ -2254,7 +2141,6 @@ SOURCES = [
                         "id": "transfer_capacity_use",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty:USE_OF_TRANSFER_CAPACITY [12.1.A]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
@@ -2269,7 +2155,6 @@ SOURCES = [
                         "id": "total_nominated_capacity",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "mixed (PT15M FR-DE, PT60M GB pairs)",
@@ -2283,10 +2168,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "in_area_code", "role": "series", "cardinality": 2},
-                            {"column": "out_area_code", "role": "series", "cardinality": 4},
+                            {"column": "in_area_code", "role": "series"},
+                            {"column": "out_area_code", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "pairs GB>NL, GB>BE, GB>FR, FR>DE-LU; 0 duplicates",
                             "rows_per_7d projected (168/day).",
@@ -2296,7 +2180,6 @@ SOURCES = [
                         "id": "total_capacity_allocated",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "60min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -2308,10 +2191,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "in_area_code", "role": "series", "cardinality": 3},
-                            {"column": "out_area_code", "role": "series", "cardinality": 3},
+                            {"column": "in_area_code", "role": "series"},
+                            {"column": "out_area_code", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "pairs GB>NL, GB>BE, FR>DE-LU, FR>BE, NL>DE-LU, NL>BE; 0 duplicates",
                             "rows_per_7d projected (144/day).",
@@ -2330,7 +2212,6 @@ SOURCES = [
                         "id": "auction_revenue",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "60min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -2343,8 +2224,8 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "in_area_code", "role": "series", "cardinality": 1},
-                            {"column": "out_area_code", "role": "series", "cardinality": 2},
+                            {"column": "in_area_code", "role": "series"},
+                            {"column": "out_area_code", "role": "series"},
                         ],
                         "dedup": {
                             "keys": [
@@ -2357,7 +2238,6 @@ SOURCES = [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "432 rows, 264 distinct keys: x1.64 duplicates (identical "
                             "values). No EVENT_WINDOW_FILTER on the amount class, so "
@@ -2372,7 +2252,6 @@ SOURCES = [
                         "id": "congestion_income",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty:IMPL_ALLOC_CONG_INCOME_FLOW_BASED "
                         "[12.1.E]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
@@ -2401,7 +2280,6 @@ SOURCES = [
                         "id": "imbalance_prices",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty:IMBALANCE_PRICES_R3 [17.1.G]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
@@ -2420,7 +2298,6 @@ SOURCES = [
                         "id": "imbalance_volume",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty:TOTAL_IMBALANCE_VOLUMES_R3 [17.1.H]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
@@ -2436,7 +2313,6 @@ SOURCES = [
                         "id": "current_balancing_state",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "broken",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "irregular (PT1M A03 curve, change points)",
@@ -2450,8 +2326,7 @@ SOURCES = [
                                 "flowDirection is dropped",
                             }
                         ],
-                        "dims": [{"column": "area_code", "role": "series", "cardinality": 1}],
-                        "volume_class": "small",
+                        "dims": [{"column": "area_code", "role": "series"}],
                         "notes": [
                             "SILVER BUG: area_code is '' on all 9,414 rows. The XML "
                             "carries area_Domain.mRID at DOCUMENT level, and the "
@@ -2482,7 +2357,6 @@ SOURCES = [
                         "id": "activated_balancing_prices",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty:PRICES_OF_ACTIVATED_BALANCING_ENERGY_R3 "
                         "[TR 17.1.F]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
@@ -2498,7 +2372,6 @@ SOURCES = [
                         "id": "aggregated_balancing_energy_bids",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty:AGGREGATED_BALANCING_ENERGY_BIDS_R3 "
                         "[12.3.E]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
@@ -2518,7 +2391,6 @@ SOURCES = [
                         "id": "contracted_reserves",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty:AMOUNT_AND_PRICES_PAID_OF_BALANCING_RESERVES_UNDER_CONTRACT",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
@@ -2533,7 +2405,6 @@ SOURCES = [
                         "id": "procured_balancing_capacity",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "broken",
                         "clock": {"column": "timestamp_utc", "grain": "15min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -2544,10 +2415,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "area_code", "role": "series", "cardinality": 1},
-                            {"column": "market_agreement_type", "role": "filter", "cardinality": 1},
+                            {"column": "area_code", "role": "series"},
+                            {"column": "market_agreement_type", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "SILVER BUG: area_code '' and market_agreement_type '' on "
                             "all 440 rows. Bronze has documents for DE-LU, BE, FR and "
@@ -2562,7 +2432,6 @@ SOURCES = [
                         "id": "cross_zonal_balancing_capacity",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty:ALLOCATION_AND_USE_CROSS_ZONAL_CAPACITY "
                         "[GL EB 12.3.H]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
@@ -2579,7 +2448,6 @@ SOURCES = [
                         "id": "balancing_financial_expenses_income",
                         "schedule": "monthly",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty:FINANCIAL_EXPENSES_AND_INCOME_FOR_BALANCING_R3 "
                         "[17.1.I]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
@@ -2609,7 +2477,6 @@ SOURCES = [
                         "id": "outages_generation",
                         "schedule": "daily",
                         "kind": "events",
-                        "verdict": "events-table",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "irregular: start of an availability block (A03 "
@@ -2627,10 +2494,10 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "area_code", "role": "filter", "cardinality": 6},
-                            {"column": "unit_mrid", "role": "series", "cardinality": 221},
-                            {"column": "unit_name", "role": "filter", "cardinality": 219},
-                            {"column": "outage_type", "role": "filter", "cardinality": 1},
+                            {"column": "area_code", "role": "filter"},
+                            {"column": "unit_mrid", "role": "series"},
+                            {"column": "unit_name", "role": "filter"},
+                            {"column": "outage_type", "role": "filter"},
                         ],
                         "dedup": {
                             "keys": ["timestamp_utc", "unit_mrid"],
@@ -2639,7 +2506,6 @@ SOURCES = [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"},
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "11,011 rows but 1,574 distinct (timestamp_utc, "
                             "unit_mrid): about x7 cross-partition copies (every daily "
@@ -2677,7 +2543,6 @@ SOURCES = [
                         "id": "outages_production",
                         "schedule": "daily",
                         "kind": "events",
-                        "verdict": "events-table",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "irregular: availability-block start (A03, PT1M)",
@@ -2692,10 +2557,10 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "area_code", "role": "filter", "cardinality": 3},
-                            {"column": "unit_mrid", "role": "series", "cardinality": 46},
-                            {"column": "production_type", "role": "filter", "cardinality": 6},
-                            {"column": "document_status", "role": "filter", "cardinality": 2},
+                            {"column": "area_code", "role": "filter"},
+                            {"column": "unit_mrid", "role": "series"},
+                            {"column": "production_type", "role": "filter"},
+                            {"column": "document_status", "role": "filter"},
                         ],
                         "dedup": {
                             "keys": ["timestamp_utc", "area_code", "unit_mrid", "timeseries_mrid"],
@@ -2704,7 +2569,6 @@ SOURCES = [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"},
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "3,551 rows, 972 distinct (timestamp_utc, unit_mrid, "
                             "timeseries_mrid): about x3.7 copies",
@@ -2721,7 +2585,6 @@ SOURCES = [
                         "id": "outages_consumption",
                         "schedule": "daily",
                         "kind": "events",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "15min"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
@@ -2731,7 +2594,7 @@ SOURCES = [
                                 "label": "aggregated unavailability of consumption units (A76)",
                             }
                         ],
-                        "dims": [{"column": "area_code", "role": "series", "cardinality": 2}],
+                        "dims": [{"column": "area_code", "role": "series"}],
                         "dedup": {
                             "keys": [
                                 "timestamp_utc",
@@ -2744,7 +2607,6 @@ SOURCES = [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"},
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "almost all DE-LU (1,728 rows), NL 10; constant values "
                             "0-35 MW; planned only; document_status ''",
@@ -2757,7 +2619,6 @@ SOURCES = [
                         "id": "outages_transmission",
                         "schedule": "daily",
                         "kind": "events",
-                        "verdict": "events-table",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "irregular: availability-block start (A03, PT1M)",
@@ -2773,10 +2634,10 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "in_area_code", "role": "filter", "cardinality": 3},
-                            {"column": "out_area_code", "role": "filter", "cardinality": 4},
-                            {"column": "asset_mrid", "role": "series", "cardinality": 28},
-                            {"column": "document_status", "role": "filter", "cardinality": 2},
+                            {"column": "in_area_code", "role": "filter"},
+                            {"column": "out_area_code", "role": "filter"},
+                            {"column": "asset_mrid", "role": "series"},
+                            {"column": "document_status", "role": "filter"},
                         ],
                         "dedup": {
                             "keys": [
@@ -2791,7 +2652,6 @@ SOURCES = [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"},
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "3,981 rows, 418 distinct keys: about x9.5 copies",
                             "GB>FR dominates (3,549 rows), which matches the "
@@ -2806,7 +2666,6 @@ SOURCES = [
                         "id": "outages_offshore_grid",
                         "schedule": "daily",
                         "kind": "events",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty:UNAVAILABILITY_OF_OFFSHORE_GRID [10.1.C]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
@@ -2840,7 +2699,6 @@ SOURCES = [
                         "id": "redispatching_cross_border",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty:REDISPATCHING_CROSS_BORDER_R3 [13.1.A]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
@@ -2855,7 +2713,6 @@ SOURCES = [
                         "id": "redispatching_internal",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "15min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -2865,8 +2722,7 @@ SOURCES = [
                                 "label": "internal redispatching volume (A63/A85)",
                             }
                         ],
-                        "dims": [{"column": "in_area_code", "role": "series", "cardinality": 2}],
-                        "volume_class": "small",
+                        "dims": [{"column": "in_area_code", "role": "series"}],
                         "notes": [
                             "in_area_code = out_area_code on every row (NL 1,056, BE 148); no GB",
                             "rows_per_7d projected (96/day); activity is event-driven, "
@@ -2877,7 +2733,6 @@ SOURCES = [
                         "id": "countertrading",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty:COUNTERTRADING_R3 [13.1.B]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
@@ -2888,7 +2743,6 @@ SOURCES = [
                         "id": "congestion_management_costs",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty:COSTS_OF_CONGESTION_MANAGEMENT_R3 "
                         "[13.1.C]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
@@ -2914,7 +2768,6 @@ SOURCES = [
                         "id": "balancing_energy_bids",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "15min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -2925,16 +2778,14 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "area_code", "role": "filter", "cardinality": 3},
-                            {"column": "direction", "role": "series", "cardinality": 2},
+                            {"column": "area_code", "role": "filter"},
+                            {"column": "direction", "role": "series"},
                             {
                                 "column": "standard_market_product",
                                 "role": "filter",
-                                "cardinality": 3,
                             },
-                            {"column": "bid_mrid", "role": "filter", "cardinality": 1082},
+                            {"column": "bid_mrid", "role": "filter"},
                         ],
-                        "volume_class": "medium",
                         "notes": [
                             "BE 30,335 rows; FR and DE-LU 500 each. The "
                             "4800-TimeSeries page cap (client.py:57) may truncate "
@@ -2959,11 +2810,10 @@ SOURCES = [
                         "id": "generation_units_master_data",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "verdict": "reference-table",
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "dims": [
-                            {"column": "area_code", "role": "filter", "cardinality": 6},
-                            {"column": "production_type", "role": "filter", "cardinality": 18},
+                            {"column": "area_code", "role": "filter"},
+                            {"column": "production_type", "role": "filter"},
                         ],
                         "dedup": {
                             "keys": ["area_code", "unit_mrid"],
@@ -2971,7 +2821,6 @@ SOURCES = [
                                 {"column": "ingested_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "1,317 rows = 660 distinct (area_code, unit_mrid) x2 "
                             "snapshots (Aug, Sep), identical",
@@ -3003,7 +2852,6 @@ SOURCES = [
                         "id": "carbon_intensity",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3025,7 +2873,6 @@ SOURCES = [
                                 "label": "very low | low | moderate | high | very high band",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "timestamp_utc is the API 'from' (period start); a range "
                             "request also returns the half-hour ending at 'from' (241 "
@@ -3055,7 +2902,6 @@ SOURCES = [
                         "id": "intensity_current",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched: no bronze/neso/intensity_current "
                         "dir; a transformer IS registered "
                         "(GF/silver/neso/carbon_intensity.py:272-280 "
@@ -3076,7 +2922,6 @@ SOURCES = [
                                 "label": "current half-hour estimated actual",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "A --start 2026-09-13 run would write the fetch-time "
                             "half-hour (26 Sep) into a bronze partition labelled 13 "
@@ -3088,7 +2933,6 @@ SOURCES = [
                         "id": "intensity_period",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3108,7 +2952,6 @@ SOURCES = [
                                 "label": "index band",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "same series as carbon_intensity fetched one SP per "
                             "request (48 requests per day)",
@@ -3120,7 +2963,6 @@ SOURCES = [
                         "id": "intensity_at",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "reference-table",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3135,7 +2977,6 @@ SOURCES = [
                                 "label": "estimated actual",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "one row per request; the request is anchored at --start, "
                             "so a multi-day window still yields 1 row",
@@ -3148,7 +2989,6 @@ SOURCES = [
                         "id": "intensity_fw24h",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
@@ -3163,7 +3003,6 @@ SOURCES = [
                                 "label": "estimated actual where already published",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "one request per 14-day chunk, anchored at --start: 49 "
                             "rows covering 24h regardless of window length",
@@ -3179,7 +3018,6 @@ SOURCES = [
                         "id": "intensity_fw48h",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
@@ -3194,7 +3032,6 @@ SOURCES = [
                                 "label": "estimated actual",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "anchored at --start: 97 rows over 48h per run",
                             "Same anchoring caveat as fw24h.",
@@ -3204,7 +3041,6 @@ SOURCES = [
                         "id": "intensity_pt24h",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
@@ -3219,7 +3055,6 @@ SOURCES = [
                                 "label": "estimated actual",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "anchored at --start and looks BACK 24h: the runbook "
                             "command returns 12–13 Sep, outside the week",
@@ -3231,7 +3066,6 @@ SOURCES = [
                         "id": "intensity_today",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched: no bronze/neso/intensity_today "
                         "dir; own transformer registered; /intensity/date "
                         "serves the current date only "
@@ -3250,14 +3084,12 @@ SOURCES = [
                                 "label": "estimated actual",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": ["intensity_date covers any past date with the same shape."],
                     },
                     {
                         "id": "intensity_date",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3277,7 +3109,6 @@ SOURCES = [
                                 "label": "index band",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "rows align to UK-local days (first row "
                             "2026-07-31T23:00Z); same series as carbon_intensity",
@@ -3298,7 +3129,6 @@ SOURCES = [
                         "id": "intensity_stats",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "reference-table",
                         "clock": {"column": "timestamp_utc", "grain": "request-window"},
                         "latest_day_rule": {"mode": "max", "column": "period_end_utc"},
                         "values": [
@@ -3323,7 +3153,6 @@ SOURCES = [
                                 "label": "index of the average",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "one summary row per ≤14-day request chunk; its span is "
                             "period_end_utc - timestamp_utc",
@@ -3336,7 +3165,6 @@ SOURCES = [
                         "id": "intensity_stats_block",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "24h"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3356,7 +3184,6 @@ SOURCES = [
                                 "label": "min per block",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "blocks are 24h from --start in UTC (block=24 default), not UK days"
                         ],
@@ -3374,7 +3201,6 @@ SOURCES = [
                         "id": "generation",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3384,8 +3210,7 @@ SOURCES = [
                                 "label": "fuel share of GB generation for the half-hour",
                             }
                         ],
-                        "dims": [{"column": "fuel", "role": "series", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "series"}],
                         "notes": [
                             "measured P1-3: shares sum to 99.8–100.2 per half-hour "
                             "(vendor rounding)",
@@ -3405,7 +3230,6 @@ SOURCES = [
                         "id": "generation_current",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched: no bronze/neso/generation_current "
                         "dir; own transformer registered; /generation is "
                         "current-only (requires_window=False)",
@@ -3418,15 +3242,13 @@ SOURCES = [
                                 "label": "current fuel share",
                             }
                         ],
-                        "dims": [{"column": "fuel", "role": "series", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "series"}],
                         "notes": ["A subset of generation."],
                     },
                     {
                         "id": "generation_pt24h",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
@@ -3436,8 +3258,7 @@ SOURCES = [
                                 "label": "fuel share, 24h before --start",
                             }
                         ],
-                        "dims": [{"column": "fuel", "role": "series", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "series"}],
                         "notes": [
                             "anchored at --start, looks back 24h: the runbook command "
                             "returns 12–13 Sep",
@@ -3456,7 +3277,6 @@ SOURCES = [
                         "id": "regional_current",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched: no bronze/neso/regional_current "
                         "dir; own transformer registered; /regional is "
                         "current-only",
@@ -3475,17 +3295,15 @@ SOURCES = [
                             },
                         ],
                         "dims": [
-                            {"column": "regionid", "role": "series", "cardinality": 18},
-                            {"column": "fuel", "role": "filter", "cardinality": 9},
+                            {"column": "regionid", "role": "series"},
+                            {"column": "fuel", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": ["A subset of regional_intensity."],
                     },
                     {
                         "id": "regional_england",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched: no bronze/neso/regional_england "
                         "dir; own transformer registered; current-only",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
@@ -3497,15 +3315,13 @@ SOURCES = [
                                 "label": "current England forecast",
                             }
                         ],
-                        "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "filter"}],
                         "notes": ["England is regionid 15 inside regional_intensity (measured)."],
                     },
                     {
                         "id": "regional_scotland",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched: no bronze/neso/regional_scotland "
                         "dir; own transformer registered; current-only",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
@@ -3517,15 +3333,13 @@ SOURCES = [
                                 "label": "current Scotland forecast",
                             }
                         ],
-                        "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "filter"}],
                         "notes": ["Scotland is regionid 16 inside regional_intensity."],
                     },
                     {
                         "id": "regional_wales",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched: no bronze/neso/regional_wales dir; "
                         "own transformer registered; current-only",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
@@ -3537,15 +3351,13 @@ SOURCES = [
                                 "label": "current Wales forecast",
                             }
                         ],
-                        "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "filter"}],
                         "notes": ["Wales is regionid 17 inside regional_intensity."],
                     },
                     {
                         "id": "regional_postcode",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched: no bronze/neso/regional_postcode "
                         "dir; own transformer registered; current-only "
                         "(default postcode RG10)",
@@ -3558,14 +3370,12 @@ SOURCES = [
                                 "label": "current forecast for postcode RG10",
                             }
                         ],
-                        "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "filter"}],
                     },
                     {
                         "id": "regional_regionid",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched: no bronze/neso/regional_regionid "
                         "dir; own transformer registered; current-only "
                         "(DEFAULT_REGION_ID=13)",
@@ -3578,8 +3388,7 @@ SOURCES = [
                                 "label": "current forecast for regionid 13 (London)",
                             }
                         ],
-                        "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "filter"}],
                     },
                 ],
             },
@@ -3594,7 +3403,6 @@ SOURCES = [
                         "id": "regional_intensity",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3616,10 +3424,9 @@ SOURCES = [
                             },
                         ],
                         "dims": [
-                            {"column": "regionid", "role": "series", "cardinality": 18},
-                            {"column": "fuel", "role": "filter", "cardinality": 9},
+                            {"column": "regionid", "role": "series"},
+                            {"column": "fuel", "role": "filter"},
                         ],
-                        "volume_class": "medium",
                         "notes": [
                             "measured P1-3: actual_gco2_kwh is 100% null (vault says "
                             "'usually absent'; locally always absent)",
@@ -3645,7 +3452,6 @@ SOURCES = [
                         "id": "regional_intensity_postcode",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3657,8 +3463,7 @@ SOURCES = [
                             },
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
-                        "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "filter"}],
                         "notes": [
                             "actual_gco2_kwh 100% null",
                             "single region: RG10 -> regionid 12 (measured)",
@@ -3669,7 +3474,6 @@ SOURCES = [
                         "id": "regional_intensity_regionid",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3680,8 +3484,7 @@ SOURCES = [
                             },
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
-                        "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "filter"}],
                         "notes": [
                             "actual_gco2_kwh 100% null",
                             "single region 13 London",
@@ -3692,7 +3495,6 @@ SOURCES = [
                         "id": "regional_intensity_fw24h",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
@@ -3704,10 +3506,9 @@ SOURCES = [
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
                         "dims": [
-                            {"column": "regionid", "role": "series", "cardinality": 18},
-                            {"column": "fuel", "role": "filter", "cardinality": 9},
+                            {"column": "regionid", "role": "series"},
+                            {"column": "fuel", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "actual_gco2_kwh 100% null",
                             "anchored at --start: 49 half-hours per run",
@@ -3719,7 +3520,6 @@ SOURCES = [
                         "id": "regional_intensity_fw24h_postcode",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
@@ -3730,8 +3530,7 @@ SOURCES = [
                             },
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
-                        "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "filter"}],
                         "notes": [
                             "actual_gco2_kwh 100% null",
                             "anchored at --start",
@@ -3742,7 +3541,6 @@ SOURCES = [
                         "id": "regional_intensity_fw24h_regionid",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
@@ -3753,8 +3551,7 @@ SOURCES = [
                             },
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
-                        "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "filter"}],
                         "notes": [
                             "actual_gco2_kwh 100% null",
                             "anchored at --start",
@@ -3765,7 +3562,6 @@ SOURCES = [
                         "id": "regional_intensity_fw48h",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
@@ -3777,10 +3573,9 @@ SOURCES = [
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
                         "dims": [
-                            {"column": "regionid", "role": "series", "cardinality": 18},
-                            {"column": "fuel", "role": "filter", "cardinality": 9},
+                            {"column": "regionid", "role": "series"},
+                            {"column": "fuel", "role": "filter"},
                         ],
-                        "volume_class": "medium",
                         "notes": [
                             "actual_gco2_kwh 100% null",
                             "anchored at --start: 97 half-hours per run",
@@ -3792,7 +3587,6 @@ SOURCES = [
                         "id": "regional_intensity_fw48h_postcode",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
@@ -3803,8 +3597,7 @@ SOURCES = [
                             },
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
-                        "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "filter"}],
                         "notes": [
                             "actual_gco2_kwh 100% null",
                             "anchored at --start",
@@ -3815,7 +3608,6 @@ SOURCES = [
                         "id": "regional_intensity_fw48h_regionid",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
@@ -3826,8 +3618,7 @@ SOURCES = [
                             },
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
-                        "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "filter"}],
                         "notes": [
                             "actual_gco2_kwh 100% null",
                             "anchored at --start",
@@ -3838,7 +3629,6 @@ SOURCES = [
                         "id": "regional_intensity_pt24h",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
@@ -3850,10 +3640,9 @@ SOURCES = [
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
                         "dims": [
-                            {"column": "regionid", "role": "series", "cardinality": 18},
-                            {"column": "fuel", "role": "filter", "cardinality": 9},
+                            {"column": "regionid", "role": "series"},
+                            {"column": "fuel", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "actual_gco2_kwh 100% null",
                             "looks back 24h from --start: the runbook command returns 12–13 Sep",
@@ -3865,7 +3654,6 @@ SOURCES = [
                         "id": "regional_intensity_pt24h_postcode",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
@@ -3876,8 +3664,7 @@ SOURCES = [
                             },
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
-                        "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "filter"}],
                         "notes": [
                             "actual_gco2_kwh 100% null",
                             "looks back 24h from --start",
@@ -3888,7 +3675,6 @@ SOURCES = [
                         "id": "regional_intensity_pt24h_regionid",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
@@ -3899,8 +3685,7 @@ SOURCES = [
                             },
                             {"column": "generation_percentage", "unit": "%", "label": "fuel share"},
                         ],
-                        "dims": [{"column": "fuel", "role": "filter", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "filter"}],
                         "notes": [
                             "actual_gco2_kwh 100% null",
                             "looks back 24h from --start",
@@ -3920,7 +3705,6 @@ SOURCES = [
                         "id": "intensity_factors",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "verdict": "reference-table",
                         "clock": {"column": "ingested_at", "grain": "none"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
@@ -3930,8 +3714,7 @@ SOURCES = [
                                 "label": "static emission factor per fuel",
                             }
                         ],
-                        "dims": [{"column": "fuel", "role": "series", "cardinality": "unknown"}],
-                        "volume_class": "small",
+                        "dims": [{"column": "fuel", "role": "series"}],
                         "notes": [
                             "Not window-bound: any run fetches the current static "
                             "table. The fuel count is unknown until fetched. Medium "
@@ -3966,7 +3749,6 @@ SOURCES = [
                         "id": "historic_generation_mix",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -4116,7 +3898,6 @@ SOURCES = [
                                 "label": "vendor-published shares, carried not recomputed",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "APPEND_ONLY whole-history captures: base 619,092 rows = 2 "
                             "captures; _latest 309,931 (measured P1-3). Read _latest.",
@@ -4151,7 +3932,6 @@ SOURCES = [
                         "id": "embedded_wind_solar_forecast",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "event_time",
                             "grain": "30min",
@@ -4180,7 +3960,6 @@ SOURCES = [
                                 "label": "embedded solar capacity assumed",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "one issue only locally: issue_time 2026-08-20 21:25Z "
                             "covers 20 Aug–2 Sep (measured P1-3)",
@@ -4206,7 +3985,6 @@ SOURCES = [
                         "id": "daily_wind_availability",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "availability_date", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "published_at"},
                         "values": [
@@ -4217,8 +3995,7 @@ SOURCES = [
                                 "unit for the day",
                             }
                         ],
-                        "dims": [{"column": "bmu_id", "role": "series", "cardinality": 276}],
-                        "volume_class": "small",
+                        "dims": [{"column": "bmu_id", "role": "series"}],
                         "notes": [
                             "measured P1-3: 1 all-null row (bmu_id, date and MW all "
                             "null) from the 20 Aug capture; filter bmu_id IS NOT NULL",
@@ -4254,7 +4031,6 @@ SOURCES = [
                         "id": "historical_demand",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1h"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -4310,8 +4086,7 @@ SOURCES = [
                                 "label": "secondary drivers",
                             },
                         ],
-                        "dims": [{"column": "location", "role": "series", "cardinality": 7}],
-                        "volume_class": "small",
+                        "dims": [{"column": "location", "role": "series"}],
                         "notes": [
                             "ERA5 archive lags ~5 days (vault; not vendor-guaranteed)",
                             "vintage_policy column carries 2 labels (ADR-031); not "
@@ -4328,7 +4103,6 @@ SOURCES = [
                         "id": "forecast_demand",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1h"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
@@ -4341,8 +4115,7 @@ SOURCES = [
                             {"column": "cdd_k", "unit": "K", "label": "derived degree hours"},
                             {"column": "wind_speed_10m_mps", "unit": "m/s", "label": "10 m wind"},
                         ],
-                        "dims": [{"column": "location", "role": "series", "cardinality": 7}],
-                        "volume_class": "small",
+                        "dims": [{"column": "location", "role": "series"}],
                         "notes": [
                             "vintages overwritten: dedup (timestamp_utc, location) "
                             "keep=last; no forecast_run_at",
@@ -4367,7 +4140,6 @@ SOURCES = [
                         "id": "historical_wind",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1h"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -4418,8 +4190,7 @@ SOURCES = [
                                 "label": "secondary",
                             },
                         ],
-                        "dims": [{"column": "location", "role": "series", "cardinality": 12}],
-                        "volume_class": "small",
+                        "dims": [{"column": "location", "role": "series"}],
                         "notes": [
                             "80/120/180 m columns in the schema are absent from the "
                             "archive relation (all-null on ERA5, sources.yaml comment)",
@@ -4430,7 +4201,6 @@ SOURCES = [
                         "id": "forecast_wind",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1h"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
@@ -4466,8 +4236,7 @@ SOURCES = [
                             },
                             {"column": "wind_gusts_10m_mps", "unit": "m/s", "label": "gusts"},
                         ],
-                        "dims": [{"column": "location", "role": "series", "cardinality": 12}],
-                        "volume_class": "small",
+                        "dims": [{"column": "location", "role": "series"}],
                         "notes": [
                             "vintages overwritten; a past-dated fetch is a hindcast",
                             "32 columns measured (includes the 80/120/180 m heights).",
@@ -4486,7 +4255,6 @@ SOURCES = [
                         "id": "historical_solar",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1h"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -4531,15 +4299,13 @@ SOURCES = [
                             {"column": "snowfall_cm", "unit": "mixed", "label": "secondary"},
                             {"column": "snow_depth_m", "unit": "mixed", "label": "secondary"},
                         ],
-                        "dims": [{"column": "location", "role": "series", "cardinality": 6}],
-                        "volume_class": "small",
+                        "dims": [{"column": "location", "role": "series"}],
                         "notes": ["ERA5 lag ~5 days"],
                     },
                     {
                         "id": "forecast_solar",
                         "schedule": "hourly",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1h"},
                         "latest_day_rule": {"mode": "max", "column": "available_at"},
                         "values": [
@@ -4554,8 +4320,7 @@ SOURCES = [
                                 "label": "forecast GHI",
                             },
                         ],
-                        "dims": [{"column": "location", "role": "series", "cardinality": 6}],
-                        "volume_class": "small",
+                        "dims": [{"column": "location", "role": "series"}],
                         "notes": ["vintages overwritten; a past-dated fetch is a hindcast"],
                     },
                 ],
@@ -4580,7 +4345,6 @@ SOURCES = [
                     {
                         "id": "gold_stack_clearing",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "event_time",
                             "grain": "30min",
@@ -4617,17 +4381,16 @@ SOURCES = [
                             },
                         ],
                         "dims": [
-                            {"column": "vintage_policy_id", "role": "filter", "cardinality": 4},
-                            {"column": "marginal_fuel_type", "role": "series", "cardinality": 4},
-                            {"column": "price_mechanism", "role": "filter", "cardinality": 2},
-                            {"column": "marginal_bm_unit_id", "role": "filter", "cardinality": 91},
-                            {"column": "run_id", "role": "filter", "cardinality": 28},
+                            {"column": "vintage_policy_id", "role": "filter"},
+                            {"column": "marginal_fuel_type", "role": "series"},
+                            {"column": "price_mechanism", "role": "filter"},
+                            {"column": "marginal_bm_unit_id", "role": "filter"},
+                            {"column": "run_id", "role": "filter"},
                         ],
                         "row_filter": {
                             "column": "vintage_policy_id",
                             "equals": "smp_headline_perfect_prog_v2",
                         },
-                        "volume_class": "small",
                         "notes": [
                             "measured P1-3: 36,672 rows = 18,336 (event_time, as_of) "
                             "keys x 2; v1 (schema_version 1) and v2 (schema_version 2) "
@@ -4665,7 +4428,6 @@ SOURCES = [
                     {
                         "id": "gold_stack_residual_demand",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "event_time",
                             "grain": "30min",
@@ -4790,9 +4552,7 @@ SOURCES = [
                                 "label": "demand the stack clears against",
                             },
                         ],
-                        "dims": [
-                            {"column": "vintage_policy_id", "role": "filter", "cardinality": 4}
-                        ],
+                        "dims": [{"column": "vintage_policy_id", "role": "filter"}],
                         "default_filter": {
                             "column": "vintage_policy_id",
                             "equals": "smp_headline_perfect_prog_v2",
@@ -4801,7 +4561,6 @@ SOURCES = [
                             "column": "vintage_policy_id",
                             "equals": "smp_headline_perfect_prog_v2",
                         },
-                        "volume_class": "small",
                         "notes": [
                             "same v1/v2 duplication as clearing",
                             "no nulls (measured P1-3)",
@@ -4816,7 +4575,6 @@ SOURCES = [
                     {
                         "id": "gold_stack_supply_curve_points",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "event_time",
                             "grain": "30min",
@@ -4852,15 +4610,14 @@ SOURCES = [
                             },
                         ],
                         "dims": [
-                            {"column": "bm_unit_id", "role": "filter", "cardinality": 110},
-                            {"column": "fuel_type", "role": "series", "cardinality": 5},
-                            {"column": "vintage_policy_id", "role": "filter", "cardinality": 2},
+                            {"column": "bm_unit_id", "role": "filter"},
+                            {"column": "fuel_type", "role": "series"},
+                            {"column": "vintage_policy_id", "role": "filter"},
                         ],
                         "row_filter": {
                             "column": "vintage_policy_id",
                             "equals": "smp_headline_perfect_prog_v2",
                         },
-                        "volume_class": "medium",
                         "notes": [
                             "only the two headline runs carry points (v1 88,542 rows; "
                             "v2 87,678); diagnostic runs have none",
@@ -4888,7 +4645,6 @@ SOURCES = [
                     {
                         "id": "gold_forecasts",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "delivery_time",
                             "grain": "30min",
@@ -4945,9 +4701,9 @@ SOURCES = [
                             },
                         ],
                         "dims": [
-                            {"column": "model_id", "role": "series", "cardinality": None},
-                            {"column": "vintage_policy_id", "role": "series", "cardinality": None},
-                            {"column": "run_id", "role": "filter", "cardinality": 6},
+                            {"column": "model_id", "role": "series"},
+                            {"column": "vintage_policy_id", "role": "series"},
+                            {"column": "run_id", "role": "filter"},
                         ],
                         "dedup": {
                             "keys": [
@@ -4962,7 +4718,6 @@ SOURCES = [
                                 {"column": "run_id", "direction": "desc", "nulls": "last"},
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "the raw view applies no supersession: re-issues coexist "
                             "with current rows",
@@ -4988,7 +4743,6 @@ SOURCES = [
                     {
                         "id": "gold_forecast_metrics",
                         "kind": "reference",
-                        "verdict": "reference-table",
                         "clock": {"column": "written_at", "grain": "none"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
@@ -5000,12 +4754,11 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "metric_name", "role": "series", "cardinality": 12},
-                            {"column": "model_slug", "role": "filter", "cardinality": 2},
-                            {"column": "run_id", "role": "filter", "cardinality": 5},
-                            {"column": "fold", "role": "filter", "cardinality": 12},
+                            {"column": "metric_name", "role": "series"},
+                            {"column": "model_slug", "role": "filter"},
+                            {"column": "run_id", "role": "filter"},
+                            {"column": "fold", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "gate_* columns null on the 96% of rows that are fold "
                             "scores (only run-scope gate rows fill them)",
@@ -5024,7 +4777,6 @@ SOURCES = [
                     {
                         "id": "gold_uk_imbalance_context",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -5055,10 +4807,7 @@ SOURCES = [
                                 "in the view)",
                             },
                         ],
-                        "dims": [
-                            {"column": "price_derivation_code", "role": "filter", "cardinality": 3}
-                        ],
-                        "volume_class": "small",
+                        "dims": [{"column": "price_derivation_code", "role": "filter"}],
                         "notes": [
                             "measured P1-3: carbon columns 99.73% null; non-null only "
                             "2026-07-31T23:30Z–2026-08-05T23:30Z (241 rows) because "
@@ -5082,7 +4831,6 @@ SOURCES = [
                     {
                         "id": "gold_gb_day_ahead_benchmark",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -5101,7 +4849,6 @@ SOURCES = [
                                 "label": "APXMIDP volume",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "one row per SP via QUALIFY on available_at",
                             "available_at is the ingest clock (MID has no publishTime)",
@@ -5120,7 +4867,6 @@ SOURCES = [
                     {
                         "id": "gold_eu_gas_storage",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "gas_day", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "gas_day"},
                         "values": [
@@ -5138,8 +4884,7 @@ SOURCES = [
                             },
                             {"column": "storage_pct_full", "unit": "%", "label": "fullness"},
                         ],
-                        "dims": [{"column": "country_code", "role": "series", "cardinality": 9}],
-                        "volume_class": "small",
+                        "dims": [{"column": "country_code", "role": "series"}],
                         "notes": [
                             "measured P1-3: GB rows (5 of 45) have every value null",
                             "A column projection of silver_gie_agsi_storage (P1-4). No "
@@ -5157,7 +4902,6 @@ SOURCES = [
                     {
                         "id": "system_marginal_price",
                         "kind": "series",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched: builder registered "
                         "(GF/gold/system_marginal_price.py:71) but never "
                         "built; no "
@@ -5194,7 +4938,6 @@ SOURCES = [
                                 "label": "ISO weekday 1=Mon (differs from gridflow models' 0=Mon)",
                             },
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "Enum stretched: 'never-built' is the literal cause. It "
                             "largely duplicates gold_uk_imbalance_context plus two "
@@ -5225,7 +4968,6 @@ SOURCES = [
                         "id": "physical_flows",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5238,11 +4980,10 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "operator_key", "role": "series", "cardinality": 48},
-                            {"column": "point_key", "role": "series", "cardinality": 620},
-                            {"column": "direction_key", "role": "series", "cardinality": 2},
+                            {"column": "operator_key", "role": "series"},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "Full-Europe fetch (connector omits pointDirection for "
                             "this dataset): 986 operator-point-directions, 27 operator "
@@ -5279,7 +5020,6 @@ SOURCES = [
                         "id": "aggregated_physical_flows",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5290,10 +5030,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "adjacent_systems_key", "role": "series", "cardinality": 3},
-                            {"column": "direction_key", "role": "filter", "cardinality": 1},
+                            {"column": "adjacent_systems_key", "role": "series"},
+                            {"column": "direction_key", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "Only 3 of the 5 configured "
                             "DEFAULT_AGGREGATED_POINT_DIRECTIONS return rows: UK entry "
@@ -5319,7 +5058,6 @@ SOURCES = [
                         "id": "nominations",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5331,11 +5069,10 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "operator_key", "role": "series", "cardinality": 3},
-                            {"column": "point_key", "role": "series", "cardinality": 4},
-                            {"column": "direction_key", "role": "series", "cardinality": 2},
+                            {"column": "operator_key", "role": "series"},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "value null on 29% of rows (Moffat IE exit and GB Moffat "
                             "entry are all-null: reverse-direction virtual points)",
@@ -5348,7 +5085,6 @@ SOURCES = [
                         "id": "renominations",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5360,11 +5096,10 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "operator_key", "role": "series", "cardinality": 3},
-                            {"column": "point_key", "role": "series", "cardinality": 4},
-                            {"column": "direction_key", "role": "series", "cardinality": 2},
+                            {"column": "operator_key", "role": "series"},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "value null on 14% of rows",
                             "UK coverage date of the timestamp can differ from the "
@@ -5375,7 +5110,6 @@ SOURCES = [
                         "id": "allocations",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5387,11 +5121,10 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "operator_key", "role": "series", "cardinality": 3},
-                            {"column": "point_key", "role": "series", "cardinality": 4},
-                            {"column": "direction_key", "role": "series", "cardinality": 2},
+                            {"column": "operator_key", "role": "series"},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "value null on 43% of rows",
                             "timestamp_utc at 03:00 and 04:00 UTC depending on "
@@ -5415,7 +5148,6 @@ SOURCES = [
                         "id": "firm_available",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5427,11 +5159,10 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "operator_key", "role": "series", "cardinality": 3},
-                            {"column": "point_key", "role": "series", "cardinality": 4},
-                            {"column": "direction_key", "role": "series", "cardinality": 2},
+                            {"column": "operator_key", "role": "series"},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "value null on 68% of rows (15/22); only Moffat IE entry "
                             "(5 days) and Bacton IUK entry (2 days) carry numbers",
@@ -5443,7 +5174,6 @@ SOURCES = [
                         "id": "firm_booked",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5454,11 +5184,10 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "operator_key", "role": "series", "cardinality": 3},
-                            {"column": "point_key", "role": "series", "cardinality": 4},
-                            {"column": "direction_key", "role": "series", "cardinality": 2},
+                            {"column": "operator_key", "role": "series"},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "value null on 68% of rows (15/22)",
                             "UK coverage date of the timestamp can differ from the "
@@ -5469,7 +5198,6 @@ SOURCES = [
                         "id": "firm_technical",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5480,10 +5208,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "point_key", "role": "series", "cardinality": 2},
-                            {"column": "direction_key", "role": "series", "cardinality": 2},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "value null on 100% of rows (10/10): only the two "
                             "reverse-direction virtual points return (Moffat entry, "
@@ -5500,7 +5227,6 @@ SOURCES = [
                         "id": "interruptible_available",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5511,10 +5237,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "point_key", "role": "series", "cardinality": 2},
-                            {"column": "direction_key", "role": "series", "cardinality": 2},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "value null on 71% of rows (5/7); 2 numbers in 5 days",
                             "UK coverage date of the timestamp can differ from the "
@@ -5525,7 +5250,6 @@ SOURCES = [
                         "id": "interruptible_booked",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5536,10 +5260,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "point_key", "role": "series", "cardinality": 1},
-                            {"column": "direction_key", "role": "series", "cardinality": 2},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "value null on 83% of rows (5/6); 1 number in 5 days",
                             "UK coverage date of the timestamp can differ from the "
@@ -5550,7 +5273,6 @@ SOURCES = [
                         "id": "interruptible_total",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5561,10 +5283,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "point_key", "role": "series", "cardinality": 2},
-                            {"column": "direction_key", "role": "series", "cardinality": 2},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "value null on 71% of rows (5/7)",
                             "UK coverage date of the timestamp can differ from the "
@@ -5584,7 +5305,6 @@ SOURCES = [
                         "id": "available_through_oversubscription",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "events-table",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5596,11 +5316,10 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "operator_key", "role": "filter", "cardinality": 4},
-                            {"column": "point_key", "role": "series", "cardinality": 5},
-                            {"column": "direction_key", "role": "filter", "cardinality": 2},
+                            {"column": "operator_key", "role": "filter"},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "value null on 100% of rows (55/55); unit and period_type "
                             "empty strings; is_default_sentence true on every row",
@@ -5617,7 +5336,6 @@ SOURCES = [
                         "id": "available_through_surrender",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "events-table",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5630,10 +5348,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "point_key", "role": "series", "cardinality": 5},
-                            {"column": "direction_key", "role": "filter", "cardinality": 2},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "value null on 100% of rows (55/55); every row is the default sentence",
                             "UK coverage date of the timestamp can differ from the "
@@ -5644,7 +5361,6 @@ SOURCES = [
                         "id": "available_through_uioli_long_term",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "events-table",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5655,10 +5371,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "point_key", "role": "series", "cardinality": 5},
-                            {"column": "direction_key", "role": "filter", "cardinality": 2},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "value null on 100% of rows (55/55)",
                             "UK coverage date of the timestamp can differ from the "
@@ -5669,7 +5384,6 @@ SOURCES = [
                         "id": "available_through_uioli_short_term",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "events-table",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5680,10 +5394,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "point_key", "role": "series", "cardinality": 5},
-                            {"column": "direction_key", "role": "filter", "cardinality": 2},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "value null on 100% of rows (55/55)",
                             "UK coverage date of the timestamp can differ from the "
@@ -5703,7 +5416,6 @@ SOURCES = [
                         "id": "gcv",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5714,11 +5426,10 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "operator_key", "role": "series", "cardinality": 4},
-                            {"column": "point_key", "role": "series", "cardinality": 4},
-                            {"column": "direction_key", "role": "series", "cardinality": 2},
+                            {"column": "operator_key", "role": "series"},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "value null on 43% of rows; Bacton IUK exit "
                             "(Interconnector) reports 0.0, which reads as no-flow "
@@ -5731,7 +5442,6 @@ SOURCES = [
                         "id": "wobbe_index",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5742,11 +5452,10 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "operator_key", "role": "series", "cardinality": 4},
-                            {"column": "point_key", "role": "series", "cardinality": 5},
-                            {"column": "direction_key", "role": "series", "cardinality": 2},
+                            {"column": "operator_key", "role": "series"},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "value null on 78% of rows (35/45)",
                             "three clock hours (02:00/03:00/04:00 UTC): 15 distinct "
@@ -5759,17 +5468,15 @@ SOURCES = [
                         "id": "methane_content",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {"column": "value", "unit": "% (mol/mol)", "label": "methane content"}
                         ],
                         "dims": [
-                            {"column": "point_key", "role": "series", "cardinality": 2},
-                            {"column": "direction_key", "role": "series", "cardinality": 2},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "no nulls",
                             "UK coverage date of the timestamp can differ from the "
@@ -5780,17 +5487,15 @@ SOURCES = [
                         "id": "hydrogen_content",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {"column": "value", "unit": "% (mol/mol)", "label": "hydrogen content"}
                         ],
                         "dims": [
-                            {"column": "point_key", "role": "series", "cardinality": 1},
-                            {"column": "direction_key", "role": "series", "cardinality": 2},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "no nulls; 2 distinct values",
                             "UK coverage date of the timestamp can differ from the "
@@ -5801,17 +5506,15 @@ SOURCES = [
                         "id": "oxygen_content",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
                             {"column": "value", "unit": "% (mol/mol)", "label": "oxygen content"}
                         ],
                         "dims": [
-                            {"column": "point_key", "role": "series", "cardinality": 1},
-                            {"column": "direction_key", "role": "series", "cardinality": 2},
+                            {"column": "point_key", "role": "series"},
+                            {"column": "direction_key", "role": "series"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "no nulls; 1 distinct value (flat line)",
                             "UK coverage date of the timestamp can differ from the "
@@ -5831,7 +5534,6 @@ SOURCES = [
                         "id": "cmp_unsuccessful_requests",
                         "schedule": "daily",
                         "kind": "events",
-                        "verdict": "events-table",
                         "clock": {"column": "capacity_from", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "capacity_from"},
                         "values": [
@@ -5847,9 +5549,9 @@ SOURCES = [
                             },
                         ],
                         "dims": [
-                            {"column": "operator_key", "role": "filter", "cardinality": 50},
-                            {"column": "point_key", "role": "filter", "cardinality": 670},
-                            {"column": "direction_key", "role": "filter", "cardinality": 3},
+                            {"column": "operator_key", "role": "filter"},
+                            {"column": "point_key", "role": "filter"},
+                            {"column": "direction_key", "role": "filter"},
                         ],
                         "dedup": {
                             "keys": ["id"],
@@ -5857,7 +5559,6 @@ SOURCES = [
                                 {"column": "available_at", "direction": "desc", "nulls": "last"}
                             ],
                         },
-                        "volume_class": "small",
                         "notes": [
                             "KNOWN SILVER BUG (unmerged gridflow branch "
                             "fix/silver-entsog-cmp-timestamp, commit 0b577dc): "
@@ -5888,7 +5589,6 @@ SOURCES = [
                         "id": "cmp_auction_premiums",
                         "schedule": "daily",
                         "kind": "events",
-                        "verdict": "events-table",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5904,11 +5604,10 @@ SOURCES = [
                             },
                         ],
                         "dims": [
-                            {"column": "operator_key", "role": "filter", "cardinality": 47},
-                            {"column": "point_key", "role": "filter", "cardinality": 654},
-                            {"column": "booking_platform_key", "role": "filter", "cardinality": 4},
+                            {"column": "operator_key", "role": "filter"},
+                            {"column": "point_key", "role": "filter"},
+                            {"column": "booking_platform_key", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "auction_premium, cleared_price, reserve_price, "
                             "auction_from, auction_to and value all null on 5035/5035 "
@@ -5936,7 +5635,6 @@ SOURCES = [
                         "id": "cmp_unavailable_firm_capacity",
                         "schedule": "daily",
                         "kind": "events",
-                        "verdict": "events-table",
                         "clock": {"column": "timestamp_utc", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -5952,10 +5650,9 @@ SOURCES = [
                             },
                         ],
                         "dims": [
-                            {"column": "operator_key", "role": "filter", "cardinality": 30},
-                            {"column": "point_key", "role": "filter", "cardinality": 367},
+                            {"column": "operator_key", "role": "filter"},
+                            {"column": "point_key", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "No numeric capacity column exists in silver; value null "
                             "on 100% of rows",
@@ -5982,11 +5679,9 @@ SOURCES = [
                         "id": "interruptions",
                         "schedule": "daily",
                         "kind": "events",
-                        "verdict": "not-held",
                         "not_held_cause": "fetched-empty",
                         "clock": {"column": "unknown", "grain": "event"},
                         "latest_day_rule": {"mode": "max", "column": "unknown"},
-                        "volume_class": "small",
                         "notes": [
                             "fetched-empty is outside the RUNBOOK cause list "
                             "(never-fetched | no-transformer | folded-into | "
@@ -6001,11 +5696,9 @@ SOURCES = [
                         "id": "urgent_market_messages",
                         "schedule": "daily",
                         "kind": "events",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched",
                         "clock": {"column": "unknown", "grain": "event"},
                         "latest_day_rule": {"mode": "max", "column": "unknown"},
-                        "volume_class": "small",
                         "notes": [
                             "Transformer exists (generic). Would need isLatestVersion "
                             "handling downstream.",
@@ -6026,7 +5719,6 @@ SOURCES = [
                         "id": "tariffs",
                         "schedule": "monthly",
                         "kind": "reference",
-                        "verdict": "reference-table",
                         "clock": {"column": "product_period_from", "grain": "product"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
@@ -6042,10 +5734,10 @@ SOURCES = [
                             },
                         ],
                         "dims": [
-                            {"column": "country_code", "role": "filter", "cardinality": 21},
-                            {"column": "operator", "role": "filter", "cardinality": 37},
-                            {"column": "point_key", "role": "filter", "cardinality": 138},
-                            {"column": "product_type", "role": "filter", "cardinality": 5},
+                            {"column": "country_code", "role": "filter"},
+                            {"column": "operator", "role": "filter"},
+                            {"column": "point_key", "role": "filter"},
+                            {"column": "product_type", "role": "filter"},
                         ],
                         "dedup": {
                             "keys": ["id"],
@@ -6054,7 +5746,6 @@ SOURCES = [
                             ],
                         },
                         "snapshot_column": "available_at",
-                        "volume_class": "medium",
                         "notes": [
                             "The full tariff set is re-stored per partition day: 61220 "
                             "rows = 5 x 12244 distinct ids; each daily bronze body is "
@@ -6076,7 +5767,6 @@ SOURCES = [
                         "id": "tariff_simulations",
                         "schedule": "monthly",
                         "kind": "reference",
-                        "verdict": "reference-table",
                         "clock": {"column": "timestamp_utc", "grain": "product"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "values": [
@@ -6087,9 +5777,9 @@ SOURCES = [
                             }
                         ],
                         "dims": [
-                            {"column": "country_code", "role": "filter", "cardinality": 21},
-                            {"column": "operator", "role": "filter", "cardinality": 35},
-                            {"column": "product_type", "role": "filter", "cardinality": 5},
+                            {"column": "country_code", "role": "filter"},
+                            {"column": "operator", "role": "filter"},
+                            {"column": "product_type", "role": "filter"},
                         ],
                         "default_filter": {"column": "country_code", "equals": "UK"},
                         "dedup": {
@@ -6099,7 +5789,6 @@ SOURCES = [
                             ],
                         },
                         "snapshot_column": "available_at",
-                        "volume_class": "medium",
                         "notes": [
                             "13910 rows = 5 x 2782 distinct ids (re-stored per day)",
                             "cost columns are VARCHAR, not numeric (generic "
@@ -6120,11 +5809,9 @@ SOURCES = [
                         "id": "connection_points",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "volume_class": "small",
                         "notes": [
                             "Transformer exists (generic registration). Useful as a "
                             "label lookup for point_key on the flow pages."
@@ -6134,33 +5821,27 @@ SOURCES = [
                         "id": "operators",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "volume_class": "small",
                         "notes": ["Transformer exists (generic)."],
                     },
                     {
                         "id": "balancing_zones",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "volume_class": "small",
                         "notes": ["Transformer exists (generic)."],
                     },
                     {
                         "id": "operator_point_directions",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "volume_class": "small",
                         "notes": [
                             "Transformer exists (generic). Vault: join key for "
                             "country/zone labels on physical_flows."
@@ -6170,22 +5851,18 @@ SOURCES = [
                         "id": "interconnections",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "volume_class": "small",
                         "notes": ["Transformer exists (generic)."],
                     },
                     {
                         "id": "aggregate_interconnections",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "volume_class": "small",
                         "notes": ["Transformer exists (generic)."],
                     },
                 ],
@@ -6212,7 +5889,6 @@ SOURCES = [
                         "id": "storage",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "gas_day", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "gas_day"},
                         "values": [
@@ -6240,10 +5916,9 @@ SOURCES = [
                             },
                         ],
                         "dims": [
-                            {"column": "country_code", "role": "series", "cardinality": 9},
-                            {"column": "entity_level", "role": "filter", "cardinality": 1},
+                            {"column": "country_code", "role": "series"},
+                            {"column": "entity_level", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "UNIT DISAGREEMENT: code (_gwh columns) and vault say GWh, "
                             "but DE working_gas_volume_gwh = 246.5 and "
@@ -6281,7 +5956,6 @@ SOURCES = [
                         "id": "storage_reports",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "gas_day", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "gas_day"},
                         "values": [
@@ -6298,8 +5972,7 @@ SOURCES = [
                             {"column": "injection_gwh", "unit": None, "label": "EU injection"},
                             {"column": "withdrawal_gwh", "unit": None, "label": "EU withdrawal"},
                         ],
-                        "dims": [{"column": "entity_code", "role": "filter", "cardinality": 1}],
-                        "volume_class": "small",
+                        "dims": [{"column": "entity_code", "role": "filter"}],
                         "notes": [
                             "Default scope is aggregate_type EU only (1 row per gas day)",
                             "Same unit disagreement as storage (EU "
@@ -6328,7 +6001,6 @@ SOURCES = [
                         "id": "unavailability",
                         "schedule": "daily",
                         "kind": "events",
-                        "verdict": "events-table",
                         "latest_day_rule": {"mode": "max", "column": "event_time"},
                         "values": [
                             {
@@ -6348,12 +6020,11 @@ SOURCES = [
                             },
                         ],
                         "dims": [
-                            {"column": "country", "role": "filter", "cardinality": 13},
-                            {"column": "facility", "role": "filter", "cardinality": 52},
-                            {"column": "type", "role": "filter", "cardinality": 2},
-                            {"column": "end_flag", "role": "filter", "cardinality": 2},
+                            {"column": "country", "role": "filter"},
+                            {"column": "facility", "role": "filter"},
+                            {"column": "type", "role": "filter"},
+                            {"column": "end_flag", "role": "filter"},
                         ],
-                        "volume_class": "small",
                         "notes": [
                             "KNOWN SILVER BUG (unmerged gridflow branch "
                             "fix/silver-agsi-unavailability-overlap, commit 80bad68): "
@@ -6387,11 +6058,9 @@ SOURCES = [
                         "id": "news",
                         "schedule": "daily",
                         "kind": "events",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched",
                         "clock": {"column": "unknown", "grain": "event"},
                         "latest_day_rule": {"mode": "max", "column": "gas_day"},
-                        "volume_class": "small",
                         "notes": [
                             "Transformer exists. Whether the listing reaches back to "
                             "14-20 Sep is unknown; one fetch would settle it."
@@ -6401,11 +6070,9 @@ SOURCES = [
                         "id": "news_item",
                         "schedule": "daily",
                         "kind": "events",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched",
                         "clock": {"column": "unknown", "grain": "event"},
                         "latest_day_rule": {"mode": "max", "column": "gas_day"},
-                        "volume_class": "small",
                     },
                 ],
             },
@@ -6419,22 +6086,18 @@ SOURCES = [
                         "id": "about_summary",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "volume_class": "small",
                         "notes": ["Transformer exists."],
                     },
                     {
                         "id": "about_listing",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "verdict": "not-held",
                         "not_held_cause": "never-fetched",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
-                        "volume_class": "small",
                         "notes": [
                             "Transformer exists. Would unlock facility-level storage "
                             "scope (the 'site' in the family label)."
@@ -6463,7 +6126,6 @@ SOURCES = [
                         "id": "lng",
                         "schedule": "daily",
                         "kind": "series",
-                        "verdict": "chart",
                         "clock": {"column": "gas_day", "grain": "1d"},
                         "latest_day_rule": {"mode": "max", "column": "gas_day"},
                         "values": [
@@ -6484,8 +6146,7 @@ SOURCES = [
                                 "label": "raw vendor dtmi.gwh, unconfirmed",
                             },
                         ],
-                        "dims": [{"column": "country_code", "role": "series", "cardinality": 8}],
-                        "volume_class": "small",
+                        "dims": [{"column": "country_code", "role": "series"}],
                         "notes": [
                             "NEW SILVER GAP (not on any named branch): inventory is "
                             'dropped. Bronze carries "inventory": {"lng", "gwh"} as a '
@@ -6525,7 +6186,6 @@ DATASET_DEFAULTS: dict[str, Any] = {
     "dedup": None,
     "row_filter": None,
     "snapshot_column": None,
-    "volume_class": None,
     "notes": [],
 }
 FAMILY_DEFAULTS: dict[str, Any] = {"route": None, "notes": []}

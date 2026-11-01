@@ -99,7 +99,7 @@ export function PriceContext({ ctx }: { ctx: PageContext }) {
         </div>
       )}
       {ctx.mode === 'chart' && panels.length > 0 && (
-        <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+        <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} />
       )}
       <PricesWords ctx={ctx} />
       {ctx.mode === 'chart' && (!imbalance || imbalance.count === 0) && <p className="gf-hint">No indicated imbalance is held in this window.</p>}

@@ -31,7 +31,7 @@ export function PriceKey({ ctx }: { ctx: PageContext }) {
     const v = r[price.field]
     return typeof v === 'number' && v < 0
   }).length
-  const items: KeyItem[] = [{ key: 'price', mark: { kind: 'line', color: price.color, dashed: ctx.fixture }, label: `${price.label}, ${price.unit.label ?? 'unit unconfirmed'}` }]
+  const items: KeyItem[] = [{ key: 'price', mark: { kind: 'line', color: price.color }, label: `${price.label}, ${price.unit.label ?? 'unit unconfirmed'}` }]
   // The band marks runs on the chart; the Table view draws none, so it isn't keyed there.
   if (below > 0 && ctx.mode === 'chart') items.push({ key: 'below', mark: { kind: 'band' }, label: `${price.label} below zero` })
   const when = (t: number) => periodName(t, step, model.settlement)

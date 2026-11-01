@@ -7,9 +7,7 @@
  * - `RowsResponse` is `GET /api/sources/{source}/{dataset}/rows` (v0.4 P3-2):
  *   one held dataset's rows for a window of UK days.
  * - `DataSource` is what a page reads through: `_data/http.ts` reads the
- *   two endpoints (every page's default), and the fixture adapter
- *   (`_data/fixture.ts`), kept for the template's demo page, returns
- *   exactly the same shapes.
+ *   two endpoints.
  *
  * P3 returns shapes that map onto these types; change one only with the
  * other. Free-text fields (grain, unit, notes, causes) are typed as strings
@@ -33,8 +31,6 @@ export type FamilyPage = 'build' | 'table-only' | 'not-built' | 'pinned' | 'exte
 export interface Manifest {
   /** When the backend last read coverage from the local store, ISO 8601 UTC. */
   generated_at: string
-  /** Today's UK date (`YYYY-MM-DD`) when the response was made; every `latest_local_day` is capped at it. */
-  today_uk: string
   sources: ManifestSource[]
 }
 
@@ -98,8 +94,6 @@ export interface Dim {
   column: string
   /** `series`: one line or band per value; `filter`: narrows the rows. */
   role: 'series' | 'filter'
-  /** Distinct values measured by the research; a string (`unknown`) or null where it wasn't. */
-  cardinality: number | string | null
 }
 
 /** A structured equality filter, never SQL text. */
@@ -132,15 +126,12 @@ export interface ManifestDataset {
   /** How often gridflow fetches it (`hourly`, `daily`, …); null for gold. */
   schedule: string | null
   kind: Kind
-  /** The research verdict: `chart`, `events-table`, `reference-table`, `not-held`, `broken`. */
-  verdict: string
   clock: DatasetClock | null
   latest_day_rule: LatestDayRule
   values: ValueColumn[]
   dims: Dim[]
   /** Applied by the backend when a request names no filter. */
   default_filter: EqualsFilter | null
-  volume_class: 'small' | 'medium' | 'large' | null
   /**
    * Research notes with internal references (file lines, rulings, "silver").
    * Never rendered as they stand: a page reads them, and the P1 card, and
@@ -353,11 +344,6 @@ export interface RowsRequest extends RowsQuery {
  * `not_held_cause`, `reason` or `hint`, and the envelope's other fields.
  */
 export interface DataSource {
-  /**
-   * `fixture` data is synthetic: every panel drawing it carries the
-   * dashed-ochre Fixture tag (DESIGN §9). `live` reads the local store.
-   */
-  readonly origin: 'fixture' | 'live'
   manifest(signal?: AbortSignal): Promise<Manifest>
   rows(request: RowsRequest, signal?: AbortSignal): Promise<RowsResponse>
 }

@@ -32,7 +32,7 @@ export function BorderCharts({ ctx }: { ctx: PageContext }) {
   const alone = aloneSentence((focus ? [focus] : borders).map((b) => ({ name: b.name, alone: aloneIn([b.own, b.beside]) })), 'on')
   return (
     <>
-      <SeriesChart panels={panels} domain={windowDomain(w.start, w.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+      <SeriesChart panels={panels} domain={windowDomain(w.start, w.end)} picked={ctx.picked} onPick={ctx.pick} />
       <p className="gf-hint">
         {cadenceSentence(named)} {missingSentence(named, w)} {focus ? '' : 'Each border has a scale of its own. '}A missing step breaks its line.{alone ? ` ${alone}` : ''}
       </p>

@@ -89,7 +89,6 @@ def test_http_contract_cache_is_lazy_and_fresh_hit_skips_client(
         "id",
         "schedule",
         "kind",
-        "verdict",
         "held",
         "relation",
         "coverage",
@@ -98,7 +97,11 @@ def test_http_contract_cache_is_lazy_and_fresh_hit_skips_client(
     assert "dedup" not in dataset
     assert "row_filter" not in dataset
     assert "base_relation" not in dataset
-    assert TestClient(app).get("/api/datasets").status_code == 200
+    # Research annotations that no consumer read are not part of the manifest.
+    datasets = [d for s in body["sources"] for f in s["families"] for d in f["datasets"]]
+    assert not any({"verdict", "volume_class"} & set(d) for d in datasets)
+    assert all(set(dim) == {"column", "role"} for d in datasets for dim in d["dims"])
+    assert "today_uk" not in body
 
 
 def test_warm_refresh_returns_stale_with_original_generated_at(

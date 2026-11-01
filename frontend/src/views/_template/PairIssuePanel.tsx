@@ -91,7 +91,6 @@ export function PairIssuePanel({ ctx, pair, own, heads, order, where, note, lead
             domain={windowDomain(ctx.window.start, ctx.window.end)}
             picked={ctx.picked}
             onPick={ctx.pick}
-            fixture={ctx.fixture}
           />
           <p className="gf-hint">
             Each bar is one half-hour: how long before it the issue drawn for it was made. A saw from near zero up to about a day means each day’s figures come from one issue made early that day, so the early half-hours were issued minutes ahead and the late ones most of a day ahead; a

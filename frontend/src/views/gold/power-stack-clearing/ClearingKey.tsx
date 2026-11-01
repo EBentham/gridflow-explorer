@@ -70,8 +70,8 @@ export function ClearingKey({ ctx }: { ctx: PageContext }) {
 
   const items: KeyItem[] = []
   // The key names the lines drawn: none for a market index that wasn't read, or holds nothing in this window.
-  if (points.some((p) => p.market !== null)) items.push({ key: 'market', mark: { kind: 'line', color: MARKET_COLOR, dashed: ctx.fixture }, label: 'Market index price, £/MWh' })
-  items.push({ key: 'model', mark: { kind: 'line', color: MODEL_COLOR, dashed: ctx.fixture }, label: 'Modelled price, £/MWh' })
+  if (points.some((p) => p.market !== null)) items.push({ key: 'market', mark: { kind: 'line', color: MARKET_COLOR }, label: 'Market index price, £/MWh' })
+  items.push({ key: 'model', mark: { kind: 'line', color: MODEL_COLOR }, label: 'Modelled price, £/MWh' })
   if (chart && runs.length) items.push({ key: 'floor', mark: { kind: 'band' }, label: 'The price floor set the modelled price' })
 
   const latestSetter = latest ? setterOf(latest) : null

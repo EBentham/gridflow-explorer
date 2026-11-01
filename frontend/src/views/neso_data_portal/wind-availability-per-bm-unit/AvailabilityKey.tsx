@@ -67,8 +67,8 @@ function AllKey({ ctx, cap }: { ctx: PageContext; cap: Capture }) {
       {ctx.mode === 'chart' && (
         <KeyList
           items={[
-            { key: 'avail', mark: { kind: 'line', color: AVAIL_COLOR, dashed: ctx.fixture }, label: 'Forecast available, all units' },
-            ...(output ? [{ key: 'output', mark: { kind: 'line' as const, color: OUTPUT_COLOR, dashed: ctx.fixture }, label: 'GB wind output, metered' }] : []),
+            { key: 'avail', mark: { kind: 'line', color: AVAIL_COLOR }, label: 'Forecast available, all units' },
+            ...(output ? [{ key: 'output', mark: { kind: 'line' as const, color: OUTPUT_COLOR }, label: 'GB wind output, metered' }] : []),
           ]}
         />
       )}
@@ -106,7 +106,7 @@ function OneKey({ ctx, cap, unit }: { ctx: PageContext; cap: Capture; unit: Unit
   const part = unit.last && lastTotal?.full && lastTotal.sum > 0 ? (100 * unit.last.v) / lastTotal.sum : null
   return (
     <>
-      {ctx.mode === 'chart' && <KeyList items={[{ key: unit.id, mark: { kind: 'line', color: UNIT_COLOR, dashed: ctx.fixture }, label: <code>{unit.id}</code> }]} />}
+      {ctx.mode === 'chart' && <KeyList items={[{ key: unit.id, mark: { kind: 'line', color: UNIT_COLOR }, label: <code>{unit.id}</code> }]} />}
       <dl className="gf-stats gf-wa-stats">
         {unit.last && stat('Latest day', MW.format(unit.last.v), dayText(unit.last.day))}
         {flat && unit.low && stat('On every day held', MW.format(unit.low.v))}

@@ -49,7 +49,7 @@ export function DailyKey({ ctx }: { ctx: PageContext }) {
 
   return (
     <>
-      <KeyList items={[{ key: 'own', mark: { kind: 'line', color: own.color, dashed: ctx.fixture }, label: `${own.label}, GW, one figure a day` }]} />
+      <KeyList items={[{ key: 'own', mark: { kind: 'line', color: own.color }, label: `${own.label}, GW, one figure a day` }]} />
       <dl className="gf-stats">
         <div>
           <dt>Highest day</dt>

@@ -31,7 +31,7 @@ function PriceItem({ ctx, price, at }: { ctx: PageContext; price: PriceSeries | 
       <ul className="gf-series-key">
         <li>
           <button type="button" disabled>
-            <KeyList items={[{ key: 'price', mark: { kind: 'line', color: PRICE_COLOR, dashed: ctx.fixture }, label: <span className="gf-series-name">Market index price</span> }]} />
+            <KeyList items={[{ key: 'price', mark: { kind: 'line', color: PRICE_COLOR }, label: <span className="gf-series-name">Market index price</span> }]} />
             <span className="gf-series-value">{shown && def ? def.unit.format(shown.v) : '–'}</span>
           </button>
           {shown && model && shown.t !== at && <span className="gf-series-when">{periodName(shown.t, model.stepMs, model.settlement)}</span>}
@@ -167,7 +167,7 @@ function UnitKey({ ctx, model, id }: { ctx: PageContext; model: SeriesModel; id:
         items={[
           {
             key: id,
-            mark: { kind: 'line', color: line.fuel.color, dashed: ctx.fixture },
+            mark: { kind: 'line', color: line.fuel.color },
             label: (
               <span>
                 <code>{id}</code>, {line.fuel.code === null ? line.fuel.label.toLowerCase() : line.fuel.label}

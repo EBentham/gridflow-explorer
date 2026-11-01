@@ -43,7 +43,7 @@ export function VolumePanel({ ctx }: { ctx: PageContext }) {
   return (
     <>
       {ctx.mode === 'chart' && volume.count > 0 && (
-        <SeriesChart panels={[panel]} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+        <SeriesChart panels={[panel]} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} />
       )}
       {ctx.mode === 'chart' && volume.count === 0 && <p className="gf-hint">No volume is held in this window.</p>}
       <div className="gf-days">

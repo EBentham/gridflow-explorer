@@ -48,7 +48,7 @@ export function AvailabilityMain({ ctx }: { ctx: PageContext }) {
     const flat = one.low && one.high && one.low.v === one.high.v
     return (
       <>
-        <SeriesChart panels={[unitPanel(one, w, flat ? 180 : 420)]} domain={domain} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+        <SeriesChart panels={[unitPanel(one, w, flat ? 180 : 420)]} domain={domain} picked={ctx.picked} onPick={ctx.pick} />
         <p className="gf-hint">
           <code>{one.id}</code>’s forecast available capacity for each day, in MW, held flat from midnight to midnight as it is one figure for the whole day
           {flat && one.low ? `: ${MW.format(one.low.v)} on every day it holds` : ''}. A gap is a day with no figure held. It has a figure on {one.held} of the {plural(cap.days.length, 'day', 'days')} in this window that hold rows.
@@ -62,7 +62,7 @@ export function AvailabilityMain({ ctx }: { ctx: PageContext }) {
   const windowDays = datesBetween(w.start, w.end).length
   return (
     <>
-      <SeriesChart panels={[totalPanel(cap, w, output, 460)]} domain={domain} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+      <SeriesChart panels={[totalPanel(cap, w, output, 460)]} domain={domain} picked={ctx.picked} onPick={ctx.pick} />
       <p className="gf-hint">
         The forecast line is the sum of every unit’s forecast available capacity for the day, in GW, held flat from midnight to midnight as each figure is for the whole day. A gap is a day with no rows held.
         {partial.length > 0 &&

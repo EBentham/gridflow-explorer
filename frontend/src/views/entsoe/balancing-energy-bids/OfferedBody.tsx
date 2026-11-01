@@ -127,7 +127,7 @@ export function OfferedBody({ ctx }: { ctx: PageContext }) {
   return (
     <>
       <CutOffNote ctx={ctx} />
-      <SeriesChart panels={[panel]} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+      <SeriesChart panels={[panel]} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} />
       {book.bucketed ? (
         <MeansWords book={book} />
       ) : (

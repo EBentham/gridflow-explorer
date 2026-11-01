@@ -116,7 +116,7 @@ export function ZonesBody({ ctx }: { ctx: PageContext }) {
   return (
     <>
       {notes}
-      <SeriesChart panels={panels} domain={domain} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+      <SeriesChart panels={panels} domain={domain} picked={ctx.picked} onPick={ctx.pick} />
       {gb && (gb.state === 'error' || gb.state === 'refreshing') && (
         <p className="gf-hint">
           GB’s benchmark isn’t drawn under the zones: <ErrorWords error={gb.error} />

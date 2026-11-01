@@ -145,12 +145,12 @@ export function BalancePanel({ ctx }: { ctx: PageContext }) {
       <>
         <KeyList
           items={[
-            { key: 'a', mark: { kind: 'line', color: z.zone.color, dashed: ctx.fixture }, label: `${name}, generation forecast, ${unit.label}` },
-            { key: 'b', mark: { kind: 'line', color: MEASURE.load, dashed: ctx.fixture }, label: `${name}, load forecast, ${unit.label}` },
+            { key: 'a', mark: { kind: 'line', color: z.zone.color }, label: `${name}, generation forecast, ${unit.label}` },
+            { key: 'b', mark: { kind: 'line', color: MEASURE.load }, label: `${name}, load forecast, ${unit.label}` },
             { key: 'd', mark: { kind: 'bars', color: MEASURE.diff, shape: 'rise' }, label: `Generation less load, ${unit.label}, lower chart` },
           ]}
         />
-        <SeriesChart panels={panels} domain={domain} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+        <SeriesChart panels={panels} domain={domain} picked={ctx.picked} onPick={ctx.pick} />
       </>
     )
   } else if (ctx.mode === 'chart' && pair && !both.length) {

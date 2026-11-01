@@ -61,7 +61,7 @@ export function DaysPanel({ ctx }: { ctx: PageContext }) {
       {ctx.mode === 'chart' && anyBoth && (
         <>
           <KeyList items={[{ key: MISS, mark: { kind: 'bars', color: COLORS.miss, shape: 'rise' }, label: `Estimated actual less forecast, ${unit.label ?? 'unit unconfirmed'}` }]} />
-          <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+          <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} picked={ctx.picked} onPick={ctx.pick} />
         </>
       )}
       {(above || below) && (

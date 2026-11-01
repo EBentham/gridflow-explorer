@@ -169,9 +169,13 @@ round caps, non-scaling 1.4px strokes.
 ## 9. Fixture and honesty rules
 
 - Anything synthetic carries a visible dashed-ochre "Fixture" tag wherever it appears. The
-  wind forecast and the template demo (`/sources/demo/dataset-page`) are the only fixtures.
-  P4-0 kept the demo: it is the one page that shows the error, refreshing, too-many and
-  empty states on demand.
+  wind forecast is the only fixture.
+- **The template demo is retired** (Bobbo, 2026-10-31). P4-0 had kept
+  `/sources/demo/dataset-page` and its fixture adapter as the one page that showed the
+  error, refreshing, too-many and empty states on demand. It was the only page that set the
+  adapter, so the fixture flag every live page threaded through its panels could never be
+  true, and nothing had used the demo since 27 Sep. Git keeps it for the day an on-demand
+  state check is wanted again.
 - A dataset being configured in gridflow does not mean it is held locally. Only datasets
   the Explorer actually reads show coverage, dates or values.
 - Every chart names its dataset, unit and window. No invented statistics, no fake live

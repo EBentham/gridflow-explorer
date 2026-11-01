@@ -97,5 +97,5 @@ export function ResidualMain({ ctx }: { ctx: PageContext }) {
     belowZero: clearing,
     axisWidth: AXIS_WIDTH,
   }
-  return <SeriesChart panels={[panel]} domain={windowDomain(ctx.window.start, ctx.window.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+  return <SeriesChart panels={[panel]} domain={windowDomain(ctx.window.start, ctx.window.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} />
 }

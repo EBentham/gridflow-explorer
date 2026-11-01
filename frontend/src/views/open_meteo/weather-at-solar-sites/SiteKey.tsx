@@ -60,7 +60,7 @@ export function SiteKey({ ctx }: { ctx: PageContext }) {
               return (
                 <li key={id} className={on ? 'is-focus' : ctx.focus ? 'is-muted' : undefined}>
                   <button type="button" aria-pressed={on} disabled={!pickable} onClick={() => ctx.setFocus(on ? undefined : id)}>
-                    <KeyList items={[{ key: id, mark: { kind: 'line', color: d.color, dashed: ctx.fixture }, label: <span className="gf-series-name">{d.group !== null ? siteLabel(d.group) : d.label}</span> }]} />
+                    <KeyList items={[{ key: id, mark: { kind: 'line', color: d.color }, label: <span className="gf-series-name">{d.group !== null ? siteLabel(d.group) : d.label}</span> }]} />
                     <span className="gf-series-value">{peak ? d.unit.format(peak.v) : '–'}</span>
                   </button>
                   {peak && showWhen(d) && <span className="gf-series-when">{when(d, peak.t)}</span>}

@@ -45,7 +45,7 @@ export function BorderKey({ ctx }: { ctx: PageContext }) {
             <li key={b.id} className={on ? 'is-focus' : focused ? 'is-muted' : undefined}>
               <button type="button" aria-pressed={on} disabled={!pickable} onClick={() => ctx.setFocus(on ? undefined : b.id)}>
                 {/* A plain span, not the no-wrap name: a long border (Netherlands–Germany/Luxembourg) wraps rather than pushing its value out of the panel. */}
-                <KeyList items={[{ key: b.id, mark: { kind: 'line', color: own.color, dashed: ctx.fixture }, label: <span>{b.name}</span> }]} />
+                <KeyList items={[{ key: b.id, mark: { kind: 'line', color: own.color }, label: <span>{b.name}</span> }]} />
                 <span className="gf-series-value">{t?.latest ? figureText(b.own.def.unit, t.latest.v) : '–'}</span>
               </button>
               {t?.latest && t.latest.t !== stamp && <span className="gf-series-when">Latest for {periodLabel(t.latest.t, step)}</span>}
@@ -64,8 +64,8 @@ export function BorderKey({ ctx }: { ctx: PageContext }) {
       {drawn.length > 0 && ctx.mode === 'chart' && (
         <KeyList
           items={[
-            { key: own.key, mark: { kind: 'line' as const, color: own.color, dashed: ctx.fixture }, label: `${own.label}, the borders above` },
-            ...drawn.map((m) => ({ key: m.key, mark: { kind: 'line' as const, color: m.color, dashed: ctx.fixture }, label: `${m.label}, on the same border` })),
+            { key: own.key, mark: { kind: 'line' as const, color: own.color }, label: `${own.label}, the borders above` },
+            ...drawn.map((m) => ({ key: m.key, mark: { kind: 'line' as const, color: m.color }, label: `${m.label}, on the same border` })),
           ]}
         />
       )}

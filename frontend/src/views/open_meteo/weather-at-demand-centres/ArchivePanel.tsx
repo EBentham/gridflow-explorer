@@ -57,7 +57,6 @@ export function ArchivePanel({ ctx }: { ctx: PageContext }) {
           focus={focusArchive ? seriesId(focusArchive) : undefined}
           picked={ctx.picked}
           onPick={ctx.pick}
-          fixture={ctx.fixture}
         />
       )}
       {rel && (rel.state === 'error' || rel.state === 'refreshing') && (

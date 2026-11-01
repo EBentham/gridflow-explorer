@@ -85,7 +85,7 @@ export function DepthChart({ ctx }: { ctx: PageContext }) {
   return (
     <>
       {panels.length > 0 ? (
-        <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+        <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} />
       ) : (
         <p className="gf-state">This window holds the indicated imbalance only: no offer, bid or accepted volume. The working panel draws the imbalance, and the table lists it.</p>
       )}

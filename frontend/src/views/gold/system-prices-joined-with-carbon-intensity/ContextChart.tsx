@@ -91,7 +91,7 @@ export function ContextChart({ ctx }: { ctx: PageContext }) {
     <>
       {panels.length > 0 ? (
         <div className="gf-imbctx-chart">
-          <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+          <SeriesChart panels={panels} domain={windowDomain(ctx.window.start, ctx.window.end)} focus={ctx.focus} picked={ctx.picked} onPick={ctx.pick} />
         </div>
       ) : (
         <p className="gf-state">Rows are held for this window, but none of their values can be drawn. The table lists them.</p>

@@ -49,8 +49,8 @@ export function ZoneKey({ ctx }: { ctx: PageContext }) {
       {ctx.mode === 'chart' && (
         <KeyList
           items={[
-            { key: 'in', mark: { kind: 'line', color: SIDE_COLORS.in, dashed: ctx.fixture }, label: `Zone ${SIDE_LABELS.in}` },
-            { key: 'out', mark: { kind: 'line', color: SIDE_COLORS.out, dashed: ctx.fixture }, label: `Zone ${SIDE_LABELS.out}` },
+            { key: 'in', mark: { kind: 'line', color: SIDE_COLORS.in }, label: `Zone ${SIDE_LABELS.in}` },
+            { key: 'out', mark: { kind: 'line', color: SIDE_COLORS.out }, label: `Zone ${SIDE_LABELS.out}` },
           ]}
         />
       )}

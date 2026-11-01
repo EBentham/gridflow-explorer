@@ -135,7 +135,6 @@ export function PairBody({ ctx }: { ctx: PageContext }) {
         focus={ctx.focus}
         picked={ctx.picked}
         onPick={ctx.pick}
-        fixture={ctx.fixture}
       />
       <p className="gf-hint">
         {focus ? `${focus.label} alone, ` : 'Both lines, '}

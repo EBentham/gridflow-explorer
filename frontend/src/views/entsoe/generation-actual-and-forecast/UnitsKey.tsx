@@ -36,7 +36,7 @@ export function UnitsKey({ ctx }: { ctx: PageContext }) {
           return (
             <li key={id} className={on ? 'is-focus' : ctx.focus ? 'is-muted' : undefined}>
               <button type="button" aria-pressed={on} disabled={u.units.length < 2} onClick={() => ctx.setFocus(on ? undefined : id)}>
-                <KeyList items={[{ key: id, mark: { kind: 'line', color: d.color, dashed: ctx.fixture }, label: <code className="gf-series-name">{d.label}</code> }]} />
+                <KeyList items={[{ key: id, mark: { kind: 'line', color: d.color }, label: <code className="gf-series-name">{d.label}</code> }]} />
                 <span className="gf-series-value">{r.latest ? d.unit.format(r.latest.v) : '–'}</span>
               </button>
               {r.latest && r.latest.t !== stamp && <span className="gf-series-when">{periodLabel(r.latest.t, r.track.step)}</span>}

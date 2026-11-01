@@ -58,7 +58,6 @@ export function ProfileChart({
   day,
   unit,
   bucketed,
-  fixture,
 }: {
   lines: ProfileLine[]
   /** The selected zone's lowest-to-highest band, drawn under its line. */
@@ -67,7 +66,6 @@ export function ProfileChart({
   day: { label: string; color: string } | null
   unit: DisplayUnit
   bucketed: boolean
-  fixture: boolean
 }) {
   const finest = Math.min(...lines.map((l) => l.stepMin))
   const slotMaps = lines.map((l) => new Map(l.slots.map((s) => [s.minute, s])))
@@ -115,7 +113,7 @@ export function ProfileChart({
       const start = label - (label % l.stepMin)
       const s = slotMaps[i].get(start)
       const own = l.stepMin > finest ? `, ${slotText(start, l.stepMin)}` : ''
-      tip.push({ key: l.key, color: l.color, label: `${l.label}${own}`, value: s && s.mean !== null ? unit.format(s.mean) : 'none held', dashed: fixture })
+      tip.push({ key: l.key, color: l.color, label: `${l.label}${own}`, value: s && s.mean !== null ? unit.format(s.mean) : 'none held' })
       if (focus && s) {
         if (s.high) tip.push({ key: 'high', color: 'var(--chart-fan)', label: `Highest, ${dayTick(s.high.t)}`, value: unit.format(s.high.v) })
         if (s.low) tip.push({ key: 'low', color: 'var(--chart-fan)', label: `Lowest, ${dayTick(s.low.t)}`, value: unit.format(s.low.v) })
@@ -146,9 +144,9 @@ export function ProfileChart({
         {scale.domain[0] < 0 && <ZeroLine />}
         {focus && band && <Area dataKey="range" {...fanBandProps(RANGE_OPACITY)} />}
         {lines.map((l, i) => (
-          <Line key={l.key} dataKey={drawKey(i)} {...lineProps(l.color, { fixture })} />
+          <Line key={l.key} dataKey={drawKey(i)} {...lineProps(l.color)} />
         ))}
-        {focus && day && <Line dataKey="day" {...lineProps(day.color, { fixture })} />}
+        {focus && day && <Line dataKey="day" {...lineProps(day.color)} />}
         {focus && peak && peak.mean !== null && (
           <Extreme x={peak.minute} y={peak.mean} anchor={anchor(peak.minute)} color={focus.color} text={`Mean ${unit.format(peak.mean)}, highest, ${slotText(peak.minute, focus.stepMin)}`} />
         )}

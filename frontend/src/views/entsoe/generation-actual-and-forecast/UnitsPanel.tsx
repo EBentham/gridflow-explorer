@@ -42,7 +42,7 @@ export function UnitsPanel({ ctx }: { ctx: PageContext }) {
       zero: true,
       axisWidth: AXIS_WIDTH,
     }
-    chart = <SeriesChart panels={[panel]} domain={domain} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} syncId="gen-units-total" />
+    chart = <SeriesChart panels={[panel]} domain={domain} picked={ctx.picked} onPick={ctx.pick} syncId="gen-units-total" />
   }
 
   return (

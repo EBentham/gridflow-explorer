@@ -33,7 +33,7 @@ export function TempKey({ ctx }: { ctx: PageContext }) {
 
   return (
     <>
-      <KeyList items={[{ key: 'temp', mark: { kind: 'line', color: def.color, dashed: ctx.fixture }, label: `${def.label}, one figure per day, ${def.unit.label ?? 'unit unconfirmed'}` }]} />
+      <KeyList items={[{ key: 'temp', mark: { kind: 'line', color: def.color }, label: `${def.label}, one figure per day, ${def.unit.label ?? 'unit unconfirmed'}` }]} />
       <dl className="gf-stats">
         <div>
           <dt>Latest day</dt>

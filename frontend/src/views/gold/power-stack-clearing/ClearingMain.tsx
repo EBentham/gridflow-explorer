@@ -150,8 +150,8 @@ function ClearingChart({ ctx, points, unread }: { ctx: PageContext; points: Clea
           <YAxis {...valueAxis('£/MWh', scale, { width: AXIS_WIDTH, format: (v) => fmtN(v, priceDigits) })} allowDataOverflow={clipped} />
           <Tooltip content={renderTip} cursor={CURSOR} isAnimationActive={false} />
           {scale.domain[0] < 0 && <ZeroLine />}
-          <Line dataKey="market" {...lineProps(MARKET_COLOR, { fixture: ctx.fixture })} />
-          <Line dataKey="model" {...lineProps(MODEL_COLOR, { fixture: ctx.fixture })} />
+          <Line dataKey="market" {...lineProps(MARKET_COLOR)} />
+          <Line dataKey="model" {...lineProps(MODEL_COLOR)} />
           {band && <SelectionEdges x1={band[0]} x2={band[1]} />}
         </ComposedChart>
       </ChartFrame>

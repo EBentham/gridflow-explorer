@@ -9,24 +9,23 @@
  *    and for a forecast held past that day, a window on to its last day;
  *    under them, the family's datasets that aren't held locally.
  * 3. Grid: the main panel with the 272px key beside it, then the working
- *    panel with the side panel. Every panel has its H2, its source line and,
- *    on fixture data, the dashed-ochre Fixture tag.
+ *    panel with the side panel. Every panel has its H2 and its source line.
  *
- * It reads the manifest and the rows through the page's adapter, and sets
+ * It reads the manifest and the rows through the HTTP adapter, and sets
  * `data-view-ready` only once the manifest, the rows and every related
  * dataset have settled into data, an empty window or an error.
  */
 import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { FixtureTag, Head, Panel, PendingNote, RangeControl, Screen, Segmented, Toolbar, ViewSwitch, type PanelArea, type ViewState } from '../../design/frame'
+import { Head, Panel, PendingNote, RangeControl, Screen, Segmented, Toolbar, ViewSwitch, type PanelArea, type ViewState } from '../../design/frame'
 import { useAnchoredRange, useViewParam } from '../../design/range'
 import { SourceEmblem } from '../../design/symbols'
 import { rangeText } from '../../design/time'
 import type { DateRange } from '../../lib/range'
 import type { Manifest, ManifestDataset, ManifestFamily, ManifestSource, RowsRequest, RowsResponse } from '../contract'
 import type { DatasetView, PageContext, PanelSlots, QuerySpec, RelatedData, RelatedSpec, SlotSpec, ViewConfig } from '../define'
-import { adapterFor } from '../_data/adapters'
 import { useManifest, useRowsList, type Load } from '../_data/hooks'
+import { httpAdapter } from '../_data/http'
 import type { RegisteredView } from '../registry'
 import { panelTitle, slotsFor } from './defaults'
 import { ForwardControl } from './ForwardControl'
@@ -34,8 +33,6 @@ import { About, ErrorWords, PageNotes, SourceLine } from './panels'
 import { buildSeriesModel } from './seriesModel'
 import { emptyWindowText, isoDayText, notHeldText, sourceName } from './text'
 import './template.css'
-
-const FIXTURE_NOTE = 'Synthetic data made in the browser, not read from gridflow.'
 
 const AREAS: [keyof PanelSlots, PanelArea][] = [
   ['main', 'main'],
@@ -173,9 +170,7 @@ function ConfigProblems({ problems }: { problems: string[] }) {
 
 export function DatasetPage({ entry }: { entry: RegisteredView }) {
   const { config } = entry
-  const adapter = adapterFor(config)
-  const fixture = adapter.origin === 'fixture'
-  const manifest = useManifest(adapter)
+  const manifest = useManifest(httpAdapter)
   const [params, setSearch] = useSearchParams()
   const [mode, setMode] = useViewParam()
 
@@ -210,7 +205,7 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
       ...(view.related ?? []).map((r, i) => ({ source: r.source, dataset: r.dataset, ...span, ...relatedQueries[i] })),
     ]
   }, [ready, dataset, window, queryKey, entry.source, view.related])
-  const loads = useRowsList(adapter, requests)
+  const loads = useRowsList(httpAdapter, requests)
   const main = requests.length ? loads[0] : undefined
   const response = main?.state === 'data' ? main.value : null
 
@@ -293,7 +288,6 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
         : 'The whole table: it has no clock'
       : undefined
   const hasChart = (view.body === 'series' && view.chart !== false) || (view.body === 'events' && Boolean(view.strip))
-  const tag = fixture ? <FixtureTag title={FIXTURE_NOTE} /> : undefined
 
   const ctx: PageContext | null =
     source && family && dataset && manifest.value
@@ -304,7 +298,6 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
           family,
           dataset,
           readAt: manifest.value.generated_at,
-          fixture,
           range: reference ? null : range,
           window,
           windowText,
@@ -368,14 +361,9 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
         {source && (
           <>
             <span aria-hidden="true">/</span>
-            {/* A live source has its page; the fixture's made-up source has none. */}
-            {fixture ? (
-              <span>{source.name}</span>
-            ) : (
-              <Link to={`/sources/${source.key}`} className="gf-crumb-link">
-                {source.name}
-              </Link>
-            )}
+            <Link to={`/sources/${source.key}`} className="gf-crumb-link">
+              {source.name}
+            </Link>
           </>
         )}
       </nav>
@@ -384,7 +372,6 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
         title={config.title}
         sub={view.sub ?? config.sub}
         stamp={stamp}
-        badge={fixture ? <FixtureTag title={FIXTURE_NOTE}>Fixture data: made in the browser</FixtureTag> : undefined}
       />
       <Toolbar>
         {switchable.length > 1 && <Segmented label="Dataset" options={switchable.map((e) => ({ value: e.view.id, label: e.view.label }))} value={view.id} onChange={switchTo} />}
@@ -399,7 +386,7 @@ export function DatasetPage({ entry }: { entry: RegisteredView }) {
         {AREAS.map(([area, gridArea]) => {
           const slot = slots[area]
           return (
-            <Panel key={area} area={gridArea} title={panelTitle(view, area, ctx)} src={srcOf(area, slot)} tag={tag}>
+            <Panel key={area} area={gridArea} title={panelTitle(view, area, ctx)} src={srcOf(area, slot)}>
               {body(area)}
             </Panel>
           )

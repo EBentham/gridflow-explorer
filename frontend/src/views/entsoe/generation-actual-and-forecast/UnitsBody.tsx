@@ -63,7 +63,7 @@ export function UnitsBody({ ctx }: { ctx: PageContext }) {
   return (
     <>
       {note}
-      <SeriesChart panels={[panel]} domain={domain} picked={ctx.picked} onPick={ctx.pick} fixture={ctx.fixture} />
+      <SeriesChart panels={[panel]} domain={domain} picked={ctx.picked} onPick={ctx.pick} />
       <p className="gf-hint">
         {focus ? 'One unit’s output as ENTSO-E publishes it, alone.' : 'Each unit’s output as ENTSO-E publishes it, from zero.'} Units are named by their ENTSO-E code: the rows carry no names.
       </p>

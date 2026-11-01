@@ -35,7 +35,7 @@ export function PairKey({ ctx }: { ctx: PageContext }) {
           return (
             <li key={id} className={on ? 'is-focus' : ctx.focus ? 'is-muted' : undefined}>
               <button type="button" aria-pressed={on} disabled={!pickable} onClick={() => ctx.setFocus(on ? undefined : id)}>
-                <KeyList items={[{ key: id, mark: { kind: 'line', color: d.color, dashed: ctx.fixture }, label: <span className="gf-series-name">{d.key === 'a' ? 'Generation' : 'Demand, sign flipped'}</span> }]} />
+                <KeyList items={[{ key: id, mark: { kind: 'line', color: d.color }, label: <span className="gf-series-name">{d.key === 'a' ? 'Generation' : 'Demand, sign flipped'}</span> }]} />
                 <span className="gf-series-value">{latest ? d.unit.format(latest.v) : DASH}</span>
               </button>
               {latest && <span className="gf-series-when">{when(latest.t)}</span>}

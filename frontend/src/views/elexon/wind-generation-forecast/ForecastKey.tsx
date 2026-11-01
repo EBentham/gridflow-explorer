@@ -48,9 +48,9 @@ export function ForecastKey({ ctx }: { ctx: PageContext }) {
   const join = joinMetered(model, own, mModel, mDef, issues)
   const noun = model.bucketed && step ? meansText(step) : stepNoun(step)
 
-  const items: KeyItem[] = [{ key: 'forecast', mark: { kind: 'line', color: own.color, dashed: ctx.fixture }, label: `${own.label}, ${unit.label ?? 'unit unconfirmed'}` }]
+  const items: KeyItem[] = [{ key: 'forecast', mark: { kind: 'line', color: own.color }, label: `${own.label}, ${unit.label ?? 'unit unconfirmed'}` }]
   if (ctx.mode === 'chart' && mDef && mDef.count > 0) {
-    items.push({ key: 'metered', mark: { kind: 'line', color: COLORS.metered, dashed: ctx.fixture }, label: 'Metered wind output, working panel' })
+    items.push({ key: 'metered', mark: { kind: 'line', color: COLORS.metered }, label: 'Metered wind output, working panel' })
   }
 
   return (

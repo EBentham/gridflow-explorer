@@ -222,7 +222,7 @@ export type DatasetView = SeriesView | EventsView | ReferenceView
 
 // ---------------------------------------------------------------- panels
 
-/** A panel's content. The template draws the panel, its H2, the source line and any Fixture tag. */
+/** A panel's content. The template draws the panel, its H2 and the source line. */
 export interface SlotSpec {
   /** The panel's H2. Default: the body's own for that panel (`Key` for a series' key). */
   title?: string | ((ctx: PageContext) => string)
@@ -250,8 +250,6 @@ export interface ViewConfig {
   datasets: DatasetView[]
   /** Caveats for the whole family, shown with each dataset's own. A caveat that reads the page (its coverage, say) is a function. */
   caveats?: (string | ((ctx: PageContext) => string))[]
-  /** Read the dev fixture whatever the app's adapter is. Fixture pages carry the Fixture tag on every panel. */
-  adapter?: 'fixture'
 }
 
 /** A related dataset as a panel sees it. */
@@ -276,8 +274,6 @@ export interface PageContext {
   dataset: ManifestDataset
   /** When the backend last read coverage (ISO), for "as read at" lines. */
   readAt: string
-  /** Synthetic data: every panel carries the Fixture tag and dashes its traces. */
-  fixture: boolean
   /** The toolbar's range; null for a reference table, which has no clock. */
   range: RangeState | null
   window: DateRange | null
@@ -299,9 +295,9 @@ export interface PageContext {
   pick: (midnight: number | undefined) => void
   /**
    * The page's URL parameters, for controls a page adds. The template and the
-   * app own `days`, `from`, `to`, `view`, `dataset`, `q`, `theme`, `fixture`
-   * and every `f.…` (the events table's column filters): a page's own
-   * controls use other names.
+   * app own `days`, `from`, `to`, `view`, `dataset`, `q`, `theme` and every
+   * `f.…` (the events table's column filters): a page's own controls use
+   * other names.
    */
   param: (name: string) => string | null
   setParam: (name: string, value: string | null) => void

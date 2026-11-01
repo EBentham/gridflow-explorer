@@ -232,7 +232,7 @@ function Profile({ ctx, zones, focus, bucketed }: { ctx: PageContext; zones: Zon
           </li>
         )}
       </ul>
-      <ProfileChart lines={lines} band={Boolean(focus)} day={dayLine} unit={unit} bucketed={bucketed} fixture={ctx.fixture} />
+      <ProfileChart lines={lines} band={Boolean(focus)} day={dayLine} unit={unit} bucketed={bucketed} />
       <p className="gf-hint">
         {focus ? `${focus.label}’s mean` : 'Each zone’s mean'} price at each UK clock time, gathered across the {plural(days, 'day', 'days')} holding one, so a day held in part adds to some times only.
         {focus && peak && trough && peak !== trough && peak.mean !== null && trough.mean !== null ? ` Its mean is highest at ${slotText(peak.minute, line.stepMin)} and lowest at ${slotText(trough.minute, line.stepMin)}, on the UK clock.` : ''}

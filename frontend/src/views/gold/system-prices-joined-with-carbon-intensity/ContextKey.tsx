@@ -34,11 +34,11 @@ export function ContextKey({ ctx }: { ctx: PageContext }) {
     return d && typeof v === 'number' ? d.unit.format(v) : 'not held'
   }
 
-  const items: KeyItem[] = [{ key: 'ssp', mark: { kind: 'line', color: price.color, dashed: ctx.fixture }, label: sides.differ > 0 ? price.label : 'System price' }]
-  if (buy && sides.differ > 0) items.push({ key: 'sbp', mark: { kind: 'line', color: buy.color, dashed: ctx.fixture }, label: buy.label })
+  const items: KeyItem[] = [{ key: 'ssp', mark: { kind: 'line', color: price.color }, label: sides.differ > 0 ? price.label : 'System price' }]
+  if (buy && sides.differ > 0) items.push({ key: 'sbp', mark: { kind: 'line', color: buy.color }, label: buy.label })
   if (niv && niv.count > 0) items.push({ key: 'niv', mark: { kind: 'swatch', color: niv.color }, label: `${niv.label}, ${niv.unit.label ?? 'unit unconfirmed'}` })
-  if (forecast && forecast.count > 0) items.push({ key: 'cif', mark: { kind: 'line', color: forecast.color, dashed: ctx.fixture }, label: forecast.label })
-  if (actual && actual.count > 0) items.push({ key: 'cia', mark: { kind: 'line', color: actual.color, dashed: ctx.fixture }, label: actual.label })
+  if (forecast && forecast.count > 0) items.push({ key: 'cif', mark: { kind: 'line', color: forecast.color }, label: forecast.label })
+  if (actual && actual.count > 0) items.push({ key: 'cia', mark: { kind: 'line', color: actual.color }, label: actual.label })
   const below = model.rows.filter((r) => {
     const v = r[price.field]
     return typeof v === 'number' && v < 0
