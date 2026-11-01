@@ -225,7 +225,7 @@ def test_post_fetch_bad_range_422_never_reaches_preflight(
 def test_post_fetch_end_on_the_last_date_422_never_reaches_preflight(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """The CLI's exclusive end is the day after `end`, which `date.max` cannot hold."""
+    """The CLI ends a bare `--end` at the next midnight, which `date.max` cannot hold."""
     preflight_calls: list[None] = []
     monkeypatch.setattr(jobs_router, "probe_writer_lock", lambda: preflight_calls.append(None))
 

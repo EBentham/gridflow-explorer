@@ -13,12 +13,13 @@ from __future__ import annotations
 
 import subprocess
 import sys
-from datetime import date
+from datetime import UTC, date, datetime, time, timedelta
 from pathlib import Path
 
 import duckdb
 import pytest
 from conftest import CountingFakeClient
+from gridflow.pipeline.runner import resolve_dates
 
 import app.jobs as jobs_module
 from app import deps, fetch
@@ -311,9 +312,9 @@ def test_fetch_command_runs_gridflow_as_module() -> None:
 
 
 def test_build_command_matches_documented_shape_for_both_datasets() -> None:
-    """`--end` is the day after the inclusive `end` arg — see
-    `test_build_command_advances_end_by_one_day_for_zero_width_window` for
-    the inclusive-day -> exclusive-midnight contract this encodes.
+    """Both dates pass through as given — see
+    `test_fetch_window_covers_exactly_the_requested_days` for how gridflow
+    reads them.
     """
     generation_mix = get_dataset("generation-mix")
     cmd = fetch.build_command(generation_mix, date(2026, 8, 1), date(2026, 8, 15))
@@ -327,7 +328,7 @@ def test_build_command_matches_documented_shape_for_both_datasets() -> None:
         "--start",
         "2026-08-01",
         "--end",
-        "2026-08-16",
+        "2026-08-15",
     ]
 
     system_prices = get_dataset("system-prices")
@@ -342,28 +343,24 @@ def test_build_command_matches_documented_shape_for_both_datasets() -> None:
         "--start",
         "2026-08-01",
         "--end",
-        "2026-08-16",
+        "2026-08-15",
     ]
 
 
-def test_build_command_advances_end_by_one_day_for_zero_width_window() -> None:
-    """Regression for the end-day fetch gap: explorer `end` is an inclusive
-    day, but the CLI's bare-date `--end` resolves to a midnight-UTC instant
-    (exclusive upper bound). A same-day request (`start == end`) would
-    therefore be a zero-width window and ingest nothing unless `--end` is
-    advanced by one day past the requested `end`.
+@pytest.mark.parametrize(
+    ("start", "end"),
+    [(date(2026, 8, 1), date(2026, 8, 15)), (date(2026, 3, 1), date(2026, 3, 1))],
+)
+def test_fetch_window_covers_exactly_the_requested_days(start: date, end: date) -> None:
+    """The installed gridflow's own parser reads the command's dates as
+    `[start 00:00Z, end + 1 day 00:00Z)`: every requested day, the last
+    included (a same-day request is not zero-width), and no day more.
     """
-    generation_mix = get_dataset("generation-mix")
-    cmd = fetch.build_command(generation_mix, date(2026, 3, 1), date(2026, 3, 1))
-    assert cmd == [
-        sys.executable,
-        "-m",
-        "gridflow",
-        "pipeline",
-        "elexon",
-        "fuelhh",
-        "--start",
-        "2026-03-01",
-        "--end",
-        "2026-03-02",
-    ]
+    cmd = fetch.build_command(get_dataset("generation-mix"), start, end)
+
+    window = resolve_dates(cmd[cmd.index("--start") + 1], cmd[cmd.index("--end") + 1], None, 24)
+
+    assert window == (
+        datetime.combine(start, time.min, tzinfo=UTC),
+        datetime.combine(end + timedelta(days=1), time.min, tzinfo=UTC),
+    )

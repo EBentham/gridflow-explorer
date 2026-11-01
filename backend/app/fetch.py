@@ -22,7 +22,6 @@ import os
 import subprocess
 import sys
 import time
-from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from app.deps import open_client
@@ -69,10 +68,8 @@ def probe_writer_lock() -> None:
 def build_command(spec: DatasetSpec, start: date, end: date) -> list[str]:
     """Build the `gridflow pipeline` command for one dataset and window.
 
-    Explorer `end` is an inclusive day, but the CLI's bare-date `--end`
-    resolves to a midnight-UTC instant (exclusive upper bound), so `end` is
-    advanced by one day to convert inclusive-day to exclusive-midnight and
-    ensure the final requested day is actually ingested.
+    Explorer `end` is an inclusive day, and the CLI reads a bare-date
+    `--end` the same way (through that day), so both dates pass unchanged.
 
     Args:
         spec: The catalogue entry, supplying `cli_source`/`cli_dataset`.
@@ -94,7 +91,7 @@ def build_command(spec: DatasetSpec, start: date, end: date) -> list[str]:
         "--start",
         start.isoformat(),
         "--end",
-        (end + timedelta(days=1)).isoformat(),
+        end.isoformat(),
     ]
 
 
