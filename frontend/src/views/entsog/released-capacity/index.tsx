@@ -7,7 +7,10 @@
  */
 import type { QuerySpec, SeriesView } from '../../define'
 import { defineView } from '../../define'
-import { DirectionControl } from './DirectionControl'
+import { paramSwitch } from '../../_template/ParamSwitch'
+
+/** Entry by default, exit through `?direction=exit`: the rows form one series per point only within a direction. */
+const Direction = paramSwitch('direction', 'Direction', ['entry', 'Entry'], ['exit', 'Exit'])
 
 const byDirection = (params: URLSearchParams): QuerySpec => ({ group: 'point_key', filters: { direction_key: params.get('direction') === 'exit' ? 'exit' : 'entry' } })
 
@@ -20,7 +23,7 @@ function released(id: string, label: string, title: string, caveats: string[] = 
     title,
     values: [{ column: 'default_sentence', label: 'Statement' }],
     query: byDirection,
-    controls: DirectionControl,
+    controls: Direction,
     chart: false,
     caveats,
   }

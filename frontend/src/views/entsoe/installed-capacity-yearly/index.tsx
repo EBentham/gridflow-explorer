@@ -10,7 +10,10 @@ import type { Scalar } from '../../contract'
 import { productionType } from '../../_template/codes'
 import type { ColumnSpec } from '../../define'
 import { defineView } from '../../define'
-import { GbControl } from './GbControl'
+import { paramSwitch } from '../../_template/ParamSwitch'
+
+/** GB's units by default, every area's through `?area=all`, which the view's `query` reads. */
+const Area = paramSwitch('area', 'Area', ['gb', 'GB'], ['all', 'All areas'])
 
 /** GB's area code (EIC) in ENTSO-E's rows. */
 const GB = '10YGB----------A'
@@ -63,7 +66,7 @@ const view = defineView({
         'GB’s rows look out of date: they still list hard-coal units, and GB’s last coal plant closed in 2024. Read them as the last list GB sent ENTSO-E, not as its fleet for the year shown.',
       ],
       query: (params) => (params.get('area') === 'all' ? {} : { filters: { area_code: GB } }),
-      controls: GbControl,
+      controls: Area,
       columns: [
         { field: 'unit_mrid', label: 'Unit', format: 'id' },
         { field: 'production_type', label: 'Production type', text: productionType },

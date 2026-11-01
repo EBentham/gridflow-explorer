@@ -5,7 +5,10 @@
  * switch shows them all.
  */
 import { defineView } from '../../define'
-import { CountryControl } from './CountryControl'
+import { paramSwitch } from '../../_template/ParamSwitch'
+
+/** UK by default, every country through `?country=all`, which the view's `query` reads. */
+const Country = paramSwitch('country', 'Country', ['uk', 'UK'], ['all', 'All countries'])
 
 /** Why two rows can look the same: what tells them apart is inside the id. */
 const LOOKALIKE = 'Rows that look alike differ in direction (entry or exit) or capacity (firm or interruptible), which this read carries only inside each row’s id, in the last column.'
@@ -29,7 +32,7 @@ const view = defineView({
         LOOKALIKE,
       ],
       query: (params) => (params.get('country') === 'all' ? {} : { filters: { country_code: 'UK' } }),
-      controls: CountryControl,
+      controls: Country,
       columns: [
         { field: 'point_key', label: 'Point', format: 'id' },
         { field: 'operator', label: 'Operator' },
@@ -55,7 +58,7 @@ const view = defineView({
       ],
       // The backend keeps the UK by default here; "All countries" clears that default.
       query: (params) => (params.get('country') === 'all' ? { filters: null } : {}),
-      controls: CountryControl,
+      controls: Country,
       columns: [
         { field: 'operator', label: 'Operator' },
         { field: 'product_type', label: 'Product' },
