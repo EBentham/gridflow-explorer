@@ -1,11 +1,11 @@
 """Explorer-local settings.
 
 `GridflowClient()` with no argument resolves its own DuckDB path through
-gridflow's `load_settings()`, which loads gridflow's own repo `.env`
-anchored to the gridflow package location — so it works regardless of our
-cwd. We still pass the path explicitly (see `deps.client_ctx`) so the
-explorer's own configuration is self-describing and testable independent of
-gridflow's install location.
+gridflow's `load_settings()`: `GRIDFLOW_DUCKDB_PATH`, else `gridflow.duckdb`
+under `GRIDFLOW_DATA_DIR` (default `~/gridflow-data`), reading the nearest
+`.env` at or above the working directory. We still pass the path explicitly
+(see `deps.client_ctx`) so the explorer's own configuration is
+self-describing and testable independent of gridflow's install location.
 """
 
 from __future__ import annotations
