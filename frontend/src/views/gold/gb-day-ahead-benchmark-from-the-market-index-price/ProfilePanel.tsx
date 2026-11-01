@@ -9,10 +9,10 @@
 import { CHART } from '../../../design/chartTheme'
 import { plural } from '../../../design/format'
 import { dayLabel, stepNoun } from '../../../design/time'
-import { daySummaries } from '../../_template/seriesModel'
+import { daySummaries, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { PRICE, RANGE_OPACITY, VOLUME, profileOf, seriesOf, slotText, volumeByDay } from './figures'
+import { PRICE, RANGE_OPACITY, VOLUME, profileOf, slotText, volumeByDay } from './figures'
 import { ProfileChart } from './ProfileChart'
 
 const DAY_COLOR = 'var(--chart-price-2)'

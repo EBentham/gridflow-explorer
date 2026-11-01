@@ -8,9 +8,9 @@
  */
 import { plural, pct } from '../../../design/format'
 import { instantLabel } from '../../../design/time'
-import { periodName, type WideRow } from '../../_template/seriesModel'
+import { periodName, type WideRow, seriesOf } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { SOLAR_CAP, SOLAR_FC, WIND_CAP, WIND_FC, WIND_STRIPE, SOLAR_COLOR, aheadParts, capacityOf, idOf, issuesOf, seriesOf } from './figures'
+import { SOLAR_CAP, SOLAR_FC, WIND_CAP, WIND_FC, WIND_STRIPE, SOLAR_COLOR, aheadParts, capacityOf, idOf, issuesOf } from './figures'
 
 const ITEMS = [
   { column: SOLAR_FC, label: 'Solar, embedded', swatch: SOLAR_COLOR },

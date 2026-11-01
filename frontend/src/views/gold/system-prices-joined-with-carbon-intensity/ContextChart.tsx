@@ -17,8 +17,9 @@ import { windowDomain } from '../../../design/time'
 import { SeriesBody } from '../../_template/SeriesBody'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, CI_ACTUAL, CI_FORECAST, NIV, SBP, SSP, folded, intensityCover, priceSides, seriesOf, unjoinable } from './figures'
+import { AXIS_WIDTH, CI_ACTUAL, CI_FORECAST, NIV, SBP, SSP, folded, intensityCover, priceSides, unjoinable } from './figures'
 import { IntensityWords } from './IntensityWords'
+import { seriesOf } from '../../_template/seriesModel'
 
 /** Below this many intensity points the extremes' labels crowd the panel's caption. */
 const MIN_LABELLED = 12

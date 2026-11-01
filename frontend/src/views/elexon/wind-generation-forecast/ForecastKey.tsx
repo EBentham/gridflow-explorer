@@ -9,10 +9,10 @@
 import { KeyList, type KeyItem } from '../../../design/charts'
 import { dayLabel, instantLabel, stepNoun } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
-import { extremesOf, latestValue, periodName } from '../../_template/seriesModel'
+import { extremesOf, latestValue, periodName, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { COLORS, FORECAST, METERED, METERED_KEY, MW_UNIT, issuesByHour, joinMetered, leadText, seriesOf, signedMw, summariseIssues, type DiffStats } from './figures'
+import { COLORS, FORECAST, METERED, METERED_KEY, MW_UNIT, issuesByHour, joinMetered, leadText, signedMw, summariseIssues, type DiffStats } from './figures'
 
 function DiffStat({ label, s, noun }: { label: string; s: DiffStats; noun: string }) {
   return (

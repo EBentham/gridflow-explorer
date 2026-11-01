@@ -13,8 +13,8 @@ import type { PageContext } from '../../define'
 import { pointsOf } from './figures'
 import { besideState, bordersOf, roleOf, type Border } from './model'
 import { cadenceSentence, stepsApartSentence } from './words'
-
-const dash = <span className="gf-cell-missing">–</span>
+import { dashCell } from '../../_template/cells'
+import { cap } from '../../../design/format'
 
 interface BorderRow {
   t: number
@@ -22,8 +22,6 @@ interface BorderRow {
   own: number | null
   beside: number | null
 }
-
-const cap = (s: string) => `${s[0].toUpperCase()}${s.slice(1)}`
 
 export function BorderTable({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
@@ -44,7 +42,7 @@ export function BorderTable({ ctx }: { ctx: PageContext }) {
   rows.sort((a, c) => a.t - c.t || borders.indexOf(a.border) - borders.indexOf(c.border))
   const unit = borders.find((b) => b.own)?.own?.def.unit
   const unitLabel = unit?.label ?? 'unit unconfirmed'
-  const value = (v: number | null) => (v === null || !unit ? dash : unit.plain(v))
+  const value = (v: number | null) => (v === null || !unit ? dashCell : unit.plain(v))
   const columns: TableCol<BorderRow>[] = [
     { key: 't', label: 'Starts', render: (r) => instantLabel(r.t), sortValue: (r) => r.t },
     { key: 'border', label: 'Border', render: (r) => r.border.name, sortValue: (r) => borders.indexOf(r.border) },

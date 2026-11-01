@@ -9,24 +9,24 @@ import { fmtDay, instantLabel, windowDomain } from '../../../design/time'
 import { SeriesChart } from '../../_template/SeriesChart'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
-import { MW, bandId, bandOf, bandsIn, codeName, daysAhead, daysOf, heldShape, loneWords, rowsOf, stackPanel, type Row } from './figures'
+import { bandId, bandOf, bandsIn, codeName, daysAhead, daysOf, heldShape, loneWords, rowsOf, stackPanel, type Row } from './figures'
 import { OneDayWords } from './OneDay'
-
-const dash = <span className="gf-cell-missing">–</span>
+import { dashCell } from '../../_template/cells'
+import { MW } from '../../_template/units'
 
 function FuelTable({ ctx }: { ctx: PageContext }) {
   const rows = rowsOf(ctx.response)
     // The backend sends a row with no value for each code on a day it holds nothing for; the delivery days table names those days.
     .filter((r) => r.mw !== null)
     .sort((a, b) => a.date.localeCompare(b.date) || bandOf(a.code).order - bandOf(b.code).order || (a.code ?? '').localeCompare(b.code ?? ''))
-  const cell = (v: ReactNode | null) => v ?? dash
+  const cell = (v: ReactNode | null) => v ?? dashCell
   const columns: TableCol<Row>[] = [
     { key: 'date', label: 'Delivery day', render: (r) => fmtDay(r.date), sortValue: (r) => r.date },
     { key: 'code', label: 'Fuel code', render: (r) => cell(r.code && <code>{r.code}</code>), sortValue: (r) => r.code },
-    { key: 'band', label: 'Fuel', render: (r) => (r.code ? codeName(r.code) : dash), sortValue: (r) => bandOf(r.code).order },
-    { key: 'mw', label: `Usable output, ${MW.label}`, num: true, render: (r) => (r.mw === null ? dash : MW.plain(r.mw)), sortValue: (r) => r.mw },
-    { key: 'issued', label: 'Issued', render: (r) => (r.issued === null ? dash : instantLabel(r.issued)), sortValue: (r) => r.issued },
-    { key: 'ahead', label: 'Days ahead', num: true, render: (r) => (r.issued === null ? dash : daysAhead(r.date, r.issued)), sortValue: (r) => (r.issued === null ? null : daysAhead(r.date, r.issued)) },
+    { key: 'band', label: 'Fuel', render: (r) => (r.code ? codeName(r.code) : dashCell), sortValue: (r) => bandOf(r.code).order },
+    { key: 'mw', label: `Usable output, ${MW.label}`, num: true, render: (r) => (r.mw === null ? dashCell : MW.plain(r.mw)), sortValue: (r) => r.mw },
+    { key: 'issued', label: 'Issued', render: (r) => (r.issued === null ? dashCell : instantLabel(r.issued)), sortValue: (r) => r.issued },
+    { key: 'ahead', label: 'Days ahead', num: true, render: (r) => (r.issued === null ? dashCell : daysAhead(r.date, r.issued)), sortValue: (r) => (r.issued === null ? null : daysAhead(r.date, r.issued)) },
   ]
   return (
     <WindowedTable

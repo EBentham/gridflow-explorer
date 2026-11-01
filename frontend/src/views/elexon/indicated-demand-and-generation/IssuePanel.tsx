@@ -7,14 +7,12 @@
  * the day's figures come from.
  */
 import { KeyList } from '../../../design/charts'
-import { plural } from '../../../design/format'
+import { plural, DASH } from '../../../design/format'
 import { HOUR_MS, clock, dayLabel, instantLabel, londonMidnight, stepNoun, windowDomain, zoneAbbrev } from '../../../design/time'
 import { SeriesChart } from '../../_template/SeriesChart'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
 import { AXIS_WIDTH, COLORS, LEAD_UNIT, boundaryName, issueStats, pairDays, pairOf, type PairDay } from './figures'
-
-const dash = '–'
 
 /** `01:17 BST that day (45)`: an issue named against the day it gives figures for. */
 function issueWords(day: PairDay, at: number, n: number, many: boolean): string {
@@ -34,7 +32,7 @@ export function IssuePanel({ ctx }: { ctx: PageContext }) {
   const noun = pair.bucketed && pair.stepMs ? meansText(pair.stepMs) : stepNoun(pair.stepMs)
   const own = pair.ownIsDemand ? 'demand' : 'generation'
   const unit = (pair.gen ?? pair.dem)?.unit
-  const range = (lo: { v: number } | null, hi: { v: number } | null) => (lo && hi && unit ? `${unit.plain(lo.v)} to ${unit.plain(hi.v)}` : dash)
+  const range = (lo: { v: number } | null, hi: { v: number } | null) => (lo && hi && unit ? `${unit.plain(lo.v)} to ${unit.plain(hi.v)}` : DASH)
   const heldDays = days.filter((d) => d.gHeld > 0 || d.dHeld > 0)
   const firstHeld = days.findIndex((d) => d.gHeld > 0 || d.dHeld > 0)
   const lead = firstHeld === -1 ? 0 : firstHeld
@@ -133,7 +131,7 @@ export function IssuePanel({ ctx }: { ctx: PageContext }) {
                   <td className="is-num">{held(d)}</td>
                   <td className="is-num">{range(d.gLow, d.gHigh)}</td>
                   <td className="is-num">{range(d.dLow, d.dHigh)}</td>
-                  <td>{d.issues.length ? d.issues.map((x) => issueWords(d, x.at, x.n, d.issues.length > 1)).join('; ') : dash}</td>
+                  <td>{d.issues.length ? d.issues.map((x) => issueWords(d, x.at, x.n, d.issues.length > 1)).join('; ') : DASH}</td>
                 </tr>
               )
             })}

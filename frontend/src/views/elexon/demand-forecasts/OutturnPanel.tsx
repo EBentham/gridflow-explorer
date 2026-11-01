@@ -8,33 +8,14 @@
  * is a gap, never a zero.
  */
 import { KeyList } from '../../../design/charts'
-import { pct, plural } from '../../../design/format'
+import { pct, plural, DASH } from '../../../design/format'
 import { dayLabel, stepNoun, windowDomain } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
-import { daySummaries, periodName, type SeriesDef } from '../../_template/seriesModel'
+import { daySummaries, periodName, type SeriesDef, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import {
-  AXIS_WIDTH,
-  COLORS,
-  ERROR_UNIT,
-  INDO,
-  ITSDO,
-  NATIONAL_BOUNDARY,
-  NDF,
-  OUTTURN_KEY,
-  boundaryOf,
-  errorByDay,
-  forecastColumn,
-  joinOutturn,
-  sameClock,
-  seriesOf,
-  signedMw,
-  type ErrorStats,
-} from './figures'
-
-const dash = '–'
+import { AXIS_WIDTH, COLORS, ERROR_UNIT, INDO, ITSDO, NATIONAL_BOUNDARY, NDF, OUTTURN_KEY, boundaryOf, errorByDay, forecastColumn, joinOutturn, sameClock, signedMw, type ErrorStats } from './figures'
 
 function def(base: SeriesDef, key: string, field: string, label: string, color: string, unit = base.unit): SeriesDef {
   return { ...base, key, field, label, color, from: key, unit }
@@ -45,9 +26,9 @@ function ErrorCells({ s, over }: { s: ErrorStats | undefined; over?: string }) {
   if (!s || !s.count) {
     return (
       <>
-        <td className="is-num">{dash}</td>
-        <td className="is-num">{dash}</td>
-        <td className="is-num">{dash}</td>
+        <td className="is-num">{DASH}</td>
+        <td className="is-num">{DASH}</td>
+        <td className="is-num">{DASH}</td>
       </>
     )
   }
@@ -58,7 +39,7 @@ function ErrorCells({ s, over }: { s: ErrorStats | undefined; over?: string }) {
         {over ? `, over ${plural(s.count, over.replace(/s$/, ''), over)}` : ''}
       </td>
       <td className="is-num">{ERROR_UNIT.plain(s.sumAbs / s.count)}</td>
-      <td className="is-num">{s.sumOutturn > 0 ? pct(s.sumAbs / s.sumOutturn) : dash}</td>
+      <td className="is-num">{s.sumOutturn > 0 ? pct(s.sumAbs / s.sumOutturn) : DASH}</td>
     </>
   )
 }
@@ -119,7 +100,7 @@ export function OutturnPanel({ ctx }: { ctx: PageContext }) {
   const lead = firstHeld === -1 ? 0 : firstHeld
   const shown = lead >= 2 ? days.slice(lead) : days
   const unit = own.unit
-  const fmt = (x: { v: number } | null | undefined) => (x ? unit.plain(x.v) : dash)
+  const fmt = (x: { v: number } | null | undefined) => (x ? unit.plain(x.v) : DASH)
   const relFailed = rel && (rel.state === 'error' || rel.state === 'refreshing')
 
   return (

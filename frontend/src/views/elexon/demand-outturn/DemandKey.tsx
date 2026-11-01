@@ -8,10 +8,10 @@
 import { KeyList, type KeyItem } from '../../../design/charts'
 import { stepNoun } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
-import { extremesOf, latestValue, periodName } from '../../_template/seriesModel'
+import { extremesOf, latestValue, periodName, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { INDO, ITSDO, TSD_KEY, gapRows, seriesOf } from './figures'
+import { INDO, ITSDO, TSD_KEY, gapRows } from './figures'
 
 export function DemandKey({ ctx }: { ctx: PageContext }) {
   const model = ctx.series

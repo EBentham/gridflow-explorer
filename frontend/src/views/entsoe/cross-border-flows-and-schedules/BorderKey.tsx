@@ -13,8 +13,7 @@ import { areaName, BESIDE_COLOR } from './areas'
 import { heldText, windowTally } from './figures'
 import { besideState, bordersOf, focusedBorder, latestStamp, roleOf } from './model'
 import { figureText, stepWords } from './words'
-
-const cap = (s: string) => `${s[0].toUpperCase()}${s.slice(1)}`
+import { cap } from '../../../design/format'
 
 export function BorderKey({ ctx }: { ctx: PageContext }) {
   const w = ctx.window

@@ -56,9 +56,6 @@ export const ZONES: Zone[] = [
 
 export const GROUPS: GroupSpec[] = ZONES.map(({ value, label, color }) => ({ value, label, color }))
 
-/** A column's series in a model, when the rows hold it. */
-export const seriesOf = (model: SeriesModel | null | undefined, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
-
 export interface Point {
   t: number
   v: number

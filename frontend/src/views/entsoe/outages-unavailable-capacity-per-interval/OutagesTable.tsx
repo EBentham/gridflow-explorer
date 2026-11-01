@@ -32,13 +32,13 @@ import {
   type Field,
 } from './shape'
 
-const MISSING = <span className="gf-cell-missing">–</span>
+const dashCell = <span className="gf-cell-missing">–</span>
 
 function fieldCol(f: Field): TableCol<EventRow> {
   const cell = (v: EventRow[string]): ReactNode => {
     const words = f.words?.(v ?? null)
     if (words) return words
-    if (v === null || v === undefined || v === '') return MISSING
+    if (v === null || v === undefined || v === '') return dashCell
     return f.id ? <code>{String(v)}</code> : String(v)
   }
   return {
@@ -74,7 +74,7 @@ export function OutagesTable({ ctx }: { ctx: PageContext }) {
       label: 'Block starts',
       render: (r) => {
         const ms = startMs(r[START])
-        return ms === null ? MISSING : withYear(ms)
+        return ms === null ? dashCell : withYear(ms)
       },
       sortValue: (r) => startMs(r[START]),
     },
@@ -84,7 +84,7 @@ export function OutagesTable({ ctx }: { ctx: PageContext }) {
       num: true,
       render: (r) => {
         const v = r[MW]
-        return typeof v === 'number' ? mwText(v) : MISSING
+        return typeof v === 'number' ? mwText(v) : dashCell
       },
       sortValue: (r) => {
         const v = r[MW]

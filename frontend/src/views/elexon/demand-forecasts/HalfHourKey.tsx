@@ -8,10 +8,10 @@
 import { KeyList, type KeyItem } from '../../../design/charts'
 import { instantLabel, stepNoun } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
-import { extremesOf, latestValue, periodName } from '../../_template/seriesModel'
+import { extremesOf, latestValue, periodName, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { COLORS, ERROR_UNIT, INDO, ITSDO, NATIONAL_BOUNDARY, NDF, OUTTURN_KEY, boundaryOf, forecastColumn, issueStats, joinOutturn, leadText, sameClock, seriesOf, signedMw } from './figures'
+import { COLORS, ERROR_UNIT, INDO, ITSDO, NATIONAL_BOUNDARY, NDF, OUTTURN_KEY, boundaryOf, forecastColumn, issueStats, joinOutturn, leadText, sameClock, signedMw } from './figures'
 
 export function HalfHourKey({ ctx }: { ctx: PageContext }) {
   const model = ctx.series

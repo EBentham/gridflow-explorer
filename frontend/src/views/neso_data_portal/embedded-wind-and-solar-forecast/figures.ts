@@ -12,6 +12,7 @@ import { DAY_MS, HOUR_MS, MINUTE_MS, datesBetween, dayStart, instantLabel, londo
 import type { DateRange } from '../../../lib/range'
 import type { RowsResponse } from '../../contract'
 import type { SeriesDef, SeriesModel } from '../../_template/seriesModel'
+import { seriesOf } from '../../_template/seriesModel'
 
 export const WIND_FC = 'embedded_wind_forecast'
 export const WIND_CAP = 'embedded_wind_capacity'
@@ -35,9 +36,6 @@ export const RECORDED_COLOR = 'var(--chart-actual)'
 
 /** The working panel's charts share this value-axis width with the main chart, so the clocks line up. */
 export const AXIS_WIDTH = 44
-
-/** A column's series in a model, when the rows hold it. */
-export const seriesOf = (model: SeriesModel | null | undefined, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
 
 /** A column's id in the template's focus and keys: the rows aren't split, so it is `self/<column>`. */
 export const idOf = (column: string) => `self/${column}`

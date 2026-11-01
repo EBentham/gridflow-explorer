@@ -54,9 +54,6 @@ export const GRADES: Grade[] = [
 
 export const gradeOf = (value: string): Grade | undefined => GRADES.find((g) => g.value === value)
 
-/** A column's series in the model, when the rows hold it. */
-export const seriesOf = (model: SeriesModel | null, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
-
 /** Each time's published grade, from the rows as read; a missing step, or a mean, has none. */
 export function gradesByTime(response: SeriesRowsResponse | null): Map<number, string> {
   const out = new Map<number, string>()

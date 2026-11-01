@@ -11,7 +11,7 @@
  */
 import type { ReactNode } from 'react'
 import { KeyList } from '../../../design/charts'
-import { plural } from '../../../design/format'
+import { plural, DASH } from '../../../design/format'
 import { dayLabel, londonMidnight, windowDomain } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
@@ -20,7 +20,6 @@ import type { PageContext } from '../../define'
 import { AXIS_WIDTH, markGaps, onClock, perText, pointsOf, statsOf, stepWords, trackDays, type Clocked, type Point } from './figures'
 import { windSolarOf } from './windSolar'
 
-const dash = '–'
 const AVG = 'A series held more often is averaged into each longer step it holds in full.'
 const MEASURE = { total: 'var(--chart-actual)', sum: 'var(--chart-fan)', diff: 'var(--fuel-other)' } as const
 
@@ -37,7 +36,7 @@ export function WindSolarPanel({ ctx }: { ctx: PageContext }) {
   }
   const zone = ws.zone
   const unit = ws.held[0].def.unit
-  const plain = (v: number | null) => (v === null ? dash : unit.plain(v))
+  const plain = (v: number | null) => (v === null ? DASH : unit.plain(v))
   const read = ws.totalRead
   const failed = read && (read.state === 'error' || read.state === 'refreshing')
   const pair = ws.pair

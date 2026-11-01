@@ -17,9 +17,9 @@ import type { DateRange } from '../../../lib/range'
 import type { RowsResponse, Scalar } from '../../contract'
 import type { PageContext, RelatedData } from '../../define'
 import type { ChartPanel } from '../../_template/SeriesChart'
-import { daySummaries, type DaySummary, type SeriesDef, type SeriesModel, type WideRow } from '../../_template/seriesModel'
+import { daySummaries, type DaySummary, type SeriesDef, type SeriesModel, type WideRow, collator } from '../../_template/seriesModel'
 import { relatedFilters, type SourcePart } from '../../_template/panelHelpers'
-import { displayUnit } from '../../_template/units'
+import { displayUnit, MW } from '../../_template/units'
 
 // ---------------------------------------------------------------- columns and keys
 
@@ -54,9 +54,6 @@ export const AXIS_WIDTH = 56
 
 /** A stack of many units reads in GW; one unit's level keeps MW (DESIGN §6). */
 export const GW = displayUnit('MW', 'GW')
-export const MW = displayUnit('MW', 'MW')
-
-const collator = new Intl.Collator('en-GB', { numeric: true, sensitivity: 'base' })
 
 // ---------------------------------------------------------------- the unit asked for
 

@@ -9,9 +9,9 @@
 import { CHART } from '../../../design/chartTheme'
 import { currency, plural } from '../../../design/format'
 import { periodLabel } from '../../../design/time'
-import { latestValue, periodName, seriesId } from '../../_template/seriesModel'
+import { latestValue, periodName, seriesId, seriesOf } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { GB_KEY, GB_PRICE, seriesOf, zoneFigures, zoneNoun, type Point, type ZoneFigures } from './figures'
+import { GB_KEY, GB_PRICE, zoneFigures, zoneNoun, type Point, type ZoneFigures } from './figures'
 
 const eur = (v: number) => `${currency(v, '€', 2)}/MWh`
 

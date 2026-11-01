@@ -13,6 +13,7 @@ import type { RowsResponse, SeriesRow } from '../../contract'
 import type { PageContext, RelatedData } from '../../define'
 import type { SeriesDef, SeriesModel, WideRow } from '../../_template/seriesModel'
 import { displayUnit } from '../../_template/units'
+import { seriesOf } from '../../_template/seriesModel'
 
 export const NDF = 'ndf'
 export const TSDF = 'tsdf'
@@ -61,9 +62,6 @@ export const signedGw = (v: number) => {
   const text = GW_UNIT.plain(v)
   return `${Number(text.replace('−', '-')) > 0 ? '+' : ''}${text}`
 }
-
-/** A column's series in a model, when the rows hold it. */
-export const seriesOf = (model: SeriesModel | null | undefined, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
 
 /** The page's forecast column: national for `ndf`/`ndfd`, transmission for `tsdf`/`tsdfd`. */
 export const forecastColumn = (datasetId: string) => (datasetId === NDF || datasetId === NDFD ? NATIONAL_FC : TRANSMISSION_FC)

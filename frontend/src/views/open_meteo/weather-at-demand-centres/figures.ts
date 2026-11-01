@@ -57,9 +57,6 @@ export function cityStepsText(n: number, model: Pick<SeriesModel, 'bucketed' | '
   return `${count} city values`
 }
 
-/** A column's series in a model, when the rows hold it (the first, for a split column). */
-export const seriesOf = (model: SeriesModel | null | undefined, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
-
 /** Every city's series of one column. */
 export const citySeries = (model: SeriesModel | null | undefined, column: string): SeriesDef[] => model?.all.filter((d) => d.column === column) ?? []
 

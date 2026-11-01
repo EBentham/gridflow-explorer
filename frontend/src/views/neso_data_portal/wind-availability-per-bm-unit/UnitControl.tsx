@@ -8,6 +8,7 @@ import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { Segmented } from '../../../design/frame'
 import type { PageContext } from '../../define'
 import { UNIT_PARAM, captureFrom, unitAsked, unitMissing, unitShown } from './figures'
+import { collator } from '../../_template/seriesModel'
 
 const LIST_ID = 'gf-wa-units'
 
@@ -17,8 +18,6 @@ const MODES: { value: Mode; label: string }[] = [
   { value: 'all', label: 'All units' },
   { value: 'one', label: 'One unit' },
 ]
-
-const collator = new Intl.Collator('en-GB', { numeric: true, sensitivity: 'base' })
 
 /** A pick from the box's list, rather than a key typed: browsers send it as one replacing input. */
 function picked(e: ChangeEvent<HTMLInputElement>): boolean {

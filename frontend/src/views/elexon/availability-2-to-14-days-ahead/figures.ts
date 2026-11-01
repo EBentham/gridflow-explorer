@@ -23,7 +23,8 @@ import type { RowsResponse, SeriesRow } from '../../contract'
 import type { PageContext } from '../../define'
 import type { ChartPanel } from '../../_template/SeriesChart'
 import type { SeriesDef, WideRow } from '../../_template/seriesModel'
-import { displayUnit } from '../../_template/units'
+import { displayUnit, MW } from '../../_template/units'
+import { collator } from '../../_template/seriesModel'
 
 // ---------------------------------------------------------------- columns and keys
 
@@ -47,12 +48,9 @@ export const UNIT_PARAM = 'unit'
 export const AXIS_WIDTH = 52
 
 export const GW = displayUnit('MW', 'GW')
-export const MW = displayUnit('MW', 'MW')
 
 /** The difference between the units' sum and the fuel figure: both forecasts, so the forecast colour. */
 export const DIFF_COLOR = 'var(--chart-fan)'
-
-const collator = new Intl.Collator('en-GB', { numeric: true, sensitivity: 'base' })
 
 // ---------------------------------------------------------------- fuel codes and bands
 

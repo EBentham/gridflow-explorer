@@ -5,7 +5,7 @@
  * their year) and its sort value. A missing value reads as a dash, never 0.
  */
 import type { ReactNode } from 'react'
-import { autoDigits, fmtN } from '../../design/format'
+import { autoDigits, DASH, fmtN } from '../../design/format'
 import { instantLabel, rangeText } from '../../design/time'
 import type { Scalar } from '../contract'
 import type { CellFormat, ColumnSpec } from '../define'
@@ -17,7 +17,8 @@ type Row = Record<string, Scalar | undefined>
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
-const MISSING = <span className="gf-cell-missing">–</span>
+/** A table cell with no value: a muted dash. */
+export const dashCell = <span className="gf-cell-missing">{DASH}</span>
 
 /** A time cell's instant: epoch ms or an ISO string; null when it isn't one. */
 export function toInstant(v: Scalar | undefined): number | null {
@@ -79,7 +80,7 @@ export function toTableCol(spec: ColumnSpec, { years = false }: { years?: boolea
   const format = spec.format ?? 'text'
   const unit = spec.unit ? displayUnit(spec.unit, spec.display ?? 'MW') : null
   const cell = (v: Scalar | undefined): ReactNode => {
-    if (v === null || v === undefined || v === '') return MISSING
+    if (v === null || v === undefined || v === '') return dashCell
     const words = wordsOf(spec, v)
     if (words !== null) return words
     switch (format) {

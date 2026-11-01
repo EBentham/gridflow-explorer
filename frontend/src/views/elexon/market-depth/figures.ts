@@ -16,7 +16,7 @@
 import { datesBetween, dayStart, londonMidnight, stepsInDay } from '../../../design/time'
 import type { SeriesRow, SeriesRowsResponse } from '../../contract'
 import type { PageContext, ValueSpec } from '../../define'
-import { buildSeriesModel, type SeriesDef, type SeriesModel } from '../../_template/seriesModel'
+import { buildSeriesModel, type SeriesDef, type SeriesModel, seriesOf } from '../../_template/seriesModel'
 
 export const IMBALANCE = 'indicated_imbalance_mwh'
 export const OFFER = 'offer_volume_mwh'
@@ -61,9 +61,6 @@ export const PRICE_VALUES: ValueSpec[] = [
   // Not the teal of the bids nor any other colour on this page: net imbalance volume is its own quantity.
   { column: NIV, label: 'Net imbalance volume', color: 'var(--fuel-peaking)' },
 ]
-
-/** A column's series in a model, when the rows hold it. */
-export const seriesOf = (model: SeriesModel | null | undefined, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
 
 export interface FoldedPrices {
   model: SeriesModel

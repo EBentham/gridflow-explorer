@@ -8,7 +8,8 @@
 import { dayTick } from '../../../design/time'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
-import { MW, UNIT_PARAM, captureFrom, midnightOf, type Unit } from './figures'
+import { UNIT_PARAM, captureFrom, midnightOf, type Unit } from './figures'
+import { MW } from '../../_template/units'
 
 const cell = (v: number | null | undefined) => (typeof v === 'number' ? MW.plain(v) : '–')
 

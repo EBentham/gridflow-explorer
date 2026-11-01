@@ -6,15 +6,13 @@
  * held, mean, lowest, highest and latest, in MW. Selecting a unit draws it
  * alone above; the drawn ones carry their chart colour.
  */
-import { plural } from '../../../design/format'
+import { plural, DASH } from '../../../design/format'
 import { periodLabel, windowDomain } from '../../../design/time'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
 import { seriesId, type SeriesDef, type WideRow } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
 import { AXIS_WIDTH, markGaps, perText, pointsOf, stepWords } from './figures'
 import { TOTAL_UNIT, unitsOf } from './units'
-
-const dash = '–'
 
 export function UnitsPanel({ ctx }: { ctx: PageContext }) {
   const window = ctx.window
@@ -23,7 +21,7 @@ export function UnitsPanel({ ctx }: { ctx: PageContext }) {
     return <p className="gf-hint">No unit of this type holds output in this zone in this window, so there is nothing to list.</p>
   }
   const mw = u.units[0].track.def.unit
-  const plain = (v: number | null | undefined) => (v === null || v === undefined ? dash : mw.plain(v))
+  const plain = (v: number | null | undefined) => (v === null || v === undefined ? DASH : mw.plain(v))
   const total = u.total
   const mixed = new Set(u.units.map((r) => r.track.step)).size > 1
   const possible = total?.step ? Math.max(...u.units.map((r) => r.track.points.length)) : null
@@ -102,7 +100,7 @@ export function UnitsPanel({ ctx }: { ctx: PageContext }) {
                   <td className="is-num">{plain(r.stats.low?.v)}</td>
                   <td className="is-num">{plain(r.stats.high?.v)}</td>
                   <td className="is-num">{plain(r.latest?.v)}</td>
-                  <td>{r.latest ? periodLabel(r.latest.t, r.track.step) : dash}</td>
+                  <td>{r.latest ? periodLabel(r.latest.t, r.track.step) : DASH}</td>
                 </tr>
               )
             })}

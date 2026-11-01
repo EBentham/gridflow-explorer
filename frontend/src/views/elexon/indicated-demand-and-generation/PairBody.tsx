@@ -13,8 +13,7 @@ import { meansText } from '../../_template/text'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
 import { AXIS_WIDTH, MW_UNIT, boundaryName, leadText, pairId, pairOf, type Pair, type PairRow } from './figures'
-
-const dash = <span className="gf-cell-missing">–</span>
+import { dashCell } from '../../_template/cells'
 
 /** Why the other dataset isn't drawn beside the page's own, when it isn't. */
 export function OtherNote({ pair }: { pair: Pair }) {
@@ -32,9 +31,9 @@ export function OtherNote({ pair }: { pair: Pair }) {
 }
 
 function PairTable({ ctx, pair }: { ctx: PageContext; pair: Pair }) {
-  const mw = (v: number | null) => (v === null ? dash : MW_UNIT.plain(v))
+  const mw = (v: number | null) => (v === null ? dashCell : MW_UNIT.plain(v))
   const split = pair.issueMismatch > 0
-  const issued = (at: number | null) => (at === null ? dash : instantLabel(at))
+  const issued = (at: number | null) => (at === null ? dashCell : instantLabel(at))
   const ownIssued = (r: PairRow) => {
     const c = pair.cells.get(r.t)
     return (pair.ownIsDemand ? c?.demIssued : c?.genIssued) ?? null
@@ -44,7 +43,7 @@ function PairTable({ ctx, pair }: { ctx: PageContext; pair: Pair }) {
     // The half-hour names its UK day; the SP is the backend's, never derived.
     ...(pair.settlement
       ? [
-          { key: 'sp', label: 'SP', num: true, render: (r: PairRow) => pair.settlement?.get(r.t)?.period ?? dash, sortValue: (r: PairRow) => pair.settlement?.get(r.t)?.period ?? null },
+          { key: 'sp', label: 'SP', num: true, render: (r: PairRow) => pair.settlement?.get(r.t)?.period ?? dashCell, sortValue: (r: PairRow) => pair.settlement?.get(r.t)?.period ?? null },
         ]
       : []),
     { key: 'g', label: 'Generation, MW', num: true, render: (r) => mw(pair.cells.get(r.t)?.genMw ?? null), sortValue: (r) => pair.cells.get(r.t)?.genMw ?? null },
@@ -55,7 +54,7 @@ function PairTable({ ctx, pair }: { ctx: PageContext; pair: Pair }) {
       num: true,
       render: (r) => {
         const v = pair.cells.get(r.t)?.demMw ?? null
-        return v === null ? dash : MW_UNIT.plain(-v)
+        return v === null ? dashCell : MW_UNIT.plain(-v)
       },
       sortValue: (r) => {
         const v = pair.cells.get(r.t)?.demMw ?? null
@@ -72,7 +71,7 @@ function PairTable({ ctx, pair }: { ctx: PageContext; pair: Pair }) {
       key: 'l',
       label: 'Issued ahead',
       num: true,
-      render: (r) => (typeof r.l === 'number' ? leadText(r.l * HOUR_MS) : dash),
+      render: (r) => (typeof r.l === 'number' ? leadText(r.l * HOUR_MS) : dashCell),
       sortValue: (r) => (typeof r.l === 'number' ? r.l : null),
     },
   ]

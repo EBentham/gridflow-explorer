@@ -18,9 +18,10 @@ import { SeriesBody } from '../../_template/SeriesBody'
 import { plannedParts, relatedParts } from '../../_template/panelHelpers'
 import { clock, zoneAbbrev } from '../../../design/time'
 import { defineView } from '../../define'
-import { COLORS, DEMAND_KEY, INDO, TEMP, seriesOf, tempUnit } from './figures'
+import { COLORS, DEMAND_KEY, INDO, TEMP, tempUnit } from './figures'
 import { DaysPanel } from './DaysPanel'
 import { TempKey } from './TempKey'
+import { seriesOf } from '../../_template/seriesModel'
 
 const view = defineView({
   title: 'Temperature',

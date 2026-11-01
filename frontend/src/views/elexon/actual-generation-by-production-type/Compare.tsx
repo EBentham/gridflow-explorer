@@ -15,14 +15,13 @@ import { ErrorWords } from '../../_template/panels'
 import { SeriesChart } from '../../_template/SeriesChart'
 import { periodName, type SeriesDef, type SeriesModel } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
-import { displayUnit } from '../../_template/units'
+import { displayUnit, MW } from '../../_template/units'
 import type { PageContext } from '../../define'
 import { AGWS_KEY, DEFAULT_PAIR, FUELHH_KEY, PAIR_PARAM, PAIRINGS, halfHourly, pairColor, pairFigures, pairRows, pairingOf, type PairFigures, type Pairing } from './figures'
 import './page.css'
 import { AXIS_WIDTH } from './types'
 
 const GW = displayUnit('MW')
-const MW = displayUnit('MW', 'MW')
 const OTHER_COLOR = 'var(--chart-actual)'
 const GAP_COLOR = 'var(--chart-tick)'
 const NAME = { [FUELHH_KEY]: 'FUELHH', [AGWS_KEY]: 'agws' } as const

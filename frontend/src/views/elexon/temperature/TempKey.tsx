@@ -8,9 +8,9 @@
 import { KeyList } from '../../../design/charts'
 import { plural } from '../../../design/format'
 import { datesBetween, dayLabel } from '../../../design/time'
-import { extremesOf } from '../../_template/seriesModel'
+import { extremesOf, seriesOf } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { TEMP, daysAt, heldFigures, seriesOf, sevenDayMean } from './figures'
+import { TEMP, daysAt, heldFigures, sevenDayMean } from './figures'
 
 export function TempKey({ ctx }: { ctx: PageContext }) {
   const model = ctx.series

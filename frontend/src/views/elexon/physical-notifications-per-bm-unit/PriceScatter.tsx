@@ -14,7 +14,8 @@ import { CHART, CURSOR, GRID, TICK, valueAxis } from '../../../design/chartTheme
 import { fmtN, niceTicks, stepDigits } from '../../../design/format'
 import { periodName, type Settlement } from '../../_template/seriesModel'
 import type { DisplayUnit } from '../../_template/units'
-import { AXIS_WIDTH, MW, PRICE_COLOR, type Pair } from './figures'
+import { AXIS_WIDTH, PRICE_COLOR, type Pair } from './figures'
+import { MW } from '../../_template/units'
 
 interface TipProps {
   active?: boolean

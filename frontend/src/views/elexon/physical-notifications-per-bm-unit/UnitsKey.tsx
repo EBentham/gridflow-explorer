@@ -15,7 +15,8 @@ import { extremesOf, periodName, type SeriesModel } from '../../_template/series
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
 import { FuelWords } from './FuelWords'
-import { GW, MW, PRICE_COLOR, latestFullSum, latestOf, levelsOf, pricePairs, priceSeries, priceSplit, sameClock, unitLines, unitShown, type PriceSeries, type UnitLine } from './figures'
+import { GW, PRICE_COLOR, latestFullSum, latestOf, levelsOf, pricePairs, priceSeries, priceSplit, sameClock, unitLines, unitShown, type PriceSeries, type UnitLine } from './figures'
+import { MW } from '../../_template/units'
 
 function PriceItem({ ctx, price, at }: { ctx: PageContext; price: PriceSeries | null; at: number | undefined }) {
   const rel = ctx.related.price

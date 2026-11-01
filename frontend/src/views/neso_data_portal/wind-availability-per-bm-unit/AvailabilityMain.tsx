@@ -11,9 +11,10 @@ import { datesBetween, windowDomain } from '../../../design/time'
 import { SeriesChart } from '../../_template/SeriesChart'
 import { ErrorWords } from '../../_template/panels'
 import type { PageContext } from '../../define'
-import { MW, OUTPUT_KEY, captureFrom, dayText, outputCover, outputSeries, totalPanel, unitMissing, unitPanel, unitShown } from './figures'
+import { OUTPUT_KEY, captureFrom, dayText, outputCover, outputSeries, totalPanel, unitMissing, unitPanel, unitShown } from './figures'
 import { UnitRows } from './UnitRows'
 import { UnitsMatrix } from './UnitsMatrix'
+import { MW } from '../../_template/units'
 
 function OutputWords({ ctx }: { ctx: PageContext }) {
   const rel = ctx.related[OUTPUT_KEY]

@@ -9,9 +9,9 @@
  */
 import { KeyList, type KeyItem } from '../../../design/charts'
 import { listText, money } from '../../../design/format'
-import { extremesOf, latestValue, periodName } from '../../_template/seriesModel'
+import { extremesOf, latestValue, periodName, seriesOf } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { CI_ACTUAL, CI_FORECAST, NIV, SBP, SSP, folded, intensityCover, priceSides, seriesOf, unjoinable } from './figures'
+import { CI_ACTUAL, CI_FORECAST, NIV, SBP, SSP, folded, intensityCover, priceSides, unjoinable } from './figures'
 
 export function ContextKey({ ctx }: { ctx: PageContext }) {
   if (unjoinable(ctx)) return <p className="gf-hint">This window comes as means over two hours or more, kept apart by price derivation code, so there is no single series to key. Choose a shorter window.</p>

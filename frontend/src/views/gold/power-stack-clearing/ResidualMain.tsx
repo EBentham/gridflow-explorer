@@ -17,8 +17,7 @@ import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { SeriesRow } from '../../contract'
 import type { PageContext } from '../../define'
 import { AXIS_WIDTH, DEMAND, HYDRO, INDO, INTERCONNECTORS, INTERCONNECTOR_CODES, LINE_COLUMNS, OTHER, PUMPED, RESIDUAL, SOLAR, WIND, num, ownRows } from './figures'
-
-const dash = <span className="gf-cell-missing">–</span>
+import { dashCell } from '../../_template/cells'
 
 /** The columns top to bottom of the waterfall, each with its header. */
 const TABLE_COLUMNS: { column: string; label: ReactNode }[] = [
@@ -50,8 +49,8 @@ function ResidualTable({ ctx }: { ctx: PageContext }) {
     { key: 't', label: model.bucketed ? 'Period (means)' : 'Period', render: (r) => periodLabel(r.ts, model.stepMs), sortValue: (r) => r.ts },
     ...(settlement
       ? [
-          { key: 'sd', label: 'Settlement date', render: (r: SeriesRow) => settlement.get(r.ts)?.date ?? dash, sortValue: (r: SeriesRow) => settlement.get(r.ts)?.date ?? null },
-          { key: 'sp', label: 'SP', num: true, render: (r: SeriesRow) => settlement.get(r.ts)?.period ?? dash, sortValue: (r: SeriesRow) => settlement.get(r.ts)?.period ?? null },
+          { key: 'sd', label: 'Settlement date', render: (r: SeriesRow) => settlement.get(r.ts)?.date ?? dashCell, sortValue: (r: SeriesRow) => settlement.get(r.ts)?.date ?? null },
+          { key: 'sp', label: 'SP', num: true, render: (r: SeriesRow) => settlement.get(r.ts)?.period ?? dashCell, sortValue: (r: SeriesRow) => settlement.get(r.ts)?.period ?? null },
         ]
       : []),
     ...TABLE_COLUMNS.map(({ column, label }) => ({
@@ -60,7 +59,7 @@ function ResidualTable({ ctx }: { ctx: PageContext }) {
       num: true,
       render: (r: SeriesRow) => {
         const v = num(r[column])
-        return v === null ? dash : fmt0(v)
+        return v === null ? dashCell : fmt0(v)
       },
       sortValue: (r: SeriesRow) => num(r[column]),
     })),

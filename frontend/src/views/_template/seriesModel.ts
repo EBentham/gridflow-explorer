@@ -90,7 +90,11 @@ export const DEFAULT_MAX_SERIES = 10
 /** A series' id across a page's datasets: `self/wind`, `price/price_gbp_mwh`. Focus and keys use it. */
 export const seriesId = (d: Pick<SeriesDef, 'from' | 'key'>) => `${d.from}/${d.key}`
 
-const collator = new Intl.Collator('en-GB', { numeric: true, sensitivity: 'base' })
+/** Natural en-GB order for names and codes: `T_ABC-2` before `T_ABC-10`. */
+export const collator = new Intl.Collator('en-GB', { numeric: true, sensitivity: 'base' })
+
+/** The series drawing a column (the first, when the rows are split). */
+export const seriesOf = (model: SeriesModel | null | undefined, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
 
 const groupKey = (v: unknown) => (v === null || v === undefined ? '' : String(v))
 

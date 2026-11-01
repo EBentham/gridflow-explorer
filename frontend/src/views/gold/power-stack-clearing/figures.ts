@@ -11,6 +11,7 @@ import { datesBetween, dayStart, londonMidnight, stepsInDay } from '../../../des
 import type { DateRange } from '../../../lib/range'
 import type { Scalar, SeriesRow } from '../../contract'
 import type { PageContext, QuerySpec } from '../../define'
+import { collator } from '../../_template/seriesModel'
 
 // ---------------------------------------------------------------- the run
 
@@ -553,8 +554,6 @@ export interface CostTerm {
   term: string
   entries: CostEntry[]
 }
-
-const collator = new Intl.Collator('en-GB', { numeric: true, sensitivity: 'base' })
 
 export function costTerms(units: CurveUnit[]): { terms: CostTerm[]; unreadable: number; missing: number } {
   const terms = new Map<string, Map<string, CostEntry>>()

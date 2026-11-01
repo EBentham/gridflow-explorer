@@ -16,18 +16,18 @@ import { SeriesBody } from '../../_template/SeriesBody'
 import type { SeriesModel, WideRow } from '../../_template/seriesModel'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
-import { CI, CI_LABEL, FUELS, seriesOf } from './fuels'
+import { CI, CI_LABEL, FUELS } from './fuels'
 import { LongChart } from './LongChart'
 import { clockOf, heldText, periodName, periodsOf, periodText, pointKindOf, rowKindOf, stepsText, type Clock, type Period } from './periods'
 import { WindHatch } from './WindHatch'
-
-const dash = <span className="gf-cell-missing">–</span>
+import { seriesOf } from '../../_template/seriesModel'
+import { dashCell } from '../../_template/cells'
 
 function LongTable({ ctx, periods, stepWords }: { ctx: PageContext; periods: Period[]; stepWords: string }) {
   const model = ctx.series as SeriesModel
   const gw = seriesOf(model, 'gas')?.unit
   const ci = seriesOf(model, CI)?.unit
-  const num = (v: number | null, plain?: (x: number) => string) => (v === null || !plain ? dash : plain(v))
+  const num = (v: number | null, plain?: (x: number) => string) => (v === null || !plain ? dashCell : plain(v))
   const kind = periods[0]?.kind ?? 'day'
   const gwLabel = gw?.label ?? 'unit unconfirmed'
   const columns: TableCol<Period>[] = [

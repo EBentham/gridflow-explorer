@@ -62,9 +62,6 @@ function signed(v: number): string {
 /** A signed MW figure: `+431`, with a true minus below zero. */
 export const signedMw = (v: number) => `${Math.round(v) > 0 ? '+' : ''}${MW_UNIT.plain(v)}`
 
-/** A column's series in a model, when the rows hold it. */
-export const seriesOf = (model: SeriesModel | null | undefined, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
-
 // ---------------------------------------------------------------- issues
 
 /**

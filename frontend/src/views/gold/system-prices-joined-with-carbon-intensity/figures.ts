@@ -23,7 +23,7 @@ import { listText } from '../../../design/format'
 import { datesBetween, dayStart, HOUR_MS, londonMidnight, rangeText } from '../../../design/time'
 import type { ManifestDataset, SeriesRow, SeriesRowsResponse } from '../../contract'
 import type { PageContext, SeriesView, ValueSpec } from '../../define'
-import { buildSeriesModel, type SeriesDef, type SeriesModel } from '../../_template/seriesModel'
+import { buildSeriesModel, type SeriesModel, seriesOf } from '../../_template/seriesModel'
 
 export const SSP = 'system_sell_price'
 export const SBP = 'system_buy_price'
@@ -180,8 +180,6 @@ export function intensityRuns(ctx: PageContext): IntensityRuns | null {
   if (run) (run.held ? heldRuns : emptyRuns).push(rangeText(run.first, run.last))
   return { held: days.filter((d) => heldDays.has(dayStart(d))).length, days: days.length, heldRuns, emptyRuns }
 }
-
-export const seriesOf = (model: SeriesModel | null, column: string): SeriesDef | undefined => model?.all.find((d) => d.column === column)
 
 /** Half-hours whose sell and buy prices both hold, and how many of those differ. */
 export function priceSides(model: SeriesModel): { both: number; differ: number } {

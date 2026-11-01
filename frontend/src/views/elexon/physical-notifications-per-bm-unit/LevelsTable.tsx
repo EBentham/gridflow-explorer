@@ -10,11 +10,11 @@ import { periodLabel } from '../../../design/time'
 import type { SeriesRow, SeriesRowsResponse } from '../../contract'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
-import { END, MW, START, UNIT, focusedLine, fuelFor, fuelLookup, num, priceAt, priceSeries, sameClock, unitLines, unitShown } from './figures'
+import { END, START, UNIT, focusedLine, fuelFor, fuelLookup, num, priceAt, priceSeries, sameClock, unitLines, unitShown } from './figures'
+import { dashCell } from '../../_template/cells'
+import { MW } from '../../_template/units'
 
-const dash = <span className="gf-cell-missing">–</span>
-
-const level = (v: number | null): ReactNode => (v === null ? dash : MW.plain(v))
+const level = (v: number | null): ReactNode => (v === null ? dashCell : MW.plain(v))
 
 export function LevelsTable({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
@@ -36,8 +36,8 @@ export function LevelsTable({ ctx }: { ctx: PageContext }) {
     { key: 't', label: model.bucketed ? 'Period (means)' : 'Period', render: (r) => periodLabel(r.ts, model.stepMs), sortValue: (r) => r.ts },
     ...(hasSettlement
       ? [
-          { key: 'sd', label: 'Settlement date', render: (r: SeriesRow) => r.settlement_date ?? dash, sortValue: (r: SeriesRow) => r.settlement_date ?? null },
-          { key: 'sp', label: 'SP', num: true, render: (r: SeriesRow) => r.settlement_period ?? dash, sortValue: (r: SeriesRow) => r.settlement_period ?? null },
+          { key: 'sd', label: 'Settlement date', render: (r: SeriesRow) => r.settlement_date ?? dashCell, sortValue: (r: SeriesRow) => r.settlement_date ?? null },
+          { key: 'sp', label: 'SP', num: true, render: (r: SeriesRow) => r.settlement_period ?? dashCell, sortValue: (r: SeriesRow) => r.settlement_period ?? null },
         ]
       : []),
     ...(one
@@ -48,7 +48,7 @@ export function LevelsTable({ ctx }: { ctx: PageContext }) {
             label: 'Unit',
             render: (r: SeriesRow) => {
               const id = idOf(r)
-              return id ? <code>{id}</code> : dash
+              return id ? <code>{id}</code> : dashCell
             },
             sortValue: (r: SeriesRow) => idOf(r),
           },
@@ -57,7 +57,7 @@ export function LevelsTable({ ctx }: { ctx: PageContext }) {
             label: 'Fuel',
             render: (r: SeriesRow) => {
               const id = idOf(r)
-              return id ? fuelFor(lookup, id).label : dash
+              return id ? fuelFor(lookup, id).label : dashCell
             },
             // Stack order: fuel by fuel, as the chart and the key run.
             sortValue: (r: SeriesRow) => {
@@ -76,7 +76,7 @@ export function LevelsTable({ ctx }: { ctx: PageContext }) {
             num: true,
             render: (r: SeriesRow) => {
               const v = prices.get(r.ts)
-              return v === undefined ? dash : price.def.unit.plain(v)
+              return v === undefined ? dashCell : price.def.unit.plain(v)
             },
             sortValue: (r: SeriesRow) => prices.get(r.ts) ?? null,
           },

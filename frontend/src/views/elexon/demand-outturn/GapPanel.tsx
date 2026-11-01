@@ -10,10 +10,10 @@ import { plural } from '../../../design/format'
 import { dayLabel, stepNoun, windowDomain } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
-import { daySummaries, type SeriesDef } from '../../_template/seriesModel'
+import { daySummaries, type SeriesDef, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, COLORS, INDO, ITSDO, TSD_KEY, gapRows, seriesOf, sumsByDay } from './figures'
+import { AXIS_WIDTH, COLORS, INDO, ITSDO, TSD_KEY, gapRows, sumsByDay } from './figures'
 
 export function GapPanel({ ctx }: { ctx: PageContext }) {
   const model = ctx.series

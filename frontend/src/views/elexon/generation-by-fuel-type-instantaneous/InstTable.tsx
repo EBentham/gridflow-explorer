@@ -7,13 +7,11 @@
 import { instantLabel, periodLabel } from '../../../design/time'
 import type { WideRow } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
-import { displayUnit } from '../../_template/units'
+import { MW } from '../../_template/units'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
 import { codeDefs, codeLabel, codeOrder } from './fuels'
-
-const MW = displayUnit('MW', 'MW')
-const dash = <span className="gf-cell-missing">–</span>
+import { dashCell } from '../../_template/cells'
 
 export function InstTable({ ctx }: { ctx: PageContext }) {
   const model = ctx.series
@@ -48,7 +46,7 @@ export function InstTable({ ctx }: { ctx: PageContext }) {
         num: true,
         render: (r) => {
           const v = mw(r)
-          return v === null ? dash : MW.plain(v)
+          return v === null ? dashCell : MW.plain(v)
         },
         sortValue: mw,
       }

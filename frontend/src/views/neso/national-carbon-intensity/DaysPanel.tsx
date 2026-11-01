@@ -8,16 +8,15 @@
  * A day held in part is summarised in part, and says so in its Held column.
  */
 import { KeyList } from '../../../design/charts'
-import { plural } from '../../../design/format'
+import { plural, DASH } from '../../../design/format'
 import { dayLabel, stepNoun, stepsInDay, windowDomain } from '../../../design/time'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
-import { periodName, type SeriesDef } from '../../_template/seriesModel'
+import { periodName, type SeriesDef, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { SeriesRowsResponse } from '../../contract'
 import type { PageContext } from '../../define'
-import { ACTUAL, AXIS_WIDTH, COLORS, FORECAST, GRADES, dayFigures, gradeOf, gradesByTime, missRows, seriesOf, signed } from './figures'
+import { ACTUAL, AXIS_WIDTH, COLORS, FORECAST, GRADES, dayFigures, gradeOf, gradesByTime, missRows, signed } from './figures'
 
-const dash = '–'
 const MISS = 'miss'
 
 export function DaysPanel({ ctx }: { ctx: PageContext }) {
@@ -54,7 +53,7 @@ export function DaysPanel({ ctx }: { ctx: PageContext }) {
   const lead = firstHeld === -1 ? 0 : firstHeld
   const shown = lead >= 2 ? days.slice(lead) : days
   const span = 5 + cols.length
-  const fmt = (v: number | null) => (v === null ? dash : unit.plain(v))
+  const fmt = (v: number | null) => (v === null ? DASH : unit.plain(v))
   const anyBoth = days.some((d) => d.bothHeld > 0)
 
   return (
@@ -134,11 +133,11 @@ export function DaysPanel({ ctx }: { ctx: PageContext }) {
                   <td className="is-num">{expected === null || !partial ? held : `${held} of ${expected}`}</td>
                   <td className="is-num">{fmt(d.forecastMean)}</td>
                   <td className="is-num">{d.actualHeld < d.forecastHeld && d.actualMean !== null ? `${fmt(d.actualMean)}, over ${d.actualHeld}` : fmt(d.actualMean)}</td>
-                  <td className="is-num">{d.missMean === null ? dash : signed(d.missMean)}</td>
+                  <td className="is-num">{d.missMean === null ? DASH : signed(d.missMean)}</td>
                   <td className="is-num">{fmt(d.missAbsMean)}</td>
                   {cols.map((c) => (
                     <td key={c.value} className="is-num">
-                      {d.grades.get(c.value) ?? dash}
+                      {d.grades.get(c.value) ?? DASH}
                     </td>
                   ))}
                 </tr>

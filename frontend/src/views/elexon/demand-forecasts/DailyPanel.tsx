@@ -8,7 +8,7 @@
  * filled in: a day without a figure is a gap in its line and a dash.
  */
 import { KeyList } from '../../../design/charts'
-import { plural } from '../../../design/format'
+import { plural, DASH } from '../../../design/format'
 import { DAY_MS, fmtDay, instantLabel, windowDomain } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
 import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
@@ -16,13 +16,11 @@ import type { SeriesDef, WideRow } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
 import { AXIS_WIDTH, COLORS, GW_UNIT, NDFD, OTHER_KEY, OUTTURN_KEY, daysAhead, deliveryDays, type DailyFigure } from './figures'
 
-const dash = '–'
-
 function line(key: string, label: string, color: string, count: number): SeriesDef {
   return { key, field: key, column: key, group: null, label, color, unit: GW_UNIT, from: key, count, mean: null, min: null, max: null, signed: false }
 }
 
-const gw = (f: DailyFigure | null) => (f ? GW_UNIT.plain(f.mw * GW_UNIT.factor) : dash)
+const gw = (f: DailyFigure | null) => (f ? GW_UNIT.plain(f.mw * GW_UNIT.factor) : DASH)
 
 export function DailyPanel({ ctx }: { ctx: PageContext }) {
   const days = deliveryDays(ctx)
@@ -108,12 +106,12 @@ export function DailyPanel({ ctx }: { ctx: PageContext }) {
                       {fmtDay(d.date)}
                     </button>
                   </th>
-                  <td>{f?.issued != null ? instantLabel(f.issued) : f ? dash : 'not held locally'}</td>
-                  <td className="is-num">{f?.issued != null ? daysAhead(d.date, f.issued) : dash}</td>
+                  <td>{f?.issued != null ? instantLabel(f.issued) : f ? DASH : 'not held locally'}</td>
+                  <td className="is-num">{f?.issued != null ? daysAhead(d.date, f.issued) : DASH}</td>
                   <td className="is-num">{gw(d.national)}</td>
                   <td className="is-num">{gw(d.transmission)}</td>
-                  <td className="is-num">{d.peak !== null ? GW_UNIT.plain(d.peak) : partial ? `${d.held} of ${d.expected ?? '?'} held` : dash}</td>
-                  <td className="is-num">{d.mean !== null ? GW_UNIT.plain(d.mean) : dash}</td>
+                  <td className="is-num">{d.peak !== null ? GW_UNIT.plain(d.peak) : partial ? `${d.held} of ${d.expected ?? '?'} held` : DASH}</td>
+                  <td className="is-num">{d.mean !== null ? GW_UNIT.plain(d.mean) : DASH}</td>
                 </tr>
               )
             })}

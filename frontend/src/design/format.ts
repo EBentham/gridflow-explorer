@@ -6,6 +6,12 @@
 
 const MINUS = '−'
 
+/** A missing figure in words or a cell: never 0. */
+export const DASH = '–'
+
+/** `Area` from `area`: a sentence's first word. */
+export const cap = (s: string) => `${s[0].toUpperCase()}${s.slice(1)}`
+
 function signed(v: number, body: (abs: number) => string): string {
   return `${v < 0 ? MINUS : ''}${body(Math.abs(v))}`
 }

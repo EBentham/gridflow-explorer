@@ -132,4 +132,3 @@ export function besideMissingSentence(besideWords: string, ownWords: string, own
   return missing.length ? `The ${besideWords} holds nothing on ${daysText(missing)} that the ${ownWords} holds.` : ''
 }
 
-export const cap = (s: string) => `${s[0].toUpperCase()}${s.slice(1)}`

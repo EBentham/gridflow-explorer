@@ -19,7 +19,8 @@ import type { PageContext, RelatedData } from '../../define'
 import type { ChartPanel } from '../../_template/SeriesChart'
 import { relatedFilters, type SourcePart } from '../../_template/panelHelpers'
 import type { SeriesDef, SeriesModel, WideRow } from '../../_template/seriesModel'
-import { displayUnit } from '../../_template/units'
+import { displayUnit, MW } from '../../_template/units'
+import { collator } from '../../_template/seriesModel'
 
 // ---------------------------------------------------------------- columns and keys
 
@@ -56,9 +57,6 @@ export const AXIS_WIDTH = 56
 
 /** Totals over many units read in GW; one unit keeps MW (DESIGN §6). */
 export const GW = displayUnit('MW', 'GW')
-export const MW = displayUnit('MW', 'MW')
-
-const collator = new Intl.Collator('en-GB', { numeric: true, sensitivity: 'base' })
 
 // ---------------------------------------------------------------- the rows, read once
 

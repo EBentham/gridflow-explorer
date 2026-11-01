@@ -11,7 +11,8 @@ import { KeyList } from '../../../design/charts'
 import { plural } from '../../../design/format'
 import { fmtDay, instantLabel } from '../../../design/time'
 import type { PageContext } from '../../define'
-import { DIFF_COLOR, FUEL_KEY, GW, MW, bandId, bandsIn, daysAhead, daysOf, heldShape, issuedRange, keyDay, signedMw, unitFuel, unitShown, type Day, type UnitInfo } from './figures'
+import { DIFF_COLOR, FUEL_KEY, GW, bandId, bandsIn, daysAhead, daysOf, heldShape, issuedRange, keyDay, signedMw, unitFuel, unitShown, type Day, type UnitInfo } from './figures'
+import { MW } from '../../_template/units'
 
 const gw = (mw: number) => GW.format(mw * GW.factor)
 

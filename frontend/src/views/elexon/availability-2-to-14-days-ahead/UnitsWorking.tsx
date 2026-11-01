@@ -10,10 +10,11 @@ import { plural } from '../../../design/format'
 import { fmtDay, instantLabel } from '../../../design/time'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
-import { MW, UNIT_PARAM, daysAhead, daysOf, keyDay, sortedUnits, unitFuel, unitShown, unitsOf, type Day, type UnitInfo } from './figures'
+import { UNIT_PARAM, daysAhead, daysOf, keyDay, sortedUnits, unitFuel, unitShown, unitsOf, type Day, type UnitInfo } from './figures'
+import { dashCell } from '../../_template/cells'
+import { MW } from '../../_template/units'
 
-const dash = <span className="gf-cell-missing">–</span>
-const mw = (v: number | null | undefined) => (v === null || v === undefined ? dash : MW.plain(v))
+const mw = (v: number | null | undefined) => (v === null || v === undefined ? dashCell : MW.plain(v))
 
 function OneDays({ ctx, unit, days }: { ctx: PageContext; unit: UnitInfo; days: Day[] }) {
   return (
@@ -80,11 +81,11 @@ function AllUnits({ ctx, days }: { ctx: PageContext; days: Day[] }) {
             <code>{u.id}</code>
           </button>
         ) : (
-          dash
+          dashCell
         ),
       sortValue: (u) => u.id,
     },
-    { key: 'ng', label: 'National Grid id', render: (u) => (u.ng ? <code>{u.ng}</code> : dash), sortValue: (u) => u.ng },
+    { key: 'ng', label: 'National Grid id', render: (u) => (u.ng ? <code>{u.ng}</code> : dashCell), sortValue: (u) => u.ng },
     {
       key: 'fuel',
       label: 'Fuel',

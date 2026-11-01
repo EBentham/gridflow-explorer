@@ -9,7 +9,8 @@
 import type { ReactNode } from 'react'
 import { KeyList } from '../../../design/charts'
 import type { PageContext } from '../../define'
-import { AVAIL_COLOR, GW, MW, OUTPUT_COLOR, TOP_N, UNIT_COLOR, UNIT_PARAM, aheadText, captureFrom, dayText, outputSeries, publishedText, unitMissing, unitShown, type Capture, type Unit } from './figures'
+import { AVAIL_COLOR, GW, OUTPUT_COLOR, TOP_N, UNIT_COLOR, UNIT_PARAM, aheadText, captureFrom, dayText, outputSeries, publishedText, unitMissing, unitShown, type Capture, type Unit } from './figures'
+import { MW } from '../../_template/units'
 
 function stat(label: string, value: ReactNode, when?: string) {
   return (
