@@ -50,6 +50,15 @@ export function jsonName(v: Scalar): string | null {
   }
 }
 
+/** What the rows endpoint takes as a filter value: letters, digits, spaces and `_ . - / :`, 1 to 64 of them. */
+const UNIT_ID = /^[A-Za-z0-9 _.\-/:]{1,64}$/
+
+/** A BM unit id the rows endpoint can filter by, trimmed; null for anything else. */
+export function validUnitId(value: string | null | undefined): string | null {
+  const v = (value ?? '').trim()
+  return UNIT_ID.test(v) ? v : null
+}
+
 /** `Gas combined cycle` from `gas_combined_cycle`: a snake_case id as words. */
 export function idWords(v: Scalar): string | null {
   if (typeof v !== 'string' || !v) return null

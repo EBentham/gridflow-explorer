@@ -3,32 +3,6 @@
  * design already uses (DESIGN.md): no new looks.
  */
 
-/* ---------------------------------------------------------------- toolbar */
-
-/* the window of delivery days, the units switch, then the id box with its button */
-.gf-av-control,
-.gf-av-unitform,
-.gf-av-unitlabel {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-.gf-av-control {
-  gap: 8px 14px;
-}
-.gf-av-unitform {
-  margin: 0;
-}
-/* a unit id is an identifier, so the box sets it in the id face */
-.gf-input.gf-av-input {
-  width: 12.5rem;
-  font-family: var(--font-id);
-}
-.gf-input.gf-av-input::placeholder {
-  font-family: var(--font-ui);
-}
-
 /* ---------------------------------------------------------------- tables */
 
 /* the delivery days: two weeks at most, the whole list rather than a scroll box */

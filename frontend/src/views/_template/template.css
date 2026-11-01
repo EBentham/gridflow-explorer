@@ -175,6 +175,31 @@
   border-color: var(--ink-2);
 }
 
+/* a page's unit control (`UnitBox`): the mode switch, then the id box with its button */
+.gf-unit-control,
+.gf-unit-form,
+.gf-unit-label {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.gf-unit-control {
+  gap: 8px 14px;
+}
+.gf-unit-form {
+  margin: 0;
+}
+/* a unit id is an identifier, so the box sets it in the id face (over `font: inherit`) */
+.gf-input.gf-unit-input {
+  width: 12.5rem;
+  font-family: var(--font-id);
+}
+/* the prompt is words, not an id */
+.gf-input.gf-unit-input::placeholder {
+  font-family: var(--font-ui);
+}
+
 /* ================================================================ the windowed table */
 
 .gf-wtable {

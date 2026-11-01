@@ -20,6 +20,7 @@ import type { ChartPanel } from '../../_template/SeriesChart'
 import { daySummaries, type DaySummary, type SeriesDef, type SeriesModel, type WideRow, collator } from '../../_template/seriesModel'
 import { relatedFilters, type SourcePart } from '../../_template/panelHelpers'
 import { displayUnit, MW } from '../../_template/units'
+import { validUnitId } from '../../_template/codes'
 
 // ---------------------------------------------------------------- columns and keys
 
@@ -57,22 +58,13 @@ export const GW = displayUnit('MW', 'GW')
 
 // ---------------------------------------------------------------- the unit asked for
 
-/** What the rows endpoint takes as a filter value: letters, digits, spaces and `_ . - / :`, 1 to 64 of them. */
-const UNIT_ID = /^[A-Za-z0-9 _.\-/:]{1,64}$/
-
-/** A unit id the endpoint can filter by, trimmed; null for anything else. */
-export function validUnit(value: string | null | undefined): string | null {
-  const v = (value ?? '').trim()
-  return UNIT_ID.test(v) ? v : null
-}
-
 /** The unit read alone: the filter the rows came back with, or, before they arrive, the one the address asks for. */
 export function unitShown(ctx: PageContext): string | null {
   if (ctx.response) {
     const f = ctx.response.filters?.[UNIT]
     return f === null || f === undefined ? null : String(f)
   }
-  return validUnit(ctx.param(UNIT_PARAM))
+  return validUnitId(ctx.param(UNIT_PARAM))
 }
 
 /** The units the backend kept by default, largest first, as its truncation reason names them. */
@@ -168,13 +160,6 @@ export function listedUnits(lookup: FuelLookup): { id: string; fuel: Fuel }[] {
   return [...lookup.codes.keys()]
     .map((id) => ({ id, fuel: fuelFor(lookup, id) }))
     .sort((a, b) => a.fuel.order - b.fuel.order || a.fuel.label.localeCompare(b.fuel.label) || collator.compare(a.id, b.id))
-}
-
-/** The id as the forecast lists it, matched without regard to case; the id as typed when it lists none. */
-export function listedId(lookup: FuelLookup, typed: string): string {
-  if (lookup.codes.has(typed)) return typed
-  const lower = typed.toLowerCase()
-  return [...lookup.codes.keys()].find((id) => id.toLowerCase() === lower) ?? typed
 }
 
 // ---------------------------------------------------------------- the units' lines

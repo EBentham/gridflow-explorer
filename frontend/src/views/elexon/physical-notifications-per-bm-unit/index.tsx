@@ -24,7 +24,8 @@
 import { SourceLine } from '../../_template/panels'
 import type { PageContext } from '../../define'
 import { defineView } from '../../define'
-import { AXIS_WIDTH, END, FUEL_DATASET, FUEL_KEY, FUEL_VALUE, PRICE, PRICE_COLOR, PRICE_DATASET, PRICE_KEY, START, TOP_N, UNIT, UNIT_PARAM, flatLevel, focusedLine, fuelPart, pricePart, unitLines, unitShown, validUnit } from './figures'
+import { AXIS_WIDTH, END, FUEL_DATASET, FUEL_KEY, FUEL_VALUE, PRICE, PRICE_COLOR, PRICE_DATASET, PRICE_KEY, START, TOP_N, UNIT, UNIT_PARAM, flatLevel, focusedLine, fuelPart, pricePart, unitLines, unitShown } from './figures'
+import { validUnitId } from '../../_template/codes'
 import { LevelsMain } from './LevelsMain'
 import { UnitControl } from './UnitControl'
 import { UnitsKey } from './UnitsKey'
@@ -110,7 +111,7 @@ const view = defineView({
         'By default the backend picks the top 20 units for the window by their mean end level as kept, so another window can pick other units; any unit can be read alone from the toolbar. Each unit’s fuel is as Elexon’s 2 to 14 day availability forecast lists it for these days; a unit it doesn’t list is drawn in grey as fuel not listed.',
       ],
       query: (params) => {
-        const unit = validUnit(params.get(UNIT_PARAM))
+        const unit = validUnitId(params.get(UNIT_PARAM))
         return unit ? { filters: { [UNIT]: unit } } : {}
       },
       values: [

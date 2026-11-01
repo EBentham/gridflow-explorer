@@ -26,6 +26,7 @@ import type { SeriesDef, WideRow } from '../../_template/seriesModel'
 import { displayUnit, MW } from '../../_template/units'
 import { collator } from '../../_template/seriesModel'
 import { AXIS_WIDTH } from '../../_template/SeriesChart'
+import { validUnitId } from '../../_template/codes'
 
 // ---------------------------------------------------------------- columns and keys
 
@@ -372,16 +373,9 @@ export function sortedUnits(units: Map<string, UnitInfo>): UnitInfo[] {
 }
 
 /** What the rows endpoint takes as a filter value, and what an id in the address may be: letters, digits, spaces and `_ . - / :`. */
-const UNIT_ID = /^[A-Za-z0-9 _.\-/:]{1,64}$/
-
-export function validUnit(value: string | null | undefined): string | null {
-  const v = (value ?? '').trim()
-  return UNIT_ID.test(v) ? v : null
-}
-
 /** The unit the address asks for, matched to a listed id without regard to case; null for all units. */
 export function askedUnit(ctx: Pick<PageContext, 'param'>): string | null {
-  return validUnit(ctx.param(UNIT_PARAM))
+  return validUnitId(ctx.param(UNIT_PARAM))
 }
 
 /** The unit read alone: the one asked for, when the rows list it. */
