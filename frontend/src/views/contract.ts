@@ -322,8 +322,8 @@ export type RowsResponse = SeriesRowsResponse | EventsRowsResponse | ReferenceRo
  *
  * - 404 `unknown_dataset`: an unknown dataset, or one that isn't held (with
  *   `not_held_cause`);
- * - 422 `bad_range`, `bad_filter`, `bad_group`, `bad_identifier`,
- *   `window_unavailable`, and `ambiguous_series` (with `group`,
+ * - 422 `bad_range`, `bad_filter`, `bad_group`, `window_unavailable`, and
+ *   `ambiguous_series` (with `group`,
  *   `varying_dimensions`, `varying_keys` and `varying_columns`, and a `hint`
  *   that is a query string, never shown as it stands);
  * - 413 `result_too_large` with a `reason` (`row_cap`, `unsafe_downsample`,
