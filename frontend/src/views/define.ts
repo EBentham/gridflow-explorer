@@ -294,18 +294,17 @@ export interface PageContext {
   /** A UK day's midnight picked on the chart or in a day table: the chart's highlight band. */
   picked: number | undefined
   pick: (midnight: number | undefined) => void
-  /** The page's URL parameters, for controls a page adds (not one of `TEMPLATE_PARAMS`, nor `f.…`). */
+  /**
+   * The page's URL parameters, for controls a page adds. The template and the
+   * app own `days`, `from`, `to`, `view`, `dataset`, `q`, `theme`, `fixture`
+   * and every `f.…` (the events table's column filters): a page's own
+   * controls use other names.
+   */
   param: (name: string) => string | null
   setParam: (name: string, value: string | null) => void
   /** Several parameters in one change (a null removes one). */
   setParams: (changes: Record<string, string | null>) => void
 }
-
-/**
- * URL parameters the template and the app own. A page's own controls use
- * other names, and never start with `f.` (the events table's column filters).
- */
-export const TEMPLATE_PARAMS = ['days', 'from', 'to', 'view', 'dataset', 'q', 'theme', 'fixture'] as const
 
 /** A family's view. Identity at runtime; it types the config. */
 export function defineView(config: ViewConfig): ViewConfig {

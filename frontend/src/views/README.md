@@ -19,7 +19,7 @@ source lines, the honesty states and the Fixture tags.
 ```
 src/views/
   README.md              this contract
-  define.ts              the view config types, defineView, TEMPLATE_PARAMS
+  define.ts              the view config types and defineView
   contract.ts            the manifest and rows shapes, and the DataSource interface
   registry.ts            finds every page with import.meta.glob('./*/*/index.tsx')
   FamilyRoute.tsx        the route element: the page, or what the source list says of the address
@@ -237,9 +237,8 @@ A page **may not**:
   carry internal references. Words like "silver", "manifest" and "configured" stay off the
   page;
 - **use the fixture.** `adapter: 'fixture'` is for the demo only;
-- **take the template's URL parameters.** `TEMPLATE_PARAMS` (`days`, `from`, `to`, `view`,
-  `dataset`, `q`, `theme`, `fixture`) and anything starting `f.` (the events filters) are
-  the template's.
+- **take the template's URL parameters.** `days`, `from`, `to`, `view`, `dataset`, `q`,
+  `theme`, `fixture` and anything starting `f.` (the events filters) are the template's.
 
 ## Panels
 
