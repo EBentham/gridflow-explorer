@@ -21,7 +21,6 @@ import type { SeriesDef, SeriesModel } from '../../_template/seriesModel'
 import { areaColor, areaName, areaPhrase, areaRank, borderName, BESIDE_COLOR, IN_PARAM, inAreaCode, SIDE_COLORS } from './areas'
 import { aloneCount, AXIS_WIDTH, PANEL_HEIGHT, pointsOf, rowsOf, stepOf, withBreaks, type Point } from './figures'
 
-export const FLOWS = 'cross_border_flows'
 export const SCHEDULES = 'commercial_schedules'
 export const NET_POSITIONS = 'net_positions'
 

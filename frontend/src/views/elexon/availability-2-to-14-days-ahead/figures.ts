@@ -29,7 +29,6 @@ import { collator } from '../../_template/seriesModel'
 // ---------------------------------------------------------------- columns and keys
 
 export const FOU = 'fou2t14d'
-export const UOU = 'uou2t14d'
 /** Forecast usable output, MW, one figure per fuel (or unit) per delivery day. */
 export const VALUE = 'output_usable_mw'
 export const FUEL = 'fuel_type'

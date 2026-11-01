@@ -16,7 +16,6 @@ import { plural } from '../../../design/format'
 import { dayStart, datesBetween, HOUR_MS, londonMidnight, MINUTE_MS, stepNoun, stepsInDay } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { GroupSpec, PageContext } from '../../define'
-import { ENTSOE_PRODUCTION_TYPES } from '../../_template/codes'
 import { seriesId, type SeriesDef, type SeriesModel, type WideRow } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 
@@ -141,9 +140,6 @@ export function typeFrom(params: URLSearchParams | ((name: string) => string | n
   const p = typeof params === 'function' ? params(TYPE_PARAM) : params.get(TYPE_PARAM)
   return UNIT_TYPES.find((f) => f.code === p) ?? UNIT_TYPES[0]
 }
-
-/** ENTSO-E's own name for a type, with its code: `Fossil hard coal (B05)`. */
-export const typeName = (code: string) => `${ENTSOE_PRODUCTION_TYPES[code] ?? code} (${code})`
 
 /** The unit a page's rows are filtered to, as the response says. */
 export function filteredType(ctx: PageContext): Fuel {
