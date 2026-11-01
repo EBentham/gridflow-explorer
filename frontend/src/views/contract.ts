@@ -31,8 +31,6 @@ export type FamilyPage = 'build' | 'table-only' | 'not-built' | 'pinned' | 'exte
 export interface Manifest {
   /** When the backend last read coverage from the local store, ISO 8601 UTC. */
   generated_at: string
-  /** Today's UK date (`YYYY-MM-DD`) when the response was made; every `latest_local_day` is capped at it. */
-  today_uk: string
   sources: ManifestSource[]
 }
 
@@ -96,8 +94,6 @@ export interface Dim {
   column: string
   /** `series`: one line or band per value; `filter`: narrows the rows. */
   role: 'series' | 'filter'
-  /** Distinct values measured by the research; a string (`unknown`) or null where it wasn't. */
-  cardinality: number | string | null
 }
 
 /** A structured equality filter, never SQL text. */
@@ -130,15 +126,12 @@ export interface ManifestDataset {
   /** How often gridflow fetches it (`hourly`, `daily`, …); null for gold. */
   schedule: string | null
   kind: Kind
-  /** The research verdict: `chart`, `events-table`, `reference-table`, `not-held`, `broken`. */
-  verdict: string
   clock: DatasetClock | null
   latest_day_rule: LatestDayRule
   values: ValueColumn[]
   dims: Dim[]
   /** Applied by the backend when a request names no filter. */
   default_filter: EqualsFilter | null
-  volume_class: 'small' | 'medium' | 'large' | null
   /**
    * Research notes with internal references (file lines, rulings, "silver").
    * Never rendered as they stand: a page reads them, and the P1 card, and

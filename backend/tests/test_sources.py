@@ -40,7 +40,6 @@ def _dataset(dataset_id="sample", **updates):
         "id": dataset_id,
         "schedule": "daily",
         "kind": "series",
-        "verdict": "chart",
         "base_relation": f"silver_test_{dataset_id}",
         "latest_relation": f"silver_test_{dataset_id}_latest",
         "not_held_cause": None,
@@ -52,7 +51,6 @@ def _dataset(dataset_id="sample", **updates):
         "dedup": None,
         "row_filter": None,
         "snapshot_column": None,
-        "volume_class": "small",
         "notes": [],
     }
     d.update(updates)
@@ -396,7 +394,7 @@ def test_dotted_and_reserved_identifiers_and_quoted_scalar_execute(
     )
     d = _dataset(
         values=[{"column": "q_0.05", "unit": None, "label": "Quantile"}],
-        dims=[{"column": "start", "role": "filter", "cardinality": None}],
+        dims=[{"column": "start", "role": "filter"}],
         row_filter={"column": "owner", "equals": "O'Neil"},
     )
     monkeypatch.setattr(sources, "SOURCES", _spec(d))

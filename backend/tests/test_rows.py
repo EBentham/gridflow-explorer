@@ -43,7 +43,7 @@ def _spec(
         "clock": {"column": "timestamp_utc", "grain": grain, "settlement_cols": []},
         "latest_day_rule": {"mode": "max", "column": anchor_column},
         "values": [{"column": "value", "unit": "MW", "label": "Test value"}],
-        "dims": [{"column": "unit", "role": "series", "cardinality": 2}] if grouped else [],
+        "dims": [{"column": "unit", "role": "series"}] if grouped else [],
         "default_filter": None,
         "dedup": {
             "keys": ["timestamp_utc", "unit"] if grouped else ["timestamp_utc"],
@@ -251,7 +251,7 @@ def test_pn_ranking_does_not_overweight_capture_copies(monkeypatch, sources_db):
         id="pn",
         base_relation="silver_test_pn",
         values=[{"column": "level_to", "unit": "MW", "label": "End level"}],
-        dims=[{"column": "bm_unit_id", "role": "filter", "cardinality": 21}],
+        dims=[{"column": "bm_unit_id", "role": "filter"}],
         dedup=None,
     )
     sources_db.con.execute(
@@ -466,7 +466,7 @@ def test_missing_metadata_relation_raises_runtime_error(monkeypatch, sources_db)
 def test_ambiguity_hint_uses_stable_conflict_order(sources_db):
     """The earliest conflicting clock and group determine the hint."""
     spec = _spec()
-    spec["dims"].append({"column": "region", "role": "filter", "cardinality": 2})
+    spec["dims"].append({"column": "region", "role": "filter"})
     spec["dedup"] = None
     sources_db.con.execute(
         "CREATE TABLE silver_test_sample (timestamp_utc TIMESTAMPTZ, unit VARCHAR, "
@@ -620,7 +620,7 @@ def test_dedup_precedes_row_filter_filters_and_window(monkeypatch, sources_db):
     """A newer nonmatching revision cannot resurrect an older matching row."""
     spec = _spec()
     spec["dedup"]["keys"] = ["unit"]
-    spec["dims"].append({"column": "variant", "role": "filter", "cardinality": 2})
+    spec["dims"].append({"column": "variant", "role": "filter"})
     old = datetime(2026, 9, 21, tzinfo=UTC)
     new = datetime(2026, 9, 22, tzinfo=UTC)
     sources_db.con.execute(
@@ -883,8 +883,8 @@ def test_nonstring_dims_use_canonical_equality(monkeypatch, sources_db):
         dedup=None,
     )
     spec["dims"] = [
-        {"column": "number", "role": "filter", "cardinality": 2},
-        {"column": "flag", "role": "filter", "cardinality": 2},
+        {"column": "number", "role": "filter"},
+        {"column": "flag", "role": "filter"},
     ]
     sources_db.con.execute(
         "CREATE TABLE silver_test_sample (number INTEGER, flag BOOLEAN, value DOUBLE)"
@@ -906,7 +906,7 @@ def test_entity_identity_check_precedes_window(monkeypatch, sources_db):
     """An older producer collision is visible before a clean date window."""
     spec = _spec(ordered=False)
     spec["dedup"] = None
-    spec["dims"].append({"column": "region", "role": "filter", "cardinality": 2})
+    spec["dims"].append({"column": "region", "role": "filter"})
     sources_db.con.execute(
         "CREATE TABLE silver_test_sample (timestamp_utc TIMESTAMPTZ, unit VARCHAR, "
         "region VARCHAR, value DOUBLE)"
@@ -944,8 +944,8 @@ def test_stack_unit_collision_refuses_even_with_equal_provenance(monkeypatch, so
     spec = _spec(ordered=False)
     spec["dedup"] = None
     spec["dims"] = [
-        {"column": "unit", "role": "filter", "cardinality": 2},
-        {"column": "region", "role": "series", "cardinality": 1},
+        {"column": "unit", "role": "filter"},
+        {"column": "region", "role": "series"},
     ]
     sources_db.con.execute(
         "CREATE TABLE silver_test_sample (timestamp_utc TIMESTAMPTZ, unit VARCHAR, "
@@ -990,7 +990,7 @@ def test_declared_difference_is_not_a_capture_duplicate(sources_db, field):
     spec = _spec(ordered=False, grouped=False)
     spec["dedup"] = None
     if field == "unit":
-        spec["dims"] = [{"column": "unit", "role": "filter", "cardinality": 2}]
+        spec["dims"] = [{"column": "unit", "role": "filter"}]
     elif field == "settlement_period":
         spec["clock"]["settlement_cols"] = [field]
     elif field == "anchor_utc":
@@ -1065,7 +1065,7 @@ def test_staggered_identities_cannot_share_bucket(monkeypatch, sources_db):
     monkeypatch.setattr(rows, "MAX_RESPONSE_ROWS", 5)
     spec = _spec(ordered=False)
     spec["dedup"] = None
-    spec["dims"].append({"column": "region", "role": "filter", "cardinality": 2})
+    spec["dims"].append({"column": "region", "role": "filter"})
     sources_db.con.execute(
         "CREATE TABLE silver_test_sample (timestamp_utc TIMESTAMPTZ, unit VARCHAR, "
         "region VARCHAR, value DOUBLE)"
