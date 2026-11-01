@@ -12,9 +12,9 @@ import { useMemo } from 'react'
 import { plural } from '../../../design/format'
 import { windowDomain } from '../../../design/time'
 import { SeriesBody } from '../../_template/SeriesBody'
-import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
+import { SeriesChart, type ChartPanel, AXIS_WIDTH } from '../../_template/SeriesChart'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, commonStep, markGaps, perText } from './figures'
+import { commonStep, markGaps, perText } from './figures'
 import { focusedUnit, unitsOf, UNITS_DRAWN } from './units'
 
 export function UnitsBody({ ctx }: { ctx: PageContext }) {

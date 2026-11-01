@@ -71,9 +71,6 @@ export const FUEL = 'fuel_type'
 
 // ---------------------------------------------------------------- drawing
 
-/** Every chart's value axis takes this width, so charts stacked in different panels share a clock. */
-export const AXIS_WIDTH = 52
-
 /** The market index: the price that actually traded, drawn in the chart language's colour for an outturn. */
 export const MARKET_COLOR = 'var(--chart-actual)'
 /** The model's own figures: its clearing price and where its stack clears. */

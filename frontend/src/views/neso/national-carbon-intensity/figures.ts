@@ -33,9 +33,6 @@ export const COLORS = {
   grade: 'var(--heat-hi)',
 } as const
 
-/** Every chart on the page takes this value-axis width, so their clocks line up. */
-export const AXIS_WIDTH = 52
-
 export interface Grade {
   value: string
   label: string

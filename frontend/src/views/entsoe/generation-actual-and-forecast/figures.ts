@@ -43,9 +43,6 @@ export const LOAD_KEY = 'load'
 export const ZONE_PARAM = 'zone'
 export const TYPE_PARAM = 'type'
 
-/** Chart panels on one page take this value-axis width, so their clocks line up. */
-export const AXIS_WIDTH = 52
-
 const QUARTER_MS = 15 * MINUTE_MS
 
 // ---------------------------------------------------------------- zones

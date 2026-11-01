@@ -27,9 +27,6 @@ export const TSD_KEY = 'tsd'
 /** The key of the related national demand read beside the daily figure. */
 export const NATIONAL_KEY = 'national'
 
-/** Both charts' value axes take this width, so their clocks line up. */
-export const AXIS_WIDTH = 52
-
 /**
  * Transmission demand less national demand at each half-hour both hold a
  * value, in the models' display unit (GW). A half-hour either lacks is null:

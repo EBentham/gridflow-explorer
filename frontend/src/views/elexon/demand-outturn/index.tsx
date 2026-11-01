@@ -12,12 +12,13 @@ import { SourceLine } from '../../_template/panels'
 import { periodLabel } from '../../../design/time'
 import { keyStamp, relatedParts } from '../../_template/panelHelpers'
 import { defineView } from '../../define'
-import { AXIS_WIDTH, ATL, COLORS, INDO, INDOD, ITSDO, NATIONAL_KEY, TSD_KEY } from './figures'
+import { ATL, COLORS, INDO, INDOD, ITSDO, NATIONAL_KEY, TSD_KEY } from './figures'
 import { DailyPanel } from './DailyPanel'
 import { DemandKey } from './DemandKey'
 import { GapPanel } from './GapPanel'
 import { LoadKey } from './LoadKey'
 import { seriesOf } from '../../_template/seriesModel'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 
 const view = defineView({
   title: 'Demand outturn',

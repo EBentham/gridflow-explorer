@@ -11,9 +11,9 @@ import { plural } from '../../../design/format'
 import { dayLabel, windowDomain } from '../../../design/time'
 import { ErrorWords } from '../../_template/panels'
 import { meansText } from '../../_template/text'
-import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
+import { SeriesChart, type ChartPanel, AXIS_WIDTH } from '../../_template/SeriesChart'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, DEMAND, DEMAND_KEY, HDD, TEMP, citySeries, weatherDays } from './figures'
+import { DEMAND, DEMAND_KEY, HDD, TEMP, citySeries, weatherDays } from './figures'
 import { seriesOf } from '../../_template/seriesModel'
 
 export function DemandPanel({ ctx }: { ctx: PageContext }) {

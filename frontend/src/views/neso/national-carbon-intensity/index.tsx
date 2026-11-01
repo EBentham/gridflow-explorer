@@ -17,11 +17,12 @@
  */
 import { SourceLine } from '../../_template/panels'
 import { defineView } from '../../define'
-import { ACTUAL, AXIS_WIDTH, COLORS, FORECAST, INDEX } from './figures'
+import { ACTUAL, COLORS, FORECAST, INDEX } from './figures'
 import { DaysPanel } from './DaysPanel'
 import { FamilySide } from './FamilySide'
 import { IntensityKey } from './IntensityKey'
 import { IntensityMain } from './IntensityMain'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 
 const UNIT = 'gCO₂/kWh'
 

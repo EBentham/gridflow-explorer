@@ -36,9 +36,6 @@ export const VALUE_COLUMNS = [SSP, SBP, NIV, CI_FORECAST, CI_ACTUAL]
 /** The related key for NESO's national carbon intensity: read for which days hold it. */
 export const CI_SOURCE = 'ci'
 
-/** The value axes' width, so the stacked panels' clocks line up. */
-export const AXIS_WIDTH = 52
-
 export const VALUES: ValueSpec[] = [
   { column: SSP, label: 'Sell price', color: 'var(--chart-price)' },
   // A series colour no other series here uses: it shares the price panel whenever it differs from the sell price.

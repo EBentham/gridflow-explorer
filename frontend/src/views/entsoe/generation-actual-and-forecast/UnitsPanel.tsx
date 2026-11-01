@@ -8,10 +8,10 @@
  */
 import { plural, DASH } from '../../../design/format'
 import { periodLabel, windowDomain } from '../../../design/time'
-import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
+import { SeriesChart, type ChartPanel, AXIS_WIDTH } from '../../_template/SeriesChart'
 import { seriesId, type SeriesDef, type WideRow } from '../../_template/seriesModel'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, markGaps, perText, pointsOf, stepWords } from './figures'
+import { markGaps, perText, pointsOf, stepWords } from './figures'
 import { TOTAL_UNIT, unitsOf } from './units'
 
 export function UnitsPanel({ ctx }: { ctx: PageContext }) {

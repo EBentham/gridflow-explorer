@@ -35,7 +35,6 @@ import { CurveMain } from './CurveMain'
 import {
   AT_FLOOR,
   AVAILABLE,
-  AXIS_WIDTH,
   CAPACITY,
   CLEARING_DATASET,
   COST,
@@ -77,6 +76,7 @@ import { NettedPanel } from './NettedPanel'
 import { ResidualKey } from './ResidualKey'
 import { ResidualMain } from './ResidualMain'
 import './stack.css'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 
 /** The run's filter as the rows carry it, or as the page asks for it before they arrive. */
 const runFilters = (ctx: PageContext) => ctx.response?.filters ?? RUN_QUERY.filters

@@ -10,12 +10,12 @@
 import { KeyList } from '../../../design/charts'
 import { plural, DASH } from '../../../design/format'
 import { dayLabel, stepNoun, stepsInDay, windowDomain } from '../../../design/time'
-import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
+import { SeriesChart, type ChartPanel, AXIS_WIDTH } from '../../_template/SeriesChart'
 import { periodName, type SeriesDef, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { SeriesRowsResponse } from '../../contract'
 import type { PageContext } from '../../define'
-import { ACTUAL, AXIS_WIDTH, COLORS, FORECAST, GRADES, dayFigures, gradeOf, gradesByTime, missRows, signed } from './figures'
+import { ACTUAL, COLORS, FORECAST, GRADES, dayFigures, gradeOf, gradesByTime, missRows, signed } from './figures'
 
 const MISS = 'miss'
 

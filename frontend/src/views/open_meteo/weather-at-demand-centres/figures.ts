@@ -33,9 +33,6 @@ export const ARCHIVE_KEY = 'archive'
 
 export const DEMAND_COLOR = 'var(--chart-actual)'
 
-/** Both charts' value axes take this width, so their clocks line up. */
-export const AXIS_WIDTH = 52
-
 const CITY_NAMES: [string, string][] = [
   ['belfast', 'Belfast'],
   ['birmingham', 'Birmingham'],

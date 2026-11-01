@@ -28,7 +28,6 @@ import { defineView } from '../../define'
 import { BalancePanel } from './BalancePanel'
 import {
   AREA,
-  AXIS_WIDTH,
   filteredType,
   filteredZone,
   FORECAST,
@@ -63,6 +62,7 @@ import { WindSolarKey } from './WindSolarKey'
 import { windSolarOf } from './windSolar'
 import { WindSolarPanel } from './WindSolarPanel'
 import { ZoneControl } from './ZoneControl'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 
 /** A related dataset, named in full in a source line. */
 function relatedPart(ctx: PageContext, key: string, column: string): SourcePart[] {

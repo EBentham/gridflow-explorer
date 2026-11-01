@@ -10,13 +10,13 @@
 import { useMemo, type ReactNode } from 'react'
 import { fmt0 } from '../../../design/format'
 import { periodLabel, stepNoun, windowDomain } from '../../../design/time'
-import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
+import { SeriesChart, type ChartPanel, AXIS_WIDTH } from '../../_template/SeriesChart'
 import type { SeriesDef } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { SeriesRow } from '../../contract'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, DEMAND, HYDRO, INDO, INTERCONNECTORS, INTERCONNECTOR_CODES, LINE_COLUMNS, OTHER, PUMPED, RESIDUAL, SOLAR, WIND, num, ownRows } from './figures'
+import { DEMAND, HYDRO, INDO, INTERCONNECTORS, INTERCONNECTOR_CODES, LINE_COLUMNS, OTHER, PUMPED, RESIDUAL, SOLAR, WIND, num, ownRows } from './figures'
 import { dashCell } from '../../_template/cells'
 
 /** The columns top to bottom of the waterfall, each with its header. */

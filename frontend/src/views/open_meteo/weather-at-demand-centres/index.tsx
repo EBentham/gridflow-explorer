@@ -14,9 +14,10 @@ import { relatedParts } from '../../_template/panelHelpers'
 import { defineView, type ValueSpec } from '../../define'
 import { ArchivePanel } from './ArchivePanel'
 import { DemandPanel } from './DemandPanel'
-import { AIR_DENSITY, ARCHIVE_KEY, AXIS_WIDTH, CDD, CITIES, DEMAND, DEMAND_COLOR, DEMAND_KEY, HDD, HUMIDITY, PRESSURE, RAIN, SNOW_DEPTH, SNOWFALL, SUN, TEMP, WIND, citySeries } from './figures'
+import { AIR_DENSITY, ARCHIVE_KEY, CDD, CITIES, DEMAND, DEMAND_COLOR, DEMAND_KEY, HDD, HUMIDITY, PRESSURE, RAIN, SNOW_DEPTH, SNOWFALL, SUN, TEMP, WIND, citySeries } from './figures'
 import { WeatherKey } from './WeatherKey'
 import { seriesOf } from '../../_template/seriesModel'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 
 const BY_CITY = { group: 'location' }
 

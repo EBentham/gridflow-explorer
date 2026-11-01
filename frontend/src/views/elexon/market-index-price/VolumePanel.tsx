@@ -8,11 +8,11 @@
  */
 import { plural } from '../../../design/format'
 import { dayLabel, stepNoun, windowDomain } from '../../../design/time'
-import { SeriesChart, type ChartPanel } from '../../_template/SeriesChart'
+import { SeriesChart, type ChartPanel, AXIS_WIDTH } from '../../_template/SeriesChart'
 import { daySummaries, seriesOf } from '../../_template/seriesModel'
 import { meansText } from '../../_template/text'
 import type { PageContext } from '../../define'
-import { AXIS_WIDTH, PRICE, VOLUME, volumeByDay } from './figures'
+import { PRICE, VOLUME, volumeByDay } from './figures'
 
 export function VolumePanel({ ctx }: { ctx: PageContext }) {
   const model = ctx.series

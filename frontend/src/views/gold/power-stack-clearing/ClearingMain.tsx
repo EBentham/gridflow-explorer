@@ -21,7 +21,6 @@ import { meansText } from '../../_template/text'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
 import {
-  AXIS_WIDTH,
   MARKET_COLOR,
   MODEL_COLOR,
   clearingPoints,
@@ -37,6 +36,7 @@ import {
 } from './figures'
 import { UnreadNote } from './UnreadNote'
 import { dashCell } from '../../_template/cells'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 
 const PRICE_H = 270
 const DEMAND_H = 150

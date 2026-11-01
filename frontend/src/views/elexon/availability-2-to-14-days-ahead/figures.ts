@@ -25,6 +25,7 @@ import type { ChartPanel } from '../../_template/SeriesChart'
 import type { SeriesDef, WideRow } from '../../_template/seriesModel'
 import { displayUnit, MW } from '../../_template/units'
 import { collator } from '../../_template/seriesModel'
+import { AXIS_WIDTH } from '../../_template/SeriesChart'
 
 // ---------------------------------------------------------------- columns and keys
 
@@ -42,9 +43,6 @@ export const DATE = 'settlement_date'
 export const FUEL_KEY = 'byfuel'
 /** The page's own URL parameter: the one unit to read alone. */
 export const UNIT_PARAM = 'unit'
-
-/** Every chart on the page takes this value-axis width, so their clocks line up. */
-export const AXIS_WIDTH = 52
 
 export const GW = displayUnit('MW', 'GW')
 
