@@ -13,7 +13,9 @@ dependencies = [
     # deps.py imports it for the lock-classified exception catch, and jobs.py (P3)
     # imports it for the try_start preflight probe. A direct import is a declared
     # dependency, not a transitive one riding in on the gridflow install.
-    "duckdb",
+    # Held below 2.0, the major gridflow's own lock tests: the fetch job runs
+    # gridflow in this venv, writing the catalogue gridflow's install reads.
+    "duckdb<2",
     # gridflow from its git repository (see [tool.uv.sources]); uv.lock pins
     # the commit. gridflow is on SemVer, and while on 0.x any change to the
     # surface listed in gridflow.contract is a minor bump, so the range
