@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
+import type { Coverage } from '../api/types'
 import { listText } from '../design/format'
 import { fmtDay } from '../design/time'
-import { useCoverage } from '../hooks/useCoverage'
+import { useJson } from '../hooks/useJson'
 import { useFetchJob } from '../hooks/useFetchJob'
 import type { DateRange } from '../lib/range'
 
@@ -32,7 +33,7 @@ function missingText(dates: string[]): string {
  * remounts it instead of showing a previous range's job state.
  */
 export function FetchBanner({ datasetId, source, range, onComplete }: FetchBannerProps) {
-  const { coverage, loading: coverageLoading, refetch: refetchCoverage } = useCoverage(datasetId, range)
+  const { data: coverage, loading: coverageLoading, refetch: refetchCoverage } = useJson<Coverage>(`/api/datasets/${datasetId}/coverage?start=${range.start}&end=${range.end}`)
   const { job, starting, error, start } = useFetchJob(datasetId)
 
   const prevStateRef = useRef<string | undefined>(undefined)

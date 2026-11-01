@@ -4,7 +4,7 @@ import type { DataRecord } from '../api/types'
 import type { ViewState } from '../design/frame'
 import { useAnchoredRange, type RangeState } from '../design/range'
 import { REFRESH_RETRY_MS, useLatestDay, type LiveDatasetId } from './latestDays'
-import { useDataset } from './useDataset'
+import { useJson } from './useJson'
 
 export interface LiveDataset {
   range: RangeState
@@ -24,7 +24,9 @@ export interface LiveDataset {
 export function useLiveDataset(id: LiveDatasetId): LiveDataset {
   const latest = useLatestDay(id)
   const range = useAnchoredRange(latest.day)
-  const { data, loading, error, refetch } = useDataset(id, range.range)
+  // A range still waiting for its latest day reads nothing yet.
+  const path = range.range ? `/api/datasets/${id}/data?start=${range.range.start}&end=${range.range.end}` : null
+  const { data, loading, error, refetch } = useJson<DataRecord[]>(path)
 
   useEffect(() => {
     if (error?.code !== 'refresh_in_progress') return undefined

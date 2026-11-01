@@ -6,7 +6,7 @@
  * screens do.
  */
 import { useEffect, useState } from 'react'
-import { ApiError } from '../../api/client'
+import { isAbort, toApiError, type ApiError } from '../../api/client'
 import { REFRESH_RETRY_MS } from '../../hooks/latestDays'
 import type { DataSource, Manifest, RowsRequest, RowsResponse } from '../contract'
 
@@ -20,8 +20,6 @@ export interface Load<T> {
 
 const LOADING: Load<never> = { state: 'loading', value: null, error: null }
 
-const toApiError = (err: unknown) => (err instanceof ApiError ? err : new ApiError('unknown_error', err instanceof Error ? err.message : String(err)))
-const isAbort = (err: unknown) => err instanceof DOMException && err.name === 'AbortError'
 
 function failed<T>(err: unknown): Load<T> {
   const error = toApiError(err)
