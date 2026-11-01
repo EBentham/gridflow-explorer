@@ -93,19 +93,24 @@ export function useManifest(ds: DataSource): Load<Manifest> {
  */
 export function useRowsList(ds: DataSource, requests: RowsRequest[]): Load<RowsResponse>[] {
   const key = JSON.stringify(requests)
-  const [held, setHeld] = useState<{ key: string; loads: Load<RowsResponse>[] }>({ key: '', loads: [] })
+  const [held, setHeld] = useState<{ key: string; loads: Load<RowsResponse>[]; settled: boolean }>({ key: '', loads: [], settled: false })
   const [tick, setTick] = useState(0)
-  const [answers, setAnswers] = useState(0)
 
   useEffect(() => {
     const list = JSON.parse(key) as RowsRequest[]
     if (!list.length) return undefined
     const controller = new AbortController()
-    setHeld((prev) => ({ key, loads: list.map((_, i) => (prev.key === key && prev.loads[i]?.state === 'refreshing' ? prev.loads[i] : LOADING)) }))
+    let pending = list.length
+    setHeld((prev) => ({
+      key,
+      settled: false,
+      loads: list.map((_, i) => (prev.key === key && prev.loads[i]?.state === 'refreshing' ? prev.loads[i] : LOADING)),
+    }))
     list.forEach((req, i) => {
       const put = (load: Load<RowsResponse>) => {
-        setHeld((prev) => (prev.key === key ? { key, loads: prev.loads.map((l, j) => (j === i ? load : l)) } : prev))
-        setAnswers((n) => n + 1)
+        pending -= 1
+        const settled = pending === 0
+        setHeld((prev) => (prev.key === key ? { key, settled, loads: prev.loads.map((l, j) => (j === i ? load : l)) } : prev))
       }
       ds.rows(req, controller.signal).then(
         (value) => put({ state: 'data', value, error: null }),
@@ -118,13 +123,14 @@ export function useRowsList(ds: DataSource, requests: RowsRequest[]): Load<RowsR
   }, [ds, key, tick])
 
   const current = held.key === key ? held.loads : null
-  const refreshing = current?.some((l) => l.state === 'refreshing') ?? false
-  // `refreshing` stays true across a retry, so each answer re-arms the wait; a slow retry is never cut short.
+  // A retry keeps showing refreshing, so the next one waits until every read of the batch has
+  // answered: a quick sibling's answer must not cut a slow read short.
+  const waiting = held.key === key && held.settled && held.loads.some((l) => l.state === 'refreshing')
   useEffect(() => {
-    if (!refreshing) return undefined
+    if (!waiting) return undefined
     const timer = window.setTimeout(() => setTick((n) => n + 1), REFRESH_RETRY_MS)
     return () => window.clearTimeout(timer)
-  }, [refreshing, answers])
+  }, [waiting])
 
   return current ?? requests.map(() => LOADING)
 }
