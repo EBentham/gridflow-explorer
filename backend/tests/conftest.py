@@ -11,15 +11,14 @@ Split by consumer:
       `app.routers.datasets.client_ctx` so route tests never touch a real
       `GridflowClient`. Reused (generic — any client with `.close()`) by
       the P4 forecasts tests below via `ForecastStubClient`.
-    - `forecast_rows_frame` / `forecast_metrics_rows_frame` /
-      `ForecastStubClient`: `test_forecasts.py` and `test_forecasts_api.py`
-      (via the `forecast_stub_client` / `forecast_stub_client_ctx` and
-      `empty_forecast_stub_client*` fixtures).
+    - The forecast frames and `ForecastStubClient`: `test_forecasts.py`
+      builds clients directly, and `test_forecasts_api.py` installs one
+      with the `forecast_ctx` factory.
 """
 
 from __future__ import annotations
 
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from datetime import date, datetime
 from typing import Any
@@ -698,54 +697,18 @@ class ForecastStubClient:
 
 
 @pytest.fixture
-def forecast_stub_client() -> ForecastStubClient:
-    """A fresh `ForecastStubClient` with default fixture frames."""
-    return ForecastStubClient()
+def forecast_ctx(monkeypatch: pytest.MonkeyPatch) -> Callable[..., StubClientCtx]:
+    """Install a `ForecastStubClient` over the given frames as the forecasts routes' client.
 
-
-@pytest.fixture
-def forecast_stub_client_ctx(forecast_stub_client: ForecastStubClient) -> StubClientCtx:
-    """A `StubClientCtx` wrapping `forecast_stub_client`, ready to monkeypatch in."""
-    return StubClientCtx(forecast_stub_client)
-
-
-@pytest.fixture
-def empty_forecast_stub_client() -> ForecastStubClient:
-    """A `ForecastStubClient` over an empty store (both views zero rows)."""
-    return ForecastStubClient(forecasts=empty_forecasts_frame(), metrics=empty_metrics_frame())
-
-
-@pytest.fixture
-def empty_forecast_stub_client_ctx(empty_forecast_stub_client: ForecastStubClient) -> StubClientCtx:
-    """A `StubClientCtx` wrapping `empty_forecast_stub_client`, ready to monkeypatch in."""
-    return StubClientCtx(empty_forecast_stub_client)
-
-
-@pytest.fixture
-def two_policy_forecast_stub_client() -> ForecastStubClient:
-    """A `ForecastStubClient` pinning ADR-057 section 3's two-policy collision."""
-    return ForecastStubClient(
-        forecasts=two_policy_forecasts_frame(), metrics=two_policy_metrics_frame()
-    )
-
-
-@pytest.fixture
-def two_policy_forecast_stub_client_ctx(
-    two_policy_forecast_stub_client: ForecastStubClient,
-) -> StubClientCtx:
-    """A `StubClientCtx` wrapping `two_policy_forecast_stub_client`, ready to monkeypatch in."""
-    return StubClientCtx(two_policy_forecast_stub_client)
-
-
-@pytest.fixture
-def tie_break_forecast_stub_client() -> ForecastStubClient:
-    """A `ForecastStubClient` pinning `_supersede`'s `run_id DESC` tie-break."""
-    return ForecastStubClient(forecasts=tie_break_forecasts_frame(), metrics=empty_metrics_frame())
-
-
-@pytest.fixture
-def collision_forecast_stub_client() -> ForecastStubClient:
-    """A `ForecastStubClient` pinning the JSON variant-key encoding against
-    identifiers that contain the previous wire encoding's `"::"` separator.
+    Omitted frames default to `forecast_rows_frame()` / `forecast_metrics_rows_frame()`.
     """
-    return ForecastStubClient(forecasts=collision_forecasts_frame(), metrics=empty_metrics_frame())
+    from app.routers import forecasts as forecasts_router
+
+    def install(
+        forecasts: pl.DataFrame | None = None, metrics: pl.DataFrame | None = None
+    ) -> StubClientCtx:
+        ctx = StubClientCtx(ForecastStubClient(forecasts, metrics))
+        monkeypatch.setattr(forecasts_router, "client_ctx", ctx)
+        return ctx
+
+    return install
