@@ -104,6 +104,8 @@ export interface ColumnSpec {
    * `time` reads an ISO or epoch instant on the UK clock; `date` a `YYYY-MM-DD`.
    */
   format?: CellFormat
+  /** A `time` column names each instant's year: events that run years past their window. */
+  years?: boolean
   unit?: string
   display?: 'GW' | 'MW'
   /**

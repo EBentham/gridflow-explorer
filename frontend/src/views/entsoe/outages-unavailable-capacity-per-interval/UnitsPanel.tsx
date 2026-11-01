@@ -12,7 +12,9 @@ import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import { instantLabel } from '../../../design/time'
 import type { Scalar } from '../../contract'
 import type { PageContext } from '../../define'
-import { MW, START, activeFilters, applyFilters, mwText, rowsOf, shapeOf, startMs, withYear, type Field } from './shape'
+import { dashCell } from '../../_template/cells'
+import { activeFilters, applyFilters } from '../../_template/filters'
+import { MW, START, mwText, rowsOf, shapeOf, startMs, withYear, type Field } from './shape'
 
 interface Unit {
   key: string
@@ -29,8 +31,6 @@ interface Unit {
   published: number
 }
 
-const dashCell = <span className="gf-cell-missing">–</span>
-
 function cell(f: Field | undefined, v: Scalar | undefined): ReactNode {
   const words = f?.words?.(v ?? null)
   if (words) return words
@@ -43,7 +43,7 @@ export function UnitsPanel({ ctx }: { ctx: PageContext }) {
   const all = rowsOf(ctx)
   if (!shape) return null
   if (ctx.state === 'empty' || !all.length) return <p className="gf-hint">No outage block was published in {ctx.windowText}, so no {shape.noun[0]} is listed.</p>
-  const active = activeFilters(ctx, shape)
+  const active = activeFilters(ctx, shape.filters)
   const rows = applyFilters(all, active)
 
   const units = new Map<string, Unit>()

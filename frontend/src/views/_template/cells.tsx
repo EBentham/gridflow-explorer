@@ -5,7 +5,7 @@
  * their year) and its sort value. A missing value reads as a dash, never 0.
  */
 import type { ReactNode } from 'react'
-import { autoDigits, DASH, fmtN } from '../../design/format'
+import { autoDigits, DASH, fmt0, fmtN } from '../../design/format'
 import { instantLabel, rangeText } from '../../design/time'
 import type { Scalar } from '../contract'
 import type { CellFormat, ColumnSpec } from '../define'
@@ -80,7 +80,8 @@ export function toTableCol(spec: ColumnSpec, { years = false }: { years?: boolea
   const format = spec.format ?? 'text'
   const unit = spec.unit ? displayUnit(spec.unit, spec.display ?? 'MW') : null
   const cell = (v: Scalar | undefined): ReactNode => {
-    if (v === null || v === undefined || v === '') return dashCell
+    // A blank reads as a dash, unless the column has words for it ("Not stated").
+    if (v === null || v === undefined || v === '') return spec.text?.(null) ?? dashCell
     const words = wordsOf(spec, v)
     if (words !== null) return words
     switch (format) {
@@ -89,7 +90,8 @@ export function toTableCol(spec: ColumnSpec, { years = false }: { years?: boolea
       case 'number': {
         if (typeof v !== 'number') return String(v)
         const shown = unit && unit.numeric ? v * unit.factor : v
-        return unit && unit.label !== null ? unit.plain(shown) : fmtN(shown, autoDigits(shown))
+        if (unit && unit.label !== null) return unit.plain(shown)
+        return Number.isInteger(shown) ? fmt0(shown) : fmtN(shown, autoDigits(shown))
       }
       case 'time': {
         const ms = toInstant(v)

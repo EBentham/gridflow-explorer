@@ -2,14 +2,14 @@
  * What each outage dataset's rows hold, for the page's own table and panels:
  * the column naming what is out (a unit, a border asset, an area), its areas,
  * its status and type where it has them, and the filters the table offers.
- * Also the words for ENTSO-E's area codes and statuses, and the table's
- * filters as they live in the URL (`?f.<field>=`, the template's convention).
+ * Also the words for ENTSO-E's area codes and statuses, and the events
+ * table's columns.
  */
 import { autoDigits, fmt0, fmtN } from '../../../design/format'
 import { instantLabel } from '../../../design/time'
 import { productionType } from '../../_template/codes'
 import type { EventRow, EventsRowsResponse, Scalar } from '../../contract'
-import type { PageContext } from '../../define'
+import type { ColumnSpec, PageContext } from '../../define'
 
 /** The value column in every outage table. */
 export const MW = 'unavailable_mw'
@@ -125,33 +125,29 @@ export function mwText(v: number): string {
   return Number.isInteger(v) ? fmt0(v) : fmtN(v, autoDigits(v))
 }
 
-/** A value in its field's words, or as held; `Blank` for an empty one with no words. */
-export function said(f: Field | undefined, v: Scalar | undefined): string {
-  const words = f?.words?.(v ?? null)
-  if (words) return words
-  return v === null || v === undefined || v === '' ? 'Blank' : String(v)
-}
-
-// ---------------------------------------------------------------- filters
-
-/** The URL value for a blank field, which `?f.<field>=` can't carry as an empty string. */
-export const BLANK = '(blank)'
-
-export const filterParam = (field: string) => `f.${field}`
-
-/** A row's value as a filter matches it. */
-export const filterValue = (v: Scalar | undefined) => (v === null || v === undefined || v === '' ? BLANK : String(v))
-
-/** The filters set in the URL, as [field, value] pairs. */
-export function activeFilters(ctx: PageContext, shape: OutageShape): [string, string][] {
-  return shape.filters.map((f) => [f, ctx.param(filterParam(f))] as [string, string | null]).filter((x): x is [string, string] => x[1] !== null)
-}
-
-export function applyFilters(rows: EventRow[], active: [string, string][]): EventRow[] {
-  if (!active.length) return rows
-  return rows.filter((r) => active.every(([f, v]) => filterValue(r[f]) === v))
-}
-
 export function rowsOf(ctx: PageContext): EventRow[] {
   return (ctx.response as EventsRowsResponse | null)?.rows ?? []
+}
+
+// ---------------------------------------------------------------- the table
+
+const asColumn = (f: Field): ColumnSpec => ({ field: f.field, label: f.label, format: f.id ? 'id' : 'text', text: f.words })
+
+/**
+ * The events table's columns: what is out, its status, then the block and
+ * its figure; identifiers a name already covers go last, so a narrow box
+ * cuts them off before the figures. A block start names its year: blocks
+ * run years ahead of the window.
+ */
+export function columnsOf(shape: OutageShape): ColumnSpec[] {
+  const one = (f: Field | undefined) => (f ? [asColumn(f)] : [])
+  return [
+    ...one(shape.name ?? shape.who),
+    ...one(shape.status),
+    { field: START, label: 'Block starts', format: 'time', years: true },
+    { field: MW, label: MW_LABEL, format: 'number' },
+    ...one(shape.type),
+    ...shape.areas.map(asColumn),
+    ...(shape.name ? one(shape.who) : []),
+  ]
 }
