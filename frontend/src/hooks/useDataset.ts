@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError, fetchJson } from '../api/client'
 import type { DataRecord } from '../api/types'
 import type { DateRange } from '../lib/range'
@@ -24,18 +24,25 @@ export function useDataset(datasetId: string, range: DateRange | null): UseDatas
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<ApiError | null>(null)
   const [refetchTick, setRefetchTick] = useState(0)
+  const lastPath = useRef('')
   const start = range?.start
   const end = range?.end
 
   useEffect(() => {
     if (!start || !end) return undefined
     const controller = new AbortController()
-    setLoading(true)
-    setError(null)
-
     const path = `/api/datasets/${datasetId}/data?start=${start}&end=${end}`
+    const retry = lastPath.current === path
+    lastPath.current = path
+    setLoading(true)
+    // A retry of the same request while gridflow holds the store keeps saying so until it answers.
+    setError((prev) => (retry && prev?.code === 'refresh_in_progress' ? prev : null))
+
     fetchJson<DataRecord[]>(path, controller.signal)
-      .then(setData)
+      .then((rows) => {
+        setData(rows)
+        setError(null)
+      })
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === 'AbortError') return
         setError(err instanceof ApiError ? err : new ApiError('unknown_error', String(err)))
