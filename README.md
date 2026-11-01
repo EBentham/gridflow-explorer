@@ -117,8 +117,9 @@ The explorer reads the catalogue gridflow itself uses: `gridflow.duckdb` under
 backend, so `uv run gridflow init` creates an empty catalogue there and
 `uv run gridflow pipeline <source> <dataset>` fills it (see
 [gridflow's install notes](https://github.com/EBentham/gridflow#install)). To point the
-explorer at a catalogue somewhere else, set `GRIDFLOW_EXPLORER_DUCKDB_PATH`, in the
-environment or in `backend/.env`. The fetch job passes the same path to the gridflow CLI.
+explorer at a catalogue somewhere else, set `GRIDFLOW_EXPLORER_DUCKDB_PATH` in the
+environment or in `backend/.env` (copy `backend/.env.example`). The fetch job passes the
+same path to the gridflow CLI.
 
 To work on gridflow and the explorer together, layer a local gridflow checkout over the
 locked one: `uv run --with-editable ../../gridflow <command>`.
