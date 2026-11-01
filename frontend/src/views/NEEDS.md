@@ -30,22 +30,17 @@ why a page needs it, and what the page does meanwhile.
    `entsog/tariff_simulations` cost). The template shows them as published and sorts them as
    numbers. A numeric cast in the backend would let a page chart them.
 
-## Shared code outside this unit's boundary
-
-5. ~~**DESIGN.md §9** still said the template demo is deleted by P4-0.~~ Done: the line now
-   says the demo was kept, and why.
-6. ~~**Pages hung on "Reading gridflow's source list…"**, as Vite's `/api` proxy reused
-   keep-alive sockets the backend had closed.~~ Done in dfceb34: the proxy no longer keeps
-   connections alive.
-
 ## Domain questions for research (labelled on the pages, not guessed)
 
 7. **ENTSO-E's GB unit lists look stale.** `installed_capacity_units` and
    `generation_units_master_data` still list 10 GB hard-coal units dated 2026, and GB's last
    coal plant closed in 2024. The pages label GB's rows as the last list sent, not the 2026
    fleet. It needs confirming before any stack work uses these capacities.
-8. **EIC area names.** There is no shared EIC→name list, so pages show area codes. A
-   research-confirmed map would let `ColumnSpec.text` name them.
+8. **EIC area names.** `_template/codes.ts` names the six areas the pages read
+   (`ENTSOE_AREAS`, gridflow's own names; `entsoeArea` for `ColumnSpec.text`). A code outside
+   them still shows as held: a research-confirmed list, or the backend serving gridflow's
+   `area_name_for` in the source list, would name the rest (the installed-capacity unit list
+   still shows codes).
 
 ## Source list text (backend)
 

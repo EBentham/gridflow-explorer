@@ -3,26 +3,6 @@
 What the template or the endpoint lacks for this page, why the page needs it, and what it
 does meanwhile.
 
-1. **Events time cells can't name the year.** `EventsBody` builds its columns with
-   `toTableCol(c)` and no `years`, so a `format: 'time'` column prints `Wed 8 Oct, 03:00`.
-   These rows' block starts (`timestamp_utc`) run from 2015 to 2077, so the year is the
-   point. A `text` formatter would name it, but the column would then sort by the words.
-   - Meanwhile: the page draws its own main body (`OutagesTable.tsx`) on `WindowedTable`,
-     `CountStrip` and the same filter markup, with a block-start column that names the year
-     and sorts as a time. It repeats about 60 lines of `EventsBody`'s filters.
-   - Wanted: a `years` flag on `ColumnSpec` (or `EventsView`) passed through to `toTableCol`.
-   - A deliberate deviation: the page's own filters keep the template's `?f.<field>=`
-     parameters, which the README reserves for the events body. They are the same filters
-     the events body would set, and the template clears every `f.` parameter when the
-     dataset changes; a page-prefixed name would leave one dataset's filters standing on the
-     next. With a `years` flag the page could go back to `EventsBody` and this goes away.
-
-2. **Event filters can't pick a blank value.** `EventsBody` sets `?f.<field>=` to the value,
-   and an empty string clears it, so `document_status` '' (a notice that states no status)
-   can't be chosen, and blanks show as a dash with no words.
-   - Meanwhile: the page's own filters carry blanks as `(blank)` in the URL and read them
-     "Not stated".
-
 3. **The default events source line names the wrong clock.** `mainSrc` says "one row per
    event, at its `timestamp_utc`" (the manifest clock), but the rows endpoint windows and dates
    events by `latest_day_rule.column` (`published_at`). The page overrides the main source

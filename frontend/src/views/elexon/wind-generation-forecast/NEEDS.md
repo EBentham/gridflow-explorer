@@ -9,10 +9,6 @@
   hour, or every issue for a window. What the page does instead: reads each row's issue
   time, counts in the key the hours issued before and after them, charts each hour's lead
   in the working panel, and splits metered less forecast the same way.
-- **Lead-time helpers are copied.** `leadText` and the issue-time reading in `figures.ts`
-  repeat demand forecasts' `figures.ts`, as a page may not import another family's folder.
-  A template module (say `_template/issues.ts`) holding the lead text and an issue summary
-  would keep the forecast pages alike.
 - **No overlay of a related series in the main panel.** Metered output can't share the
   main chart's axis with the forecast, so the working panel draws both on one axis, with
   the difference and the lead as bars under them.

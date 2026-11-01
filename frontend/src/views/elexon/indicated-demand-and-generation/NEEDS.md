@@ -8,14 +8,6 @@
   (`figures.ts`, `pairOf`), and name it "sign flipped" wherever it is drawn; the table
   gives the figure as held and flipped side by side. A `ValueSpec.negate` (display only,
   with the template adding "sign flipped" to the label) would let the defaults do it.
-- **A related dataset can't follow the page's own parameters.** The boundary is a page
-  parameter (`?boundary=`), but `RelatedSpec.query` is fixed. What the page does instead:
-  reads the other dataset split by boundary with no filter (18 series, 18 times the rows of
-  one boundary: about 6,000 rows for 7 days, 26,000 for 30), and picks the page's boundary
-  from it. A `query` function on `RelatedSpec`, like the dataset's own, would cut that read
-  to one boundary. A custom window longer than about 57 days would push that read past the
-  row cap and come back as means; the page then draws the page's own dataset alone and
-  says why.
 - **No overlay of a related series in the main panel.** The pair is the point of the page,
   but the template draws a related dataset only in the lower panel. What the page does
   instead: a main body of its own that draws both on one axis with `SeriesChart`.
