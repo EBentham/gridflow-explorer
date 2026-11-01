@@ -9,7 +9,7 @@
  * A band's value at a time is the sum of its codes held there; it is null
  * only when none of them is held, so a missing reading is never read as zero.
  */
-import { FUEL_BANDS, fuelVar } from '../../../design/fuels'
+import { FUEL_BANDS, fuelVar, ELEXON_FUELS, elexonBand, elexonFuelName, isInterconnectorCode } from '../../../design/fuels'
 import type { SeriesDef, SeriesModel, WideRow } from '../../_template/seriesModel'
 import type { DisplayUnit } from '../../_template/units'
 import type { GroupSpec } from '../../define'
@@ -27,44 +27,28 @@ export const AXIS_WIDTH = 44
 /** Five minutes: the readings' step, and the gap between a reading's start and its stamp. */
 export const FIVE_MIN = 5 * 60 * 1000
 
-/** Elexon's non-interconnector codes, bottom of the stack first, with the band each folds into. */
-const CODES: { code: string; label: string; band: string }[] = [
-  { code: 'NUCLEAR', label: 'Nuclear', band: 'nuclear' },
-  { code: 'NPSHYD', label: 'Hydro', band: 'hydro' },
-  { code: 'BIOMASS', label: 'Biomass', band: 'biomass' },
-  { code: 'WIND', label: 'Wind', band: 'wind' },
-  { code: 'CCGT', label: 'Gas (CCGT)', band: 'gas' },
-  { code: 'OCGT', label: 'Gas (OCGT)', band: 'peaking' },
-  { code: 'COAL', label: 'Coal', band: 'peaking' },
-  { code: 'OIL', label: 'Oil', band: 'peaking' },
-  { code: 'OTHER', label: 'Other', band: 'other' },
-  { code: 'PS', label: 'Pumped storage', band: 'pumped_storage' },
-]
-
-const isLink = (code: string) => code.startsWith('INT')
 
 /** The band a code folds into: `INT…` into net imports, a code the page doesn't know into other, as the Generation mix screen does. */
 export function bandOf(code: string): string {
-  if (isLink(code)) return 'imports'
-  return CODES.find((c) => c.code === code)?.band ?? 'other'
+  return elexonBand(code) ?? 'other'
 }
 
 /** A code's name: the fuel's, or null for an interconnector or a code the page doesn't know (shown as its code). */
 export function codeLabel(code: string): string | null {
-  return CODES.find((c) => c.code === code)?.label ?? null
+  return elexonFuelName(code)
 }
 
 /** The twenty codes a day holds, for the template: named and coloured by their band. */
 export const GROUPS: GroupSpec[] = [
-  ...CODES.map((c) => ({ value: c.code, label: c.label, color: fuelVar(c.band) })),
+  ...ELEXON_FUELS.map((c) => ({ value: c.code, label: c.label, color: fuelVar(c.band) })),
   ...['INTELEC', 'INTEW', 'INTFR', 'INTGRNL', 'INTIFA2', 'INTIRL', 'INTNED', 'INTNEM', 'INTNSL', 'INTVKL'].map((code) => ({ value: code, label: `Interconnector ${code}`, color: fuelVar('imports') })),
 ]
 
 /** The codes the rows hold, in stack order: the fuels, then the interconnectors, then any code the page doesn't know. */
 export function codeOrder(codes: string[]): string[] {
   const rank = (code: string) => {
-    const i = CODES.findIndex((c) => c.code === code)
-    return i >= 0 ? i : isLink(code) ? CODES.length : CODES.length + 1
+    const i = ELEXON_FUELS.findIndex((c) => c.code === code)
+    return i >= 0 ? i : isInterconnectorCode(code) ? ELEXON_FUELS.length : ELEXON_FUELS.length + 1
   }
   return [...codes].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))
 }
@@ -78,7 +62,7 @@ export function codeDefs(model: SeriesModel): Map<string, SeriesDef> {
 
 /** Codes the page doesn't know, which the chart folds into other. */
 export function unknownCodes(model: SeriesModel): string[] {
-  return [...codeDefs(model).keys()].filter((c) => !isLink(c) && !CODES.some((k) => k.code === c))
+  return [...codeDefs(model).keys()].filter((c) => !isInterconnectorCode(c) && !ELEXON_FUELS.some((k) => k.code === c))
 }
 
 /** A band's field in the folded rows. */

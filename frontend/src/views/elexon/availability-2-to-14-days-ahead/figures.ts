@@ -16,7 +16,7 @@
  * names them (`INT…` codes are interconnectors; OCGT, coal and oil are the
  * peaking band).
  */
-import { FUEL_BANDS, fuelVar } from '../../../design/fuels'
+import { FUEL_BANDS, fuelVar, elexonBand, elexonFuelName, isInterconnectorCode } from '../../../design/fuels'
 import { DAY_MS, datesBetween, dayStart, londonMidnight, nextLondonMidnight, ukDate } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { RowsResponse, SeriesRow } from '../../contract'
@@ -62,28 +62,6 @@ export interface Band {
   order: number
 }
 
-/** Elexon's fuel codes on the design's fuel bands, as the generation mix and the physical notifications page fold them. */
-const BAND_OF: Record<string, string> = {
-  NUCLEAR: 'nuclear',
-  NPSHYD: 'hydro',
-  BIOMASS: 'biomass',
-  WIND: 'wind',
-  CCGT: 'gas',
-  OCGT: 'peaking',
-  COAL: 'peaking',
-  OIL: 'peaking',
-  OTHER: 'other',
-  PS: 'pumped_storage',
-}
-
-/** Each code's own name, where it says more than its band's. */
-const CODE_NAMES: Record<string, string> = {
-  CCGT: 'Gas (CCGT)',
-  OCGT: 'Gas (OCGT)',
-  COAL: 'Coal',
-  OIL: 'Oil',
-}
-
 /** The chart's neutral ink, for a code the page doesn't know: no fuel colour is claimed for it. */
 const NEUTRAL = 'var(--chart-tick)'
 
@@ -97,7 +75,7 @@ const bandByKey = new Map(BANDS.map((b) => [b.key, b]))
 
 /** A fuel code's band; a code the page doesn't know is a band of its own, named by its code, in neutral ink. */
 export function bandOf(code: string | null): Band {
-  const key = code === null ? null : code.startsWith('INT') ? 'imports' : BAND_OF[code]
+  const key = code === null ? null : elexonBand(code)
   const band = key ? bandByKey.get(key) : undefined
   if (band) return band
   const name = code ?? 'Fuel not listed'
@@ -108,8 +86,8 @@ export const isInterconnector = (band: Band) => band.key === 'imports'
 
 /** A code in words: `Gas (OCGT)`, `Interconnector`, or the band's name. */
 export function codeName(code: string): string {
-  if (code.startsWith('INT')) return 'Interconnector'
-  return CODE_NAMES[code] ?? bandOf(code).label
+  if (isInterconnectorCode(code)) return 'Interconnector'
+  return elexonFuelName(code) ?? bandOf(code).label
 }
 
 const byBand = (a: Band, b: Band) => a.order - b.order || collator.compare(a.label, b.label)

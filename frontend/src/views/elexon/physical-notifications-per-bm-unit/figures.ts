@@ -11,7 +11,7 @@
  * half-hour's end only when the unit notified one run (the page's caveat,
  * and NEEDS.md, say so).
  */
-import { FUEL_BANDS, fuelVar } from '../../../design/fuels'
+import { FUEL_BANDS, fuelVar, elexonBand, elexonFuelName } from '../../../design/fuels'
 import { datesBetween, dayStart, londonMidnight } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { RowsResponse, Scalar } from '../../contract'
@@ -86,23 +86,6 @@ export interface Fuel {
   order: number
 }
 
-/** Elexon's fuel codes on the design's fuel bands, as the generation mix folds them. `INT…` codes are interconnectors. */
-const BAND_OF: Record<string, string> = {
-  NUCLEAR: 'nuclear',
-  NPSHYD: 'hydro',
-  BIOMASS: 'biomass',
-  WIND: 'wind',
-  CCGT: 'gas',
-  OCGT: 'peaking',
-  COAL: 'peaking',
-  OIL: 'peaking',
-  OTHER: 'other',
-  PS: 'pumped_storage',
-}
-
-/** The peaking band's own fuels, named as the generation mix names them. */
-const PEAKING_LABELS: Record<string, string> = { OCGT: 'Gas (OCGT)', COAL: 'Coal', OIL: 'Oil' }
-
 /** No fuel colour for a fuel the page can't name: the chart's neutral ink, as the power stack page uses for its floor. */
 const NEUTRAL = 'var(--chart-tick)'
 
@@ -111,10 +94,10 @@ const MIXED_FUEL: Fuel = { code: null, label: 'More than one fuel listed', color
 
 /** A fuel code's name, colour and place in the stack; a code the page doesn't know keeps its code as its name. */
 export function fuelOf(code: string): Fuel {
-  const band = code.startsWith('INT') ? 'imports' : BAND_OF[code]
+  const band = elexonBand(code)
   const i = band ? FUEL_BANDS.findIndex((b) => b.key === band) : -1
   if (i < 0) return { code, label: code, color: NEUTRAL, order: FUEL_BANDS.length }
-  const label = band === 'imports' ? 'Interconnector' : (PEAKING_LABELS[code] ?? FUEL_BANDS[i].label)
+  const label = band === 'imports' ? 'Interconnector' : (elexonFuelName(code) ?? FUEL_BANDS[i].label)
   return { code, label, color: fuelVar(FUEL_BANDS[i].key), order: i }
 }
 
