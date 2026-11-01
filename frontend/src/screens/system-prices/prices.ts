@@ -1,5 +1,6 @@
 import type { DataRecord } from '../../api/types'
 import { HALF_HOUR, toMs } from '../../design/time'
+import { runsWhere, type Run } from '../../design/series'
 
 export interface PriceRow {
   t: number
@@ -30,33 +31,5 @@ export function isDualPriced(rows: PriceRow[]): boolean {
   return rows.some((r) => r.sell !== null && r.buy !== null && r.sell !== r.buy)
 }
 
-export interface NegRun {
-  start: number
-  /** Start of the last negative half-hour in the run. */
-  last: number
-  n: number
-  min: number
-}
-
 /** Runs of consecutive half-hours with a system price below zero. A missing half-hour ends a run. */
-export function negativeRuns(rows: PriceRow[]): NegRun[] {
-  const out: NegRun[] = []
-  let cur: NegRun | null = null
-  for (const r of rows) {
-    const p = r.price
-    const contiguous = cur !== null && r.t - cur.last <= HALF_HOUR
-    if (p !== null && p < 0) {
-      if (cur && contiguous) {
-        cur.last = r.t
-        cur.n += 1
-        cur.min = Math.min(cur.min, p)
-      } else {
-        cur = { start: r.t, last: r.t, n: 1, min: p }
-        out.push(cur)
-      }
-    } else {
-      cur = null
-    }
-  }
-  return out
-}
+export const negativeRuns = (rows: PriceRow[]): Run[] => runsWhere(rows, HALF_HOUR, (r) => r.price, (v) => v < 0)

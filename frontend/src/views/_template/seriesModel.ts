@@ -8,6 +8,7 @@
  * there at all (it is on another clock).
  */
 import { SERIES_COLORS } from '../../design/chartTheme'
+import { runsWhere, type Run } from '../../design/series'
 import { datesBetween, dayStart, fmtDay, HOUR_MS, londonMidnight, periodLabel, stepsInDay, ukDate } from '../../design/time'
 import type { DateRange } from '../../lib/range'
 import type { SeriesRowsResponse, ValueColumn } from '../contract'
@@ -225,25 +226,8 @@ export function periodName(t: number, stepMs: number | null, settlement: Map<num
 }
 
 /** Runs of consecutive held values below zero, as [first, last] times; a gap ends a run. Only on a regular clock. */
-export function runsBelowZero(rows: WideRow[], def: SeriesDef, stepMs: number | null): { start: number; last: number; n: number; min: number }[] {
-  if (stepMs === null) return []
-  const out: { start: number; last: number; n: number; min: number }[] = []
-  let run: (typeof out)[number] | null = null
-  for (const row of rows) {
-    if (!(def.field in row)) continue
-    const v = row[def.field]
-    if (typeof v === 'number' && v < 0) {
-      if (run && row.t - run.last <= stepMs) {
-        run.last = row.t
-        run.n += 1
-        run.min = Math.min(run.min, v)
-      } else {
-        run = { start: row.t, last: row.t, n: 1, min: v }
-        out.push(run)
-      }
-    } else run = null
-  }
-  return out
+export function runsBelowZero(rows: WideRow[], def: SeriesDef, stepMs: number | null): Run[] {
+  return runsWhere(rows, stepMs, (row) => (def.field in row ? (row[def.field] ?? null) : undefined), (v) => v < 0)
 }
 
 /** The last held value of a field over some rows, or null. */

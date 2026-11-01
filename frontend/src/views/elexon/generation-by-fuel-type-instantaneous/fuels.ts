@@ -27,7 +27,6 @@ export const AXIS_WIDTH = 44
 /** Five minutes: the readings' step, and the gap between a reading's start and its stamp. */
 export const FIVE_MIN = 5 * 60 * 1000
 
-
 /** The band a code folds into: `INT…` into net imports, a code the page doesn't know into other, as the Generation mix screen does. */
 export function bandOf(code: string): string {
   return elexonBand(code) ?? 'other'

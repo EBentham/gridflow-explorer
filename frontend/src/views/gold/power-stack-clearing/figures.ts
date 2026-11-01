@@ -6,12 +6,13 @@
  * mean or a count, never read as zero, and nothing here re-derives what
  * gridflow's model computed.
  */
-import { niceTicks, type Scale } from '../../../design/format'
+import { niceTicks, type Scale, num } from '../../../design/format'
 import { datesBetween, dayStart, londonMidnight, stepsInDay } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { Scalar, SeriesRow } from '../../contract'
 import type { PageContext, QuerySpec } from '../../define'
 import { collator } from '../../_template/seriesModel'
+import { runsWhere, type Run } from '../../../design/series'
 
 // ---------------------------------------------------------------- the run
 
@@ -114,7 +115,6 @@ export const FLOOR_STYLE: FuelStyle = { label: 'The price floor', color: 'var(--
 
 // ---------------------------------------------------------------- reading cells
 
-export const num = (v: Scalar | undefined): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 export const str = (v: Scalar | undefined): string | null => (typeof v === 'string' && v !== '' ? v : null)
 const bool = (v: Scalar | undefined): boolean | null => (typeof v === 'boolean' ? v : null)
 
@@ -221,21 +221,7 @@ export function setterOf(p: Pick<ClearingPoint, 'atFloor' | 'fuel'>): { key: str
 }
 
 /** Runs of consecutive half-hours where the floor set the price, as their first and last times. */
-export function floorRuns(points: ClearingPoint[], stepMs: number | null): { start: number; last: number }[] {
-  if (stepMs === null) return []
-  const out: { start: number; last: number }[] = []
-  let run: { start: number; last: number } | null = null
-  for (const p of points) {
-    if (p.atFloor === true) {
-      if (run && p.t - run.last <= stepMs) run.last = p.t
-      else {
-        run = { start: p.t, last: p.t }
-        out.push(run)
-      }
-    } else run = null
-  }
-  return out
-}
+export const floorRuns = (points: ClearingPoint[], stepMs: number | null): Run[] => runsWhere(points, stepMs, (p) => (p.atFloor === true ? 0 : null), () => true)
 
 export interface Mean {
   mean: number | null

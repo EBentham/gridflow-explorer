@@ -15,6 +15,7 @@ import { CHART } from '../../../design/chartTheme'
 import type { DateRange } from '../../../lib/range'
 import type { GroupSpec } from '../../define'
 import type { SeriesDef, SeriesModel, WideRow } from '../../_template/seriesModel'
+import { runsWhere } from '../../../design/series'
 
 export const PRICE = 'price_eur_mwh'
 export const AREA = 'area_code'
@@ -108,24 +109,7 @@ function stepsInWindow(window: DateRange, step: number | null): number | null {
 }
 
 /** The runs of consecutive held steps below zero on a zone's own clock; a gap ends a run. */
-export function runsBelow(points: Point[], step: number | null): { start: number; last: number; n: number; min: number }[] {
-  if (step === null) return []
-  const out: { start: number; last: number; n: number; min: number }[] = []
-  let run: (typeof out)[number] | null = null
-  for (const p of points) {
-    if (p.v < 0) {
-      if (run && p.t - run.last <= step) {
-        run.last = p.t
-        run.n += 1
-        run.min = Math.min(run.min, p.v)
-      } else {
-        run = { start: p.t, last: p.t, n: 1, min: p.v }
-        out.push(run)
-      }
-    } else run = null
-  }
-  return out
-}
+export const runsBelow = (points: Point[], step: number | null) => runsWhere(points, step, (p) => p.v, (v) => v < 0)
 
 /**
  * Every zone of the five, and any other the rows hold, with its figures for

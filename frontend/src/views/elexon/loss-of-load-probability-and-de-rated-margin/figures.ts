@@ -11,7 +11,7 @@
  * Nothing is filled in: a half-hour with no figure is a gap, never a zero.
  */
 import { daysInWindow } from '../../../design/days'
-import { fmtN } from '../../../design/format'
+import { fmtN, num } from '../../../design/format'
 import { HOUR_MS, stepsInDay } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
 import type { PageContext } from '../../define'
@@ -114,8 +114,6 @@ function def(which: 'm' | 'p', count: number): SeriesDef {
     signed: false,
   }
 }
-
-const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 
 /** The page's rows, as the panels read them. Null until the rows are read. */
 export function modelOf(ctx: PageContext): Model | null {

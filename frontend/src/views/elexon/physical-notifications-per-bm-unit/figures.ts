@@ -14,7 +14,7 @@
 import { FUEL_BANDS, fuelVar, elexonBand, elexonFuelName } from '../../../design/fuels'
 import { datesBetween, dayStart, londonMidnight } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
-import type { RowsResponse, Scalar } from '../../contract'
+import type { RowsResponse } from '../../contract'
 import type { PageContext, RelatedData } from '../../define'
 import type { ChartPanel } from '../../_template/SeriesChart'
 import { daySummaries, type DaySummary, type SeriesDef, type SeriesModel, type WideRow, collator } from '../../_template/seriesModel'
@@ -289,9 +289,6 @@ export function priceAt(price: PriceSeries): Map<number, number> {
 }
 
 // ---------------------------------------------------------------- figures
-
-/** A cell's number, or null for a gap. */
-export const num = (v: Scalar | undefined): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 
 export interface Levels {
   /** Half-hours (or means) holding a start level. */

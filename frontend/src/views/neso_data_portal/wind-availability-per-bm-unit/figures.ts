@@ -14,13 +14,14 @@
 import { SERIES_COLORS } from '../../../design/chartTheme'
 import { HALF_HOUR, dayStart, fmtDay, instantLabel, nextLondonMidnight, ukDate, windowDomain } from '../../../design/time'
 import type { DateRange } from '../../../lib/range'
-import type { RowsResponse, Scalar } from '../../contract'
+import type { RowsResponse } from '../../contract'
 import type { PageContext, RelatedData } from '../../define'
 import type { ChartPanel } from '../../_template/SeriesChart'
 import { relatedFilters, type SourcePart } from '../../_template/panelHelpers'
 import type { SeriesDef, SeriesModel, WideRow } from '../../_template/seriesModel'
 import { displayUnit, MW } from '../../_template/units'
 import { collator } from '../../_template/seriesModel'
+import { num } from '../../../design/format'
 
 // ---------------------------------------------------------------- columns and keys
 
@@ -104,8 +105,6 @@ export interface Capture {
   /** The days between publication and the day a figure is for, lowest and highest, where both are known. */
   ahead: { min: number; max: number } | null
 }
-
-const num = (v: Scalar | undefined): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
 

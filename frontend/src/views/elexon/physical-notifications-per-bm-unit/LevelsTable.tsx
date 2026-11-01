@@ -10,9 +10,10 @@ import { periodLabel } from '../../../design/time'
 import type { SeriesRow, SeriesRowsResponse } from '../../contract'
 import { WindowedTable, type TableCol } from '../../_template/WindowedTable'
 import type { PageContext } from '../../define'
-import { END, START, UNIT, focusedLine, fuelFor, fuelLookup, num, priceAt, priceSeries, sameClock, unitLines, unitShown } from './figures'
+import { END, START, UNIT, focusedLine, fuelFor, fuelLookup, priceAt, priceSeries, sameClock, unitLines, unitShown } from './figures'
 import { dashCell } from '../../_template/cells'
 import { MW } from '../../_template/units'
+import { num } from '../../../design/format'
 
 const level = (v: number | null): ReactNode => (v === null ? dashCell : MW.plain(v))
 
