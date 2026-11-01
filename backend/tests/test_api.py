@@ -23,19 +23,9 @@ def _client() -> TestClient:
     return TestClient(app)
 
 
-def test_datasets_lists_both_datasets_with_series_and_id() -> None:
-    response = _client().get("/api/datasets")
-
-    assert response.status_code == 200
-    body = response.json()
-    ids = {entry["id"] for entry in body}
-    assert ids == {"generation-mix", "system-prices"}
-    for entry in body:
-        assert entry["series"], f"{entry['id']} has no series"
-        assert entry["default_range_days"] == 7
-        assert "cli_source" not in entry
-        assert "cli_dataset" not in entry
-        assert "loader" not in entry
+def test_bare_datasets_listing_is_retired() -> None:
+    """The pages list datasets from `/api/sources`; the old listing had no consumer."""
+    assert _client().get("/api/datasets").status_code == 404
 
 
 def test_data_route_default_window_is_seven_days_ending_today(

@@ -4,22 +4,6 @@
  * layer between backend and frontend.
  */
 
-export interface SeriesSpec {
-  key: string
-  label: string
-}
-
-export interface DatasetSummary {
-  id: string
-  title: string
-  description: string
-  chart: string
-  unit: string
-  default_range_days: number
-  timestamp_key: string
-  series: SeriesSpec[]
-}
-
 /** One record from `/api/datasets/{id}/data`: a timestamp plus one value per series (null where none is held). */
 export type DataRecord = Record<string, string | number | null>
 

@@ -9,8 +9,7 @@ import polars as pl
 import pytest
 from conftest import StubClient, generation_mix_frame
 
-from app.catalogue import DATASETS, to_catalogue_entry
-from app.transforms import load_generation_mix, load_system_prices
+from app.transforms import GENERATION_SERIES_KEYS, load_generation_mix, load_system_prices
 
 WINDOW_START = date(2026, 8, 10)
 WINDOW_END = date(2026, 8, 10)
@@ -71,9 +70,8 @@ def test_int_star_codes_collapse_into_single_imports_value() -> None:
 
 def test_every_declared_series_key_present_on_every_record() -> None:
     records = _generation_records()
-    declared_keys = {s.key for s in DATASETS["generation-mix"].series}
     for record in records:
-        for key in declared_keys:
+        for key in GENERATION_SERIES_KEYS:
             assert key in record, f"missing declared key {key!r} in {record!r}"
 
 
@@ -110,12 +108,3 @@ def test_system_prices_sorted_ascending_by_timestamp() -> None:
     records = load_system_prices(StubClient(), WINDOW_START, WINDOW_END)
     timestamps = [r["timestamp"] for r in records]
     assert timestamps == sorted(timestamps)
-
-
-def test_to_catalogue_entry_emits_id_and_omits_internal_fields() -> None:
-    entry = to_catalogue_entry(DATASETS["generation-mix"])
-    assert entry["id"] == "generation-mix"
-    assert "cli_source" not in entry
-    assert "cli_dataset" not in entry
-    assert "loader" not in entry
-    assert "dataset_id" not in entry

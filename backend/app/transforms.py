@@ -44,11 +44,8 @@ FUEL_TO_SERIES: dict[str, str] = {
     "OTHER": "other",
 }
 
-# The 11 display series, in stacking (bottom-to-top) order — matches the
-# `generation-mix` `DATASETS` entry in `catalogue.py`. Declared independently
-# rather than imported from there: `catalogue.py` imports the loaders from
-# this module, so importing back would be circular. Both lists are read from
-# the same P1-PLAN.md table and are exercised together by `test_transforms.py`.
+# The 11 display series every generation-mix record carries, in stacking
+# (bottom-to-top) order, from P1-PLAN.md's table.
 GENERATION_SERIES_KEYS: tuple[str, ...] = (
     "nuclear",
     "wind",

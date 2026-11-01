@@ -1,4 +1,4 @@
-"""`/api/datasets*` routes.
+"""`/api/datasets/{dataset_id}/*` routes for the two pinned screens.
 
 **Validation runs before any client is acquired.** `get_dataset` (404) and
 range parsing/defaulting (422) both happen before `client_ctx()` is ever
@@ -18,25 +18,12 @@ from typing import Any
 
 from fastapi import APIRouter, Query
 
-from app.catalogue import get_dataset, list_datasets, to_catalogue_entry
+from app.catalogue import get_dataset
 from app.coverage import dataset_coverage
 from app.deps import client_ctx
 from app.ranges import resolve_range
 
 router = APIRouter(tags=["datasets"])
-
-
-@router.get("/api/datasets")
-def get_datasets() -> list[dict[str, Any]]:
-    """List every catalogue entry.
-
-    Touches no database — the catalogue is entirely in-process, so this
-    answers normally even while a fetch job is running.
-
-    Returns:
-        One serialized catalogue entry per registered dataset.
-    """
-    return [to_catalogue_entry(spec) for spec in list_datasets()]
 
 
 @router.get("/api/datasets/{dataset_id}/data")

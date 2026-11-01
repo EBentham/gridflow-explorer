@@ -102,7 +102,6 @@ def test_http_contract_cache_is_lazy_and_fresh_hit_skips_client(
     assert not any({"verdict", "volume_class"} & set(d) for d in datasets)
     assert all(set(dim) == {"column", "role"} for d in datasets for dim in d["dims"])
     assert "today_uk" not in body
-    assert TestClient(app).get("/api/datasets").status_code == 200
 
 
 def test_warm_refresh_returns_stale_with_original_generated_at(
