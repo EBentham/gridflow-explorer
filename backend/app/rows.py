@@ -141,12 +141,6 @@ def validate(
     dataset = REGISTRY.get((source, dataset_id))
     if dataset is None:
         raise RowsError(ErrorCode.UNKNOWN_DATASET, "Unknown source or dataset.")
-    if dataset["not_held_cause"]:
-        raise RowsError(
-            ErrorCode.UNKNOWN_DATASET,
-            "Dataset is not held.",
-            not_held_cause=dataset["not_held_cause"],
-        )
     first = _parse_date(start)
     last = _parse_date(end)
     if dataset["kind"] == "reference" and (first or last):

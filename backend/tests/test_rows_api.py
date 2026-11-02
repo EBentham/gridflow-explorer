@@ -26,7 +26,6 @@ def _spec(*, kind="series", grain="1h", grouped=True):
         "kind": kind,
         "base_relation": "silver_test_sample",
         "latest_relation": None,
-        "not_held_cause": None,
         "clock": {"column": "timestamp_utc", "grain": grain, "settlement_cols": []}
         if kind == "series"
         else None,
@@ -381,21 +380,6 @@ def test_same_day_range_is_accepted(monkeypatch, sources_db):
     }
 
 
-def test_declared_not_held_returns_cause_before_acquire(monkeypatch):
-    """A committed not-held cause is emitted without touching the catalogue."""
-    spec = _spec()
-    spec["not_held_cause"] = "fetched-empty:test"
-    monkeypatch.setattr(rows, "REGISTRY", {("test", "sample"): spec})
-    _forbid_acquire(monkeypatch)
-    response = TestClient(app).get("/api/sources/test/sample/rows")
-    assert response.status_code == 404
-    assert response.json()["error"] == {
-        "code": "unknown_dataset",
-        "message": "Dataset is not held.",
-        "not_held_cause": "fetched-empty:test",
-    }
-
-
 def test_cached_missing_schema_returns_cause_before_acquire(monkeypatch):
     """A warm negative metadata entry short-circuits catalogue construction."""
     from app.settings import get_settings
@@ -425,7 +409,6 @@ def test_reference_rejects_dates_before_acquire(monkeypatch):
 def test_neso_intensity_factors_remains_held_reference(monkeypatch, sources_db):
     """The committed NESO descriptor serves a held, windowless reference."""
     spec = rows.REGISTRY[("neso", "intensity_factors")]
-    assert spec["not_held_cause"] is None
     assert spec["kind"] == "reference"
     sources_db.con.execute(
         "CREATE TABLE silver_neso_intensity_factors (ingested_at TIMESTAMPTZ, "

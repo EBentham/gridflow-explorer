@@ -45,7 +45,6 @@ def _spec(kind: str = "series") -> dict[str, Any]:
         "kind": kind,
         "base_relation": "silver_test_sample",
         "latest_relation": None,
-        "not_held_cause": None,
         "clock": {"column": "timestamp_utc", "grain": "irregular", "settlement_cols": []}
         if kind == "series"
         else None,

@@ -32,7 +32,6 @@ def test_every_seed_identity_schedule_and_family_appears_once() -> None:
             "id": d["id"],
             "family": f["label"],
             "schedule": d["schedule"],
-            "held": d["not_held_cause"] is None,
         }
         for s, f, d in _datasets()
     ]
@@ -72,7 +71,6 @@ def test_family_page_counts_routes_and_corrections() -> None:
     assert emission_factors["kind"] == "reference"
     assert emission_factors["page"] == "table-only"
     assert emission_factors["route"] == "/sources/neso/emission-factors-by-fuel"
-    assert emission_factors["datasets"][0]["not_held_cause"] is None
     assert {d["id"] for d in gold_forecasts["datasets"]} == {
         "gold_forecasts",
         "gold_forecast_metrics",

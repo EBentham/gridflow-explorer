@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import copy
+import json
+import re
 from datetime import UTC, date, datetime
 
 import pytest
@@ -42,7 +44,6 @@ def _dataset(dataset_id="sample", **updates):
         "kind": "series",
         "base_relation": f"silver_test_{dataset_id}",
         "latest_relation": f"silver_test_{dataset_id}_latest",
-        "not_held_cause": None,
         "clock": {"column": "timestamp_utc", "grain": "1h", "settlement_cols": []},
         "latest_day_rule": {"mode": "max", "column": "published_at"},
         "values": [{"column": "value", "unit": "MW", "label": "Value"}],
@@ -333,18 +334,32 @@ def test_gold_name_is_read_as_given_beside_a_latest_view(
     assert card["coverage"]["rows"] == 1
 
 
-def test_declared_not_held_relation_warns_but_stays_unheld(
-    monkeypatch: pytest.MonkeyPatch, sources_db, caplog
-) -> None:
-    """Detect a new catalogue landing hidden by stale committed metadata."""
-    sources_db.con.execute("CREATE TABLE silver_test_sample(value INTEGER)")
-    d = _dataset(not_held_cause="never-fetched")
-    monkeypatch.setattr(sources, "SOURCES", _spec(d))
-    card = _one(sources.build_manifest(sources_db))
-    assert card["held"] is False
-    assert card["coverage"] is None
-    assert card["not_held_cause"] == "never-fetched"
-    assert "Declared not held" in caplog.text
+def test_served_manifest_names_no_machine_path_or_owner_holdings(sources_db) -> None:
+    """Detect one machine's paths or fetch history served to every user's catalogue."""
+    manifest = sources.build_manifest(sources_db)
+    text = json.dumps(manifest)
+    assert not re.search(r"\b[A-Za-z]:[\\/]|/Users/|/home/", text)
+    assert not re.search(r"never-fetched|fetched-empty|never-built", text)
+    cards = [d for s in manifest["sources"] for f in s["families"] for d in f["datasets"]]
+    assert len(cards) == 172
+    assert {(d["held"], d["not_held_cause"]) for d in cards} == {(False, "missing-in-catalogue")}
+
+
+def test_committed_dataset_is_held_once_its_relation_lands(sources_db) -> None:
+    """Detect committed metadata overriding what the user's own catalogue holds."""
+    _seed_committed_relation(sources_db, _committed("intensity_current"), [{}])
+    manifest = sources.build_manifest(sources_db)
+    card = next(
+        d
+        for s in manifest["sources"]
+        if s["key"] == "neso"
+        for f in s["families"]
+        for d in f["datasets"]
+        if d["id"] == "intensity_current"
+    )
+    assert card["held"] is True
+    assert card["relation"] == "silver_neso_intensity_current"
+    assert card["coverage"]["rows"] == 1
 
 
 def test_filter_dedup_snapshot_and_null_anchor(monkeypatch: pytest.MonkeyPatch, sources_db) -> None:
