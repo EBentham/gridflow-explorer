@@ -338,7 +338,8 @@ def test_served_manifest_names_no_machine_path_or_owner_holdings(sources_db) -> 
     """Detect one machine's paths or fetch history served to every user's catalogue."""
     manifest = sources.build_manifest(sources_db)
     text = json.dumps(manifest)
-    assert not re.search(r"\b[A-Za-z]:[\\/]|/Users/|/home/", text)
+    # Drive or UNC paths (JSON doubles each backslash), or home folders outside a URL.
+    assert not re.search(r"\b[A-Za-z]:[\\/]|\\{4}\w|(?<![\w.])/(?:Users|home)/", text)
     assert not re.search(r"never-fetched|fetched-empty|never-built", text)
     cards = [d for s in manifest["sources"] for f in s["families"] for d in f["datasets"]]
     assert len(cards) == 172
