@@ -1,32 +1,18 @@
-# React + TypeScript + Vite
+# gridflow Explorer frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The Vite + React + TypeScript app. Setup, the backend it reads from and how to run both
+are in the root README: [Setup](../README.md#setup) and [Running](../README.md#running).
 
-Currently, two official plugins are available:
+From this folder, with the backend running on port 8000:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm install
+npm run dev                  # http://localhost:5173, /api proxied to the backend
+npm run build                # type-check (tsc -b), then the production build
+npm run lint                 # oxlint
+npm run shoot -- <route>     # light and dark screenshots of a route, in .shots/
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+`EXPLORER_API` points the proxy at a backend on another port, and `VITE_PORT` moves the
+dev server. The design system is in [`DESIGN.md`](DESIGN.md), and the contract for
+building a dataset page is in [`src/views/README.md`](src/views/README.md).
