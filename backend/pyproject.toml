@@ -35,7 +35,9 @@ dev = [
 # pins the commit. Moving to a new release is this line plus `uv lock`. To
 # work on both repos, layer a local checkout over the locked one with
 # `uv run --with-editable ../../gridflow <cmd>`.
-gridflow = { git = "https://github.com/EBentham/gridflow", rev = "d295448c24361d72ad127c0eb0efdf6126b95ce3" }
+# This rev is the gridflow v0.23.0 release commit. Switch to tag = "v0.23.0"
+# once that tag exists; it resolves the same commit.
+gridflow = { git = "https://github.com/EBentham/gridflow", rev = "188c8bbdae13ca4b82403e7b9bb3a9d7c593f9da" }
 
 [build-system]
 requires = ["setuptools>=68.0"]
