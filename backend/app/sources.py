@@ -320,72 +320,60 @@ def build_manifest(client: Any, *, generated_at: datetime | None = None) -> dict
             public_source["families"].append(public_family)
             for dataset in family["datasets"]:
                 public = {k: copy.deepcopy(dataset[k]) for k in _PUBLIC_DATASET}
-                cause = dataset["not_held_cause"]
-                candidate = dataset["base_relation"]
                 latest = dataset["latest_relation"]
-                if cause:
-                    if candidate in tables or latest in tables:
-                        LOG.warning(
-                            "Declared not held but catalogue relation exists: %s/%s (%s)",
-                            source["key"],
-                            dataset["id"],
-                            latest if latest in tables else candidate,
-                        )
-                    public.update(held=False, relation=None, not_held_cause=cause, coverage=None)
+                selected = latest if latest in tables else dataset["base_relation"]
+                types = columns.get(selected, {})
+                missing = _required_columns(dataset) - set(types)
+                invalid_dates = []
+                if selected in tables:
+                    date_columns = []
+                    if dataset["kind"] != "reference":
+                        clock = dataset["clock"]
+                        if clock and clock["column"]:
+                            date_columns.append(clock["column"])
+                        rule = dataset["latest_day_rule"]
+                        if rule["mode"] == "max":
+                            date_columns.append(rule["column"])
+                    for column in set(date_columns) - missing:
+                        try:
+                            _uk_day(column, types)
+                        except ValueError as exc:
+                            invalid_dates.append(str(exc))
+                if selected not in tables or missing or invalid_dates:
+                    LOG.warning(
+                        "Missing catalogue schema for %s/%s: relation=%s "
+                        "missing=%s invalid_dates=%s",
+                        source["key"],
+                        dataset["id"],
+                        selected,
+                        sorted(missing) if selected in tables else ["<relation>"],
+                        sorted(invalid_dates),
+                    )
+                    public.update(
+                        held=False,
+                        relation=None,
+                        not_held_cause="missing-in-catalogue",
+                        coverage=None,
+                    )
                 else:
-                    selected = latest if latest in tables else candidate
-                    types = columns.get(selected, {})
-                    missing = _required_columns(dataset) - set(types)
-                    invalid_dates = []
-                    if selected in tables:
-                        date_columns = []
-                        if dataset["kind"] != "reference":
-                            clock = dataset["clock"]
-                            if clock and clock["column"]:
-                                date_columns.append(clock["column"])
-                            rule = dataset["latest_day_rule"]
-                            if rule["mode"] == "max":
-                                date_columns.append(rule["column"])
-                        for column in set(date_columns) - missing:
-                            try:
-                                _uk_day(column, types)
-                            except ValueError as exc:
-                                invalid_dates.append(str(exc))
-                    if selected not in tables or missing or invalid_dates:
-                        LOG.warning(
-                            "Missing catalogue schema for %s/%s: relation=%s "
-                            "missing=%s invalid_dates=%s",
-                            source["key"],
-                            dataset["id"],
-                            selected,
-                            sorted(missing) if selected in tables else ["<relation>"],
-                            sorted(invalid_dates),
-                        )
-                        public.update(
-                            held=False,
-                            relation=None,
-                            not_held_cause="missing-in-catalogue",
-                            coverage=None,
-                        )
-                    else:
-                        public.update(
-                            held=True,
-                            relation=selected,
-                            not_held_cause=None,
-                            coverage=_coverage(client, selected, dataset, columns[selected]),
-                        )
-                        if (
-                            public["coverage"]["rows"]
-                            and not public["coverage"].get("_anchor_day")
-                            and dataset["latest_day_rule"]["mode"] == "max"
-                        ):
-                            public["notes"].append("Rows have no usable latest-day anchor.")
-                        if (
-                            public["coverage"]["rows"]
-                            and public["coverage"]["day_count"] == 0
-                            and dataset["kind"] != "reference"
-                        ):
-                            public["notes"].append("Rows have no usable coverage dates.")
+                    public.update(
+                        held=True,
+                        relation=selected,
+                        not_held_cause=None,
+                        coverage=_coverage(client, selected, dataset, columns[selected]),
+                    )
+                    if (
+                        public["coverage"]["rows"]
+                        and not public["coverage"].get("_anchor_day")
+                        and dataset["latest_day_rule"]["mode"] == "max"
+                    ):
+                        public["notes"].append("Rows have no usable latest-day anchor.")
+                    if (
+                        public["coverage"]["rows"]
+                        and public["coverage"]["day_count"] == 0
+                        and dataset["kind"] != "reference"
+                    ):
+                        public["notes"].append("Rows have no usable coverage dates.")
                 public_family["datasets"].append(public)
     return result
 

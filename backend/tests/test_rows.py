@@ -39,7 +39,6 @@ def _spec(
         "kind": "series",
         "base_relation": "silver_test_sample",
         "latest_relation": None,
-        "not_held_cause": None,
         "clock": {"column": "timestamp_utc", "grain": grain, "settlement_cols": []},
         "latest_day_rule": {"mode": "max", "column": anchor_column},
         "values": [{"column": "value", "unit": "MW", "label": "Test value"}],
@@ -200,10 +199,10 @@ def test_grain_parser_uses_exact_tokens():
         assert rows._grain({"clock": {"grain": token}}) is None
 
 
-def test_default_group_fallback_covers_all_44_specs():
+def test_default_group_fallback_covers_every_series_spec():
     """Every committed series selects a declared group or remains dimensionless."""
     for (source, dataset_id), spec in rows.REGISTRY.items():
-        if spec["not_held_cause"] or spec["kind"] != "series":
+        if spec["kind"] != "series" or not rows._clock_column(spec):
             continue
         request = rows.validate(source, dataset_id, None, None, None, None)
         dims = spec["dims"]

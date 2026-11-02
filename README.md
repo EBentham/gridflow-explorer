@@ -13,9 +13,9 @@ and what it doesn't.
 
 - **A catalogue of 172 datasets from 9 sources:** Elexon BMRS, ENTSO-E, NESO Carbon
   Intensity, the NESO Data Portal, ENTSO-G, GIE AGSI+ and ALSI, Open-Meteo, and
-  gridflow's own derived "gold" tables. The catalogue is one committed spec generated
-  from gridflow's source configuration. Its datasets, grains and identity columns drive
-  both the landing page and the API.
+  gridflow's own derived "gold" tables. The catalogue is one committed, hand-maintained
+  spec drawn from gridflow's source configuration. Its datasets, grains and identity
+  columns drive both the landing page and the API.
 - **25 dataset pages, each on one shared template.** Every page has the same frame: a
   chart or table, a key, and an "about this data" panel naming the exact table, columns,
   units, cadence and local coverage. Bespoke pages add their own panels. Examples are the
@@ -97,10 +97,10 @@ spec, so it knows every dataset's time column, grain and identity columns.
 - While a fetch holds the write lock, read routes answer `503 refresh_in_progress`
   instead of racing DuckDB's file lock. A second fetch gets `409`.
 
-**Tested.** The backend has a pytest suite of about 250 tests covering validation,
-vintage collapse, downsampling, the concurrency cap and the fetch job lifecycle. The
-frontend build type-checks under TypeScript 6 and lints with oxlint. A puppeteer
-harness (`npm run shoot`) renders any route in both themes for visual review.
+**Tested.** The backend has a pytest suite covering validation, vintage collapse,
+downsampling, the concurrency cap and the fetch job lifecycle. The frontend build
+type-checks under TypeScript 6 and lints with oxlint. A puppeteer harness
+(`npm run shoot`) renders any route in both themes for visual review.
 
 ## Setup
 
@@ -112,11 +112,14 @@ You need [uv](https://docs.astral.sh/uv/) and Node 22. The backend installs
 uv sync --extra dev
 ```
 
+Behind a corporate proxy, if `uv sync` fails with "invalid peer certificate", set
+`UV_SYSTEM_CERTS=1` or pass `--system-certs` so uv trusts your system's certificates.
+
 The explorer reads the catalogue gridflow itself uses: `gridflow.duckdb` under
 `GRIDFLOW_DATA_DIR`, which defaults to `~/gridflow-data`. gridflow's CLI comes with the
 backend, so `uv run gridflow init` creates an empty catalogue there and
 `uv run gridflow pipeline <source> <dataset>` fills it (see
-[gridflow's install notes](https://github.com/EBentham/gridflow#install)). To point the
+[gridflow's quickstart](https://github.com/EBentham/gridflow#quickstart)). To point the
 explorer at a catalogue somewhere else, set `GRIDFLOW_EXPLORER_DUCKDB_PATH` in the
 environment or in `backend/.env` (copy `backend/.env.example`). The fetch job passes the
 same path to the gridflow CLI.
@@ -148,11 +151,11 @@ npm run dev
 `EXPLORER_API` points the proxy at a backend on another port, and `VITE_PORT` moves the
 dev server.
 
-Tests and checks:
+Tests and checks (from the repo root):
 
 ```sh
-cd backend && uv run pytest -q
-cd frontend && npm run build && npm run lint
+(cd backend && uv run pytest -q)
+(cd frontend && npm run build && npm run lint)
 ```
 
 ## Related repos

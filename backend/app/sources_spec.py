@@ -1,10 +1,12 @@
 # ruff: noqa: E501
 """Committed source and dataset specifications.
 
-Hand-maintained; no runtime file reads. Long literals preserve canonical dataset
-identifiers. A key whose value would be None or an empty list is left out and filled
-from the defaults at the end of this module, and relation names follow gridflow's view
-naming, so neither is spelled out per dataset.
+Hand-maintained; no runtime file reads. Whether a dataset is held is read from the
+user's own catalogue when the manifest is built, so nothing here describes one store.
+Long literals preserve canonical dataset identifiers. A key whose value would be None
+or an empty list is left out and filled from the defaults at the end of this module,
+and relation names follow gridflow's view naming, so neither is spelled out per
+dataset.
 """
 
 import copy
@@ -2071,8 +2073,6 @@ SOURCES = [
                         "id": "offered_transfer_capacity_continuous",
                         "schedule": "daily",
                         "kind": "series",
-                        "not_held_cause": "fetched-empty:OFFERED_TRANSFER_CAPACITIES_IMPLICIT "
-                        "[11.1]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2097,8 +2097,6 @@ SOURCES = [
                         "id": "offered_transfer_capacity_implicit",
                         "schedule": "daily",
                         "kind": "series",
-                        "not_held_cause": "fetched-empty:OFFERED_TRANSFER_CAPACITIES_IMPLICIT "
-                        "[11.1]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2117,8 +2115,6 @@ SOURCES = [
                         "id": "offered_transfer_capacity_explicit",
                         "schedule": "daily",
                         "kind": "series",
-                        "not_held_cause": "fetched-empty:OFFERED_TRANSFER_CAPACITIES_IMPLICIT "
-                        "[11.1]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2141,7 +2137,6 @@ SOURCES = [
                         "id": "transfer_capacity_use",
                         "schedule": "daily",
                         "kind": "series",
-                        "not_held_cause": "fetched-empty:USE_OF_TRANSFER_CAPACITY [12.1.A]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2252,8 +2247,6 @@ SOURCES = [
                         "id": "congestion_income",
                         "schedule": "daily",
                         "kind": "series",
-                        "not_held_cause": "fetched-empty:IMPL_ALLOC_CONG_INCOME_FLOW_BASED "
-                        "[12.1.E]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2280,7 +2273,6 @@ SOURCES = [
                         "id": "imbalance_prices",
                         "schedule": "daily",
                         "kind": "series",
-                        "not_held_cause": "fetched-empty:IMBALANCE_PRICES_R3 [17.1.G]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2298,7 +2290,6 @@ SOURCES = [
                         "id": "imbalance_volume",
                         "schedule": "daily",
                         "kind": "series",
-                        "not_held_cause": "fetched-empty:TOTAL_IMBALANCE_VOLUMES_R3 [17.1.H]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2357,8 +2348,6 @@ SOURCES = [
                         "id": "activated_balancing_prices",
                         "schedule": "daily",
                         "kind": "series",
-                        "not_held_cause": "fetched-empty:PRICES_OF_ACTIVATED_BALANCING_ENERGY_R3 "
-                        "[TR 17.1.F]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2372,8 +2361,6 @@ SOURCES = [
                         "id": "aggregated_balancing_energy_bids",
                         "schedule": "daily",
                         "kind": "series",
-                        "not_held_cause": "fetched-empty:AGGREGATED_BALANCING_ENERGY_BIDS_R3 "
-                        "[12.3.E]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2391,7 +2378,6 @@ SOURCES = [
                         "id": "contracted_reserves",
                         "schedule": "daily",
                         "kind": "series",
-                        "not_held_cause": "fetched-empty:AMOUNT_AND_PRICES_PAID_OF_BALANCING_RESERVES_UNDER_CONTRACT",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2432,8 +2418,6 @@ SOURCES = [
                         "id": "cross_zonal_balancing_capacity",
                         "schedule": "daily",
                         "kind": "series",
-                        "not_held_cause": "fetched-empty:ALLOCATION_AND_USE_CROSS_ZONAL_CAPACITY "
-                        "[GL EB 12.3.H]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2448,8 +2432,6 @@ SOURCES = [
                         "id": "balancing_financial_expenses_income",
                         "schedule": "monthly",
                         "kind": "series",
-                        "not_held_cause": "fetched-empty:FINANCIAL_EXPENSES_AND_INCOME_FOR_BALANCING_R3 "
-                        "[17.1.I]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2666,7 +2648,6 @@ SOURCES = [
                         "id": "outages_offshore_grid",
                         "schedule": "daily",
                         "kind": "events",
-                        "not_held_cause": "fetched-empty:UNAVAILABILITY_OF_OFFSHORE_GRID [10.1.C]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2699,7 +2680,6 @@ SOURCES = [
                         "id": "redispatching_cross_border",
                         "schedule": "daily",
                         "kind": "series",
-                        "not_held_cause": "fetched-empty:REDISPATCHING_CROSS_BORDER_R3 [13.1.A]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2733,7 +2713,6 @@ SOURCES = [
                         "id": "countertrading",
                         "schedule": "daily",
                         "kind": "series",
-                        "not_held_cause": "fetched-empty:COUNTERTRADING_R3 [13.1.B]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {"column": "quantity_mw", "unit": "MW", "label": "countertrading (A91)"}
@@ -2743,8 +2722,6 @@ SOURCES = [
                         "id": "congestion_management_costs",
                         "schedule": "daily",
                         "kind": "series",
-                        "not_held_cause": "fetched-empty:COSTS_OF_CONGESTION_MANAGEMENT_R3 "
-                        "[13.1.C]",
                         "latest_day_rule": {"mode": "unknown", "column": None},
                         "values": [
                             {
@@ -2902,12 +2879,6 @@ SOURCES = [
                         "id": "intensity_current",
                         "schedule": "hourly",
                         "kind": "series",
-                        "not_held_cause": "never-fetched: no bronze/neso/intensity_current "
-                        "dir; a transformer IS registered "
-                        "(GF/silver/neso/carbon_intensity.py:272-280 "
-                        "registers every ENDPOINTS key), so nothing is "
-                        "folded; the endpoint is current-only "
-                        "(requires_window=False)",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3066,10 +3037,6 @@ SOURCES = [
                         "id": "intensity_today",
                         "schedule": "daily",
                         "kind": "series",
-                        "not_held_cause": "never-fetched: no bronze/neso/intensity_today "
-                        "dir; own transformer registered; /intensity/date "
-                        "serves the current date only "
-                        "(requires_window=False)",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3230,9 +3197,6 @@ SOURCES = [
                         "id": "generation_current",
                         "schedule": "hourly",
                         "kind": "series",
-                        "not_held_cause": "never-fetched: no bronze/neso/generation_current "
-                        "dir; own transformer registered; /generation is "
-                        "current-only (requires_window=False)",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3277,9 +3241,6 @@ SOURCES = [
                         "id": "regional_current",
                         "schedule": "hourly",
                         "kind": "series",
-                        "not_held_cause": "never-fetched: no bronze/neso/regional_current "
-                        "dir; own transformer registered; /regional is "
-                        "current-only",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3304,8 +3265,6 @@ SOURCES = [
                         "id": "regional_england",
                         "schedule": "hourly",
                         "kind": "series",
-                        "not_held_cause": "never-fetched: no bronze/neso/regional_england "
-                        "dir; own transformer registered; current-only",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3322,8 +3281,6 @@ SOURCES = [
                         "id": "regional_scotland",
                         "schedule": "hourly",
                         "kind": "series",
-                        "not_held_cause": "never-fetched: no bronze/neso/regional_scotland "
-                        "dir; own transformer registered; current-only",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3340,8 +3297,6 @@ SOURCES = [
                         "id": "regional_wales",
                         "schedule": "hourly",
                         "kind": "series",
-                        "not_held_cause": "never-fetched: no bronze/neso/regional_wales dir; "
-                        "own transformer registered; current-only",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3358,9 +3313,6 @@ SOURCES = [
                         "id": "regional_postcode",
                         "schedule": "hourly",
                         "kind": "series",
-                        "not_held_cause": "never-fetched: no bronze/neso/regional_postcode "
-                        "dir; own transformer registered; current-only "
-                        "(default postcode RG10)",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -3376,9 +3328,6 @@ SOURCES = [
                         "id": "regional_regionid",
                         "schedule": "hourly",
                         "kind": "series",
-                        "not_held_cause": "never-fetched: no bronze/neso/regional_regionid "
-                        "dir; own transformer registered; current-only "
-                        "(DEFAULT_REGION_ID=13)",
                         "clock": {"column": "timestamp_utc", "grain": "30min"},
                         "latest_day_rule": {"mode": "max", "column": "timestamp_utc"},
                         "values": [
@@ -4902,12 +4851,6 @@ SOURCES = [
                     {
                         "id": "system_marginal_price",
                         "kind": "series",
-                        "not_held_cause": "never-fetched: builder registered "
-                        "(GF/gold/system_marginal_price.py:71) but never "
-                        "built; no "
-                        "C:/gridflow-data/gold/system_marginal_price dir, "
-                        "so no gold_system_marginal_price view "
-                        "(GF/storage/duckdb.py:203-207)",
                         "clock": {
                             "column": "timestamp_utc",
                             "grain": "30min",
@@ -4939,8 +4882,7 @@ SOURCES = [
                             },
                         ],
                         "notes": [
-                            "Enum stretched: 'never-built' is the literal cause. It "
-                            "largely duplicates gold_uk_imbalance_context plus two "
+                            "It largely duplicates gold_uk_imbalance_context plus two "
                             "derived columns. Recommend not building a page."
                         ],
                     }
@@ -5679,15 +5621,11 @@ SOURCES = [
                         "id": "interruptions",
                         "schedule": "daily",
                         "kind": "events",
-                        "not_held_cause": "fetched-empty",
                         "clock": {"column": "unknown", "grain": "event"},
                         "latest_day_rule": {"mode": "max", "column": "unknown"},
                         "notes": [
-                            "fetched-empty is outside the RUNBOOK cause list "
-                            "(never-fetched | no-transformer | folded-into | "
-                            "current-only); none of those is true. Transformer exists "
-                            "(generic registration). A wider window would need a "
-                            "connector change in gridflow.",
+                            "Transformer exists (generic registration). A wider "
+                            "window would need a connector change in gridflow.",
                             "UK coverage date of the timestamp can differ from the "
                             "vendor gas-day label.",
                         ],
@@ -5696,7 +5634,6 @@ SOURCES = [
                         "id": "urgent_market_messages",
                         "schedule": "daily",
                         "kind": "events",
-                        "not_held_cause": "never-fetched",
                         "clock": {"column": "unknown", "grain": "event"},
                         "latest_day_rule": {"mode": "max", "column": "unknown"},
                         "notes": [
@@ -5809,7 +5746,6 @@ SOURCES = [
                         "id": "connection_points",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "not_held_cause": "never-fetched",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "notes": [
@@ -5821,7 +5757,6 @@ SOURCES = [
                         "id": "operators",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "not_held_cause": "never-fetched",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "notes": ["Transformer exists (generic)."],
@@ -5830,7 +5765,6 @@ SOURCES = [
                         "id": "balancing_zones",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "not_held_cause": "never-fetched",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "notes": ["Transformer exists (generic)."],
@@ -5839,7 +5773,6 @@ SOURCES = [
                         "id": "operator_point_directions",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "not_held_cause": "never-fetched",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "notes": [
@@ -5851,7 +5784,6 @@ SOURCES = [
                         "id": "interconnections",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "not_held_cause": "never-fetched",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "notes": ["Transformer exists (generic)."],
@@ -5860,7 +5792,6 @@ SOURCES = [
                         "id": "aggregate_interconnections",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "not_held_cause": "never-fetched",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "notes": ["Transformer exists (generic)."],
@@ -6058,7 +5989,6 @@ SOURCES = [
                         "id": "news",
                         "schedule": "daily",
                         "kind": "events",
-                        "not_held_cause": "never-fetched",
                         "clock": {"column": "unknown", "grain": "event"},
                         "latest_day_rule": {"mode": "max", "column": "gas_day"},
                         "notes": [
@@ -6070,7 +6000,6 @@ SOURCES = [
                         "id": "news_item",
                         "schedule": "daily",
                         "kind": "events",
-                        "not_held_cause": "never-fetched",
                         "clock": {"column": "unknown", "grain": "event"},
                         "latest_day_rule": {"mode": "max", "column": "gas_day"},
                     },
@@ -6086,7 +6015,6 @@ SOURCES = [
                         "id": "about_summary",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "not_held_cause": "never-fetched",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "notes": ["Transformer exists."],
@@ -6095,7 +6023,6 @@ SOURCES = [
                         "id": "about_listing",
                         "schedule": "weekly",
                         "kind": "reference",
-                        "not_held_cause": "never-fetched",
                         "clock": {"column": None, "grain": "snapshot"},
                         "latest_day_rule": {"mode": "reference", "column": None},
                         "notes": [
@@ -6178,7 +6105,6 @@ SOURCES = [
 
 DATASET_DEFAULTS: dict[str, Any] = {
     "schedule": None,
-    "not_held_cause": None,
     "clock": None,
     "values": [],
     "dims": [],

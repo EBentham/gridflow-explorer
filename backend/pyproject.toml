@@ -30,6 +30,11 @@ dev = [
     "ruff",
 ]
 
+[tool.uv]
+# Use the system trust store instead of uv's bundled certificates, so uv works
+# behind a TLS-inspecting proxy whose root CA is not in Mozilla's bundle.
+system-certs = true
+
 [tool.uv.sources]
 # gridflow is not on PyPI; uv installs it from this git source and uv.lock
 # pins the commit. Moving to a new release is this line plus `uv lock`. To

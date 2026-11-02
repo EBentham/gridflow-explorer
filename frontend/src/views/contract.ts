@@ -143,9 +143,8 @@ export interface ManifestDataset {
   /** The table the backend reads; null when not held. */
   relation: string | null
   /**
-   * Why it isn't held: a prefix (`never-fetched`, `fetched-empty`,
-   * `missing-in-catalogue`, `current-only`, `no-transformer`,
-   * `folded-into:<relation>`) with a research tail. Show `notHeldText()`, not this.
+   * Why it isn't held, read from the local catalogue: `missing-in-catalogue`
+   * when its table or a declared column is absent. Show `notHeldText()`, not this.
    */
   not_held_cause: string | null
   coverage: DatasetCoverage | null
