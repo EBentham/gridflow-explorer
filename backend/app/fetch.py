@@ -22,8 +22,6 @@ import os
 import subprocess
 import sys
 import time
-from datetime import timedelta
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from app.deps import open_client
@@ -35,11 +33,6 @@ if TYPE_CHECKING:
 
     from app.catalogue import DatasetSpec
     from app.jobs import Job
-
-# `gridflow` is editable-installed into this backend's venv, so its console
-# script lands in the same Scripts directory as the running interpreter —
-# see P1-PLAN.md "Subprocess runner" > "Executable". Never assume PATH.
-GRIDFLOW_EXE = Path(sys.executable).parent / "gridflow.exe"
 
 # Attempt schedule: 1 initial attempt plus up to 5 retries, sleeping these
 # delays (seconds) before each successive retry — 6 attempts total, ~15.5s
@@ -75,10 +68,8 @@ def probe_writer_lock() -> None:
 def build_command(spec: DatasetSpec, start: date, end: date) -> list[str]:
     """Build the `gridflow pipeline` command for one dataset and window.
 
-    Explorer `end` is an inclusive day, but the CLI's bare-date `--end`
-    resolves to a midnight-UTC instant (exclusive upper bound), so `end` is
-    advanced by one day to convert inclusive-day to exclusive-midnight and
-    ensure the final requested day is actually ingested.
+    Explorer `end` is an inclusive day, and the CLI reads a bare-date
+    `--end` the same way (through that day), so both dates pass unchanged.
 
     Args:
         spec: The catalogue entry, supplying `cli_source`/`cli_dataset`.
@@ -87,16 +78,20 @@ def build_command(spec: DatasetSpec, start: date, end: date) -> list[str]:
 
     Returns:
         The argv list, per P1-PLAN.md "Subprocess runner" > "CLI mapping".
+        gridflow runs as a module of this interpreter, never from PATH, and
+        not as a console script whose name differs by OS.
     """
     return [
-        str(GRIDFLOW_EXE),
+        sys.executable,
+        "-m",
+        "gridflow",
         "pipeline",
         spec.cli_source,
         spec.cli_dataset,
         "--start",
         start.isoformat(),
         "--end",
-        (end + timedelta(days=1)).isoformat(),
+        end.isoformat(),
     ]
 
 

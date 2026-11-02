@@ -63,7 +63,7 @@ def post_fetch(
     spec = get_dataset(dataset_id)
     start_date, end_date = resolve_range(start, end, spec.default_range_days)
     if end_date == date.max:
-        # `build_command` passes the CLI the day after `end`, which `date` cannot hold.
+        # The CLI ends a bare `--end` at the next midnight, which `date` cannot hold.
         raise BadRange(f"end must be before {date.max} for a fetch.")
 
     try:

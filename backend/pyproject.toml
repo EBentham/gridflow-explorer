@@ -13,7 +13,14 @@ dependencies = [
     # deps.py imports it for the lock-classified exception catch, and jobs.py (P3)
     # imports it for the try_start preflight probe. A direct import is a declared
     # dependency, not a transitive one riding in on the gridflow install.
-    "duckdb",
+    # Held below 2.0, the major gridflow's own lock tests: the fetch job runs
+    # gridflow in this venv, writing the catalogue gridflow's install reads.
+    "duckdb<2",
+    # gridflow from its git repository (see [tool.uv.sources]); uv.lock pins
+    # the commit. gridflow is on SemVer, and while on 0.x any change to the
+    # surface listed in gridflow.contract is a minor bump, so the range
+    # admits exactly one minor.
+    "gridflow>=0.23,<0.24",
 ]
 
 [project.optional-dependencies]
@@ -23,12 +30,14 @@ dev = [
     "ruff",
 ]
 
-# NOTE: `gridflow` is intentionally NOT listed in [project.dependencies].
-# It is installed separately as an editable local path install
-# (`uv pip install -e "../../gridflow"`) because it is a sibling checkout,
-# not a package published to PyPI. Declaring it here would send uv's
-# resolver to PyPI looking for a "gridflow" package that isn't ours.
-# See README.md "Sibling checkout requirement".
+[tool.uv.sources]
+# gridflow is not on PyPI; uv installs it from this git source and uv.lock
+# pins the commit. Moving to a new release is this line plus `uv lock`. To
+# work on both repos, layer a local checkout over the locked one with
+# `uv run --with-editable ../../gridflow <cmd>`.
+# This rev is the gridflow v0.23.0 release commit. Switch to tag = "v0.23.0"
+# once that tag exists; it resolves the same commit.
+gridflow = { git = "https://github.com/EBentham/gridflow", rev = "188c8bbdae13ca4b82403e7b9bb3a9d7c593f9da" }
 
 [build-system]
 requires = ["setuptools>=68.0"]

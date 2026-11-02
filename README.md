@@ -104,26 +104,25 @@ harness (`npm run shoot`) renders any route in both themes for visual review.
 
 ## Setup
 
-The backend expects a checkout of [`gridflow`](https://github.com/EBentham/gridflow) as a
-**sibling directory**, and a populated local gridflow catalogue:
-
-```
-some-parent-dir/
-  gridflow/            <- sibling checkout
-  gridflow-explorer/   <- this repo
-```
-
-gridflow is installed as an editable local path dependency. It isn't published on PyPI.
-From `backend/`:
+You need [uv](https://docs.astral.sh/uv/) and Node 22. The backend installs
+[`gridflow`](https://github.com/EBentham/gridflow) from its git repository, at the commit
+`backend/uv.lock` pins, so no gridflow checkout is needed. From `backend/`:
 
 ```sh
-uv venv
-uv pip install -e "../../gridflow" --python ./.venv/Scripts/python.exe
-uv pip install -e ".[dev]" --python ./.venv/Scripts/python.exe
+uv sync --extra dev
 ```
 
-Copy `backend/.env.example` to `backend/.env` and set `GRIDFLOW_EXPLORER_DUCKDB_PATH` if
-your catalogue lives somewhere other than gridflow's default.
+The explorer reads the catalogue gridflow itself uses: `gridflow.duckdb` under
+`GRIDFLOW_DATA_DIR`, which defaults to `~/gridflow-data`. gridflow's CLI comes with the
+backend, so `uv run gridflow init` creates an empty catalogue there and
+`uv run gridflow pipeline <source> <dataset>` fills it (see
+[gridflow's install notes](https://github.com/EBentham/gridflow#install)). To point the
+explorer at a catalogue somewhere else, set `GRIDFLOW_EXPLORER_DUCKDB_PATH` in the
+environment or in `backend/.env` (copy `backend/.env.example`). The fetch job passes the
+same path to the gridflow CLI.
+
+To work on gridflow and the explorer together, layer a local gridflow checkout over the
+locked one: `uv run --with-editable ../../gridflow <command>`.
 
 From `frontend/`:
 
@@ -137,7 +136,7 @@ Backend (from `backend/`). It runs single-worker on purpose, because the fetch j
 is process-local:
 
 ```sh
-./.venv/Scripts/python.exe -m uvicorn app.main:app --reload
+uv run uvicorn app.main:app --reload
 ```
 
 Frontend (from `frontend/`), then open http://localhost:5173:
@@ -152,7 +151,7 @@ dev server.
 Tests and checks:
 
 ```sh
-cd backend && ./.venv/Scripts/python.exe -m pytest -q
+cd backend && uv run pytest -q
 cd frontend && npm run build && npm run lint
 ```
 
