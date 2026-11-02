@@ -380,6 +380,21 @@ def test_same_day_range_is_accepted(monkeypatch, sources_db):
     }
 
 
+@pytest.mark.parametrize(
+    "path",
+    [
+        "entsog/connection_points/rows",
+        "entsoe/countertrading/rows?start=2026-09-14&end=2026-09-20",
+    ],
+)
+def test_undeclared_columns_or_clock_rejected_before_acquire(monkeypatch, path):
+    """A dataset with no declared columns or clock fails before SQL or an unwindowed read."""
+    _forbid_acquire(monkeypatch)
+    response = TestClient(app).get(f"/api/sources/{path}")
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "unknown_dataset"
+
+
 def test_cached_missing_schema_returns_cause_before_acquire(monkeypatch):
     """A warm negative metadata entry short-circuits catalogue construction."""
     from app.settings import get_settings

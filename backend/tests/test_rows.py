@@ -202,7 +202,7 @@ def test_grain_parser_uses_exact_tokens():
 def test_default_group_fallback_covers_every_series_spec():
     """Every committed series selects a declared group or remains dimensionless."""
     for (source, dataset_id), spec in rows.REGISTRY.items():
-        if spec["kind"] != "series":
+        if spec["kind"] != "series" or not rows._clock_column(spec):
             continue
         request = rows.validate(source, dataset_id, None, None, None, None)
         dims = spec["dims"]

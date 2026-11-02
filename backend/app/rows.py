@@ -141,6 +141,10 @@ def validate(
     dataset = REGISTRY.get((source, dataset_id))
     if dataset is None:
         raise RowsError(ErrorCode.UNKNOWN_DATASET, "Unknown source or dataset.")
+    # Some committed datasets were never observed, so the spec names no columns or clock
+    # for them; reading one would fail in SQL or ignore the requested window.
+    if not _projection(dataset) or (dataset["kind"] != "reference" and not _clock_column(dataset)):
+        raise RowsError(ErrorCode.UNKNOWN_DATASET, "Dataset declares no columns or clock to read.")
     first = _parse_date(start)
     last = _parse_date(end)
     if dataset["kind"] == "reference" and (first or last):
